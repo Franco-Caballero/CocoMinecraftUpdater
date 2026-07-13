@@ -15,6 +15,11 @@ $ErrorActionPreference = 'Stop'
 $script:CocoForm = $null
 $script:CocoCurrentProgress = 0
 $script:CocoVisualWorkStarted = $null
+if($global:CocoSharedUi){
+    $script:CocoForm=$global:CocoSharedUi.Form;$script:CocoTitle=$global:CocoSharedUi.Title
+    $script:CocoDetail=$global:CocoSharedUi.Detail;$script:CocoProgress=$global:CocoSharedUi.Progress
+    $script:CocoVisualWorkStarted=$global:CocoSharedUi.Started
+}
 
 function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]$Visible = $true, [string]$Action = '') {
     $Progress = [Math]::Max(0, [Math]::Min(100, $Progress))
@@ -27,8 +32,10 @@ function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]
         Move-Item -LiteralPath $tmp -Destination $SessionStatePath -Force
     }
     if ($script:CocoForm) {
+        $uiProgress=$Progress
+        if($global:CocoSharedUi){$uiProgress=[Math]::Min(100,[int]($global:CocoSharedUi.BaseProgress+(100-$global:CocoSharedUi.BaseProgress)*$Progress/100))}
         $script:CocoTitle.Text=$Message; $script:CocoDetail.Text=$Detail
-        $script:CocoProgress.Width=[Math]::Max(4,[int](6.2*$Progress))
+        $script:CocoProgress.Width=[Math]::Max(4,[int](5.7*$uiProgress))
         $script:CocoForm.Refresh(); [Windows.Forms.Application]::DoEvents()
     }
 }
@@ -39,28 +46,30 @@ function Show-CocoWindow {
     Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing
     [Windows.Forms.Application]::EnableVisualStyles()
     $key=[Drawing.Color]::FromArgb(1,2,3)
-    $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1000,720)
+    $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1080,740)
     $f.StartPosition='CenterScreen'; $f.FormBorderStyle='None'; $f.MaximizeBox=$false; $f.ShowInTaskbar=$true
+    $f.AutoScaleMode='None'
     $f.BackColor=$key; $f.TransparencyKey=$key; $f.ForeColor=[Drawing.Color]::White
     $iconPath=Join-Path $PSScriptRoot 'assets\reynaico.ico'
     if(Test-Path $iconPath){$f.Icon=New-Object Drawing.Icon($iconPath)}
-    $panel=New-Object Windows.Forms.Panel; $panel.Location=New-Object Drawing.Point(25,190); $panel.Size=New-Object Drawing.Size(720,330)
+    $panel=New-Object Windows.Forms.Panel; $panel.Location=New-Object Drawing.Point(25,190); $panel.Size=New-Object Drawing.Size(780,350)
     $panel.BackColor=[Drawing.Color]::FromArgb(22,13,37)
-    $accent=New-Object Windows.Forms.Panel; $accent.Location=New-Object Drawing.Point(0,0); $accent.Size=New-Object Drawing.Size(9,330)
+    $accent=New-Object Windows.Forms.Panel; $accent.Location=New-Object Drawing.Point(0,0); $accent.Size=New-Object Drawing.Size(9,350)
     $accent.BackColor=[Drawing.Color]::FromArgb(177,92,255); $panel.Controls.Add($accent)
-    $t=New-Object Windows.Forms.Label; $t.Location=New-Object Drawing.Point(38,38); $t.Size=New-Object Drawing.Size(640,52)
+    $t=New-Object Windows.Forms.Label; $t.Location=New-Object Drawing.Point(43,42); $t.Size=New-Object Drawing.Size(590,52)
     $t.Font=New-Object Drawing.Font('Segoe UI Semibold',22); $t.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
-    $d=New-Object Windows.Forms.Label; $d.Location=New-Object Drawing.Point(41,100); $d.Size=New-Object Drawing.Size(630,46)
+    $d=New-Object Windows.Forms.Label; $d.Location=New-Object Drawing.Point(46,108); $d.Size=New-Object Drawing.Size(570,46)
     $d.Font=New-Object Drawing.Font('Segoe UI',12); $d.ForeColor=[Drawing.Color]::FromArgb(218,210,229)
-    $track=New-Object Windows.Forms.Panel; $track.Location=New-Object Drawing.Point(43,165); $track.Size=New-Object Drawing.Size(620,30)
+    $track=New-Object Windows.Forms.Panel; $track.Location=New-Object Drawing.Point(46,180); $track.Size=New-Object Drawing.Size(570,30)
     $track.BackColor=[Drawing.Color]::FromArgb(58,36,81)
     $p=New-Object Windows.Forms.Panel; $p.Location=New-Object Drawing.Point(0,0); $p.Size=New-Object Drawing.Size(4,30)
     $p.BackColor=[Drawing.Color]::FromArgb(177,92,255); $track.Controls.Add($p)
-    $b=New-Object Windows.Forms.Label; $b.Text='✦  COCO PACK  •  FABRIC 26.1.2'; $b.Location=New-Object Drawing.Point(43,218)
+    $sparkle=[char]0x2726
+    $b=New-Object Windows.Forms.Label; $b.Text="$sparkle  COCO PACK  |  FABRIC 26.1.2"; $b.Location=New-Object Drawing.Point(46,244)
     $b.Size=New-Object Drawing.Size(620,25); $b.Font=New-Object Drawing.Font('Segoe UI Semibold',10); $b.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
     $panel.Controls.AddRange(@($t,$d,$track,$b))
     $artPath=Join-Path $PSScriptRoot 'assets\fullbody.png'
-    $art=New-Object Windows.Forms.PictureBox; $art.Location=New-Object Drawing.Point(590,5); $art.Size=New-Object Drawing.Size(380,710)
+    $art=New-Object Windows.Forms.PictureBox; $art.Location=New-Object Drawing.Point(675,5); $art.Size=New-Object Drawing.Size(380,720)
     $art.SizeMode='Zoom'; $art.BackColor=[Drawing.Color]::Transparent
     if(Test-Path $artPath){$art.Image=[Drawing.Image]::FromFile($artPath)}
     $f.Controls.Add($panel); $f.Controls.Add($art); $art.BringToFront()
@@ -72,7 +81,7 @@ function Show-CocoWindow {
 }
 
 function Write-Status([string]$Message) {
-    Write-Host "[Coco Updater] $Message"
+    # Un EXE sin consola convierte Write-Host en cuadros de dialogo; el estado vive en la UI.
 }
 
 function Get-Sha256([string]$Path) {
@@ -188,7 +197,7 @@ function Get-CandidateScore([string]$Root, $Manifest, [string[]]$RunningGameDirs
     if ($logText) {
         $score += Get-RecencyScore $latestLog 30
         if ($logText -match '(?i)Connecting to|Joined server|se ha unido a la partida|logged in with entity id') {
-            $score += 35; $evidence.Add('sesión multijugador registrada (+35)')
+            $score += 35; $evidence.Add('sesion multijugador registrada (+35)')
         }
         foreach ($token in @($Manifest.detector.groupTokens)) {
             if ($token -and $logText -match [regex]::Escape($token)) {
@@ -233,7 +242,7 @@ function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$Expe
             $percent=if($AllBytes -gt 0){5+[int](70*($CompletedBytes+$received)/$AllBytes)}elseif($total -gt 0){5+[int](70*$received/$total)}else{25}
             $speed=if($watch.Elapsed.TotalSeconds -gt 0){$received/$watch.Elapsed.TotalSeconds}else{0}
             $eta=if($speed -gt 0 -and $total -gt 0){[TimeSpan]::FromSeconds(($total-$received)/$speed)}else{[TimeSpan]::Zero}
-            $detail='{0:N1} / {1:N1} MB  •  {2:N1} MB/s  •  faltan ~{3:mm\:ss}' -f ($received/1MB),($total/1MB),($speed/1MB),$eta
+            $detail='{0:N1} / {1:N1} MB  |  {2:N1} MB/s  |  faltan ~{3:mm\:ss}' -f ($received/1MB),($total/1MB),($speed/1MB),$eta
             Set-CocoState 'Descargando mods' $detail $percent
         }
     } finally { $output.Dispose(); $input.Dispose(); $response.Dispose() }
@@ -253,7 +262,7 @@ function Test-MinecraftRunning([string]$Root) {
 function Wait-ForMinecraftExit([string]$Root) {
     while ($true) {
         if (-not (Test-MinecraftRunning $Root)) { return }
-        Set-CocoState 'Preparando actualización' 'Esperando a que Minecraft termine de cerrarse…' 3
+        Set-CocoState 'Preparando actualizacion' 'Esperando a que Minecraft termine de cerrarse...' 3
         Start-Sleep -Seconds 5
     }
 }
@@ -288,7 +297,7 @@ function Stage-Package($Package, $Manifest, [string]$Root) {
 }
 
 function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifest) {
-    Set-CocoState 'Instalando Coco Pack' 'Ajustando exactamente la carpeta de mods…' 78
+    Set-CocoState 'Instalando Coco Pack' 'Ajustando exactamente la carpeta de mods...' 78
     $oldMods = Join-Path $Root 'mods'
     $transientMods = Join-Path $Root '.coco-mods-replacing'
     Remove-Item -LiteralPath $transientMods -Recurse -Force -ErrorAction SilentlyContinue
@@ -304,7 +313,7 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
     Remove-Item -LiteralPath $transientMods -Recurse -Force -ErrorAction SilentlyContinue
 
     if (Test-Path (Join-Path $Stage 'config')) {
-        Set-CocoState 'Aplicando configuración' 'Sincronizando ajustes del pack…' 82
+        Set-CocoState 'Aplicando configuracion' 'Sincronizando ajustes del pack...' 82
         $targetConfig = Join-Path $Root 'config'
         New-Item -ItemType Directory -Path $targetConfig -Force | Out-Null
         Get-ChildItem -LiteralPath (Join-Path $Stage 'config') -Force | ForEach-Object {
@@ -329,7 +338,7 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
     while ($start.Elapsed.TotalSeconds -lt $remaining) {
         $fraction = if($remaining -gt 0){$start.Elapsed.TotalSeconds/$remaining}else{1}
         $smooth = $startProgress + [int]((99-$startProgress) * $fraction)
-        Set-CocoState 'Instalando Coco Pack' 'Aplicando y verificando archivos…' $smooth
+        Set-CocoState 'Instalando Coco Pack' 'Aplicando y verificando archivos...' $smooth
         Start-Sleep -Milliseconds 25
     }
     Set-CocoState 'Coco Pack actualizado' 'Ya puedes volver a abrir Minecraft' 100
@@ -361,12 +370,12 @@ function Show-CocoPreview {
     while($watch.Elapsed.TotalSeconds -lt 11){
         $seconds=$watch.Elapsed.TotalSeconds
         if($seconds -lt 2){
-            $p=[int](5+10*$seconds/2);Set-CocoState 'Buscando Minecraft' 'Identificando automáticamente la instalación correcta…' $p
+            $p=[int](5+10*$seconds/2);Set-CocoState 'Buscando Minecraft' 'Identificando automaticamente la instalacion correcta...' $p
         }elseif($seconds -lt 7){
             $fraction=($seconds-2)/5;$p=[int](15+58*$fraction)
-            $downloaded=101*$fraction;Set-CocoState 'Descargando mods' ('{0:N1} / 101,0 MB  •  20,2 MB/s  •  faltan ~00:{1:00}' -f $downloaded,[Math]::Max(0,[int](5-5*$fraction))) $p
+            $downloaded=101*$fraction;Set-CocoState 'Descargando mods' ('{0:N1} / 101,0 MB  |  20,2 MB/s  |  faltan ~00:{1:00}' -f $downloaded,[Math]::Max(0,[int](5-5*$fraction))) $p
         }else{
-            $fraction=($seconds-7)/4;$p=[int](73+26*$fraction);Set-CocoState 'Instalando Coco Pack' 'Aplicando y verificando archivos…' $p
+            $fraction=($seconds-7)/4;$p=[int](73+26*$fraction);Set-CocoState 'Instalando Coco Pack' 'Aplicando y verificando archivos...' $p
         }
         Start-Sleep -Milliseconds 25
     }
@@ -383,14 +392,14 @@ try {
     if($Preview){Show-CocoPreview;exit 0}
 
     if (-not $Silent) { Show-CocoWindow }
-    Set-CocoState 'Buscando Minecraft' 'Identificando automáticamente la instalación correcta…' 6
+    Set-CocoState 'Buscando Minecraft' 'Identificando automaticamente la instalacion correcta...' 6
     $runningDirs = Get-RunningGameDirectories
     if ($GameDir -and (Test-GameDirectory $GameDir)) {
         $candidates = @(Get-CandidateScore (Resolve-Path -LiteralPath $GameDir).Path $manifest $runningDirs)
     } else {
         $candidates = @(Get-CandidateRoots | ForEach-Object { Get-CandidateScore $_ $manifest $runningDirs })
     }
-    if ($candidates.Count -eq 0) { throw 'No se encontró ninguna carpeta de Minecraft con mods.' }
+    if ($candidates.Count -eq 0) { throw 'No se encontro ninguna carpeta de Minecraft con mods.' }
     $selected = $candidates | Sort-Object @{ Expression = 'Score'; Descending = $true }, @{ Expression = 'Root'; Descending = $false } | Select-Object -First 1
     $role = Get-Role $selected.Root $manifest
     $package = @($manifest.packages | Where-Object { $_.role -eq $role }) | Select-Object -First 1
@@ -408,7 +417,7 @@ try {
         exit 0
     }
     if (Test-CurrentVersion $selected.Root $manifest $role) {
-        Set-CocoState 'Coco Pack está actualizado' "Versión $($manifest.version) • Todo listo" 100 $false
+        Set-CocoState 'Coco Pack actualizado' "Version $($manifest.version) | Todo listo" 100 $false
         if (-not $ManifestUrl -or $MinecraftPid -le 0) { exit 0 }
         while (Test-MinecraftRunning $selected.Root) {
             Start-Sleep -Seconds 60
@@ -420,7 +429,7 @@ try {
                     Move-Item -LiteralPath "$ManifestPath.new" -Destination $ManifestPath -Force
                     $manifest=$newManifest
                     $package=@($manifest.packages | Where-Object { $_.role -eq $role }) | Select-Object -First 1
-                    Set-CocoState 'Nueva actualización encontrada' "Versión $($manifest.version)" 2
+                    Set-CocoState 'Nueva actualizacion encontrada' "Version $($manifest.version)" 2
                     break
                 }
                 Remove-Item -LiteralPath "$ManifestPath.new" -Force -ErrorAction SilentlyContinue
@@ -430,16 +439,16 @@ try {
     }
     if (-not $script:CocoForm) { Show-CocoWindow }
     if ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client' -and $MinecraftPid -gt 0) {
-        Set-CocoState 'Actualización encontrada' 'Cerrando Minecraft de forma segura…' 2 $true 'closeMinecraft'
+        Set-CocoState 'Actualizacion encontrada' 'Cerrando Minecraft de forma segura...' 2 $true 'closeMinecraft'
     } elseif ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client') {
         Set-CocoState 'Primera instalación' 'Cierra Minecraft una vez para poder instalar Session Bridge' 2
     } elseif (Test-MinecraftRunning $selected.Root) {
-        Set-CocoState 'Actualización encontrada' 'Eres el host: cierra Minecraft cuando termine la sesión LAN' 2
+        Set-CocoState 'Actualizacion encontrada' 'Eres el host: cierra Minecraft cuando termine la sesion LAN' 2
     }
     Wait-ForMinecraftExit $selected.Root
     $stage = Stage-Package $package $manifest $selected.Root
     Install-StagedPackage $selected.Root $stage $package $manifest
-    Write-Status 'Actualización terminada.'
+    Write-Status 'Actualizacion terminada.'
     exit 0
 } catch {
     if (-not $script:CocoForm) { Show-CocoWindow }

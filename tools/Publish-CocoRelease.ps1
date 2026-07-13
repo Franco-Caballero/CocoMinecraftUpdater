@@ -34,7 +34,12 @@ $bridge="fabric-mod\build\libs\coco-session-bridge-$Version.jar"
 if(-not(Get-Module -ListAvailable ps2exe)){Install-Module ps2exe -Scope CurrentUser -Force -AllowClobber}
 Import-Module ps2exe
 New-Item -ItemType Directory dist -Force|Out-Null
-Invoke-ps2exe -InputFile bootstrap\CocoBootstrapper.ps1 -OutputFile dist\CocoUpdater.exe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version "$Version.0" -NoConsole -IconFile reynaico.ico
+$bootstrapTemplate=[IO.File]::ReadAllText((Join-Path $root 'bootstrap\CocoBootstrapper.ps1'))
+$fullbodyBase64=[Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $root 'fullbody.png')))
+$generatedBootstrap=Join-Path $env:TEMP 'CocoBootstrapper.generated.ps1'
+[IO.File]::WriteAllText($generatedBootstrap,$bootstrapTemplate.Replace('__FULLBODY_BASE64__',$fullbodyBase64),(New-Object Text.UTF8Encoding($true)))
+Invoke-ps2exe -InputFile $generatedBootstrap -OutputFile dist\CocoUpdater.exe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version "$Version.0" -NoConsole -IconFile reynaico.ico
+Remove-Item $generatedBootstrap -Force
 
 git add .
 git commit -m "Publish Coco Pack $Version"
