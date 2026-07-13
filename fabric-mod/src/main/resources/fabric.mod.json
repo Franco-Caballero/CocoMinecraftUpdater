@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "coco_session_bridge",
+  "version": "${version}",
+  "name": "Coco Session Bridge & Pack Gate",
+  "description": "Mantiene el pack Coco sincronizado y bloquea clientes desactualizados.",
+  "authors": ["Coco"],
+  "license": "All-Rights-Reserved",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["cl.coco.minecraft.CocoPackGate"],
+    "client": ["cl.coco.minecraft.client.CocoSessionBridge"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.1.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

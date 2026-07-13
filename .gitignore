@@ -1,0 +1,8 @@
+release*/
+*.zip
+*.partial
+bin/
+obj/
+dist/
+.gradle/
+fabric-mod/build/

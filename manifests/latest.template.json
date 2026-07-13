@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "packId": "coco-fabric-26.1.2",
+  "version": "0.1.0",
+  "engine": {
+    "version": "0.1.0",
+    "url": "https://github.com/REEMPLAZAR_USUARIO/REEMPLAZAR_REPOSITORIO/releases/download/v0.1.0/coco-engine-0.1.0.zip",
+    "sha256": "REEMPLAZAR_SHA256_ENGINE"
+  },
+  "packages": [
+    {
+      "role": "client",
+      "url": "https://github.com/REEMPLAZAR_USUARIO/REEMPLAZAR_REPOSITORIO/releases/download/v0.1.0/coco-client-0.1.0.zip",
+      "sha256": "REEMPLAZAR_SHA256_CLIENTE"
+    },
+    {
+      "role": "host",
+      "url": "https://github.com/REEMPLAZAR_USUARIO/REEMPLAZAR_REPOSITORIO/releases/download/v0.1.0/coco-host-0.1.0.zip",
+      "sha256": "REEMPLAZAR_SHA256_HOST"
+    }
+  ],
+  "detector": {
+    "minecraftVersion": "26.1.2",
+    "markerPath": "config/coco-updater-state.json",
+    "groupTokens": ["smolbird", "nadicon", "nazorepulgadora", "cuisinho2"],
+    "knownE4mcDomains": [],
+    "modRules": [
+      { "name": "Sodium", "pattern": "(?i)^sodium-.*26\\.1\\.2.*\\.jar$", "weight": 15 },
+      { "name": "Iris", "pattern": "(?i)^iris-.*26\\.1\\.2.*\\.jar$", "weight": 15 },
+      { "name": "JourneyMap", "pattern": "(?i)^journeymap-.*26\\.1\\.2.*\\.jar$", "weight": 20 },
+      { "name": "Distant Horizons", "pattern": "(?i)^DistantHorizons-.*26\\.1\\.2.*\\.jar$", "weight": 20 },
+      { "name": "Fabric API", "pattern": "(?i)^fabric-api-.*26\\.1\\.2.*\\.jar$", "weight": 10 }
+    ]
+  }
+}

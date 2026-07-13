@@ -1,0 +1,42 @@
+name: Build Coco components
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'bootstrap/**'
+      - 'CocoUpdater.channel.json'
+      - '.github/workflows/build-bootstrapper.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: microsoft
+          java-version: '25'
+
+      - name: Build Session Bridge and Pack Gate
+        shell: powershell
+        run: fabric-mod/gradlew.bat -p fabric-mod build
+
+      - name: Install ps2exe
+        shell: powershell
+        run: Install-Module ps2exe -Scope CurrentUser -Force
+
+      - name: Build updater executable
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          Invoke-ps2exe -InputFile bootstrap/CocoBootstrapper.ps1 -OutputFile dist/CocoUpdater.exe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version '0.2.0.0' -NoConsole
+          Copy-Item CocoUpdater.channel.json dist/CocoUpdater.channel.json
+          Copy-Item fabric-mod/build/libs/coco-session-bridge-0.2.0.jar dist/
+
+      - name: Upload initial distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: coco-updater-bootstrapper
+          path: dist/
