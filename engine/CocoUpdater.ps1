@@ -13,12 +13,12 @@ param(
 $ErrorActionPreference = 'Stop'
 $script:CocoForm = $null
 
-function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]$Visible = $true) {
+function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]$Visible = $true, [string]$Action = '') {
     $Progress = [Math]::Max(0, [Math]::Min(100, $Progress))
     if ($SessionStatePath) {
         New-Item -ItemType Directory -Path (Split-Path $SessionStatePath -Parent) -Force | Out-Null
         $tmp = "$SessionStatePath.tmp"
-        [pscustomobject]@{message=$Message;detail=$Detail;progress=$Progress;visible=$Visible;updatedAt=(Get-Date).ToString('o')} |
+        [pscustomobject]@{message=$Message;detail=$Detail;progress=$Progress;visible=$Visible;action=$Action;updatedAt=(Get-Date).ToString('o')} |
             ConvertTo-Json -Compress | Set-Content -LiteralPath $tmp -Encoding UTF8
         Move-Item -LiteralPath $tmp -Destination $SessionStatePath -Force
     }
@@ -236,7 +236,7 @@ function Test-MinecraftRunning([string]$Root) {
 function Wait-ForMinecraftExit([string]$Root) {
     while ($true) {
         if (-not (Test-MinecraftRunning $Root)) { return }
-        Set-CocoState 'Actualización lista' 'Cierra Minecraft para instalarla automáticamente' 100
+        Set-CocoState 'Preparando actualización' 'Esperando a que Minecraft termine de cerrarse…' 3
         Start-Sleep -Seconds 5
     }
 }
@@ -355,12 +355,14 @@ try {
         }
         if (-not (Test-MinecraftRunning $selected.Root)) { exit 0 }
     }
-    $stage = Stage-Package $package $manifest
-    if ($Silent -and (Test-MinecraftRunning $selected.Root)) {
-        Write-Status 'Hay una actualización preparada; se aplicará al cerrar Minecraft.'
+    if (-not $script:CocoForm) { Show-CocoWindow }
+    if ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client') {
+        Set-CocoState 'Actualización encontrada' 'Cerrando Minecraft de forma segura…' 2 $true 'closeMinecraft'
+    } elseif (Test-MinecraftRunning $selected.Root) {
+        Set-CocoState 'Actualización encontrada' 'Eres el host: cierra Minecraft cuando termine la sesión LAN' 2
     }
     Wait-ForMinecraftExit $selected.Root
-    if ($Silent) { Show-CocoWindow }
+    $stage = Stage-Package $package $manifest
     Install-StagedPackage $selected.Root $stage $package $manifest
     Write-Status 'Actualización terminada.'
     exit 0
