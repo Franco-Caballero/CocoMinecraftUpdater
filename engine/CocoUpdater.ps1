@@ -429,8 +429,10 @@ try {
         if (-not (Test-MinecraftRunning $selected.Root)) { exit 0 }
     }
     if (-not $script:CocoForm) { Show-CocoWindow }
-    if ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client') {
+    if ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client' -and $MinecraftPid -gt 0) {
         Set-CocoState 'Actualización encontrada' 'Cerrando Minecraft de forma segura…' 2 $true 'closeMinecraft'
+    } elseif ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client') {
+        Set-CocoState 'Primera instalación' 'Cierra Minecraft una vez para poder instalar Session Bridge' 2
     } elseif (Test-MinecraftRunning $selected.Root) {
         Set-CocoState 'Actualización encontrada' 'Eres el host: cierra Minecraft cuando termine la sesión LAN' 2
     }
