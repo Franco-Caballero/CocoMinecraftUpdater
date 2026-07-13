@@ -33,11 +33,12 @@ if ([string]::IsNullOrWhiteSpace($ChannelPath)) {
     }
 }
 
-if (-not (Test-Path -LiteralPath $ChannelPath)) {
-    throw "No se encontró el archivo de canal: $ChannelPath"
+$defaultManifestUrl = 'https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/latest/download/latest.json'
+if (Test-Path -LiteralPath $ChannelPath) {
+    $channel = Get-Content -LiteralPath $ChannelPath -Raw | ConvertFrom-Json
+} else {
+    $channel = [pscustomobject]@{ manifestUrl = $defaultManifestUrl; channel = 'stable' }
 }
-
-$channel = Get-Content -LiteralPath $ChannelPath -Raw | ConvertFrom-Json
 if ([string]::IsNullOrWhiteSpace($channel.manifestUrl) -or $channel.manifestUrl -like '*REEMPLAZAR_*') {
     throw "Configura manifestUrl en CocoUpdater.channel.json antes de distribuir el actualizador."
 }
@@ -77,8 +78,10 @@ if ([IO.Path]::GetExtension($processPath) -ieq '.exe') {
     if (-not [string]::Equals($processPath, $maintenanceExe, [System.StringComparison]::OrdinalIgnoreCase)) {
         Copy-Item -LiteralPath $processPath -Destination $maintenanceExe -Force
     }
-    if (-not [string]::Equals($ChannelPath, $maintenanceChannel, [System.StringComparison]::OrdinalIgnoreCase)) {
+    if ((Test-Path -LiteralPath $ChannelPath) -and -not [string]::Equals($ChannelPath, $maintenanceChannel, [System.StringComparison]::OrdinalIgnoreCase)) {
         Copy-Item -LiteralPath $ChannelPath -Destination $maintenanceChannel -Force
+    } elseif (-not (Test-Path -LiteralPath $maintenanceChannel)) {
+        $channel | ConvertTo-Json | Set-Content -LiteralPath $maintenanceChannel -Encoding UTF8
     }
     $env:COCO_BOOTSTRAPPER_EXE = $maintenanceExe
     Copy-Item -LiteralPath $maintenanceExe -Destination (Join-Path $cacheRoot 'CocoUpdater.exe') -Force
