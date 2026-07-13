@@ -213,17 +213,9 @@ function Get-CandidateScore([string]$Root, $Manifest, [string[]]$RunningGameDirs
 }
 
 function Get-Role([string]$Root, $Manifest) {
-    $markerPath=Join-Path $Root $Manifest.detector.markerPath
-    if(Test-Path -LiteralPath $markerPath){
-        try{$knownRole=(Get-Content -LiteralPath $markerPath -Raw|ConvertFrom-Json).role;if($knownRole -in @('client','host')){return $knownRole}}catch{}
-    }
-    $hostSignals = @('saves', 'mcwifipnp.json')
-    $hostMods = @('e4mc', 'mcwifipnp')
-    $signalCount = 0
-    foreach ($signal in $hostSignals) { if (Test-Path (Join-Path $Root $signal)) { $signalCount++ } }
-    $mods = @(Get-ChildItem -LiteralPath (Join-Path $Root 'mods') -File -ErrorAction SilentlyContinue | ForEach-Object Name)
-    foreach ($signal in $hostMods) { if ($mods | Where-Object { $_ -match $signal }) { $signalCount++ } }
-    if ($signalCount -ge 3) { return 'host' }
+    # La marca de host es deliberadamente local y nunca forma parte de los packs.
+    # Esto evita clasificar como host a amigos que recibieron una copia de los mismos mods.
+    if (Test-Path -LiteralPath (Join-Path $Root 'config\coco-host.json')) { return 'host' }
     return 'client'
 }
 
