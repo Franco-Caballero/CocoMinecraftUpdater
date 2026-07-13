@@ -26,12 +26,13 @@ function Get-RoleMods([string]$Role,[string[]]$ExcludePatterns) {
     }|ForEach-Object{$files.Add($_)}
     $files.Add((Get-Item -LiteralPath $BridgeJar))
     return @($files|Sort-Object Name|ForEach-Object{
-        $destination=Join-Path $jarOutput $_.Name
-        Copy-Item -LiteralPath $_.FullName -Destination $destination -Force
-        $hash=(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
+        $hash=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        $assetName="mod-$hash.jar"
+        $destination=Join-Path $jarOutput $assetName
+        if(-not(Test-Path -LiteralPath $destination)){Copy-Item -LiteralPath $_.FullName -Destination $destination -Force}
         [ordered]@{
             name=$_.Name
-            url="https://github.com/$GitHubRepository/releases/download/$tag/$([Uri]::EscapeDataString($_.Name))"
+            url="https://github.com/$GitHubRepository/releases/download/$tag/$assetName"
             sha256=$hash
             size=[int64]$_.Length
         }
