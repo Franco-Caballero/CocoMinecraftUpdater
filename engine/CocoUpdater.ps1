@@ -203,7 +203,7 @@ function Get-Role([string]$Root, $Manifest) {
     return 'client'
 }
 
-function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$ExpectedHash) {
+function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$ExpectedHash, [int64]$CompletedBytes = 0, [int64]$AllBytes = 0) {
     $partial = "$Destination.partial"
     Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
     $request=[Net.HttpWebRequest]::Create($Url); $request.UserAgent='CocoMinecraftUpdater/0.2'
@@ -213,11 +213,11 @@ function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$Expe
     try {
         while (($read=$input.Read($buffer,0,$buffer.Length)) -gt 0) {
             $output.Write($buffer,0,$read); $received += $read
-            $percent=if($total -gt 0){[int](100*$received/$total)}else{25}
+            $percent=if($AllBytes -gt 0){5+[int](70*($CompletedBytes+$received)/$AllBytes)}elseif($total -gt 0){5+[int](70*$received/$total)}else{25}
             $speed=if($watch.Elapsed.TotalSeconds -gt 0){$received/$watch.Elapsed.TotalSeconds}else{0}
             $eta=if($speed -gt 0 -and $total -gt 0){[TimeSpan]::FromSeconds(($total-$received)/$speed)}else{[TimeSpan]::Zero}
             $detail='{0:N1} / {1:N1} MB  •  {2:N1} MB/s  •  faltan ~{3:mm\:ss}' -f ($received/1MB),($total/1MB),($speed/1MB),$eta
-            Set-CocoState 'Descargando actualización' $detail $percent
+            Set-CocoState 'Descargando mods' $detail $percent
         }
     } finally { $output.Dispose(); $input.Dispose(); $response.Dispose() }
     if ((Get-Sha256 $partial) -ne $ExpectedHash.ToLowerInvariant()) {
@@ -241,22 +241,37 @@ function Wait-ForMinecraftExit([string]$Root) {
     }
 }
 
-function Stage-Package($Package, $Manifest) {
+function Stage-Package($Package, $Manifest, [string]$Root) {
     $cacheRoot = Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\downloads'
-    New-Item -ItemType Directory -Path $cacheRoot -Force | Out-Null
-    $zipPath = Join-Path $cacheRoot "$($Manifest.packId)-$($Manifest.version)-$($Package.role).zip"
-    Write-Status "Descargando pack $($Manifest.version)..."
-    Download-VerifiedFile $Package.url $zipPath $Package.sha256
-
     $stage = Join-Path $cacheRoot "stage-$([guid]::NewGuid())"
-    New-Item -ItemType Directory -Path $stage -Force | Out-Null
-    Expand-Archive -LiteralPath $zipPath -DestinationPath $stage -Force
-    if (-not (Test-Path (Join-Path $stage 'mods'))) { throw 'El paquete no contiene una carpeta mods válida.' }
+    $stageMods = Join-Path $stage 'mods'
+    $jarCache = Join-Path $cacheRoot 'jars'
+    New-Item -ItemType Directory -Path $stageMods,$jarCache -Force | Out-Null
+    if (-not $Package.mods -or @($Package.mods).Count -eq 0) { throw 'El manifiesto no contiene mods para este rol.' }
+
+    $needed = [System.Collections.Generic.List[object]]::new()
+    foreach ($mod in @($Package.mods)) {
+        $installed = Join-Path (Join-Path $Root 'mods') $mod.name
+        if ((Test-Path -LiteralPath $installed) -and (Get-Sha256 $installed) -eq $mod.sha256.ToLowerInvariant()) {
+            Copy-Item -LiteralPath $installed -Destination (Join-Path $stageMods $mod.name) -Force
+        } else { $needed.Add($mod) }
+    }
+    $allBytes = [int64](($needed | Measure-Object -Property size -Sum).Sum)
+    $completed = [int64]0
+    foreach ($mod in $needed) {
+        $safeCacheName = "$($mod.sha256)-$($mod.name)"
+        $cached = Join-Path $jarCache $safeCacheName
+        if (-not ((Test-Path -LiteralPath $cached) -and (Get-Sha256 $cached) -eq $mod.sha256.ToLowerInvariant())) {
+            Download-VerifiedFile $mod.url $cached $mod.sha256 $completed $allBytes
+        }
+        Copy-Item -LiteralPath $cached -Destination (Join-Path $stageMods $mod.name) -Force
+        $completed += [int64]$mod.size
+    }
     return $stage
 }
 
 function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifest) {
-    Set-CocoState 'Instalando Coco Pack' 'Reemplazando mods de forma segura…' 35
+    Set-CocoState 'Instalando Coco Pack' 'Ajustando exactamente la carpeta de mods…' 78
     $oldMods = Join-Path $Root 'mods'
     $transientMods = Join-Path $Root '.coco-mods-replacing'
     Remove-Item -LiteralPath $transientMods -Recurse -Force -ErrorAction SilentlyContinue
@@ -272,7 +287,7 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
     Remove-Item -LiteralPath $transientMods -Recurse -Force -ErrorAction SilentlyContinue
 
     if (Test-Path (Join-Path $Stage 'config')) {
-        Set-CocoState 'Aplicando configuración' 'Sincronizando ajustes del pack…' 72
+        Set-CocoState 'Aplicando configuración' 'Sincronizando ajustes del pack…' 82
         $targetConfig = Join-Path $Root 'config'
         New-Item -ItemType Directory -Path $targetConfig -Force | Out-Null
         Get-ChildItem -LiteralPath (Join-Path $Stage 'config') -Force | ForEach-Object {
@@ -290,7 +305,14 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
         target = $Root
     } | ConvertTo-Json | Set-Content -LiteralPath $markerPath -Encoding UTF8
     Remove-Item -LiteralPath $Stage -Recurse -Force -ErrorAction SilentlyContinue
-    Set-CocoState 'Coco Pack actualizado' 'Ya puedes abrir Minecraft' 100
+    $start = [Diagnostics.Stopwatch]::StartNew()
+    while ($start.Elapsed.TotalSeconds -lt 7) {
+        $smooth = 85 + [int](14 * ($start.Elapsed.TotalSeconds / 7))
+        Set-CocoState 'Instalando Coco Pack' 'Aplicando y verificando archivos…' $smooth
+        Start-Sleep -Milliseconds 25
+    }
+    Set-CocoState 'Coco Pack actualizado' 'Ya puedes volver a abrir Minecraft' 100
+    Start-Sleep -Seconds 5
 }
 
 function Test-CurrentVersion([string]$Root, $Manifest, [string]$Role) {
@@ -298,7 +320,17 @@ function Test-CurrentVersion([string]$Root, $Manifest, [string]$Role) {
     if (-not (Test-Path $markerPath)) { return $false }
     try {
         $marker = Get-Content -LiteralPath $markerPath -Raw | ConvertFrom-Json
-        return $marker.packId -eq $Manifest.packId -and $marker.version -eq $Manifest.version -and $marker.role -eq $Role
+        if (-not ($marker.packId -eq $Manifest.packId -and $marker.version -eq $Manifest.version -and $marker.role -eq $Role)) { return $false }
+        $package = @($Manifest.packages | Where-Object role -eq $Role) | Select-Object -First 1
+        if (-not $package -or -not $package.mods) { return $false }
+        $actual = @(Get-ChildItem -LiteralPath (Join-Path $Root 'mods') -File -Filter '*.jar' -ErrorAction SilentlyContinue)
+        if ($actual.Count -ne @($package.mods).Count) { return $false }
+        foreach ($mod in @($package.mods)) {
+            $path = Join-Path (Join-Path $Root 'mods') $mod.name
+            if (-not (Test-Path -LiteralPath $path)) { return $false }
+            if ((Get-Sha256 $path) -ne $mod.sha256.ToLowerInvariant()) { return $false }
+        }
+        return $true
     } catch { return $false }
 }
 
@@ -362,7 +394,7 @@ try {
         Set-CocoState 'Actualización encontrada' 'Eres el host: cierra Minecraft cuando termine la sesión LAN' 2
     }
     Wait-ForMinecraftExit $selected.Root
-    $stage = Stage-Package $package $manifest
+    $stage = Stage-Package $package $manifest $selected.Root
     Install-StagedPackage $selected.Root $stage $package $manifest
     Write-Status 'Actualización terminada.'
     exit 0
