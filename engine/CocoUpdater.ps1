@@ -23,7 +23,8 @@ function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]
         Move-Item -LiteralPath $tmp -Destination $SessionStatePath -Force
     }
     if ($script:CocoForm) {
-        $script:CocoTitle.Text=$Message; $script:CocoDetail.Text=$Detail; $script:CocoProgress.Value=$Progress
+        $script:CocoTitle.Text=$Message; $script:CocoDetail.Text=$Detail
+        $script:CocoProgress.Width=[Math]::Max(4,[int](6.2*$Progress))
         $script:CocoForm.Refresh(); [Windows.Forms.Application]::DoEvents()
     }
 }
@@ -39,10 +40,13 @@ function Show-CocoWindow {
     $t.Font=New-Object Drawing.Font('Segoe UI Semibold',22); $t.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
     $d=New-Object Windows.Forms.Label; $d.Location=New-Object Drawing.Point(41,100); $d.Size=New-Object Drawing.Size(630,46)
     $d.Font=New-Object Drawing.Font('Segoe UI',12); $d.ForeColor=[Drawing.Color]::FromArgb(218,210,229)
-    $p=New-Object Windows.Forms.ProgressBar; $p.Location=New-Object Drawing.Point(43,165); $p.Size=New-Object Drawing.Size(620,30); $p.Style='Continuous'
+    $track=New-Object Windows.Forms.Panel; $track.Location=New-Object Drawing.Point(43,165); $track.Size=New-Object Drawing.Size(620,30)
+    $track.BackColor=[Drawing.Color]::FromArgb(58,36,81)
+    $p=New-Object Windows.Forms.Panel; $p.Location=New-Object Drawing.Point(0,0); $p.Size=New-Object Drawing.Size(4,30)
+    $p.BackColor=[Drawing.Color]::FromArgb(177,92,255); $track.Controls.Add($p)
     $b=New-Object Windows.Forms.Label; $b.Text='✦  COCO PACK  •  FABRIC 26.1.2'; $b.Location=New-Object Drawing.Point(43,218)
     $b.Size=New-Object Drawing.Size(620,25); $b.Font=New-Object Drawing.Font('Segoe UI Semibold',10); $b.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
-    $f.Controls.AddRange(@($t,$d,$p,$b)); $f.Show(); [Windows.Forms.Application]::DoEvents()
+    $f.Controls.AddRange(@($t,$d,$track,$b)); $f.Show(); [Windows.Forms.Application]::DoEvents()
     $script:CocoForm=$f; $script:CocoTitle=$t; $script:CocoDetail=$d; $script:CocoProgress=$p
 }
 

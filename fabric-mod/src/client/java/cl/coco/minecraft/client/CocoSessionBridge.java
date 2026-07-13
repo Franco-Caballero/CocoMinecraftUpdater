@@ -46,7 +46,11 @@ public final class CocoSessionBridge implements ClientModInitializer {
             graphics.fill(x, y + 34, x + width, y + 45, 0xFF3A2451);
             int fill = Math.max(4, width * Math.max(0, Math.min(100, s.progress)) / 100);
             graphics.fill(x, y + 34, x + fill, y + 45, 0xFFB15CFF);
-            graphics.centeredText(Minecraft.getInstance().font, "✦ " + s.message + " ✦", graphics.guiWidth()/2, y, 0xFFE6C7FF);
+            graphics.pose().pushMatrix();
+            graphics.pose().scale(1.35f);
+            graphics.centeredText(Minecraft.getInstance().font, "✦ " + s.message + " ✦",
+                (int)(graphics.guiWidth()/2/1.35f), (int)(y/1.35f), 0xFFE6C7FF);
+            graphics.pose().popMatrix();
             graphics.centeredText(Minecraft.getInstance().font, s.detail + "  •  " + s.progress + "%", graphics.guiWidth()/2, y + 16, CommonColors.WHITE);
         });
     }
