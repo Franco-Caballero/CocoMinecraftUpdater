@@ -5,8 +5,8 @@
   "packages": [{
     "role": "client",
     "mods": [
-      {"name":"animalgarden_fennecfox-1.0.2-fabric-26.2-0.152.2.jar","url":"https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.4.0/animalgarden_fennecfox-1.0.2-fabric-26.2-0.152.2.jar","sha256":"f863394dea1b1a3c32309d475bc5eaedbcb16fa7e87caefefd346855c99d5f0c","size":200298},
-      {"name":"animalgarden_manatee-1.0.2-fabirc-26.1.2-0.145.4.jar","url":"https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.4.0/animalgarden_manatee-1.0.2-fabirc-26.1.2-0.145.4.jar","sha256":"0decc703525381876a928f2a1acff4cae8e7b9698ed7cb3d29bd89730f4bd54e","size":100180}
+      {"name":"animalgarden_fennecfox-1.0.2-fabric-26.2-0.152.2.jar","url":"https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.4.0/mod-f863394dea1b1a3c32309d475bc5eaedbcb16fa7e87caefefd346855c99d5f0c.jar","sha256":"f863394dea1b1a3c32309d475bc5eaedbcb16fa7e87caefefd346855c99d5f0c","size":200298},
+      {"name":"animalgarden_manatee-1.0.2-fabirc-26.1.2-0.145.4.jar","url":"https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.4.0/mod-0decc703525381876a928f2a1acff4cae8e7b9698ed7cb3d29bd89730f4bd54e.jar","sha256":"0decc703525381876a928f2a1acff4cae8e7b9698ed7cb3d29bd89730f4bd54e","size":100180}
     ]
   }],
   "detector": {"minecraftVersion":"26.1.2","markerPath":"config/coco-updater-state.json","groupTokens":[],"knownE4mcDomains":[],"modRules":[]}
