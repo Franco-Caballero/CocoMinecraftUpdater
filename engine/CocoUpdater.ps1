@@ -6,6 +6,7 @@ param(
     [string]$GameDir,
     [int64]$MinecraftPid = 0,
     [string]$SessionStatePath,
+    [switch]$Preview,
     [switch]$DetectOnly,
     [switch]$Silent
 )
@@ -354,12 +355,32 @@ function Test-CurrentVersion([string]$Root, $Manifest, [string]$Role) {
     } catch { return $false }
 }
 
+function Show-CocoPreview {
+    Show-CocoWindow
+    $watch=[Diagnostics.Stopwatch]::StartNew()
+    while($watch.Elapsed.TotalSeconds -lt 11){
+        $seconds=$watch.Elapsed.TotalSeconds
+        if($seconds -lt 2){
+            $p=[int](5+10*$seconds/2);Set-CocoState 'Buscando Minecraft' 'Identificando automáticamente la instalación correcta…' $p
+        }elseif($seconds -lt 7){
+            $fraction=($seconds-2)/5;$p=[int](15+58*$fraction)
+            $downloaded=101*$fraction;Set-CocoState 'Descargando mods' ('{0:N1} / 101,0 MB  •  20,2 MB/s  •  faltan ~00:{1:00}' -f $downloaded,[Math]::Max(0,[int](5-5*$fraction))) $p
+        }else{
+            $fraction=($seconds-7)/4;$p=[int](73+26*$fraction);Set-CocoState 'Instalando Coco Pack' 'Aplicando y verificando archivos…' $p
+        }
+        Start-Sleep -Milliseconds 25
+    }
+    Set-CocoState 'Coco Pack actualizado' 'Ya puedes volver a abrir Minecraft' 100
+    Start-Sleep -Seconds 5
+}
+
 try {
     $mutex = New-Object System.Threading.Mutex($false, 'Local\CocoMinecraftUpdater')
     if (-not $mutex.WaitOne(0)) { exit 0 }
     if (-not (Test-Path -LiteralPath $ManifestPath)) { throw "No existe el manifiesto: $ManifestPath" }
     $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
     if (-not $manifest.packId -or -not $manifest.version -or -not $manifest.detector) { throw 'Manifiesto incompleto.' }
+    if($Preview){Show-CocoPreview;exit 0}
 
     if (-not $Silent) { Show-CocoWindow }
     Set-CocoState 'Buscando Minecraft' 'Identificando automáticamente la instalación correcta…' 6
