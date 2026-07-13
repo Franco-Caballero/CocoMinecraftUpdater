@@ -13,6 +13,6 @@ El pack instala **Coco Session Bridge & Pack Gate**. Desde entonces el Bridge in
 
 ## Publicación
 
-El archivo remoto `latest.json` vive en GitHub Releases y describe el motor y los paquetes de mods. El programa local nunca necesita volver a distribuirse para cambios de mods o del motor.
+El archivo remoto `latest.json` vive en GitHub Releases y describe cada JAR por nombre, tamaño y SHA-256. El updater descarga únicamente los mods faltantes o modificados, reutiliza los correctos y elimina los sobrantes. El EXE inicial no contiene mods y no necesita volver a distribuirse para cambios del pack o del motor.
 
 Ver [docs/OPERACION.md](docs/OPERACION.md) para publicar una versión y [docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md) para conectarlo a GitHub.
