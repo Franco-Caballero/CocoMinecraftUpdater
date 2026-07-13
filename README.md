@@ -4,7 +4,7 @@ Actualizador de mods para el mundo compartido **Coco**. Detecta el directorio re
 
 ## Flujo para los amigos
 
-1. Reciben una sola vez `CocoUpdater.exe` junto a `CocoUpdater.channel.json`.
+1. Reciben una sola vez únicamente `CocoUpdater.exe`.
 2. Hacen doble clic en `CocoUpdater.exe`.
 3. El bootstrapper consulta el manifiesto remoto, actualiza el motor si es necesario y ejecuta la sincronización.
 4. Si Minecraft está abierto, identifica su `--gameDir`, descarga la actualización y espera a que el juego se cierre para aplicarla.

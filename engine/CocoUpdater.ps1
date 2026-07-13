@@ -12,9 +12,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $script:CocoForm = $null
+$script:CocoCurrentProgress = 0
+$script:CocoVisualWorkStarted = $null
 
 function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]$Visible = $true, [string]$Action = '') {
     $Progress = [Math]::Max(0, [Math]::Min(100, $Progress))
+    $script:CocoCurrentProgress = $Progress
     if ($SessionStatePath) {
         New-Item -ItemType Directory -Path (Split-Path $SessionStatePath -Parent) -Force | Out-Null
         $tmp = "$SessionStatePath.tmp"
@@ -31,11 +34,19 @@ function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]
 
 function Show-CocoWindow {
     if ($script:CocoForm) { return }
+    $script:CocoVisualWorkStarted = [Diagnostics.Stopwatch]::StartNew()
     Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing
     [Windows.Forms.Application]::EnableVisualStyles()
-    $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(720,310)
-    $f.StartPosition='CenterScreen'; $f.FormBorderStyle='FixedSingle'; $f.MaximizeBox=$false
-    $f.BackColor=[Drawing.Color]::FromArgb(22,13,37); $f.ForeColor=[Drawing.Color]::White
+    $key=[Drawing.Color]::FromArgb(1,2,3)
+    $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1000,720)
+    $f.StartPosition='CenterScreen'; $f.FormBorderStyle='None'; $f.MaximizeBox=$false; $f.ShowInTaskbar=$true
+    $f.BackColor=$key; $f.TransparencyKey=$key; $f.ForeColor=[Drawing.Color]::White
+    $iconPath=Join-Path $PSScriptRoot 'assets\reynaico.ico'
+    if(Test-Path $iconPath){$f.Icon=New-Object Drawing.Icon($iconPath)}
+    $panel=New-Object Windows.Forms.Panel; $panel.Location=New-Object Drawing.Point(25,190); $panel.Size=New-Object Drawing.Size(720,330)
+    $panel.BackColor=[Drawing.Color]::FromArgb(22,13,37)
+    $accent=New-Object Windows.Forms.Panel; $accent.Location=New-Object Drawing.Point(0,0); $accent.Size=New-Object Drawing.Size(9,330)
+    $accent.BackColor=[Drawing.Color]::FromArgb(177,92,255); $panel.Controls.Add($accent)
     $t=New-Object Windows.Forms.Label; $t.Location=New-Object Drawing.Point(38,38); $t.Size=New-Object Drawing.Size(640,52)
     $t.Font=New-Object Drawing.Font('Segoe UI Semibold',22); $t.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
     $d=New-Object Windows.Forms.Label; $d.Location=New-Object Drawing.Point(41,100); $d.Size=New-Object Drawing.Size(630,46)
@@ -46,7 +57,16 @@ function Show-CocoWindow {
     $p.BackColor=[Drawing.Color]::FromArgb(177,92,255); $track.Controls.Add($p)
     $b=New-Object Windows.Forms.Label; $b.Text='✦  COCO PACK  •  FABRIC 26.1.2'; $b.Location=New-Object Drawing.Point(43,218)
     $b.Size=New-Object Drawing.Size(620,25); $b.Font=New-Object Drawing.Font('Segoe UI Semibold',10); $b.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
-    $f.Controls.AddRange(@($t,$d,$track,$b)); $f.Show(); [Windows.Forms.Application]::DoEvents()
+    $panel.Controls.AddRange(@($t,$d,$track,$b))
+    $artPath=Join-Path $PSScriptRoot 'assets\fullbody.png'
+    $art=New-Object Windows.Forms.PictureBox; $art.Location=New-Object Drawing.Point(590,5); $art.Size=New-Object Drawing.Size(380,710)
+    $art.SizeMode='Zoom'; $art.BackColor=[Drawing.Color]::Transparent
+    if(Test-Path $artPath){$art.Image=[Drawing.Image]::FromFile($artPath)}
+    $f.Controls.Add($panel); $f.Controls.Add($art); $art.BringToFront()
+    $dragStart=$null
+    $panel.Add_MouseDown({if($_.Button -eq [Windows.Forms.MouseButtons]::Left){$script:dragStart=$_.Location}})
+    $panel.Add_MouseMove({if($_.Button -eq [Windows.Forms.MouseButtons]::Left -and $script:dragStart){$f.Location=New-Object Drawing.Point(($f.Left+$_.X-$script:dragStart.X),($f.Top+$_.Y-$script:dragStart.Y))}})
+    $f.Show(); [Windows.Forms.Application]::DoEvents()
     $script:CocoForm=$f; $script:CocoTitle=$t; $script:CocoDetail=$d; $script:CocoProgress=$p
 }
 
@@ -193,6 +213,10 @@ function Get-CandidateScore([string]$Root, $Manifest, [string[]]$RunningGameDirs
 }
 
 function Get-Role([string]$Root, $Manifest) {
+    $markerPath=Join-Path $Root $Manifest.detector.markerPath
+    if(Test-Path -LiteralPath $markerPath){
+        try{$knownRole=(Get-Content -LiteralPath $markerPath -Raw|ConvertFrom-Json).role;if($knownRole -in @('client','host')){return $knownRole}}catch{}
+    }
     $hostSignals = @('saves', 'mcwifipnp.json')
     $hostMods = @('e4mc', 'mcwifipnp')
     $signalCount = 0
@@ -305,9 +329,13 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
         target = $Root
     } | ConvertTo-Json | Set-Content -LiteralPath $markerPath -Encoding UTF8
     Remove-Item -LiteralPath $Stage -Recurse -Force -ErrorAction SilentlyContinue
+    $elapsed = if($script:CocoVisualWorkStarted){$script:CocoVisualWorkStarted.Elapsed.TotalSeconds}else{7}
+    $remaining = [Math]::Max(0, 7 - $elapsed)
+    $startProgress = [Math]::Min(99,[Math]::Max(85,$script:CocoCurrentProgress))
     $start = [Diagnostics.Stopwatch]::StartNew()
-    while ($start.Elapsed.TotalSeconds -lt 7) {
-        $smooth = 85 + [int](14 * ($start.Elapsed.TotalSeconds / 7))
+    while ($start.Elapsed.TotalSeconds -lt $remaining) {
+        $fraction = if($remaining -gt 0){$start.Elapsed.TotalSeconds/$remaining}else{1}
+        $smooth = $startProgress + [int]((99-$startProgress) * $fraction)
         Set-CocoState 'Instalando Coco Pack' 'Aplicando y verificando archivos…' $smooth
         Start-Sleep -Milliseconds 25
     }
