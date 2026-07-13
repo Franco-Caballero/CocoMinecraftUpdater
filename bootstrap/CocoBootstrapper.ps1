@@ -136,11 +136,20 @@ if ([IO.Path]::GetExtension($processPath) -ieq '.exe') {
     Copy-Item -LiteralPath $maintenanceChannel -Destination (Join-Path $cacheRoot 'CocoUpdater.channel.json') -Force
 }
 
-$engineScriptArguments = @('-ManifestPath', $manifestCache, '-ManifestUrl', $channel.manifestUrl)
-if ($GameDir) { $engineScriptArguments += @('-GameDir',$GameDir) }
-if ($MinecraftPid -gt 0) { $engineScriptArguments += @('-MinecraftPid',$MinecraftPid) }
-if ($SessionStatePath) { $engineScriptArguments += @('-SessionStatePath',$SessionStatePath) }
-if ($Preview) { $engineScriptArguments += '-Preview' }
-if ($Silent) { $engineScriptArguments += '-Silent' }
+$engineParameters = @{ManifestPath=$manifestCache;ManifestUrl=$channel.manifestUrl}
+if ($GameDir) { $engineParameters.GameDir=$GameDir }
+if ($MinecraftPid -gt 0) { $engineParameters.MinecraftPid=$MinecraftPid }
+if ($SessionStatePath) { $engineParameters.SessionStatePath=$SessionStatePath }
+if ($Preview) { $engineParameters.Preview=$true }
+if ($Silent) { $engineParameters.Silent=$true }
 Set-CocoSplash 'Analizando la instalacion de Minecraft...' 12
-& $entryPoint @engineScriptArguments
+try{
+    & $entryPoint @engineParameters
+}catch{
+    if(-not$script:Splash){Show-CocoSplash}
+    $script:SplashTitle.Text='No se pudo iniciar Coco Updater'
+    $script:SplashDetail.Text=$_.Exception.Message
+    $script:SplashFill.Width=12
+    $script:Splash.Refresh();[Windows.Forms.Application]::DoEvents();Start-Sleep -Seconds 8
+    exit 1
+}
