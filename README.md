@@ -7,7 +7,7 @@ Sincroniza por JAR el pack Fabric 26.1.2 del mundo Coco. Cada amigo recibe una s
 1. Abrir la instancia correcta de Minecraft hasta el menú principal.
 2. Ejecutar `CocoUpdater.exe` una vez.
 3. El updater reconoce el `--gameDir`, solicita un cierre normal de Minecraft, instala el pack exacto y deja Session Bridge.
-4. Desde entonces Session Bridge inicia el updater sólo mientras esa instancia de Minecraft está abierta. Si aparece una actualización, cierra el cliente de forma segura y muestra la ventana morada hasta terminar.
+4. Desde entonces Session Bridge inicia una comprobación al intentar unirse a un servidor. Si el pack está actualizado, termina inmediatamente; si hay una actualización, cierra el cliente de forma segura y muestra la ventana morada hasta terminar. No queda un monitor permanente en segundo plano.
 
 No modifica mundos, cuentas, screenshots ni `options.txt`. Reemplaza exactamente los JARs de `mods` y no conserva respaldos permanentes.
 

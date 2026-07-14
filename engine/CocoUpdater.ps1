@@ -357,6 +357,20 @@ function Test-MinecraftRunning([string]$Root) {
 
 function Request-ClientMinecraftClose([string]$Root) {
     $requested=$false
+    if($MinecraftPid -gt 0){
+        try{
+            $minecraftProcess=Get-Process -Id $MinecraftPid -ErrorAction SilentlyContinue
+            if($minecraftProcess){
+                if($minecraftProcess.MainWindowHandle -ne 0){
+                    $requested=$minecraftProcess.CloseMainWindow() -or $requested
+                    Write-CocoLog "Cierre normal solicitado al PID de Minecraft $MinecraftPid."
+                }else{
+                    Write-CocoLog "El PID de Minecraft $MinecraftPid no expone una ventana principal."
+                }
+            }
+        }catch{Write-CocoLog "No se pudo solicitar cierre al PID $MinecraftPid`: $($_.Exception.Message)"}
+        if($requested){return $true}
+    }
     try {
         Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction Stop | ForEach-Object {
             $line=$_.CommandLine
@@ -372,11 +386,47 @@ function Request-ClientMinecraftClose([string]$Root) {
     return $requested
 }
 
-function Wait-ForMinecraftExit([string]$Root) {
+function Stop-ClientMinecraft([string]$Root) {
+    if($MinecraftPid -gt 0){
+        $process=Get-Process -Id $MinecraftPid -ErrorAction SilentlyContinue
+        if($process){
+            Write-CocoLog "Minecraft no respondio al cierre normal; terminando PID $MinecraftPid."
+            Stop-Process -Id $MinecraftPid -Force -ErrorAction Stop
+        }
+        return
+    }
+    Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction SilentlyContinue | ForEach-Object {
+        $line=$_.CommandLine
+        $runningGameDir=$null
+        if($line -match '(?i)--gameDir\s+"([^"]+)"'){$runningGameDir=$matches[1]}
+        elseif($line -match '(?i)--gameDir\s+([^\s]+)'){$runningGameDir=$matches[1]}
+        if($runningGameDir -and [string]::Equals($runningGameDir.TrimEnd('\'),$Root.TrimEnd('\'),[StringComparison]::OrdinalIgnoreCase)){
+            Write-CocoLog "Minecraft no respondio al cierre normal; terminando PID $($_.ProcessId)."
+            Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Wait-ForMinecraftExit([string]$Root,[bool]$CloseClientAutomatically=$false) {
+    $wait=[Diagnostics.Stopwatch]::StartNew()
+    $lastCloseAttempt=-10
     while ($true) {
         if (-not (Test-MinecraftRunning $Root)) { return }
-        Set-CocoState 'Preparando actualizacion' 'Esperando a que Minecraft termine de cerrarse...' 3
-        Start-Sleep -Seconds 5
+        if($CloseClientAutomatically){
+            if(($wait.Elapsed.TotalSeconds-$lastCloseAttempt)-ge5){
+                [void](Request-ClientMinecraftClose $Root)
+                $lastCloseAttempt=$wait.Elapsed.TotalSeconds
+            }
+            if($wait.Elapsed.TotalSeconds-ge20){
+                Set-CocoState 'Preparando actualizacion' 'Minecraft no respondio; completando el cierre...' 3
+                Stop-ClientMinecraft $Root
+            }else{
+                Set-CocoState 'Preparando actualizacion' 'Cerrando Minecraft automaticamente...' 3
+            }
+        }else{
+            Set-CocoState 'Preparando actualizacion' 'Esperando a que Minecraft termine de cerrarse...' 3
+        }
+        Start-Sleep -Milliseconds 500
     }
 }
 
@@ -552,9 +602,10 @@ try {
         Set-CocoState 'Coco Pack actualizado' "Version $($manifest.version) | Todo listo" 100 $false
         exit 0
     }
-    if (-not $script:CocoForm) { Show-CocoWindow }
+    if (-not $script:CocoForm -and -not $Silent) { Show-CocoWindow }
     if ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client' -and $MinecraftPid -gt 0) {
         Set-CocoState 'Actualizacion encontrada' 'Cerrando Minecraft de forma segura...' 2 $true 'closeMinecraft'
+        [void](Request-ClientMinecraftClose $selected.Root)
     } elseif ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client') {
         Set-CocoState 'Primera instalacion' 'Cerrando Minecraft de forma segura...' 2
         if(-not(Request-ClientMinecraftClose $selected.Root)){
@@ -563,7 +614,7 @@ try {
     } elseif (Test-MinecraftRunning $selected.Root) {
         Set-CocoState 'Actualizacion encontrada' 'Eres el host: cierra Minecraft cuando termine la sesion LAN' 2
     }
-    Wait-ForMinecraftExit $selected.Root
+    Wait-ForMinecraftExit $selected.Root ($role -eq 'client')
     $stage = Stage-Package $package $manifest $selected.Root
     Install-StagedPackage $selected.Root $stage $package $manifest
     Write-CocoLog 'Actualizacion completada correctamente.'
@@ -571,7 +622,7 @@ try {
     exit 0
 } catch {
     Write-CocoLog ("ERROR: " + ($_ | Out-String))
-    if (-not $script:CocoForm) { Show-CocoWindow }
+    if (-not $script:CocoForm -and -not $Silent) { Show-CocoWindow }
     $friendly=$_.Exception.Message
     if($friendly -match '(?i)access.*denied|acceso.*denegado|unauthorized'){$friendly='Windows bloqueo el acceso a la carpeta de Minecraft. Revisa permisos o el antivirus.'}
     elseif($friendly -match '(?i)conectar|connection|nombre remoto|timed out'){$friendly='No pudimos completar la descarga. Revisa internet y vuelve a intentarlo.'}

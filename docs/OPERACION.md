@@ -21,7 +21,7 @@ El Publisher incrementa automáticamente el último número de versión. Excluye
 - todos los assets aparecen en GitHub con el tamaño correcto;
 - la instalación host queda actualizada.
 
-Después se publica y los clientes lo detectan mientras Minecraft está abierto. Nunca publiques durante una sesión: el Publisher lo bloquea para evitar que clientes nuevos intenten entrar a un Gate antiguo.
+Después se publica y los clientes lo detectan en el próximo intento de conexión a un servidor. Session Bridge no mantiene un monitor periódico. Nunca publiques durante una sesión: el Publisher lo bloquea para evitar que clientes nuevos intenten entrar a un Gate antiguo.
 
 ## Recuperación y soporte
 
