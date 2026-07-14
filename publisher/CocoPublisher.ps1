@@ -62,8 +62,16 @@ try{
     }
     if($process.ExitCode-ne0){
         $title.Text='No se pudo publicar';$title.ForeColor=[Drawing.Color]::FromArgb(255,120,150)
-        $errorText=if(Test-Path $stderr){Get-Content $stderr|Where-Object{$_.Trim()}|Select-Object -First 1}else{'Error desconocido.'}
+        $errorText=$null
+        if(Test-Path $stderr){
+            $errorLines=@(Get-Content $stderr|Where-Object{
+                $_.Trim()-and$_-notmatch'(?i)^\s*(warning:|To https://github\.com/|[0-9a-f]{7,}\.\.[0-9a-f]{7,}\s+)'
+            })
+            $errorText=$errorLines|Where-Object{$_-match'(?i)exception|error|fallo|falta|no se |no pudo|cannot|denied'}|Select-Object -First 1
+            if(-not$errorText){$errorText=$errorLines|Select-Object -First 1}
+        }
         if(-not$errorText-and(Test-Path $stdout)){$errorText=Get-Content $stdout|Where-Object{$_.Trim()}|Select-Object -Last 1}
+        if(-not$errorText){$errorText='Error desconocido.'}
         $detail.Text=$errorText;$note.Text='La ventana permanecera abierta para que puedas leer el error.';$form.ControlBox=$true;$form.Refresh()
         while($form.Visible){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100};exit $process.ExitCode
     }

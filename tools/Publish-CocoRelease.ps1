@@ -198,3 +198,6 @@ $publishBody=@{draft=$false;prerelease=$false}|ConvertTo-Json
 $release=Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($release.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $publishBody
 Write-Progress -Activity "Publicando Coco Pack $Version" -Completed
 Write-Host "Publicado: $($release.html_url)"
+# No heredar un LASTEXITCODE antiguo de git/gradle al proceso que hospeda este
+# script. El Publisher usa este codigo como fuente de verdad para su pantalla.
+exit 0
