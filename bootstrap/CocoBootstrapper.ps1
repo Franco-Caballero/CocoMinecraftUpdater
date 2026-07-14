@@ -119,21 +119,35 @@ if (-not (Test-Path -LiteralPath $entryPoint)) {
 
 $processPath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
 if ([IO.Path]::GetExtension($processPath) -ieq '.exe') {
-    $maintenanceRoot = Join-Path $cacheRoot 'bootstrapper'
-    New-Item -ItemType Directory -Path $maintenanceRoot -Force | Out-Null
-    $maintenanceExe = Join-Path $maintenanceRoot 'CocoUpdater.exe'
-    $maintenanceChannel = Join-Path $maintenanceRoot 'CocoUpdater.channel.json'
-    if (-not [string]::Equals($processPath, $maintenanceExe, [System.StringComparison]::OrdinalIgnoreCase)) {
-        Copy-Item -LiteralPath $processPath -Destination $maintenanceExe -Force
+    $canonicalExe=Join-Path $cacheRoot 'CocoUpdater.exe'
+    $canonicalChannel=Join-Path $cacheRoot 'CocoUpdater.channel.json'
+    if(-not(Test-Path -LiteralPath $canonicalExe) -and -not[string]::Equals($processPath,$canonicalExe,[StringComparison]::OrdinalIgnoreCase)){
+        Copy-Item -LiteralPath $processPath -Destination $canonicalExe -Force
     }
-    if ((Test-Path -LiteralPath $ChannelPath) -and -not [string]::Equals($ChannelPath, $maintenanceChannel, [System.StringComparison]::OrdinalIgnoreCase)) {
-        Copy-Item -LiteralPath $ChannelPath -Destination $maintenanceChannel -Force
-    } elseif (-not (Test-Path -LiteralPath $maintenanceChannel)) {
-        $channel | ConvertTo-Json | Set-Content -LiteralPath $maintenanceChannel -Encoding UTF8
+    if((Test-Path -LiteralPath $ChannelPath) -and -not[string]::Equals($ChannelPath,$canonicalChannel,[StringComparison]::OrdinalIgnoreCase)){Copy-Item -LiteralPath $ChannelPath -Destination $canonicalChannel -Force}
+    elseif(-not(Test-Path -LiteralPath $canonicalChannel)){$channel|ConvertTo-Json|Set-Content -LiteralPath $canonicalChannel -Encoding UTF8}
+    $env:COCO_BOOTSTRAPPER_EXE=$canonicalExe
+
+    if($manifest.bootstrap -and $manifest.bootstrap.url -and $manifest.bootstrap.sha256){
+        $canonicalMatches=(Test-Path -LiteralPath $canonicalExe) -and ((Get-Sha256 $canonicalExe) -eq $manifest.bootstrap.sha256.ToLowerInvariant())
+        if(-not$canonicalMatches){
+            Set-CocoSplash 'Actualizando Coco Updater...' 11
+            $newExe=Join-Path $cacheRoot 'CocoUpdater.new.exe'
+            Download-VerifiedFile $manifest.bootstrap.url $newExe $manifest.bootstrap.sha256
+            if(-not[string]::Equals($processPath,$canonicalExe,[StringComparison]::OrdinalIgnoreCase)){
+                Move-Item -LiteralPath $newExe -Destination $canonicalExe -Force
+            }else{
+                $helper=Join-Path $cacheRoot 'Apply-CocoBootstrapUpdate.ps1'
+                $helperText=@'
+param([int]$WaitPid,[string]$Source,[string]$Destination)
+Wait-Process -Id $WaitPid -ErrorAction SilentlyContinue
+for($i=0;$i-lt20;$i++){try{Move-Item -LiteralPath $Source -Destination $Destination -Force;break}catch{Start-Sleep -Milliseconds 250}}
+'@
+                [IO.File]::WriteAllText($helper,$helperText,(New-Object Text.UTF8Encoding($true)))
+                Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$helper,'-WaitPid',$PID,'-Source',$newExe,'-Destination',$canonicalExe)
+            }
+        }
     }
-    $env:COCO_BOOTSTRAPPER_EXE = $maintenanceExe
-    Copy-Item -LiteralPath $maintenanceExe -Destination (Join-Path $cacheRoot 'CocoUpdater.exe') -Force
-    Copy-Item -LiteralPath $maintenanceChannel -Destination (Join-Path $cacheRoot 'CocoUpdater.channel.json') -Force
 }
 
 $engineParameters = @{ManifestPath=$manifestCache;ManifestUrl=$channel.manifestUrl}

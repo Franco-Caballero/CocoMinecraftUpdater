@@ -29,7 +29,6 @@ if($LASTEXITCODE){throw 'Falló la compilación del Bridge/Gate.'}
 
 .\tools\New-CocoEngine.ps1 -Version $Version -OutputDirectory release|Out-Null
 $bridge="fabric-mod\build\libs\coco-session-bridge-$Version.jar"
-.\tools\New-CocoJarRelease.ps1 -MinecraftRoot $MinecraftRoot -Version $Version -GitHubRepository $Repository -ReleaseDirectory release -BridgeJar $bridge -KnownE4mcDomains $KnownE4mcDomains|Write-Host
 
 if(-not(Get-Module -ListAvailable ps2exe)){Install-Module ps2exe -Scope CurrentUser -Force -AllowClobber}
 Import-Module ps2exe
@@ -40,6 +39,8 @@ $generatedBootstrap=Join-Path $env:TEMP 'CocoBootstrapper.generated.ps1'
 [IO.File]::WriteAllText($generatedBootstrap,$bootstrapTemplate.Replace('__FULLBODY_BASE64__',$fullbodyBase64),(New-Object Text.UTF8Encoding($true)))
 Invoke-ps2exe -InputFile $generatedBootstrap -OutputFile dist\CocoUpdater.exe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version "$Version.0" -NoConsole -IconFile reynaico.ico
 Remove-Item $generatedBootstrap -Force
+Invoke-ps2exe -InputFile publisher\CocoPublisher.ps1 -OutputFile dist\CocoPublisher.exe -Title 'Publicar Coco Pack' -Product 'Coco Publisher' -Version "$Version.0" -NoConsole -IconFile reynaico.ico
+.\tools\New-CocoJarRelease.ps1 -MinecraftRoot $MinecraftRoot -Version $Version -GitHubRepository $Repository -ReleaseDirectory release -BridgeJar $bridge -BootstrapExe 'dist\CocoUpdater.exe' -KnownE4mcDomains $KnownE4mcDomains|Write-Host
 
 git add .
 git commit -m "Publish Coco Pack $Version"

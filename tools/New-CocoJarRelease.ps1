@@ -5,6 +5,7 @@ param(
     [Parameter(Mandatory=$true)][string]$GitHubRepository,
     [Parameter(Mandatory=$true)][string]$ReleaseDirectory,
     [Parameter(Mandatory=$true)][string]$BridgeJar,
+    [Parameter(Mandatory=$true)][string]$BootstrapExe,
     [string[]]$ClientExcludePatterns=@('(?i)^e4mc','(?i)^mcwifipnp','(?i)^coco-session-bridge-'),
     [string[]]$HostExcludePatterns=@('(?i)^coco-session-bridge-'),
     [string[]]$KnownE4mcDomains=@()
@@ -51,6 +52,12 @@ $manifest=[ordered]@{
         url="https://github.com/$GitHubRepository/releases/download/$tag/coco-engine-$Version.zip"
         sha256=(Get-FileHash $enginePath -Algorithm SHA256).Hash.ToLowerInvariant()
         size=[int64](Get-Item $enginePath).Length
+    }
+    bootstrap=[ordered]@{
+        version=$Version
+        url="https://github.com/$GitHubRepository/releases/download/$tag/CocoUpdater.exe"
+        sha256=(Get-FileHash -LiteralPath $BootstrapExe -Algorithm SHA256).Hash.ToLowerInvariant()
+        size=[int64](Get-Item -LiteralPath $BootstrapExe).Length
     }
     packages=@(
         [ordered]@{role='client';mods=$clientMods},
