@@ -152,7 +152,10 @@ if (-not (Test-Path -LiteralPath $entryPoint)) {
     $temporaryRoot = "$engineRoot.new"
     Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $temporaryRoot -Force | Out-Null
-    Expand-Archive -LiteralPath $engineZip -DestinationPath $temporaryRoot -Force
+    # Do not depend on Microsoft.PowerShell.Archive. Some otherwise supported
+    # Windows installations expose Expand-Archive but cannot load its module.
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [IO.Compression.ZipFile]::ExtractToDirectory($engineZip, $temporaryRoot)
     New-Item -ItemType Directory -Path (Split-Path $engineRoot -Parent) -Force | Out-Null
     Move-Item -LiteralPath $temporaryRoot -Destination $engineRoot -Force
 }
