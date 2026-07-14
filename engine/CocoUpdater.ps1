@@ -550,24 +550,7 @@ try {
     }
     if (Test-CurrentVersion $selected.Root $manifest $role) {
         Set-CocoState 'Coco Pack actualizado' "Version $($manifest.version) | Todo listo" 100 $false
-        if (-not $ManifestUrl -or $MinecraftPid -le 0) { exit 0 }
-        while (Test-MinecraftRunning $selected.Root) {
-            Start-Sleep -Seconds 60
-            if (-not (Test-MinecraftRunning $selected.Root)) { exit 0 }
-            try {
-                Invoke-WebRequest -Uri $ManifestUrl -OutFile "$ManifestPath.new" -UseBasicParsing -TimeoutSec 30
-                $newManifest=Get-Content -LiteralPath "$ManifestPath.new" -Raw | ConvertFrom-Json
-                if ($newManifest.packId -eq $manifest.packId -and $newManifest.version -ne $manifest.version) {
-                    Move-Item -LiteralPath "$ManifestPath.new" -Destination $ManifestPath -Force
-                    $manifest=$newManifest
-                    $package=@($manifest.packages | Where-Object { $_.role -eq $role }) | Select-Object -First 1
-                    Set-CocoState 'Nueva actualizacion encontrada' "Version $($manifest.version)" 2
-                    break
-                }
-                Remove-Item -LiteralPath "$ManifestPath.new" -Force -ErrorAction SilentlyContinue
-            } catch { Remove-Item -LiteralPath "$ManifestPath.new" -Force -ErrorAction SilentlyContinue }
-        }
-        if (-not (Test-MinecraftRunning $selected.Root)) { exit 0 }
+        exit 0
     }
     if (-not $script:CocoForm) { Show-CocoWindow }
     if ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client' -and $MinecraftPid -gt 0) {

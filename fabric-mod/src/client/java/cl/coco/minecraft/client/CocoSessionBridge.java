@@ -11,7 +11,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.Minecraft;
 import cl.coco.minecraft.CocoProtocol;
 
 public final class CocoSessionBridge implements ClientModInitializer {
@@ -21,7 +20,6 @@ public final class CocoSessionBridge implements ClientModInitializer {
     private boolean closing;
 
     @Override public void onInitializeClient() {
-        var client = Minecraft.getInstance();
         long pid = ProcessHandle.current().pid();
         stateFile = Path.of(System.getenv("LOCALAPPDATA"), "CocoMinecraftUpdater", "session", pid + ".json");
         try {
@@ -29,16 +27,16 @@ public final class CocoSessionBridge implements ClientModInitializer {
         } catch (IOException ignored) {
             // A stale file must never close a new session if Windows reuses a PID.
         }
-        launchUpdater(client.gameDirectory.toPath(), pid);
-
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             if (!closing && ++ticks % 10 == 0 && shouldCloseMinecraft()) {
                 closing = true;
                 mc.stop();
             }
         });
-        ClientPlayConnectionEvents.JOIN.register((listener, sender, mc) ->
-            ClientPlayNetworking.send(new CocoProtocol.Hello(CocoProtocol.PACK_ID, CocoProtocol.PACK_VERSION)));
+        ClientPlayConnectionEvents.JOIN.register((listener, sender, mc) -> {
+            launchUpdater(mc.gameDirectory.toPath(), pid);
+            ClientPlayNetworking.send(new CocoProtocol.Hello(CocoProtocol.PACK_ID, CocoProtocol.PACK_VERSION));
+        });
     }
 
     private static void launchUpdater(Path gameDir, long pid) {
