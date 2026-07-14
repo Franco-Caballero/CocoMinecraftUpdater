@@ -112,6 +112,72 @@ function Download-TextFile([string]$Url,[string]$Destination){
     }
 }
 
+function Test-CocoEngineExtraction([string]$Destination){
+    return (Test-Path -LiteralPath (Join-Path $Destination 'CocoUpdater.ps1')) -and
+        (Test-Path -LiteralPath (Join-Path $Destination 'assets\fullbody.png')) -and
+        (Test-Path -LiteralPath (Join-Path $Destination 'assets\reynaico.ico'))
+}
+
+function Reset-CocoExtractionDirectory([string]$Destination){
+    Remove-Item -LiteralPath $Destination -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path $Destination -Force | Out-Null
+}
+
+function Expand-CocoEngineArchive([string]$Archive,[string]$Destination){
+    $failures=[Collections.Generic.List[string]]::new()
+    Reset-CocoExtractionDirectory $Destination
+
+    # Primary path: built into .NET Framework and independent of PowerShell modules.
+    try{
+        Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop
+        [IO.Compression.ZipFile]::ExtractToDirectory($Archive,$Destination)
+        if(Test-CocoEngineExtraction $Destination){return}
+        throw 'La extraccion .NET quedo incompleta.'
+    }catch{$failures.Add(".NET: $($_.Exception.Message)")}
+
+    # Windows 10 1803+ normally includes bsdtar even when PowerShell modules are damaged.
+    Reset-CocoExtractionDirectory $Destination
+    try{
+        $tar=Get-Command tar.exe -ErrorAction Stop
+        $info=New-Object Diagnostics.ProcessStartInfo
+        $info.FileName=$tar.Source
+        $info.Arguments='-xf "'+($Archive-replace'"','\"')+'" -C "'+($Destination-replace'"','\"')+'"'
+        $info.UseShellExecute=$false;$info.CreateNoWindow=$true
+        $process=New-Object Diagnostics.Process;$process.StartInfo=$info
+        [void]$process.Start();$process.WaitForExit();$tarExit=$process.ExitCode;$process.Dispose()
+        if($tarExit-eq0-and(Test-CocoEngineExtraction $Destination)){return}
+        throw "tar.exe termino con codigo $tarExit."
+    }catch{$failures.Add("tar: $($_.Exception.Message)")}
+
+    # Keep the normal cmdlet as a tertiary option for machines where it works.
+    Reset-CocoExtractionDirectory $Destination
+    try{
+        Expand-Archive -LiteralPath $Archive -DestinationPath $Destination -Force -ErrorAction Stop
+        if(Test-CocoEngineExtraction $Destination){return}
+        throw 'Expand-Archive dejo archivos incompletos.'
+    }catch{$failures.Add("PowerShell: $($_.Exception.Message)")}
+
+    # Last resort: the ZIP namespace used by Windows Explorer (asynchronous COM API).
+    Reset-CocoExtractionDirectory $Destination
+    $shell=$null;$zipNamespace=$null;$destinationNamespace=$null
+    try{
+        $shell=New-Object -ComObject Shell.Application
+        $zipNamespace=$shell.NameSpace($Archive);$destinationNamespace=$shell.NameSpace($Destination)
+        if(-not$zipNamespace-or-not$destinationNamespace){throw 'El Explorador no pudo abrir el ZIP.'}
+        $destinationNamespace.CopyHere($zipNamespace.Items(),0x414)
+        $deadline=(Get-Date).AddSeconds(45)
+        while((Get-Date)-lt$deadline){
+            if(Test-CocoEngineExtraction $Destination){return}
+            Start-Sleep -Milliseconds 250
+        }
+        throw 'El Explorador excedio el tiempo de extraccion.'
+    }catch{$failures.Add("Explorer: $($_.Exception.Message)")}
+    finally{
+        foreach($item in @($destinationNamespace,$zipNamespace,$shell)){if($item){try{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($item)}catch{}}}
+    }
+    throw "Windows no pudo descomprimir el motor de Coco. Metodos intentados: $($failures -join ' | ')"
+}
+
 if ([string]::IsNullOrWhiteSpace($ChannelPath)) {
     $processPath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
     if ([IO.Path]::GetExtension($processPath) -ieq '.exe') {
@@ -152,10 +218,7 @@ if (-not (Test-Path -LiteralPath $entryPoint)) {
     $temporaryRoot = "$engineRoot.new"
     Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $temporaryRoot -Force | Out-Null
-    # Do not depend on Microsoft.PowerShell.Archive. Some otherwise supported
-    # Windows installations expose Expand-Archive but cannot load its module.
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [IO.Compression.ZipFile]::ExtractToDirectory($engineZip, $temporaryRoot)
+    Expand-CocoEngineArchive $engineZip $temporaryRoot
     New-Item -ItemType Directory -Path (Split-Path $engineRoot -Parent) -Force | Out-Null
     Move-Item -LiteralPath $temporaryRoot -Destination $engineRoot -Force
 }
