@@ -60,7 +60,13 @@ try{
         if($seconds-lt15){$detail.Text='Compilando Bridge y preparando archivos...'}elseif($seconds-lt45){$detail.Text='Calculando mods y verificando hashes...'}else{$detail.Text='Subiendo la nueva version a GitHub...'}
         $form.Refresh();[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50;$process.Refresh()
     }
-    if($process.ExitCode-ne0){
+    # WaitForExit is required after redirected output. Without it, Windows
+    # PowerShell can expose a stale/null ExitCode even though HasExited is true.
+    $process.WaitForExit();$process.Refresh()
+    $publishedLine=$null
+    if(Test-Path $stdout){$publishedLine=Get-Content $stdout|Where-Object{$_-match'^Publicado:\s+https://'}|Select-Object -Last 1}
+    $publishSucceeded=($process.ExitCode-eq0)-or[bool]$publishedLine
+    if(-not$publishSucceeded){
         $title.Text='No se pudo publicar';$title.ForeColor=[Drawing.Color]::FromArgb(255,120,150)
         $errorText=$null
         if(Test-Path $stderr){
