@@ -22,14 +22,14 @@ try{
     $form.Controls.AddRange(@($title,$detail,$track,$note));$form.Show();[Windows.Forms.Application]::DoEvents()
 
     $hostRoot=Join-Path $env:APPDATA '.minecraft'
-    if(-not(Test-Path (Join-Path $hostRoot 'config\coco-host.json'))){throw 'Falta config\coco-host.json en la instalación host.'}
+    if(-not(Test-Path (Join-Path $hostRoot 'config\coco-host.json'))){throw 'Falta config\coco-host.json en la instalacion host.'}
     $hostRunning=$false
     Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction SilentlyContinue|ForEach-Object{
         if($_.CommandLine-match'(?i)--gameDir\s+"([^"]+)"'){$runningRoot=$matches[1]}
         elseif($_.CommandLine-match'(?i)--gameDir\s+([^\s]+)'){$runningRoot=$matches[1]}else{$runningRoot=$null}
         if($runningRoot-and[string]::Equals($runningRoot.TrimEnd('\'),$hostRoot.TrimEnd('\'),[StringComparison]::OrdinalIgnoreCase)){$hostRunning=$true}
     }
-    if($hostRunning){throw 'Cierra Minecraft antes de publicar. Así el host y tus amigos cambiarán de versión juntos.'}
+    if($hostRunning){throw 'Cierra Minecraft antes de publicar. Asi el host y tus amigos cambiaran de version juntos.'}
 
     $latestFile=Join-Path $env:TEMP 'coco-publisher-latest.json'
     Invoke-WebRequest -Uri 'https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/latest/download/latest.json' -OutFile "$latestFile.new" -UseBasicParsing -TimeoutSec 30
@@ -49,7 +49,8 @@ try{
     }catch{}
     $publishScript=Join-Path $root 'tools\Publish-CocoRelease.ps1'
     $quotedPublishScript='"'+($publishScript-replace'"','\"')+'"'
-    $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedPublishScript,'-Version',$next,'-PublisherPid',$PID)
+    $quotedHostRoot='"'+($hostRoot-replace'"','\"')+'"'
+    $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedPublishScript,'-Version',$next,'-MinecraftRoot',$quotedHostRoot,'-PublisherPid',$PID)
     if($domains.Count){$arguments+='-KnownE4mcDomains';$arguments+=@($domains)}
     $process=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $arguments -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
     $watch=[Diagnostics.Stopwatch]::StartNew()
@@ -61,7 +62,8 @@ try{
     }
     if($process.ExitCode-ne0){
         $title.Text='No se pudo publicar';$title.ForeColor=[Drawing.Color]::FromArgb(255,120,150)
-        $errorText=if(Test-Path $stderr){(Get-Content $stderr -Tail 8)-join' '}else{'Error desconocido.'}
+        $errorText=if(Test-Path $stderr){Get-Content $stderr|Where-Object{$_.Trim()}|Select-Object -First 1}else{'Error desconocido.'}
+        if(-not$errorText-and(Test-Path $stdout)){$errorText=Get-Content $stdout|Where-Object{$_.Trim()}|Select-Object -Last 1}
         $detail.Text=$errorText;$note.Text='La ventana permanecera abierta para que puedas leer el error.';$form.ControlBox=$true;$form.Refresh()
         while($form.Visible){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100};exit $process.ExitCode
     }

@@ -11,7 +11,7 @@ $ErrorActionPreference = 'Stop'
 
 function Get-Asset([string]$FileName, [string]$Role) {
     $path = Join-Path $ReleaseDirectory $FileName
-    if (-not (Test-Path $path)) { throw "No se encontró el asset: $path" }
+    if (-not (Test-Path $path)) { throw "No se encontro el asset: $path" }
     [pscustomobject]@{
         role = $Role
         url = "https://github.com/$GitHubRepository/releases/download/$Tag/$FileName"

@@ -335,7 +335,7 @@ for($i=0;$i-lt40;$i++){
     }
     catch{Start-Sleep -Milliseconds 250}
 }
-Add-Content $LogPath "No se pudo reemplazar el bootstrap después de 40 intentos."
+Add-Content $LogPath "No se pudo reemplazar el bootstrap despues de 40 intentos."
 exit 1
 '@
         [IO.File]::WriteAllText($helper,$helperText,(New-Object Text.UTF8Encoding($true)))
@@ -344,8 +344,8 @@ exit 1
         $quotedDestination='"'+($canonical-replace'"','\"')+'"'
         $quotedLog='"'+($script:CocoLogPath-replace'"','\"')+'"'
         Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedHelper,'-WaitPid',$PID,'-Source',$quotedSource,'-Destination',$quotedDestination,'-ExpectedHash',$Manifest.bootstrap.sha256,'-LogPath',$quotedLog)
-        Write-CocoLog 'Se programó la reparación/actualización diferida del bootstrap.'
-    }catch{Write-CocoLog "No se pudo programar la actualización del bootstrap: $($_.Exception.Message)"}
+        Write-CocoLog 'Se programo la reparacion/actualizacion diferida del bootstrap.'
+    }catch{Write-CocoLog "No se pudo programar la actualizacion del bootstrap: $($_.Exception.Message)"}
 }
 
 function Test-MinecraftRunning([string]$Root) {
@@ -589,7 +589,7 @@ try {
     Write-CocoLog ("ERROR: " + ($_ | Out-String))
     if (-not $script:CocoForm) { Show-CocoWindow }
     $friendly=$_.Exception.Message
-    if($friendly -match '(?i)access.*denied|acceso.*denegado|unauthorized'){$friendly='Windows bloqueó el acceso a la carpeta de Minecraft. Revisa permisos o el antivirus.'}
+    if($friendly -match '(?i)access.*denied|acceso.*denegado|unauthorized'){$friendly='Windows bloqueo el acceso a la carpeta de Minecraft. Revisa permisos o el antivirus.'}
     elseif($friendly -match '(?i)conectar|connection|nombre remoto|timed out'){$friendly='No pudimos completar la descarga. Revisa internet y vuelve a intentarlo.'}
     elseif($friendly.Length-gt150){$friendly=$friendly.Substring(0,147)+'...'}
     Set-CocoState 'No se pudo actualizar' $friendly 0

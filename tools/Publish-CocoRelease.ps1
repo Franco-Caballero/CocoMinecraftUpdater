@@ -13,7 +13,7 @@ Set-Location $root
 
 function Replace-Text([string]$Path,[string]$Pattern,[string]$Replacement){
     $full=Join-Path $root $Path;$text=[IO.File]::ReadAllText($full)
-    if(-not[regex]::IsMatch($text,$Pattern)){throw "No se encontró el campo de versión en $Path"}
+    if(-not[regex]::IsMatch($text,$Pattern)){throw "No se encontro el campo de version en $Path"}
     $updated=[regex]::Replace($text,$Pattern,$Replacement)
     [IO.File]::WriteAllText($full,$updated,(New-Object Text.UTF8Encoding($false)))
 }
@@ -22,11 +22,25 @@ Replace-Text 'fabric-mod\gradle.properties' '(?m)^mod_version=.*$' "mod_version=
 Replace-Text 'fabric-mod\src\main\java\cl\coco\minecraft\CocoProtocol.java' 'PACK_VERSION = "[^"]+"' "PACK_VERSION = `"$Version`""
 Replace-Text '.github\workflows\build-bootstrapper.yml' "-Version '\d+\.\d+\.\d+\.0'" "-Version '$Version.0'"
 
-$javaHome=Join-Path $MinecraftRoot 'runtime\java-runtime-epsilon\windows\java-runtime-epsilon'
-if(-not(Test-Path (Join-Path $javaHome 'bin\java.exe'))){throw 'No se encontró Java 25 dentro de la instalación de Minecraft.'}
+$javaCandidates=[Collections.Generic.List[string]]::new()
+$javaCandidates.Add((Join-Path $MinecraftRoot 'runtime\java-runtime-epsilon\windows\java-runtime-epsilon\bin\java.exe'))
+Get-CimInstance Win32_Process -Filter "Name='java.exe' OR Name='javaw.exe'" -ErrorAction SilentlyContinue|ForEach-Object{if($_.ExecutablePath){$javaCandidates.Add($_.ExecutablePath)}}
+$pathJava=Get-Command java.exe -ErrorAction SilentlyContinue;if($pathJava){$javaCandidates.Add($pathJava.Source)}
+$javaExe=$null
+foreach($candidate in @($javaCandidates|Select-Object -Unique)){
+    if(-not(Test-Path $candidate)){continue}
+    $javaInfo=New-Object Diagnostics.ProcessStartInfo
+    $javaInfo.FileName=$candidate;$javaInfo.Arguments='-version';$javaInfo.UseShellExecute=$false
+    $javaInfo.CreateNoWindow=$true;$javaInfo.RedirectStandardError=$true;$javaInfo.RedirectStandardOutput=$true
+    $javaProcess=New-Object Diagnostics.Process;$javaProcess.StartInfo=$javaInfo
+    [void]$javaProcess.Start();$versionLine=$javaProcess.StandardError.ReadToEnd()+$javaProcess.StandardOutput.ReadToEnd();$javaProcess.WaitForExit();$javaProcess.Dispose()
+    if($versionLine-match'"25(?:\.|\")'){$javaExe=$candidate;break}
+}
+if(-not$javaExe){throw "No se encontro Java 25. MinecraftRoot recibido: $MinecraftRoot"}
+$javaHome=Split-Path (Split-Path $javaExe -Parent) -Parent
 $env:JAVA_HOME=$javaHome
 & .\fabric-mod\gradlew.bat -p fabric-mod clean build
-if($LASTEXITCODE){throw 'Falló la compilación del Bridge/Gate.'}
+if($LASTEXITCODE){throw 'Fallo la compilacion del Bridge/Gate.'}
 
 .\tools\New-CocoEngine.ps1 -Version $Version -OutputDirectory release|Out-Null
 $bridge="fabric-mod\build\libs\coco-session-bridge-$Version.jar"
@@ -65,13 +79,13 @@ exit 1
 
 git add .
 git commit -m "Publish Coco Pack $Version"
-if($LASTEXITCODE -and $LASTEXITCODE -ne 1){throw 'Falló git commit.'}
+if($LASTEXITCODE -and $LASTEXITCODE -ne 1){throw 'Fallo git commit.'}
 git push
-if($LASTEXITCODE){throw 'Falló git push.'}
+if($LASTEXITCODE){throw 'Fallo git push.'}
 
 $credentialLines=@('protocol=https','host=github.com','')|git credential fill
 $credential=@{};foreach($line in $credentialLines){if($line-match'^([^=]+)=(.*)$'){$credential[$matches[1]]=$matches[2]}}
-if(-not$credential.password){throw 'Git Credential Manager no devolvió una credencial de GitHub.'}
+if(-not$credential.password){throw 'Git Credential Manager no devolvio una credencial de GitHub.'}
 $headers=@{Authorization="Bearer $($credential.password)";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28';'User-Agent'='CocoPublisher'}
 function Invoke-WithRetry([scriptblock]$Operation,[string]$Description){
     for($attempt=1;$attempt-le4;$attempt++){
@@ -99,7 +113,7 @@ function Get-AllReleases {
 }
 $allReleases=@(Get-AllReleases)
 
-# Los JARs viven en un release estable por hash. Sólo se suben contenidos nuevos.
+# Los JARs viven en un release estable por hash. Solo se suben contenidos nuevos.
 $assetRelease=@($allReleases|Where-Object tag_name -eq 'mod-assets'|Select-Object -First 1)
 if(-not$assetRelease){
     $assetBody=@{tag_name='mod-assets';target_commitish='main';name='Coco Mod Assets';body='Assets inmutables identificados por SHA-256.';draft=$true;prerelease=$true}|ConvertTo-Json
@@ -117,16 +131,16 @@ foreach($asset in $jarAssets){
 $remoteJarAssets=@(Get-ReleaseAssets $assetRelease.id)
 foreach($asset in $jarAssets){
     $match=@($remoteJarAssets|Where-Object name -eq $asset.Name|Select-Object -First 1)
-    if(-not$match -or [int64]$match.size -ne [int64]$asset.Length){throw "No se publicó correctamente el asset $($asset.Name)."}
+    if(-not$match -or [int64]$match.size -ne [int64]$asset.Length){throw "No se publico correctamente el asset $($asset.Name)."}
 }
 if($assetRelease.draft){
     $assetRelease=Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($assetRelease.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body (@{draft=$false;prerelease=$true}|ConvertTo-Json)
 }
 
-$body=@{tag_name="v$Version";target_commitish='main';name="Coco Pack $Version";body='Publicación automática incremental por JAR.';draft=$true;prerelease=$false}|ConvertTo-Json
+$body=@{tag_name="v$Version";target_commitish='main';name="Coco Pack $Version";body='Publicacion automatica incremental por JAR.';draft=$true;prerelease=$false}|ConvertTo-Json
 $existing=@($allReleases|Where-Object{$_.tag_name-eq"v$Version"}|Select-Object -First 1)
 if($existing){
-    if(-not$existing.draft){throw "El release v$Version ya está publicado."}
+    if(-not$existing.draft){throw "El release v$Version ya esta publicado."}
     $release=$existing
 }else{
     $release=Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$Repository/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body))
@@ -150,7 +164,7 @@ foreach($asset in $assets){
 if($missing.Count){throw "No se publicaron correctamente: $($missing -join ', ')"}
 
 # Instala exactamente el mismo paquete en el host antes de hacerlo visible a los clientes.
-if(-not(Test-Path (Join-Path $MinecraftRoot 'config\coco-host.json'))){throw 'Falta config\coco-host.json en la instalación host.'}
+if(-not(Test-Path (Join-Path $MinecraftRoot 'config\coco-host.json'))){throw 'Falta config\coco-host.json en la instalacion host.'}
 $localManifest=Get-Content 'release\latest.json' -Raw|ConvertFrom-Json
 $hostPackage=@($localManifest.packages|Where-Object role -eq host|Select-Object -First 1)
 $jarCache=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\downloads\jars'
@@ -163,7 +177,7 @@ $engineScript='"'+((Join-Path $root 'engine\CocoUpdater.ps1')-replace'"','\"')+'
 $manifestArgument='"'+((Join-Path $root 'release\latest.json')-replace'"','\"')+'"'
 $gameArgument='"'+($MinecraftRoot-replace'"','\"')+'"'
 $install=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$engineScript,'-ManifestPath',$manifestArgument,'-GameDir',$gameArgument,'-Silent') -Wait -PassThru
-if($install.ExitCode-ne0){throw 'No se pudo actualizar la instalación host; el release seguirá oculto como borrador.'}
+if($install.ExitCode-ne0){throw 'No se pudo actualizar la instalacion host; el release seguira oculto como borrador.'}
 
 $publishBody=@{draft=$false;prerelease=$false}|ConvertTo-Json
 $release=Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($release.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $publishBody
