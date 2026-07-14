@@ -62,13 +62,63 @@ function Set-CocoSplash([string]$Status,[int]$Progress){
 }
 function Close-CocoSplash {if($script:Splash){$script:CocoAllowClose=$true;$script:Splash.Close();$script:Splash.Dispose();$script:Splash=$null}}
 
+function Write-CocoBootstrapDiagnostic([Management.Automation.ErrorRecord]$Record){
+    try{
+        $logRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\logs'
+        New-Item -ItemType Directory -Path $logRoot -Force|Out-Null
+        $stamp=Get-Date -Format 'yyyyMMdd-HHmmss'
+        $logPath=Join-Path $logRoot "bootstrap-$stamp-$PID-error.txt"
+        $policies=try{Get-ExecutionPolicy -List|Format-Table -AutoSize|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
+        $engineFiles=try{if($engineRoot-and(Test-Path $engineRoot)){Get-ChildItem $engineRoot -Recurse -Force|Select-Object FullName,Length,LastWriteTime|Format-Table -AutoSize|Out-String}else{'Engine root not created.'}}catch{"Unavailable: $($_.Exception.Message)"}
+        $processPath=try{[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName}catch{'Unknown'}
+        $manifestVersion=try{$manifest.version}catch{'Unknown'}
+        $report=@"
+Coco Updater diagnostic
+Timestamp: $((Get-Date).ToString('o'))
+Bootstrap process: $processPath
+PID: $PID
+Manifest version: $manifestVersion
+Engine root: $engineRoot
+Extraction method: $script:CocoExtractionMethod
+Windows: $([Environment]::OSVersion.VersionString)
+64-bit OS/process: $([Environment]::Is64BitOperatingSystem) / $([Environment]::Is64BitProcess)
+PowerShell: $($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition))
+CLR: $([Environment]::Version)
+Language mode: $($ExecutionContext.SessionState.LanguageMode)
+
+Execution policies:
+$policies
+Exception.ToString():
+$($Record.Exception.ToString())
+
+ErrorRecord:
+$($Record|Format-List * -Force|Out-String)
+
+Script stack trace:
+$($Record.ScriptStackTrace)
+
+Invocation:
+$($Record.InvocationInfo.PositionMessage)
+
+Engine files:
+$engineFiles
+"@
+        [IO.File]::WriteAllText($logPath,$report,(New-Object Text.UTF8Encoding($true)))
+        $desktop=[Environment]::GetFolderPath('Desktop')
+        if($desktop-and(Test-Path $desktop)){
+            $desktopPath=Join-Path $desktop "CocoUpdater-error-$stamp.txt"
+            [IO.File]::WriteAllText($desktopPath,$report,(New-Object Text.UTF8Encoding($true)))
+            $logPath=$desktopPath
+        }
+        Get-ChildItem $logRoot -File -Filter 'bootstrap-*-error.txt' -ErrorAction SilentlyContinue|Sort-Object LastWriteTime -Descending|Select-Object -Skip 20|Remove-Item -Force -ErrorAction SilentlyContinue
+        return $logPath
+    }catch{return $null}
+}
+
 Show-CocoSplash
 
 trap {
-    try{
-        $errorLogRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\logs';New-Item -ItemType Directory -Path $errorLogRoot -Force|Out-Null
-        Add-Content -LiteralPath (Join-Path $errorLogRoot 'bootstrap-errors.log') -Value ("{0:o} {1}" -f (Get-Date),($_|Out-String)) -Encoding UTF8
-    }catch{}
+    $diagnosticPath=Write-CocoBootstrapDiagnostic $_
     $friendly=$_.Exception.Message
     if($_.Exception -is [Net.WebException] -or $friendly -match '(?i)conectar|connection|nombre remoto|timed out'){
         $friendly='No pudimos conectar con GitHub tras 4 intentos. Revisa internet y vuelve a abrir este EXE.'
@@ -76,7 +126,8 @@ trap {
     if(-not $script:Splash){Show-CocoSplash}
     if($script:Splash){
         $script:SplashTitle.Text='No se pudo iniciar Coco Updater'
-        $script:SplashDetail.Text=$friendly
+        $diagnosticName=if($diagnosticPath){[IO.Path]::GetFileName($diagnosticPath)}else{'No disponible'}
+        $script:SplashDetail.Text="$friendly`nEnvia por Discord: $diagnosticName"
         $script:SplashFill.Width=12
         $script:Splash.Refresh();[Windows.Forms.Application]::DoEvents();Start-Sleep -Seconds 8
     }
@@ -131,7 +182,7 @@ function Expand-CocoEngineArchive([string]$Archive,[string]$Destination){
     try{
         Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop
         [IO.Compression.ZipFile]::ExtractToDirectory($Archive,$Destination)
-        if(Test-CocoEngineExtraction $Destination){return}
+        if(Test-CocoEngineExtraction $Destination){$script:CocoExtractionMethod='.NET ZipFile';return}
         throw 'La extraccion .NET quedo incompleta.'
     }catch{$failures.Add(".NET: $($_.Exception.Message)")}
 
@@ -145,7 +196,7 @@ function Expand-CocoEngineArchive([string]$Archive,[string]$Destination){
         $info.UseShellExecute=$false;$info.CreateNoWindow=$true
         $process=New-Object Diagnostics.Process;$process.StartInfo=$info
         [void]$process.Start();$process.WaitForExit();$tarExit=$process.ExitCode;$process.Dispose()
-        if($tarExit-eq0-and(Test-CocoEngineExtraction $Destination)){return}
+        if($tarExit-eq0-and(Test-CocoEngineExtraction $Destination)){$script:CocoExtractionMethod='Windows tar.exe';return}
         throw "tar.exe termino con codigo $tarExit."
     }catch{$failures.Add("tar: $($_.Exception.Message)")}
 
@@ -153,7 +204,7 @@ function Expand-CocoEngineArchive([string]$Archive,[string]$Destination){
     Reset-CocoExtractionDirectory $Destination
     try{
         Expand-Archive -LiteralPath $Archive -DestinationPath $Destination -Force -ErrorAction Stop
-        if(Test-CocoEngineExtraction $Destination){return}
+        if(Test-CocoEngineExtraction $Destination){$script:CocoExtractionMethod='PowerShell Expand-Archive';return}
         throw 'Expand-Archive dejo archivos incompletos.'
     }catch{$failures.Add("PowerShell: $($_.Exception.Message)")}
 
@@ -167,7 +218,7 @@ function Expand-CocoEngineArchive([string]$Archive,[string]$Destination){
         $destinationNamespace.CopyHere($zipNamespace.Items(),0x414)
         $deadline=(Get-Date).AddSeconds(45)
         while((Get-Date)-lt$deadline){
-            if(Test-CocoEngineExtraction $Destination){return}
+            if(Test-CocoEngineExtraction $Destination){$script:CocoExtractionMethod='Windows Explorer ZIP';return}
             Start-Sleep -Milliseconds 250
         }
         throw 'El Explorador excedio el tiempo de extraccion.'
@@ -266,13 +317,7 @@ if ($SessionStatePath) { $engineParameters.SessionStatePath=$SessionStatePath }
 if ($Preview) { $engineParameters.Preview=$true }
 if ($Silent) { $engineParameters.Silent=$true }
 Set-CocoSplash 'Analizando la instalacion de Minecraft...' 12
-try{
-    & $entryPoint @engineParameters
-}catch{
-    if(-not$script:Splash){Show-CocoSplash}
-    $script:SplashTitle.Text='No se pudo iniciar Coco Updater'
-    $script:SplashDetail.Text=$_.Exception.Message
-    $script:SplashFill.Width=12
-    $script:Splash.Refresh();[Windows.Forms.Application]::DoEvents();Start-Sleep -Seconds 8
-    exit 1
-}
+$env:COCO_ENGINE_ROOT=$engineRoot
+$engineSource=[IO.File]::ReadAllText($entryPoint,[Text.Encoding]::UTF8)
+$engineBlock=[ScriptBlock]::Create($engineSource)
+& $engineBlock @engineParameters

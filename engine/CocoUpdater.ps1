@@ -13,6 +13,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$script:CocoEngineRoot=if($env:COCO_ENGINE_ROOT-and(Test-Path -LiteralPath $env:COCO_ENGINE_ROOT)){$env:COCO_ENGINE_ROOT}else{$PSScriptRoot}
 $script:CocoForm = $null
 $script:CocoCurrentProgress = 0
 $script:CocoVisualWorkStarted = $null
@@ -69,7 +70,7 @@ function Show-CocoWindow {
     $f.AutoScaleMode='None'; $f.TopMost=$true
     $f.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
     $f.BackColor=$key; $f.TransparencyKey=$key; $f.ForeColor=[Drawing.Color]::White
-    $iconPath=Join-Path $PSScriptRoot 'assets\reynaico.ico'
+    $iconPath=Join-Path $script:CocoEngineRoot 'assets\reynaico.ico'
     if(Test-Path $iconPath){$f.Icon=New-Object Drawing.Icon($iconPath)}
     $panel=New-Object Windows.Forms.Panel; $panel.Location=New-Object Drawing.Point(25,190); $panel.Size=New-Object Drawing.Size(780,350)
     $panel.BackColor=[Drawing.Color]::FromArgb(22,13,37)
@@ -87,7 +88,7 @@ function Show-CocoWindow {
     $b=New-Object Windows.Forms.Label; $b.Text="$sparkle  COCO PACK  |  FABRIC 26.1.2"; $b.Location=New-Object Drawing.Point(46,244)
     $b.Size=New-Object Drawing.Size(620,25); $b.Font=New-Object Drawing.Font('Segoe UI Semibold',10); $b.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
     $panel.Controls.AddRange(@($t,$d,$track,$b))
-    $artPath=Join-Path $PSScriptRoot 'assets\fullbody.png'
+    $artPath=Join-Path $script:CocoEngineRoot 'assets\fullbody.png'
     $art=New-Object Windows.Forms.PictureBox; $art.Location=New-Object Drawing.Point(675,5); $art.Size=New-Object Drawing.Size(380,720)
     $art.SizeMode='Zoom'; $art.BackColor=[Drawing.Color]::Transparent
     if(Test-Path $artPath){$art.Image=[Drawing.Image]::FromFile($artPath)}
@@ -505,13 +506,13 @@ function Show-CocoPreview {
 try {
     $mutex = New-Object System.Threading.Mutex($false, 'Local\CocoMinecraftUpdater')
     if (-not $mutex.WaitOne(0)) { exit 0 }
-    $engineParent=Split-Path $PSScriptRoot -Parent
+    $engineParent=Split-Path $script:CocoEngineRoot -Parent
     if((Split-Path $engineParent -Leaf)-eq'engine'){
         Get-ChildItem -LiteralPath $engineParent -Directory -ErrorAction SilentlyContinue |
-            Where-Object FullName -ne $PSScriptRoot | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            Where-Object FullName -ne $script:CocoEngineRoot | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
         $cacheRoot=Split-Path $engineParent -Parent
         Get-ChildItem -LiteralPath $cacheRoot -File -Filter 'engine-*.zip' -ErrorAction SilentlyContinue |
-            Where-Object Name -ne "engine-$((Split-Path $PSScriptRoot -Leaf)).zip" | Remove-Item -Force -ErrorAction SilentlyContinue
+            Where-Object Name -ne "engine-$((Split-Path $script:CocoEngineRoot -Leaf)).zip" | Remove-Item -Force -ErrorAction SilentlyContinue
     }
     if (-not (Test-Path -LiteralPath $ManifestPath)) { throw "No existe el manifiesto: $ManifestPath" }
     $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
