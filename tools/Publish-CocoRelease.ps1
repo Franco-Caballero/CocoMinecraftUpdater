@@ -10,6 +10,9 @@ $ErrorActionPreference='Stop'
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
 $root=Split-Path $PSScriptRoot -Parent
 Set-Location $root
+[Environment]::CurrentDirectory=$root
+$releaseDir=Join-Path $root 'release'
+$distDir=Join-Path $root 'dist'
 $KnownE4mcDomains=@($KnownE4mcDomainsCsv-split','|Where-Object{$_})
 Write-Output "Contexto: Repository=$Repository MinecraftRoot=$MinecraftRoot Domains=$($KnownE4mcDomains.Count)"
 
@@ -44,21 +47,26 @@ $env:JAVA_HOME=$javaHome
 & .\fabric-mod\gradlew.bat -p fabric-mod clean build
 if($LASTEXITCODE){throw 'Fallo la compilacion del Bridge/Gate.'}
 
-.\tools\New-CocoEngine.ps1 -Version $Version -OutputDirectory release|Out-Null
-$bridge="fabric-mod\build\libs\coco-session-bridge-$Version.jar"
+.\tools\New-CocoEngine.ps1 -Version $Version -OutputDirectory $releaseDir|Out-Null
+$bridge=Join-Path $root "fabric-mod\build\libs\coco-session-bridge-$Version.jar"
 
 if(-not(Get-Module -ListAvailable ps2exe)){Install-Module ps2exe -Scope CurrentUser -Force -AllowClobber}
 Import-Module ps2exe
-New-Item -ItemType Directory dist -Force|Out-Null
+New-Item -ItemType Directory $distDir -Force|Out-Null
 $bootstrapTemplate=[IO.File]::ReadAllText((Join-Path $root 'bootstrap\CocoBootstrapper.ps1'))
 $fullbodyBase64=[Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $root 'fullbody.png')))
 $generatedBootstrap=Join-Path $env:TEMP 'CocoBootstrapper.generated.ps1'
 [IO.File]::WriteAllText($generatedBootstrap,$bootstrapTemplate.Replace('__FULLBODY_BASE64__',$fullbodyBase64),(New-Object Text.UTF8Encoding($true)))
-Invoke-ps2exe -InputFile $generatedBootstrap -OutputFile dist\CocoUpdater.exe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version "$Version.0" -NoConsole -IconFile reynaico.ico
+$bootstrapExe=Join-Path $distDir 'CocoUpdater.exe'
+Invoke-ps2exe -InputFile $generatedBootstrap -OutputFile $bootstrapExe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version "$Version.0" -NoConsole -IconFile (Join-Path $root 'reynaico.ico')
 Remove-Item $generatedBootstrap -Force
 $publisherNext=Join-Path $root 'dist\CocoPublisher.next.exe'
 Remove-Item $publisherNext -Force -ErrorAction SilentlyContinue
 Invoke-ps2exe -InputFile publisher\CocoPublisher.ps1 -OutputFile $publisherNext -Title 'Publicar Coco Pack' -Product 'Coco Publisher' -Version "$Version.0" -NoConsole -IconFile reynaico.ico
+# ps2exe changes the process-wide .NET working directory to the output folder.
+# Restore both notions of the current directory before any relative tool call.
+Set-Location $root
+[Environment]::CurrentDirectory=$root
 if($PublisherPid-gt0){
     $publisherHelper=Join-Path $env:TEMP 'Apply-CocoPublisherUpdate.ps1'
     $publisherHelperText=@'
@@ -75,7 +83,7 @@ exit 1
 }else{
     Move-Item $publisherNext (Join-Path $root 'dist\CocoPublisher.exe') -Force
 }
-.\tools\New-CocoJarRelease.ps1 -MinecraftRoot $MinecraftRoot -Version $Version -GitHubRepository $Repository -ReleaseDirectory release -BridgeJar $bridge -BootstrapExe 'dist\CocoUpdater.exe' -KnownE4mcDomains $KnownE4mcDomains|Write-Host
+.\tools\New-CocoJarRelease.ps1 -MinecraftRoot $MinecraftRoot -Version $Version -GitHubRepository $Repository -ReleaseDirectory $releaseDir -BridgeJar $bridge -BootstrapExe $bootstrapExe -KnownE4mcDomains $KnownE4mcDomains|Write-Host
 .\tests\Test-CocoRelease.ps1 -Version $Version
 .\tests\Test-CocoEngineRecovery.ps1
 
@@ -126,7 +134,7 @@ if(-not$assetRelease){
     $assetBody=@{tag_name='mod-assets';target_commitish='main';name='Coco Mod Assets';body='Assets inmutables identificados por SHA-256.';draft=$true;prerelease=$true}|ConvertTo-Json
     $assetRelease=Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$Repository/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $assetBody
 }
-$jarAssets=@(Get-ChildItem release\jars -File)
+$jarAssets=@(Get-ChildItem (Join-Path $releaseDir 'jars') -File)
 $remoteJarAssets=@(Get-ReleaseAssets $assetRelease.id)
 foreach($asset in $jarAssets){
     $uploaded=@($remoteJarAssets|Where-Object name -eq $asset.Name|Select-Object -First 1)
@@ -152,7 +160,7 @@ if($existing){
 }else{
     $release=Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$Repository/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body))
 }
-$assets=@(Get-Item "release\coco-engine-$Version.zip",release\latest.json,dist\CocoUpdater.exe)
+$assets=@(Get-Item (Join-Path $releaseDir "coco-engine-$Version.zip"),(Join-Path $releaseDir 'latest.json'),$bootstrapExe)
 $index=0
 foreach($asset in $assets){
     $index++;Write-Progress -Activity "Publicando Coco Pack $Version" -Status $asset.Name -PercentComplete (100*$index/$assets.Count)
@@ -172,16 +180,16 @@ if($missing.Count){throw "No se publicaron correctamente: $($missing -join ', ')
 
 # Instala exactamente el mismo paquete en el host antes de hacerlo visible a los clientes.
 if(-not(Test-Path (Join-Path $MinecraftRoot 'config\coco-host.json'))){throw 'Falta config\coco-host.json en la instalacion host.'}
-$localManifest=Get-Content 'release\latest.json' -Raw|ConvertFrom-Json
+$localManifest=Get-Content (Join-Path $releaseDir 'latest.json') -Raw|ConvertFrom-Json
 $hostPackage=@($localManifest.packages|Where-Object role -eq host|Select-Object -First 1)
 $jarCache=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\downloads\jars'
 New-Item -ItemType Directory -Path $jarCache -Force|Out-Null
 foreach($mod in $hostPackage.mods){
-    $source=Join-Path 'release\jars' "mod-$($mod.sha256).jar"
+    $source=Join-Path (Join-Path $releaseDir 'jars') "mod-$($mod.sha256).jar"
     Copy-Item -LiteralPath $source -Destination (Join-Path $jarCache "$($mod.sha256)-$($mod.name)") -Force
 }
 $engineScript='"'+((Join-Path $root 'engine\CocoUpdater.ps1')-replace'"','\"')+'"'
-$manifestArgument='"'+((Join-Path $root 'release\latest.json')-replace'"','\"')+'"'
+$manifestArgument='"'+((Join-Path $releaseDir 'latest.json')-replace'"','\"')+'"'
 $gameArgument='"'+($MinecraftRoot-replace'"','\"')+'"'
 $install=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$engineScript,'-ManifestPath',$manifestArgument,'-GameDir',$gameArgument,'-Silent') -Wait -PassThru
 if($install.ExitCode-ne0){throw 'No se pudo actualizar la instalacion host; el release seguira oculto como borrador.'}
