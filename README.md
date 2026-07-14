@@ -1,18 +1,24 @@
 # Coco Minecraft Updater
 
-Actualizador de mods para el mundo compartido **Coco**. Detecta el directorio real de Minecraft sin depender del launcher y sincroniza el pack publicado en GitHub Releases sin conservar respaldos permanentes.
+Sincroniza por JAR el pack Fabric 26.1.2 del mundo Coco. Cada amigo recibe una sola vez `CocoUpdater.exe`; el ejecutable no contiene los mods y descarga únicamente los archivos faltantes o diferentes.
 
-## Flujo para los amigos
+## Primera instalación de un cliente
 
-1. Reciben una sola vez únicamente `CocoUpdater.exe`.
-2. Hacen doble clic en `CocoUpdater.exe`.
-3. El bootstrapper consulta el manifiesto remoto, actualiza el motor si es necesario y ejecuta la sincronización.
-4. Si Minecraft está abierto, identifica su `--gameDir`, descarga la actualización y espera a que el juego se cierre para aplicarla.
+1. Abrir la instancia correcta de Minecraft hasta el menú principal.
+2. Ejecutar `CocoUpdater.exe` una vez.
+3. El updater reconoce el `--gameDir`, solicita un cierre normal de Minecraft, instala el pack exacto y deja Session Bridge.
+4. Desde entonces Session Bridge inicia el updater sólo mientras esa instancia de Minecraft está abierta. Si aparece una actualización, cierra el cliente de forma segura y muestra la ventana morada hasta terminar.
 
-El pack instala **Coco Session Bridge & Pack Gate**. Desde entonces el Bridge inicia el updater solo mientras Minecraft está abierto, muestra el progreso dentro del juego y el servidor rechaza clientes atrasados. No se toca `saves`, `screenshots`, cuentas ni `options.txt`; no se guardan respaldos permanentes.
+No modifica mundos, cuentas, screenshots ni `options.txt`. Reemplaza exactamente los JARs de `mods` y no conserva respaldos permanentes.
 
-## Publicación
+## Host y clientes
 
-El archivo remoto `latest.json` vive en GitHub Releases y describe cada JAR por nombre, tamaño y SHA-256. El updater descarga únicamente los mods faltantes o modificados, reutiliza los correctos y elimina los sobrantes. El EXE inicial no contiene mods y no necesita volver a distribuirse para cambios del pack o del motor.
+Sólo `config/coco-host.json`, guardado localmente en la instalación del anfitrión, selecciona el paquete host. Ese archivo nunca se distribuye. El cliente no recibe e4mc ni MCWiFiPnP; ambos roles reciben el mismo Session Bridge/Pack Gate.
 
-Ver [docs/OPERACION.md](docs/OPERACION.md) para publicar una versión y [docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md) para conectarlo a GitHub.
+## Publicar mods
+
+Con Minecraft cerrado, ejecutar `dist/CocoPublisher.exe`. Incrementa la versión, compila, valida hashes y roles, crea un release privado como borrador, sube los assets, actualiza la instalación host y finalmente hace visible la versión. Si algo falla, los clientes continúan viendo el release anterior.
+
+Los diagnósticos de cada cliente quedan en `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`.
+
+Consulta [docs/OPERACION.md](docs/OPERACION.md) para el flujo operativo y riesgos conocidos.

@@ -1,0 +1,4 @@
+{
+  "manifestUrl": "http://127.0.0.1:9/latest.json",
+  "channel": "test-invalid"
+}

@@ -1,52 +1,34 @@
-# Operación y publicación
+# Operación
 
-## Primera distribución
+## Lo único que reciben los amigos
 
-Entrega a cada amigo la carpeta inicial con:
+Comparte el `CocoUpdater.exe` publicado en el release más reciente. No necesitan JSON, ZIP ni acceso a GitHub. El primer EXE instala una copia canónica en `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`; Session Bridge siempre llama a esa copia y el bootstrapper la puede reemplazar por versiones nuevas.
 
-```text
-CocoUpdater.cmd
-CocoUpdater.channel.json
-bootstrap/CocoBootstrapper.ps1
-```
+Para eliminar ambigüedad en la primera ejecución, el amigo debe abrir primero la instancia Fabric 26.1.2 correcta y luego ejecutar el EXE. El proceso abierto aporta el `--gameDir` exacto. Si Minecraft no está abierto, se elige siempre el candidato con mayor puntuación por versión Fabric, mods, logs, actividad y marcadores previos.
 
-Antes, reemplaza `manifestUrl` en `CocoUpdater.channel.json` por el enlace `latest/download/latest.json` de tu repositorio GitHub.
+## Publicar una actualización
 
-## Crear paquetes
+1. Cierra Minecraft y confirma que la sesión LAN terminó.
+2. Deja en `%APPDATA%\.minecraft\mods` los JARs que debe usar el pack.
+3. Ejecuta `dist\CocoPublisher.exe`.
+4. Espera el mensaje de éxito. No abras Minecraft mientras publica.
 
-Con Minecraft cerrado, desde PowerShell:
+El Publisher incrementa automáticamente el último número de versión. Excluye `fly-speed-modifier` mientras siga mal empaquetado, deduplica archivos idénticos, rechaza IDs Fabric repetidos con contenido diferente y separa automáticamente host/cliente. El release permanece como borrador hasta que:
 
-```powershell
-.\tools\New-CocoEngine.ps1 -Version 0.1.0 -OutputDirectory .\release
-.\tools\New-CocoPack.ps1 -MinecraftRoot "$env:APPDATA\.minecraft" -Role client -Version 0.1.0 -OutputDirectory .\release
-.\tools\New-CocoPack.ps1 -MinecraftRoot "$env:APPDATA\.minecraft" -Role host -Version 0.1.0 -OutputDirectory .\release
-```
+- Bridge, Gate, engine, bootstrapper y Publisher compilan;
+- manifiesto, tamaños y SHA-256 pasan la validación;
+- la prueba de recuperación transaccional pasa;
+- todos los assets aparecen en GitHub con el tamaño correcto;
+- la instalación host queda actualizada.
 
-El segundo paquete se puede preparar desde la instalación host. Antes de publicarlo, elimina del paquete cliente los mods exclusivamente del host si corresponde.
+Después se publica y los clientes lo detectan mientras Minecraft está abierto. Nunca publiques durante una sesión: el Publisher lo bloquea para evitar que clientes nuevos intenten entrar a un Gate antiguo.
 
-`New-CocoPack.ps1` solo incluye archivos `.jar`. Para excluir mods del host del paquete cliente se puede usar, por ejemplo, `-ExcludeModPatterns '^(?i)e4mc-', '^(?i)mcwifipnp-'`.
+## Recuperación y soporte
 
-## Publicar en GitHub Releases
+Si Windows se apaga durante el reemplazo de `mods`, el próximo inicio restaura automáticamente `.coco-mods-replacing` antes de continuar. Las descargas se verifican por SHA-256 y se reintentan cuatro veces.
 
-1. Crea un repositorio GitHub para este proyecto.
-2. Crea un release `v0.1.0`.
-3. Genera `latest.json` después de crear los ZIP:
+Para diagnosticar un PC, pide la carpeta `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`. El updater conserva los 40 registros más recientes.
 
-```powershell
-.\tools\New-CocoReleaseManifest.ps1 -Version 0.1.0 -GitHubRepository TU_USUARIO/coco-minecraft-updater -ReleaseDirectory .\release
-```
+## Riesgo de Windows
 
-4. Sube `coco-engine-0.1.0.zip`, `coco-client-0.1.0.zip`, `coco-host-0.1.0.zip` y `latest.json`.
-5. Cada actualización repite el proceso con un número de versión mayor.
-
-GitHub Releases entrega assets públicos mediante URL directa. El bootstrapper descarga el manifiesto y el motor nuevo, por lo que no es necesario redistribuir el actualizador cuando cambia el código.
-
-## Qué modifica el actualizador
-
-- Reemplaza `mods` completo sin dejar respaldo permanente. Durante unos segundos usa una carpeta transitoria para que el reemplazo no quede a medio camino; se elimina al finalizar.
-- Copia solamente los archivos de configuración incluidos explícitamente en el paquete.
-- Escribe `config/coco-updater-state.json` al finalizar con éxito.
-
-No modifica `saves`, `options.txt`, `screenshots`, cuentas ni los directorios de launcher.
-
-La revisión automática durante una sesión de juego se realizará mediante el mod puente de Fabric `Coco Session Bridge`; no se crean tareas programadas ni procesos residentes de Windows.
+`CocoUpdater.exe` no está firmado con un certificado de firma de código confiable. SmartScreen o un antivirus pueden advertir o bloquear la primera ejecución. La solución definitiva es firmar cada EXE con un certificado que genere reputación; cambiar el icono o empaquetarlo de otra manera no reemplaza esa firma.

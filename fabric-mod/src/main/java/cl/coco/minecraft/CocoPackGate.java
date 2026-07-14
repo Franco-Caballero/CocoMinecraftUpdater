@@ -22,9 +22,9 @@ public final class CocoPackGate implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(CocoProtocol.Hello.TYPE, (payload, context) -> {
             var player = context.player();
             if (!CocoProtocol.PACK_ID.equals(payload.packId()) || !CocoProtocol.PACK_VERSION.equals(payload.version())) {
-                player.connection.disconnect(Component.literal("§5✦ COCO PACK DESACTUALIZADO ✦\n§fTu versión: §d" + payload.version()
-                    + "§f  •  Servidor: §d" + CocoProtocol.PACK_VERSION
-                    + "\n\n§fCierra Minecraft. Coco Updater terminará la actualización automáticamente."));
+                player.connection.disconnect(Component.literal("\u00a75\u2726 COCO PACK DESACTUALIZADO \u2726\n\u00a7fTu version: \u00a7d" + payload.version()
+                    + "\u00a7f  -  Servidor: \u00a7d" + CocoProtocol.PACK_VERSION
+                    + "\n\n\u00a7fCierra Minecraft. Coco Updater terminara la actualizacion automaticamente."));
             } else {
                 waiting.remove(player.getUUID());
             }
@@ -33,7 +33,7 @@ public final class CocoPackGate implements ModInitializer {
             if (server.getTickCount() < entry.getValue()) return false;
             var player = server.getPlayerList().getPlayer(entry.getKey());
             if (player != null) player.connection.disconnect(Component.literal(
-                "§5✦ FALTA COCO SESSION BRIDGE ✦\n§fEjecuta §dCocoUpdater.exe §funa vez y vuelve a abrir Minecraft."));
+                "\u00a75\u2726 FALTA COCO SESSION BRIDGE \u2726\n\u00a7fEjecuta \u00a7dCocoUpdater.exe \u00a7funa vez y vuelve a abrir Minecraft."));
             return true;
         }));
     }

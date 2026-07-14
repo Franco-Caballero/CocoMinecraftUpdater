@@ -5,6 +5,12 @@ on:
   push:
     paths:
       - 'bootstrap/**'
+      - 'engine/**'
+      - 'fabric-mod/**'
+      - 'tests/**'
+      - 'tools/**'
+      - 'fullbody.png'
+      - 'reynaico.ico'
       - 'CocoUpdater.channel.json'
       - '.github/workflows/build-bootstrapper.yml'
 
@@ -27,6 +33,13 @@ jobs:
         shell: powershell
         run: Install-Module ps2exe -Scope CurrentUser -Force
 
+      - name: Validate PowerShell syntax
+        shell: powershell
+        run: |
+          Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
+            [void][scriptblock]::Create([IO.File]::ReadAllText($_.FullName))
+          }
+
       - name: Build updater executable
         shell: powershell
         run: |
@@ -35,11 +48,9 @@ jobs:
           $image = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path 'fullbody.png')))
           [IO.File]::WriteAllText('bootstrap.generated.ps1', $template.Replace('__FULLBODY_BASE64__', $image), (New-Object Text.UTF8Encoding($true)))
           Invoke-ps2exe -InputFile bootstrap.generated.ps1 -OutputFile dist/CocoUpdater.exe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version '0.5.7.0' -NoConsole -IconFile reynaico.ico
-          Copy-Item CocoUpdater.channel.json dist/CocoUpdater.channel.json
-          Copy-Item fabric-mod/build/libs/coco-session-bridge-0.5.7.jar dist/
 
       - name: Upload initial distribution
         uses: actions/upload-artifact@v4
         with:
           name: coco-updater-bootstrapper
-          path: dist/
+          path: dist/CocoUpdater.exe

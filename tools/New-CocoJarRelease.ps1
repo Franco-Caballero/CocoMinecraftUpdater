@@ -6,8 +6,8 @@ param(
     [Parameter(Mandatory=$true)][string]$ReleaseDirectory,
     [Parameter(Mandatory=$true)][string]$BridgeJar,
     [Parameter(Mandatory=$true)][string]$BootstrapExe,
-    [string[]]$ClientExcludePatterns=@('(?i)^e4mc','(?i)^mcwifipnp','(?i)^coco-session-bridge-'),
-    [string[]]$HostExcludePatterns=@('(?i)^coco-session-bridge-'),
+    [string[]]$ClientExcludePatterns=@('(?i)^e4mc','(?i)^mcwifipnp','(?i)^coco-session-bridge-','(?i)^fly-speed-modifier-'),
+    [string[]]$HostExcludePatterns=@('(?i)^coco-session-bridge-','(?i)^fly-speed-modifier-'),
     [string[]]$KnownE4mcDomains=@()
 )
 
@@ -20,22 +20,45 @@ Get-ChildItem -LiteralPath $jarOutput -File -ErrorAction SilentlyContinue|Remove
 function Test-Excluded([string]$Name,[string[]]$Patterns) {
     return [bool]@($Patterns|Where-Object{$Name -match $_}).Count
 }
+function Get-FabricModId([string]$Path) {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archive=[IO.Compression.ZipFile]::OpenRead($Path)
+    try {
+        $entry=$archive.GetEntry('fabric.mod.json')
+        if(-not$entry){return $null}
+        $reader=[IO.StreamReader]::new($entry.Open(),[Text.Encoding]::UTF8)
+        try { return ($reader.ReadToEnd()|ConvertFrom-Json).id } finally { $reader.Dispose() }
+    } finally { $archive.Dispose() }
+}
 function Get-RoleMods([string]$Role,[string[]]$ExcludePatterns) {
     $files=[System.Collections.Generic.List[IO.FileInfo]]::new()
     Get-ChildItem -LiteralPath (Join-Path $MinecraftRoot 'mods') -File -Filter '*.jar'|Where-Object{
         -not (Test-Excluded $_.Name $ExcludePatterns)
     }|ForEach-Object{$files.Add($_)}
     $files.Add((Get-Item -LiteralPath $BridgeJar))
-    return @($files|Sort-Object Name|ForEach-Object{
-        $hash=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    $prepared=@($files|ForEach-Object{
+        [pscustomobject]@{
+            File=$_
+            Hash=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            ModId=Get-FabricModId $_.FullName
+        }
+    })
+    $conflicts=@($prepared|Where-Object ModId|Group-Object ModId|Where-Object{(@($_.Group.Hash|Select-Object -Unique)).Count -gt 1})
+    if($conflicts){throw "Hay IDs Fabric repetidos con contenido diferente para $Role`: $($conflicts.Name -join ', ')"}
+    $deduplicated=@($prepared|Group-Object Hash|ForEach-Object{
+        $_.Group|Sort-Object @{Expression={if($_.File.BaseName -match '\(\d+\)$'){1}else{0}}},@{Expression={$_.File.Name.Length}},@{Expression={$_.File.Name}}|Select-Object -First 1
+    })
+    return @($deduplicated|Sort-Object {$_.File.Name}|ForEach-Object{
+        $hash=$_.Hash
+        $file=$_.File
         $assetName="mod-$hash.jar"
         $destination=Join-Path $jarOutput $assetName
-        if(-not(Test-Path -LiteralPath $destination)){Copy-Item -LiteralPath $_.FullName -Destination $destination -Force}
+        if(-not(Test-Path -LiteralPath $destination)){Copy-Item -LiteralPath $file.FullName -Destination $destination -Force}
         [ordered]@{
-            name=$_.Name
-            url="https://github.com/$GitHubRepository/releases/download/$tag/$assetName"
+            name=$file.Name
+            url="https://github.com/$GitHubRepository/releases/download/mod-assets/$assetName"
             sha256=$hash
-            size=[int64]$_.Length
+            size=[int64]$file.Length
         }
     })
 }
@@ -76,5 +99,6 @@ $manifest=[ordered]@{
         )
     }
 }
-$manifest|ConvertTo-Json -Depth 10|Set-Content -LiteralPath (Join-Path $ReleaseDirectory 'latest.json') -Encoding UTF8
+$manifestJson=$manifest|ConvertTo-Json -Depth 10
+[IO.File]::WriteAllText((Join-Path $ReleaseDirectory 'latest.json'),$manifestJson,(New-Object Text.UTF8Encoding($false)))
 [pscustomobject]@{version=$Version;clientMods=$clientMods.Count;hostMods=$hostMods.Count;uniqueAssets=@(Get-ChildItem $jarOutput).Count}|ConvertTo-Json

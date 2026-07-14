@@ -9,6 +9,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $script:Splash = $null
 $script:EmbeddedFullbodyBase64 = '__FULLBODY_BASE64__'
 
@@ -20,6 +21,7 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     $form=New-Object Windows.Forms.Form;$form.Text='Coco Minecraft Updater';$form.Size=New-Object Drawing.Size(1080,740)
     $form.StartPosition='CenterScreen';$form.FormBorderStyle='None';$form.BackColor=$key;$form.TransparencyKey=$key
     $form.AutoScaleMode='None';$form.ForeColor=[Drawing.Color]::White;$form.TopMost=$true
+    $form.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
     try{$embeddedIcon=[Drawing.Icon]::ExtractAssociatedIcon([Diagnostics.Process]::GetCurrentProcess().MainModule.FileName);if($embeddedIcon){$form.Icon=$embeddedIcon}}catch{}
     $panel=New-Object Windows.Forms.Panel;$panel.Location=New-Object Drawing.Point(25,190);$panel.Size=New-Object Drawing.Size(780,350)
     $panel.BackColor=[Drawing.Color]::FromArgb(22,13,37)
@@ -45,18 +47,41 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
             $art.Image=[Drawing.Image]::FromStream($memory);$script:EmbeddedImageStream=$memory
         }elseif(Test-Path (Join-Path $PSScriptRoot '..\fullbody.png')){$art.Image=[Drawing.Image]::FromFile((Join-Path $PSScriptRoot '..\fullbody.png'))}
     }catch{}
-    $form.Controls.Add($panel);$form.Controls.Add($art);$art.BringToFront();$form.Show();$form.BringToFront();$form.Activate();[Windows.Forms.Application]::DoEvents()
-    $script:Splash=$form;$script:SplashDetail=$detail;$script:SplashFill=$fill
+    $form.Controls.Add($panel);$form.Controls.Add($art);$art.BringToFront()
+    $work=[Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+    $scale=[Math]::Min(1.0,[Math]::Min($work.Width/1080.0,$work.Height/740.0))
+    if($scale-lt1.0){$form.Scale((New-Object Drawing.SizeF($scale,$scale)))}
+    $form.Show();$form.BringToFront();$form.Activate();[Windows.Forms.Application]::DoEvents()
+    $script:Splash=$form;$script:SplashDetail=$detail;$script:SplashFill=$fill;$script:SplashTrack=$track
     $script:SplashTitle=$title
-    $global:CocoSharedUi=@{Form=$form;Title=$title;Detail=$detail;Progress=$fill;Started=[Diagnostics.Stopwatch]::StartNew();BaseProgress=12}
+    $global:CocoSharedUi=@{Form=$form;Title=$title;Detail=$detail;Progress=$fill;Track=$track;Started=[Diagnostics.Stopwatch]::StartNew();BaseProgress=12}
 }
 function Set-CocoSplash([string]$Status,[int]$Progress){
-    if(-not$script:Splash){return};$script:SplashTitle.Text='Preparando Coco Updater';$script:SplashDetail.Text=$Status;$script:SplashFill.Width=[Math]::Max(4,[int](5.7*$Progress))
+    if(-not$script:Splash){return};$script:SplashTitle.Text='Preparando Coco Updater';$script:SplashDetail.Text=$Status;$script:SplashFill.Width=[Math]::Max(4,[int]($script:SplashTrack.ClientSize.Width*$Progress/100))
     $script:Splash.Refresh();[Windows.Forms.Application]::DoEvents()
 }
-function Close-CocoSplash {if($script:Splash){$script:Splash.Close();$script:Splash.Dispose();$script:Splash=$null}}
+function Close-CocoSplash {if($script:Splash){$script:CocoAllowClose=$true;$script:Splash.Close();$script:Splash.Dispose();$script:Splash=$null}}
 
 Show-CocoSplash
+
+trap {
+    try{
+        $errorLogRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\logs';New-Item -ItemType Directory -Path $errorLogRoot -Force|Out-Null
+        Add-Content -LiteralPath (Join-Path $errorLogRoot 'bootstrap-errors.log') -Value ("{0:o} {1}" -f (Get-Date),($_|Out-String)) -Encoding UTF8
+    }catch{}
+    $friendly=$_.Exception.Message
+    if($_.Exception -is [Net.WebException] -or $friendly -match '(?i)conectar|connection|nombre remoto|timed out'){
+        $friendly='No pudimos conectar con GitHub tras 4 intentos. Revisa internet y vuelve a abrir este EXE.'
+    }elseif($friendly.Length-gt150){$friendly=$friendly.Substring(0,147)+'...'}
+    if(-not $script:Splash){Show-CocoSplash}
+    if($script:Splash){
+        $script:SplashTitle.Text='No se pudo iniciar Coco Updater'
+        $script:SplashDetail.Text=$friendly
+        $script:SplashFill.Width=12
+        $script:Splash.Refresh();[Windows.Forms.Application]::DoEvents();Start-Sleep -Seconds 8
+    }
+    exit 1
+}
 
 function Get-Sha256([string]$Path) {
     (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -64,13 +89,27 @@ function Get-Sha256([string]$Path) {
 
 function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$ExpectedHash) {
     $partial = "$Destination.partial"
-    Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
-    Invoke-WebRequest -Uri $Url -OutFile $partial -UseBasicParsing
-    if ((Get-Sha256 $partial) -ne $ExpectedHash.ToLowerInvariant()) {
+    for($attempt=1;$attempt -le 4;$attempt++){
         Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
-        throw "La descarga no coincide con el hash SHA-256 publicado."
+        try{
+            Invoke-WebRequest -Uri $Url -OutFile $partial -UseBasicParsing -TimeoutSec 30
+            if ((Get-Sha256 $partial) -ne $ExpectedHash.ToLowerInvariant()) { throw 'La descarga no coincide con el hash SHA-256 publicado.' }
+            Move-Item -LiteralPath $partial -Destination $Destination -Force
+            return
+        }catch{
+            Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
+            if($attempt -eq 4){throw}
+            Set-CocoSplash "Reintentando conexion ($($attempt + 1)/4)..." 5
+            Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))
+        }
     }
-    Move-Item -LiteralPath $partial -Destination $Destination -Force
+}
+
+function Download-TextFile([string]$Url,[string]$Destination){
+    for($attempt=1;$attempt -le 4;$attempt++){
+        try{Invoke-WebRequest -Uri $Url -OutFile "$Destination.new" -UseBasicParsing -TimeoutSec 30;Move-Item "$Destination.new" $Destination -Force;return}
+        catch{Remove-Item "$Destination.new" -Force -ErrorAction SilentlyContinue;if($attempt -eq 4){throw};Set-CocoSplash "Reintentando conexion ($($attempt + 1)/4)..." 5;Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))}
+    }
 }
 
 if ([string]::IsNullOrWhiteSpace($ChannelPath)) {
@@ -97,7 +136,7 @@ $manifestCache = Join-Path $cacheRoot 'latest.json'
 New-Item -ItemType Directory -Path $cacheRoot -Force | Out-Null
 
 Set-CocoSplash 'Comprobando la version mas reciente...' 5
-Invoke-WebRequest -Uri $channel.manifestUrl -OutFile $manifestCache -UseBasicParsing
+Download-TextFile $channel.manifestUrl $manifestCache
 $manifest = Get-Content -LiteralPath $manifestCache -Raw | ConvertFrom-Json
 
 if (-not $manifest.engine -or -not $manifest.engine.version -or -not $manifest.engine.url -or -not $manifest.engine.sha256) {
@@ -145,7 +184,10 @@ Wait-Process -Id $WaitPid -ErrorAction SilentlyContinue
 for($i=0;$i-lt20;$i++){try{Move-Item -LiteralPath $Source -Destination $Destination -Force;break}catch{Start-Sleep -Milliseconds 250}}
 '@
                 [IO.File]::WriteAllText($helper,$helperText,(New-Object Text.UTF8Encoding($true)))
-                Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$helper,'-WaitPid',$PID,'-Source',$newExe,'-Destination',$canonicalExe)
+                $quotedHelper='"'+($helper-replace'"','\"')+'"'
+                $quotedSource='"'+($newExe-replace'"','\"')+'"'
+                $quotedDestination='"'+($canonicalExe-replace'"','\"')+'"'
+                Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedHelper,'-WaitPid',$PID,'-Source',$quotedSource,'-Destination',$quotedDestination)
             }
         }
     }

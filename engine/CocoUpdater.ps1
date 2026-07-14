@@ -12,12 +12,29 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $script:CocoForm = $null
 $script:CocoCurrentProgress = 0
 $script:CocoVisualWorkStarted = $null
+$script:CocoLogDirectory = Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\logs'
+New-Item -ItemType Directory -Path $script:CocoLogDirectory -Force | Out-Null
+Get-ChildItem -LiteralPath $script:CocoLogDirectory -File -Filter '*.log' -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime -Descending | Select-Object -Skip 40 | Remove-Item -Force -ErrorAction SilentlyContinue
+$sessionDirectory=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\session'
+Get-ChildItem -LiteralPath $sessionDirectory -File -Filter '*.json' -ErrorAction SilentlyContinue |
+    Where-Object LastWriteTime -lt (Get-Date).AddDays(-7) | Remove-Item -Force -ErrorAction SilentlyContinue
+$downloadRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\downloads'
+Get-ChildItem -LiteralPath $downloadRoot -Directory -Filter 'stage-*' -ErrorAction SilentlyContinue |
+    Where-Object LastWriteTime -lt (Get-Date).AddDays(-1) | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+$script:CocoLogPath = Join-Path $script:CocoLogDirectory ("updater-{0}-{1}.log" -f (Get-Date -Format 'yyyyMMdd-HHmmss'),$PID)
+function Write-CocoLog([string]$Text) {
+    try { Add-Content -LiteralPath $script:CocoLogPath -Value ("{0:o} {1}" -f (Get-Date),$Text) -Encoding UTF8 } catch { }
+}
+Write-CocoLog "Inicio. EnginePid=$PID GameDir='$GameDir' MinecraftPid=$MinecraftPid Silent=$Silent"
 if($global:CocoSharedUi){
     $script:CocoForm=$global:CocoSharedUi.Form;$script:CocoTitle=$global:CocoSharedUi.Title
     $script:CocoDetail=$global:CocoSharedUi.Detail;$script:CocoProgress=$global:CocoSharedUi.Progress
+    $script:CocoTrack=$global:CocoSharedUi.Track
     $script:CocoVisualWorkStarted=$global:CocoSharedUi.Started
 }
 
@@ -35,7 +52,8 @@ function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]
         $uiProgress=$Progress
         if($global:CocoSharedUi){$uiProgress=[Math]::Min(100,[int]($global:CocoSharedUi.BaseProgress+(100-$global:CocoSharedUi.BaseProgress)*$Progress/100))}
         $script:CocoTitle.Text=$Message; $script:CocoDetail.Text=$Detail
-        $script:CocoProgress.Width=[Math]::Max(4,[int](5.7*$uiProgress))
+        $trackWidth=if($script:CocoTrack){$script:CocoTrack.ClientSize.Width}else{570}
+        $script:CocoProgress.Width=[Math]::Max(4,[int]($trackWidth*$uiProgress/100))
         $script:CocoForm.Refresh(); [Windows.Forms.Application]::DoEvents()
     }
 }
@@ -49,6 +67,7 @@ function Show-CocoWindow {
     $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1080,740)
     $f.StartPosition='CenterScreen'; $f.FormBorderStyle='None'; $f.MaximizeBox=$false; $f.ShowInTaskbar=$true
     $f.AutoScaleMode='None'; $f.TopMost=$true
+    $f.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
     $f.BackColor=$key; $f.TransparencyKey=$key; $f.ForeColor=[Drawing.Color]::White
     $iconPath=Join-Path $PSScriptRoot 'assets\reynaico.ico'
     if(Test-Path $iconPath){$f.Icon=New-Object Drawing.Icon($iconPath)}
@@ -73,11 +92,11 @@ function Show-CocoWindow {
     $art.SizeMode='Zoom'; $art.BackColor=[Drawing.Color]::Transparent
     if(Test-Path $artPath){$art.Image=[Drawing.Image]::FromFile($artPath)}
     $f.Controls.Add($panel); $f.Controls.Add($art); $art.BringToFront()
-    $dragStart=$null
-    $panel.Add_MouseDown({if($_.Button -eq [Windows.Forms.MouseButtons]::Left){$script:dragStart=$_.Location}})
-    $panel.Add_MouseMove({if($_.Button -eq [Windows.Forms.MouseButtons]::Left -and $script:dragStart){$f.Location=New-Object Drawing.Point(($f.Left+$_.X-$script:dragStart.X),($f.Top+$_.Y-$script:dragStart.Y))}})
+    $work=[Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+    $scale=[Math]::Min(1.0,[Math]::Min($work.Width/1080.0,$work.Height/740.0))
+    if($scale-lt1.0){$f.Scale((New-Object Drawing.SizeF($scale,$scale)))}
     $f.Show(); $f.BringToFront(); $f.Activate(); [Windows.Forms.Application]::DoEvents()
-    $script:CocoForm=$f; $script:CocoTitle=$t; $script:CocoDetail=$d; $script:CocoProgress=$p
+    $script:CocoForm=$f; $script:CocoTitle=$t; $script:CocoDetail=$d; $script:CocoProgress=$p; $script:CocoTrack=$track
 }
 
 function Write-Status([string]$Message) {
@@ -95,6 +114,7 @@ function Get-FileText([string]$Path, [int]$TailLines = 2500) {
 }
 
 function Test-GameDirectory([string]$Path) {
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $false }
     (Test-Path (Join-Path $Path 'mods')) -and (
         (Test-Path (Join-Path $Path 'versions')) -or
         (Test-Path (Join-Path $Path 'logs')) -or
@@ -102,14 +122,44 @@ function Test-GameDirectory([string]$Path) {
     )
 }
 
+function Repair-InterruptedInstall([string]$Root) {
+    if (-not $Root -or -not (Test-Path -LiteralPath $Root)) { return }
+    $mods = Join-Path $Root 'mods'
+    $transient = Join-Path $Root '.coco-mods-replacing'
+    if ((Test-Path -LiteralPath $transient) -and -not (Test-Path -LiteralPath $mods)) {
+        Move-Item -LiteralPath $transient -Destination $mods -Force
+    } elseif ((Test-Path -LiteralPath $transient) -and (Test-Path -LiteralPath $mods)) {
+        Remove-Item -LiteralPath $transient -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Get-PersistedTarget {
+    $path = Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\target.json'
+    if (-not (Test-Path -LiteralPath $path)) { return $null }
+    try {
+        $saved = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+        if ($saved.path) { return [string]$saved.path }
+    } catch { }
+    return $null
+}
+
 function Get-CandidateRoots {
     $roots = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $persisted=Get-PersistedTarget
+    if($persisted){
+        Repair-InterruptedInstall $persisted
+        if((Test-GameDirectory $persisted)-and(Test-Path (Join-Path $persisted 'config\coco-updater-state.json'))){
+            return @((Resolve-Path -LiteralPath $persisted).Path)
+        }
+    }
     $known = @(
+        $persisted,
         (Join-Path $env:APPDATA '.minecraft'),
         (Join-Path $env:LOCALAPPDATA '.minecraft'),
         (Join-Path $env:USERPROFILE '.minecraft')
     )
     foreach ($path in $known) {
+        Repair-InterruptedInstall $path
         if (Test-GameDirectory $path) { [void]$roots.Add((Resolve-Path -LiteralPath $path).Path) }
     }
 
@@ -124,8 +174,10 @@ function Get-CandidateRoots {
 
     foreach ($scope in $scopes) {
         try {
-            Get-ChildItem -LiteralPath $scope -Directory -Filter 'mods' -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
+            Get-ChildItem -LiteralPath $scope -Directory -Recurse -Depth 5 -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -eq 'mods' -or $_.Name -eq '.coco-mods-replacing' } | ForEach-Object {
                 $candidate = $_.Parent.FullName
+                Repair-InterruptedInstall $candidate
                 if (Test-GameDirectory $candidate) { [void]$roots.Add($candidate) }
             }
         } catch { }
@@ -231,32 +283,92 @@ function Get-Role([string]$Root, $Manifest) {
 
 function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$ExpectedHash, [int64]$CompletedBytes = 0, [int64]$AllBytes = 0) {
     $partial = "$Destination.partial"
-    Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
-    $request=[Net.HttpWebRequest]::Create($Url); $request.UserAgent='CocoMinecraftUpdater/0.2'
-    $response=$request.GetResponse(); $total=[int64]$response.ContentLength
-    $input=$response.GetResponseStream(); $output=[IO.File]::Create($partial)
-    $buffer=New-Object byte[] (256KB); $received=[int64]0; $watch=[Diagnostics.Stopwatch]::StartNew()
-    try {
-        while (($read=$input.Read($buffer,0,$buffer.Length)) -gt 0) {
-            $output.Write($buffer,0,$read); $received += $read
-            $percent=if($AllBytes -gt 0){5+[int](70*($CompletedBytes+$received)/$AllBytes)}elseif($total -gt 0){5+[int](70*$received/$total)}else{25}
-            $speed=if($watch.Elapsed.TotalSeconds -gt 0){$received/$watch.Elapsed.TotalSeconds}else{0}
-            $eta=if($speed -gt 0 -and $total -gt 0){[TimeSpan]::FromSeconds(($total-$received)/$speed)}else{[TimeSpan]::Zero}
-            $detail='{0:N1} / {1:N1} MB  |  {2:N1} MB/s  |  faltan ~{3:mm\:ss}' -f ($received/1MB),($total/1MB),($speed/1MB),$eta
-            Set-CocoState 'Descargando mods' $detail $percent
-        }
-    } finally { $output.Dispose(); $input.Dispose(); $response.Dispose() }
-    if ((Get-Sha256 $partial) -ne $ExpectedHash.ToLowerInvariant()) {
+    for ($attempt=1; $attempt -le 4; $attempt++) {
         Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
-        throw 'El paquete descargado no coincide con el SHA-256 del manifiesto.'
+        try {
+            $request=$null;$response=$null;$input=$null;$output=$null
+            $request=[Net.HttpWebRequest]::Create($Url); $request.UserAgent='CocoMinecraftUpdater/1.0'
+            $request.Timeout=30000; $request.ReadWriteTimeout=30000; $request.AutomaticDecompression=[Net.DecompressionMethods]::GZip -bor [Net.DecompressionMethods]::Deflate
+            $response=$request.GetResponse(); $total=[int64]$response.ContentLength
+            $input=$response.GetResponseStream(); $output=[IO.File]::Create($partial)
+            $buffer=New-Object byte[] (256KB); $received=[int64]0; $watch=[Diagnostics.Stopwatch]::StartNew()
+            try {
+                while (($read=$input.Read($buffer,0,$buffer.Length)) -gt 0) {
+                    $output.Write($buffer,0,$read); $received += $read
+                    $percent=if($AllBytes -gt 0){5+[int](70*($CompletedBytes+$received)/$AllBytes)}elseif($total -gt 0){5+[int](70*$received/$total)}else{25}
+                    $speed=if($watch.Elapsed.TotalSeconds -gt 0){$received/$watch.Elapsed.TotalSeconds}else{0}
+                    $eta=if($speed -gt 0 -and $total -gt 0){[TimeSpan]::FromSeconds(($total-$received)/$speed)}else{[TimeSpan]::Zero}
+                    $detail='{0:N1} / {1:N1} MB  |  {2:N1} MB/s  |  faltan ~{3:mm\:ss}' -f ($received/1MB),($total/1MB),($speed/1MB),$eta
+                    Set-CocoState 'Descargando mods' $detail $percent
+                }
+            } finally { if($output){$output.Dispose()}; if($input){$input.Dispose()}; if($response){$response.Dispose()} }
+            if ((Get-Sha256 $partial) -ne $ExpectedHash.ToLowerInvariant()) { throw 'La descarga no coincide con el SHA-256 publicado.' }
+            Move-Item -LiteralPath $partial -Destination $Destination -Force
+            return
+        } catch {
+            Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
+            if($attempt -eq 4){throw}
+            Write-CocoLog "Descarga fallida (intento $attempt): $($_.Exception.Message)"
+            Set-CocoState 'Reintentando descarga' "Intento $($attempt + 1) de 4..." ([Math]::Max(5,$script:CocoCurrentProgress))
+            Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))
+        }
     }
-    Move-Item -LiteralPath $partial -Destination $Destination -Force
+}
+
+function Ensure-BootstrapUpdate($Manifest) {
+    $canonical=$env:COCO_BOOTSTRAPPER_EXE
+    if(-not$canonical-or-not$Manifest.bootstrap-or-not$Manifest.bootstrap.url-or-not$Manifest.bootstrap.sha256){return}
+    try{
+        if((Test-Path $canonical)-and(Get-Sha256 $canonical)-eq$Manifest.bootstrap.sha256.ToLowerInvariant()){return}
+        $newExe=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\CocoUpdater.new.exe'
+        if(-not((Test-Path $newExe)-and(Get-Sha256 $newExe)-eq$Manifest.bootstrap.sha256.ToLowerInvariant())){
+            Download-VerifiedFile $Manifest.bootstrap.url $newExe $Manifest.bootstrap.sha256
+        }
+        $helper=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\Apply-CocoBootstrapUpdate-V2.ps1'
+        $helperText=@'
+param([int64]$WaitPid,[string]$Source,[string]$Destination,[string]$ExpectedHash,[string]$LogPath)
+Wait-Process -Id $WaitPid -ErrorAction SilentlyContinue
+for($i=0;$i-lt40;$i++){
+    try{
+        if((Test-Path $Destination)-and(Get-FileHash $Destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$ExpectedHash){Add-Content $LogPath "Bootstrap actualizado correctamente.";exit 0}
+        Move-Item -LiteralPath $Source -Destination $Destination -Force
+    }
+    catch{Start-Sleep -Milliseconds 250}
+}
+Add-Content $LogPath "No se pudo reemplazar el bootstrap después de 40 intentos."
+exit 1
+'@
+        [IO.File]::WriteAllText($helper,$helperText,(New-Object Text.UTF8Encoding($true)))
+        $quotedHelper='"'+($helper-replace'"','\"')+'"'
+        $quotedSource='"'+($newExe-replace'"','\"')+'"'
+        $quotedDestination='"'+($canonical-replace'"','\"')+'"'
+        $quotedLog='"'+($script:CocoLogPath-replace'"','\"')+'"'
+        Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedHelper,'-WaitPid',$PID,'-Source',$quotedSource,'-Destination',$quotedDestination,'-ExpectedHash',$Manifest.bootstrap.sha256,'-LogPath',$quotedLog)
+        Write-CocoLog 'Se programó la reparación/actualización diferida del bootstrap.'
+    }catch{Write-CocoLog "No se pudo programar la actualización del bootstrap: $($_.Exception.Message)"}
 }
 
 function Test-MinecraftRunning([string]$Root) {
     if ($MinecraftPid -gt 0) { return [bool](Get-Process -Id $MinecraftPid -ErrorAction SilentlyContinue) }
     $running = Get-RunningGameDirectories
     return [bool]($running | Where-Object { [string]::Equals($_.TrimEnd('\'), $Root.TrimEnd('\'), [System.StringComparison]::OrdinalIgnoreCase) })
+}
+
+function Request-ClientMinecraftClose([string]$Root) {
+    $requested=$false
+    try {
+        Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction Stop | ForEach-Object {
+            $line=$_.CommandLine
+            $runningGameDir=$null
+            if($line -match '(?i)--gameDir\s+"([^"]+)"'){$runningGameDir=$matches[1]}
+            elseif($line -match '(?i)--gameDir\s+([^\s]+)'){$runningGameDir=$matches[1]}
+            if($runningGameDir -and [string]::Equals($runningGameDir.TrimEnd('\'),$Root.TrimEnd('\'),[StringComparison]::OrdinalIgnoreCase)){
+                $process=Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue
+                if($process -and $process.MainWindowHandle -ne 0){$requested=$process.CloseMainWindow() -or $requested}
+            }
+        }
+    }catch{Write-CocoLog "No se pudo solicitar cierre normal: $($_.Exception.Message)"}
+    return $requested
 }
 
 function Wait-ForMinecraftExit([string]$Root) {
@@ -300,7 +412,8 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
     Set-CocoState 'Instalando Coco Pack' 'Ajustando exactamente la carpeta de mods...' 78
     $oldMods = Join-Path $Root 'mods'
     $transientMods = Join-Path $Root '.coco-mods-replacing'
-    Remove-Item -LiteralPath $transientMods -Recurse -Force -ErrorAction SilentlyContinue
+    Repair-InterruptedInstall $Root
+    if (Test-Path -LiteralPath $transientMods) { throw 'No se pudo limpiar una instalacion interrumpida anterior.' }
     if (Test-Path $oldMods) { Move-Item -LiteralPath $oldMods -Destination $transientMods -Force }
     try {
         Move-Item -LiteralPath (Join-Path $Stage 'mods') -Destination $oldMods -Force
@@ -330,7 +443,13 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
         installedAt = (Get-Date).ToString('o')
         target = $Root
     } | ConvertTo-Json | Set-Content -LiteralPath $markerPath -Encoding UTF8
+    $targetPath = Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\target.json'
+    New-Item -ItemType Directory -Path (Split-Path $targetPath -Parent) -Force | Out-Null
+    [pscustomobject]@{path=$Root;packId=$Manifest.packId;updatedAt=(Get-Date).ToString('o')} |
+        ConvertTo-Json | Set-Content -LiteralPath $targetPath -Encoding UTF8
     Remove-Item -LiteralPath $Stage -Recurse -Force -ErrorAction SilentlyContinue
+    Get-ChildItem -LiteralPath (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\downloads\jars') -File -ErrorAction SilentlyContinue |
+        Remove-Item -Force -ErrorAction SilentlyContinue
     $elapsed = if($script:CocoVisualWorkStarted){$script:CocoVisualWorkStarted.Elapsed.TotalSeconds}else{7}
     $remaining = [Math]::Max(0, 7 - $elapsed)
     $startProgress = [Math]::Min(99,[Math]::Max(85,$script:CocoCurrentProgress))
@@ -386,13 +505,23 @@ function Show-CocoPreview {
 try {
     $mutex = New-Object System.Threading.Mutex($false, 'Local\CocoMinecraftUpdater')
     if (-not $mutex.WaitOne(0)) { exit 0 }
+    $engineParent=Split-Path $PSScriptRoot -Parent
+    if((Split-Path $engineParent -Leaf)-eq'engine'){
+        Get-ChildItem -LiteralPath $engineParent -Directory -ErrorAction SilentlyContinue |
+            Where-Object FullName -ne $PSScriptRoot | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        $cacheRoot=Split-Path $engineParent -Parent
+        Get-ChildItem -LiteralPath $cacheRoot -File -Filter 'engine-*.zip' -ErrorAction SilentlyContinue |
+            Where-Object Name -ne "engine-$((Split-Path $PSScriptRoot -Leaf)).zip" | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
     if (-not (Test-Path -LiteralPath $ManifestPath)) { throw "No existe el manifiesto: $ManifestPath" }
     $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
     if (-not $manifest.packId -or -not $manifest.version -or -not $manifest.detector) { throw 'Manifiesto incompleto.' }
+    Ensure-BootstrapUpdate $manifest
     if($Preview){Show-CocoPreview;exit 0}
 
     if (-not $Silent) { Show-CocoWindow }
     Set-CocoState 'Buscando Minecraft' 'Identificando automaticamente la instalacion correcta...' 6
+    if($GameDir){Repair-InterruptedInstall $GameDir}
     $runningDirs = Get-RunningGameDirectories
     if ($GameDir -and (Test-GameDirectory $GameDir)) {
         $candidates = @(Get-CandidateScore (Resolve-Path -LiteralPath $GameDir).Path $manifest $runningDirs)
@@ -408,6 +537,8 @@ try {
 
     Write-Status "Destino elegido: $($selected.Root)"
     Write-Status "Evidencia: $($selected.Evidence -join '; ')"
+    Write-CocoLog "Destino='$($selected.Root)' Score=$($selected.Score) Role=$role Version=$($manifest.version)"
+    Write-CocoLog "Evidencia=$($selected.Evidence -join '; ')"
     if ($DetectOnly) {
         [pscustomobject]@{
             selected = $selected
@@ -423,7 +554,7 @@ try {
             Start-Sleep -Seconds 60
             if (-not (Test-MinecraftRunning $selected.Root)) { exit 0 }
             try {
-                Invoke-WebRequest -Uri $ManifestUrl -OutFile "$ManifestPath.new" -UseBasicParsing
+                Invoke-WebRequest -Uri $ManifestUrl -OutFile "$ManifestPath.new" -UseBasicParsing -TimeoutSec 30
                 $newManifest=Get-Content -LiteralPath "$ManifestPath.new" -Raw | ConvertFrom-Json
                 if ($newManifest.packId -eq $manifest.packId -and $newManifest.version -ne $manifest.version) {
                     Move-Item -LiteralPath "$ManifestPath.new" -Destination $ManifestPath -Force
@@ -441,19 +572,28 @@ try {
     if ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client' -and $MinecraftPid -gt 0) {
         Set-CocoState 'Actualizacion encontrada' 'Cerrando Minecraft de forma segura...' 2 $true 'closeMinecraft'
     } elseif ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client') {
-        Set-CocoState 'Primera instalación' 'Cierra Minecraft una vez para poder instalar Session Bridge' 2
+        Set-CocoState 'Primera instalacion' 'Cerrando Minecraft de forma segura...' 2
+        if(-not(Request-ClientMinecraftClose $selected.Root)){
+            Set-CocoState 'Primera instalacion' 'Cierra Minecraft una vez para instalar Session Bridge' 2
+        }
     } elseif (Test-MinecraftRunning $selected.Root) {
         Set-CocoState 'Actualizacion encontrada' 'Eres el host: cierra Minecraft cuando termine la sesion LAN' 2
     }
     Wait-ForMinecraftExit $selected.Root
     $stage = Stage-Package $package $manifest $selected.Root
     Install-StagedPackage $selected.Root $stage $package $manifest
+    Write-CocoLog 'Actualizacion completada correctamente.'
     Write-Status 'Actualizacion terminada.'
     exit 0
 } catch {
+    Write-CocoLog ("ERROR: " + ($_ | Out-String))
     if (-not $script:CocoForm) { Show-CocoWindow }
-    Set-CocoState 'No se pudo actualizar' $_.Exception.Message 0
-    Write-Error $_
+    $friendly=$_.Exception.Message
+    if($friendly -match '(?i)access.*denied|acceso.*denegado|unauthorized'){$friendly='Windows bloqueó el acceso a la carpeta de Minecraft. Revisa permisos o el antivirus.'}
+    elseif($friendly -match '(?i)conectar|connection|nombre remoto|timed out'){$friendly='No pudimos completar la descarga. Revisa internet y vuelve a intentarlo.'}
+    elseif($friendly.Length-gt150){$friendly=$friendly.Substring(0,147)+'...'}
+    Set-CocoState 'No se pudo actualizar' $friendly 0
+    Start-Sleep -Seconds 10
     exit 1
 } finally {
     if ($mutex) { $mutex.ReleaseMutex() | Out-Null; $mutex.Dispose() }

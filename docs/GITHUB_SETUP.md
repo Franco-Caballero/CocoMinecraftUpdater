@@ -1,42 +1,13 @@
-# Conectar el proyecto a GitHub
+# GitHub
 
-## 1. Crear el repositorio
+Repositorio: `Franco-Caballero/CocoMinecraftUpdater`.
 
-En GitHub, crea un repositorio público vacío, por ejemplo `coco-minecraft-updater`. No añadas README ni `.gitignore` desde GitHub.
-
-## 2. Publicar este proyecto
-
-Desde la carpeta del proyecto:
-
-```powershell
-git init
-git add .
-git commit -m "Initial Coco updater"
-git branch -M main
-git remote add origin https://github.com/TU_USUARIO/coco-minecraft-updater.git
-git push -u origin main
-```
-
-## 3. Configurar el canal de actualización
-
-Edita `CocoUpdater.channel.json` y reemplaza:
+El canal estable está integrado dentro del EXE y apunta a:
 
 ```text
-REEMPLAZAR_USUARIO
-REEMPLAZAR_REPOSITORIO
+https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/latest/download/latest.json
 ```
 
-por tu usuario y repositorio. Ese mismo archivo se distribuye junto a `CocoUpdater.exe`.
+El Publisher obtiene la credencial mediante Git Credential Manager, crea primero un release borrador y lo publica sólo al terminar todas las verificaciones. Los assets de mods usan nombres basados en SHA-256; el cliente reutiliza JARs correctos y descarga sólo los que cambian.
 
-## 4. Obtener el primer ejecutable
-
-En GitHub abre `Actions` → `Build bootstrapper` → ejecuta el flujo o espera al primer push. Descarga el artefacto `coco-updater-bootstrapper`.
-
-Ese artefacto contiene:
-
-```text
-CocoUpdater.exe
-CocoUpdater.channel.json
-```
-
-Los amigos conservan esos dos archivos. Las actualizaciones futuras descargan automáticamente un motor nuevo y los paquetes de mods descritos por `latest.json`.
+La acción de GitHub es una compilación de respaldo. La publicación oficial se realiza con `dist\CocoPublisher.exe` desde el host porque también valida y actualiza la instalación local antes de exponer el release.

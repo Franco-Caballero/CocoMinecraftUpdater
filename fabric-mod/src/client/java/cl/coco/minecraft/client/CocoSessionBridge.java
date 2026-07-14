@@ -24,6 +24,11 @@ public final class CocoSessionBridge implements ClientModInitializer {
         var client = Minecraft.getInstance();
         long pid = ProcessHandle.current().pid();
         stateFile = Path.of(System.getenv("LOCALAPPDATA"), "CocoMinecraftUpdater", "session", pid + ".json");
+        try {
+            Files.deleteIfExists(stateFile);
+        } catch (IOException ignored) {
+            // A stale file must never close a new session if Windows reuses a PID.
+        }
         launchUpdater(client.gameDirectory.toPath(), pid);
 
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
