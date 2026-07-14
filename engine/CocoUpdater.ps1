@@ -48,7 +48,7 @@ function Show-CocoWindow {
     $key=[Drawing.Color]::FromArgb(1,2,3)
     $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1080,740)
     $f.StartPosition='CenterScreen'; $f.FormBorderStyle='None'; $f.MaximizeBox=$false; $f.ShowInTaskbar=$true
-    $f.AutoScaleMode='None'
+    $f.AutoScaleMode='None'; $f.TopMost=$true
     $f.BackColor=$key; $f.TransparencyKey=$key; $f.ForeColor=[Drawing.Color]::White
     $iconPath=Join-Path $PSScriptRoot 'assets\reynaico.ico'
     if(Test-Path $iconPath){$f.Icon=New-Object Drawing.Icon($iconPath)}
@@ -76,7 +76,7 @@ function Show-CocoWindow {
     $dragStart=$null
     $panel.Add_MouseDown({if($_.Button -eq [Windows.Forms.MouseButtons]::Left){$script:dragStart=$_.Location}})
     $panel.Add_MouseMove({if($_.Button -eq [Windows.Forms.MouseButtons]::Left -and $script:dragStart){$f.Location=New-Object Drawing.Point(($f.Left+$_.X-$script:dragStart.X),($f.Top+$_.Y-$script:dragStart.Y))}})
-    $f.Show(); [Windows.Forms.Application]::DoEvents()
+    $f.Show(); $f.BringToFront(); $f.Activate(); [Windows.Forms.Application]::DoEvents()
     $script:CocoForm=$f; $script:CocoTitle=$t; $script:CocoDetail=$d; $script:CocoProgress=$p
 }
 

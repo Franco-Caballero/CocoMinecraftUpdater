@@ -19,7 +19,8 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     $key=[Drawing.Color]::FromArgb(1,2,3)
     $form=New-Object Windows.Forms.Form;$form.Text='Coco Minecraft Updater';$form.Size=New-Object Drawing.Size(1080,740)
     $form.StartPosition='CenterScreen';$form.FormBorderStyle='None';$form.BackColor=$key;$form.TransparencyKey=$key
-    $form.AutoScaleMode='None';$form.ForeColor=[Drawing.Color]::White
+    $form.AutoScaleMode='None';$form.ForeColor=[Drawing.Color]::White;$form.TopMost=$true
+    try{$embeddedIcon=[Drawing.Icon]::ExtractAssociatedIcon([Diagnostics.Process]::GetCurrentProcess().MainModule.FileName);if($embeddedIcon){$form.Icon=$embeddedIcon}}catch{}
     $panel=New-Object Windows.Forms.Panel;$panel.Location=New-Object Drawing.Point(25,190);$panel.Size=New-Object Drawing.Size(780,350)
     $panel.BackColor=[Drawing.Color]::FromArgb(22,13,37)
     $accent=New-Object Windows.Forms.Panel;$accent.Location=New-Object Drawing.Point(0,0);$accent.Size=New-Object Drawing.Size(9,350)
@@ -44,7 +45,7 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
             $art.Image=[Drawing.Image]::FromStream($memory);$script:EmbeddedImageStream=$memory
         }elseif(Test-Path (Join-Path $PSScriptRoot '..\fullbody.png')){$art.Image=[Drawing.Image]::FromFile((Join-Path $PSScriptRoot '..\fullbody.png'))}
     }catch{}
-    $form.Controls.Add($panel);$form.Controls.Add($art);$art.BringToFront();$form.Show();[Windows.Forms.Application]::DoEvents()
+    $form.Controls.Add($panel);$form.Controls.Add($art);$art.BringToFront();$form.Show();$form.BringToFront();$form.Activate();[Windows.Forms.Application]::DoEvents()
     $script:Splash=$form;$script:SplashDetail=$detail;$script:SplashFill=$fill
     $script:SplashTitle=$title
     $global:CocoSharedUi=@{Form=$form;Title=$title;Detail=$detail;Progress=$fill;Started=[Diagnostics.Stopwatch]::StartNew();BaseProgress=12}
