@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientLoginConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import cl.coco.minecraft.CocoProtocol;
@@ -33,8 +34,12 @@ public final class CocoSessionBridge implements ClientModInitializer {
                 mc.stop();
             }
         });
+        // INIT happens before registry synchronization. A client missing a newly
+        // added content mod is rejected during that synchronization and never
+        // reaches the play JOIN event.
+        ClientLoginConnectionEvents.INIT.register((listener, mc) ->
+            launchUpdater(mc.gameDirectory.toPath(), pid));
         ClientPlayConnectionEvents.JOIN.register((listener, sender, mc) -> {
-            launchUpdater(mc.gameDirectory.toPath(), pid);
             ClientPlayNetworking.send(new CocoProtocol.Hello(CocoProtocol.PACK_ID, CocoProtocol.PACK_VERSION));
         });
     }

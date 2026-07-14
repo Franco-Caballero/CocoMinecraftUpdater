@@ -11,6 +11,8 @@ Sincroniza por JAR el pack Fabric 26.1.2 del mundo Coco. Cada amigo recibe una s
 
 No modifica mundos, cuentas, screenshots ni `options.txt`. Reemplaza exactamente los JARs de `mods` y no conserva respaldos permanentes.
 
+Session Bridge checks during login, before registry synchronization. This lets it start the updater even when a client is missing a content mod and cannot finish joining.
+
 ## Host y clientes
 
 Sólo `config/coco-host.json`, guardado localmente en la instalación del anfitrión, selecciona el paquete host. Ese archivo nunca se distribuye. El cliente no recibe e4mc ni MCWiFiPnP; ambos roles reciben el mismo Session Bridge/Pack Gate.

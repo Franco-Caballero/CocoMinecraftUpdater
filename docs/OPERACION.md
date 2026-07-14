@@ -8,6 +8,8 @@ Para eliminar ambigüedad en la primera ejecución, el amigo debe abrir primero 
 
 ## Publicar una actualización
 
+Session Bridge starts its check during login, before registry synchronization. Thus a missing content mod cannot prevent the updater from starting.
+
 1. Cierra Minecraft y confirma que la sesión LAN terminó.
 2. Deja en `%APPDATA%\.minecraft\mods` los JARs que debe usar el pack.
 3. Ejecuta `dist\CocoPublisher.exe`.
