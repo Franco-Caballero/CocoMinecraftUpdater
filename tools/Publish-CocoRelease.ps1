@@ -3,13 +3,15 @@ param(
     [Parameter(Mandatory=$true)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
     [string]$MinecraftRoot="$env:APPDATA\.minecraft",
     [string]$Repository='Franco-Caballero/CocoMinecraftUpdater',
-    [string[]]$KnownE4mcDomains=@(),
+    [string]$KnownE4mcDomainsCsv='',
     [int64]$PublisherPid=0
 )
 $ErrorActionPreference='Stop'
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
 $root=Split-Path $PSScriptRoot -Parent
 Set-Location $root
+$KnownE4mcDomains=@($KnownE4mcDomainsCsv-split','|Where-Object{$_})
+Write-Output "Contexto: Repository=$Repository MinecraftRoot=$MinecraftRoot Domains=$($KnownE4mcDomains.Count)"
 
 function Replace-Text([string]$Path,[string]$Pattern,[string]$Replacement){
     $full=Join-Path $root $Path;$text=[IO.File]::ReadAllText($full)

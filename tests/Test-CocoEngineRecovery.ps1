@@ -26,13 +26,13 @@ try{
     $manifest|ConvertTo-Json -Depth 8|Set-Content $manifestPath -Encoding UTF8
 
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $engine -ManifestPath $manifestPath -GameDir $game -Silent
-    if($LASTEXITCODE -ne 0){throw "Engine terminó con código $LASTEXITCODE"}
+    if($LASTEXITCODE -ne 0){throw "Engine termino con codigo $LASTEXITCODE"}
     if(Test-Path $transient){throw 'La carpeta transitoria no fue eliminada.'}
     $installed=@(Get-ChildItem (Join-Path $game 'mods') -File -Filter '*.jar')
-    if($installed.Count -ne 1 -or $installed[0].Name -ne 'bridge.jar'){throw 'La sustitución exacta de mods falló.'}
+    if($installed.Count -ne 1 -or $installed[0].Name -ne 'bridge.jar'){throw 'La sustitucion exacta de mods fallo.'}
     $state=Get-Content (Join-Path $game 'config\coco-updater-state.json') -Raw|ConvertFrom-Json
     if($state.version-ne'9.9.9'-or$state.role-ne'client'){throw 'El marcador final es incorrecto.'}
-    'PASS: recuperación transaccional, reemplazo exacto y marcador final.'
+    'PASS: recuperacion transaccional, reemplazo exacto y marcador final.'
 }finally{
     Remove-Item $testRoot -Recurse -Force -ErrorAction SilentlyContinue
     if($savedTarget){[IO.File]::WriteAllBytes($targetPath,$savedTarget)}else{Remove-Item $targetPath -Force -ErrorAction SilentlyContinue}

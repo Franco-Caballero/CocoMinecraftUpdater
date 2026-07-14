@@ -51,7 +51,7 @@ try{
     $quotedPublishScript='"'+($publishScript-replace'"','\"')+'"'
     $quotedHostRoot='"'+($hostRoot-replace'"','\"')+'"'
     $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedPublishScript,'-Version',$next,'-MinecraftRoot',$quotedHostRoot,'-PublisherPid',$PID)
-    if($domains.Count){$arguments+='-KnownE4mcDomains';$arguments+=@($domains)}
+    if($domains.Count){$arguments+='-KnownE4mcDomainsCsv';$arguments+=('"'+((@($domains)-join',')-replace'"','\"')+'"')}
     $process=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $arguments -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
     $watch=[Diagnostics.Stopwatch]::StartNew()
     while(-not$process.HasExited){
