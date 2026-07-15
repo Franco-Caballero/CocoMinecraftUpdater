@@ -196,11 +196,11 @@ Cuando se cambie comportamiento, actualizar código, pruebas y documentación en
 
 ### Estado verificado
 
-- Release público estable: **0.5.22**.
-- Host instalado: pack 0.5.22, rol `host`.
-- Bridge activo: `coco-session-bridge-0.5.22.jar`.
-- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, versión 0.5.22.0.
-- Manifiesto 0.5.22: 68 mods de cliente y 70 de host. El aumento incluye `pingview`, los mods YUNG's confirmados por el usuario y el Bridge nuevo.
+- Release público estable: **0.5.23**.
+- Host instalado: pack 0.5.23, rol `host`.
+- Bridge activo: `coco-session-bridge-0.5.23.jar`.
+- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, versión 0.5.23.0.
+- Manifiesto 0.5.23: 68 mods de cliente y 70 de host. Incluye `pingview` y los mods YUNG's confirmados por el usuario.
 - El host se identifica exclusivamente mediante `config\coco-host.json`, que no se distribuye.
 - Cliente excluye e4mc y MCWiFiPnP; host los incluye. Ambos roles reciben Bridge/Gate.
 - El pack reemplaza exactamente la carpeta `mods`: agrega faltantes, reemplaza hashes distintos y elimina extras. No conserva respaldos permanentes.
@@ -224,7 +224,7 @@ Actualizaciones posteriores:
 
 Un cliente todavía en Bridge 0.5.17 puede abrir el updater al iniciar; debe completar una última actualización con el comportamiento antiguo.
 
-### Cambios publicados en 0.5.22
+### Cambios publicados en 0.5.22 y 0.5.23
 
 `engine\CocoUpdater.ps1` y Session Bridge publicaron estos cambios en 0.5.22:
 
@@ -237,7 +237,9 @@ Un cliente todavía en Bridge 0.5.17 puede abrir el updater al iniciar; debe com
 - Autorizar automáticamente nodos en el controlador local del host, sin secretos de Central.
 - Crear/reparar la entrada `Coco Minecraft` en la lista de servidores.
 - Incluir pruebas de red estáticas, de estado vivo y end-to-end mediante el propio engine.
-- La revisión posterior añade heartbeat del autorizador, reintento de MSI/NLA, limpieza de reglas host en clientes, diagnóstico DIRECT/RELAY y reparación `-NetworkOnly` al arrancar. Publicar estos cambios en una versión posterior a 0.5.22 antes del ensayo con un amigo.
+- 0.5.23 añade heartbeat del autorizador, reintento de MSI/NLA, limpieza de reglas host en clientes, diagnóstico DIRECT/RELAY y reparación `-NetworkOnly` al arrancar.
+- 0.5.23 republica la configuración del controlador inmediatamente después de aceptar nodos nuevos, evitando la carrera inicial en la que un cliente podía conservar `ACCESS_DENIED` aun después de ser autorizado.
+- La secuencia del host instala o repara servicio/adaptador antes de usar el controlador, fija primero su IP `10.77.37.1` y luego inicia el autorizador.
 
 Pasaron las pruebas de sintaxis, recuperación transaccional, autorización sintética y ejecución end-to-end de red. El host quedó actualizado antes de exponer el release.
 
@@ -269,7 +271,7 @@ Los amigos que ya instalaron correctamente no necesitan recibir otro EXE: bootst
 - Un error de bootstrap indicaba que no podía cargar el engine. Se añadieron diagnósticos en `%LOCALAPPDATA%\CocoMinecraftUpdater\logs` y recuperación de extracción.
 - El updater mostraba ventanas separadas y errores de fuente/recorte. Se unificó la interfaz morada; el trabajo visual mínimo total es 7 segundos, no 7 segundos adicionales después del trabajo real.
 - Publisher mostró “No se pudo publicar” incluso junto a una URL publicada por advertencias/salida de Git. Se corrigió la detección de éxito.
-- El Publisher ejecutó una prueba visual en el host. El engine pendiente hace que `-Silent` sea realmente silencioso.
+- El Publisher ejecutó antiguamente una prueba visual en el host. Desde 0.5.22 `-Silent` es realmente silencioso.
 - Cambiar nombre offline causó pérdida aparente de inventario; se resolvió con una regla UUID Fixer para `nadicon`.
 - El error DH `Message can't be created if no world is loaded` apareció durante cierre; no tratarlo automáticamente como causa del lag en juego.
 
@@ -306,7 +308,7 @@ Los amigos que ya instalaron correctamente no necesitan recibir otro EXE: bootst
 
 ## Automatizacion ZeroTier preparada el 14-07-2026
 
-- La implementacion esta publicada en 0.5.22 y pendiente solo de probar con un amigo. El primer cliente debe instalar todo exclusivamente mediante CocoUpdater.
+- La implementacion y su segunda pasada correctiva estan publicadas en 0.5.23; sigue pendiente la primera instalacion en un Windows real de un amigo, exclusivamente mediante CocoUpdater.
 - ZeroTier One 1.16.2 esta instalado en el host; servicio automatico, nodo `58997fc5f3`.
 - Se abandono la red de Central `154a350c866b8062` en el host. La red activa es autocontrolada y privada: `Coco Minecraft`, Network ID `58997fc5f3c0c001`, subred `10.77.37.0/24`, host `10.77.37.1/24`.
 - El controlador local evita limites de dispositivos y elimina la necesidad de un token de Central. El autorizador acepta automaticamente los Node ID pendientes mientras Minecraft del host esta abierto.
@@ -316,3 +318,4 @@ Los amigos que ya instalaron correctamente no necesitan recibir otro EXE: bootst
 - Seguridad deliberada: conocer el Network ID basta para ser autorizado durante la ventana activa. La exposicion queda limitada por Firewall a Minecraft; sigue siendo necesario activar/verificar whitelist por la suplantacion de nombres offline.
 - e4mc no fue retirado. Durante la prueba A/B detener su tunel para no mezclar rutas y conservarlo como respaldo.
 - Falta medir con uno o dos amigos ping, perdida, reconexiones y si cada peer aparece `DIRECT` o `RELAY`. No afirmar mejora de latencia antes de esa medicion.
+- Prueba aislada previa a 0.5.23: un segundo nodo ZeroTier 1.16.2 con identidad nueva se unio desde WSL, fue autorizado sin intervencion y recibio automaticamente `10.77.37.11/24` en 10,9 s. Hubo 0 % de perdida, TCP 25565 respondio y el peer fue `DIRECT`. Esta prueba valida controlador, autorizador, asignacion IP, Firewall y transporte; su latencia local no representa la de Chile/Argentina ni sustituye la prueba del MSI/UAC en otro Windows.
