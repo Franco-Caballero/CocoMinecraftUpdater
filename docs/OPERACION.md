@@ -1,59 +1,108 @@
 # Operación
 
-## Lo único que reciben los amigos
+## Roles y ubicaciones
 
-Comparte el `CocoUpdater.exe` publicado en el release más reciente. No necesitan JSON, ZIP ni acceso a GitHub. El primer EXE instala una copia canónica en `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`; Session Bridge siempre llama a esa copia y el bootstrapper la puede reemplazar por versiones nuevas.
+- Host: instalación que contiene `config\coco-host.json`; recibe los componentes exclusivos de servidor LAN.
+- Cliente: instalación sin ese marcador; recibe el conjunto exacto de mods publicado para conexión.
+- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`.
+- Estado: `%APPDATA%\.minecraft\config\coco-updater-state.json`.
+- Destino detectado: `%LOCALAPPDATA%\CocoMinecraftUpdater\target.json`.
 
-Para eliminar ambigüedad en la primera ejecución, el amigo debe abrir primero la instancia Fabric 26.1.2 correcta y luego ejecutar el EXE. El proceso abierto aporta el `--gameDir` exacto. Si Minecraft no está abierto, se elige siempre el candidato con mayor puntuación por versión Fabric, mods, logs, actividad y marcadores previos.
+`config\coco-host.json` nunca se distribuye.
+
+## Primera instalación
+
+1. Mantener Minecraft del host abierto para que el autorizador ZeroTier esté disponible.
+2. En el equipo cliente, abrir la instancia Fabric 26.1.2 correcta hasta el menú.
+3. Ejecutar el `CocoUpdater.exe` del release estable.
+4. Aceptar SmartScreen/UAC si Windows lo solicita.
+5. El updater detecta `--gameDir`, instala o repara ZeroTier, espera autorización, sincroniza mods e instala Bridge/Gate.
+6. Reabrir Minecraft y usar la entrada `Coco Minecraft`.
+
+No instalar ZeroTier manualmente ni usar “Ejecutar como administrador” como procedimiento normal. Una instalación sana se reconoce por servicio, registro, adaptador e IP administrada y no vuelve a elevarse.
+
+## Sesión normal
+
+Host:
+
+1. Abrir Minecraft.
+2. Entrar al mundo y seleccionar **Start LAN**.
+3. Confirmar el puerto 25565.
+4. Ejecutar `/e4mc stop` para mantener únicamente la ruta ZeroTier.
+5. Cerrar Minecraft normalmente al terminar.
+
+Cliente:
+
+1. Abrir Minecraft.
+2. Seleccionar `Coco Minecraft` en Multijugador.
+3. Si Gate detecta una versión anterior, dejar que el updater cierre el cliente, actualice y solicite reabrir.
+
+Bridge ejecuta `-NetworkOnly` al arrancar y un chequeo completo al iniciar login. Una instalación actualizada no muestra UI ni mantiene un monitor periódico.
 
 ## Publicar una actualización
 
-Session Bridge starts its check during login, before registry synchronization. Thus a missing content mod cannot prevent the updater from starting.
+1. Cerrar Minecraft y confirmar que la LAN terminó.
+2. Dejar en `%APPDATA%\.minecraft\mods` el conjunto deseado.
+3. Ejecutar `dist\CocoPublisher.exe`.
+4. No abrir Minecraft hasta recibir confirmación de éxito.
+5. Verificar release público, `release\latest.json`, estado host y Git sincronizado.
 
-1. Cierra Minecraft y confirma que la sesión LAN terminó.
-2. Deja en `%APPDATA%\.minecraft\mods` los JARs que debe usar el pack.
-3. Ejecuta `dist\CocoPublisher.exe`.
-4. Espera el mensaje de éxito. No abras Minecraft mientras publica.
+El Publisher:
 
-El Publisher incrementa automáticamente el último número de versión. Excluye `fly-speed-modifier` mientras siga mal empaquetado, deduplica archivos idénticos, rechaza IDs Fabric repetidos con contenido diferente y separa automáticamente host/cliente. El release permanece como borrador hasta que:
+- incrementa el componente final de versión;
+- separa roles host/cliente;
+- deduplica contenido e IDs Fabric;
+- conserva en el host JAR adicionales con IDs nuevos;
+- bloquea la desaparición accidental de IDs publicados salvo autorización explícita;
+- verifica tamaños, SHA-256 y assets;
+- prueba recuperación transaccional;
+- mantiene el release como borrador hasta actualizar correctamente el host.
 
-- Bridge, Gate, engine, bootstrapper y Publisher compilan;
-- manifiesto, tamaños y SHA-256 pasan la validación;
-- la prueba de recuperación transaccional pasa;
-- todos los assets aparecen en GitHub con el tamaño correcto;
-- la instalación host queda actualizada.
+No usar `-AllowModRemoval` sin una decisión explícita sobre los IDs retirados.
 
-Después se publica y los clientes lo detectan en el próximo intento de conexión a un servidor. Session Bridge no mantiene un monitor periódico. Nunca publiques durante una sesión: el Publisher lo bloquea para evitar que clientes nuevos intenten entrar a un Gate antiguo.
+## ZeroTier
 
-## Recuperación y soporte
+- Red: `Coco Minecraft` (`58997fc5f3c0c001`).
+- Subred: `10.77.37.0/24`.
+- Endpoint: `10.77.37.1:25565`.
+- Controlador local asociado al nodo `58997fc5f3`.
+- El host autoriza nodos pendientes mientras Minecraft está abierto.
+- El firewall permite únicamente TCP 25565 desde la subred ZeroTier por la interfaz virtual.
+- Los clientes usan perfil Public; el host usa Private.
 
-Si Windows se apaga durante el reemplazo de `mods`, el próximo inicio restaura automáticamente `.coco-mods-replacing` antes de continuar. Las descargas se verifican por SHA-256 y se reintentan cuatro veces.
+El helper elevado valida el MSI oficial y espera estado `OK` e IP. Las comprobaciones posteriores no necesitan leer la CLI administrativa. `-NetworkOnly` reutiliza engine/manifiesto verificados en caché para iniciar rápidamente desde Bridge.
 
-Para diagnosticar un PC, pide la carpeta `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`. El updater conserva los 40 registros más recientes. Session Bridge escribe `bridge-<PID>.log` con el entrypoint, cada proceso iniciado y cualquier error de lanzamiento.
+No borrar `C:\ProgramData\ZeroTier\One\identity.secret`: la identidad del controlador determina el Network ID.
 
-## LAN virtual ZeroTier
+### Respaldo e4mc
 
-La integración y sus correcciones de arranque/primera unión están publicadas. El primer ensayo del cliente se hace exclusivamente ejecutando CocoUpdater; no se instala ZeroTier a mano. El engine incorpora `CocoNetwork.ps1` desde memoria, por lo que funciona con `ExecutionPolicy Restricted` sin cambiar la política del computador.
+e4mc permanece instalado solo en el host. En operación ZeroTier se detiene con `/e4mc stop` después de abrir la LAN. Como contingencia, mantenerlo activo y usar el dominio temporal mostrado por Minecraft.
 
-- Red privada autocontrolada: `Coco Minecraft` (`58997fc5f3c0c001`).
-- Subred: `10.77.37.0/24`; endpoint fijo del host: `10.77.37.1:25565`.
-- CocoUpdater descarga el MSI versionado desde `download.zerotier.com`, exige el SHA-256 fijado y una firma Authenticode válida de `ZEROTIER, INC.`.
-- La instalación del driver/servicio, unión, perfil de red y Firewall usan una sola elevación UAC cuando es necesaria. El ayudante administrativo oculto espera `OK` e IP y los devuelve al engine; no se debe pedir “Ejecutar como administrador” manualmente. Una PC ya correcta se reconoce por servicio/registro y por el adaptador/IP ZeroTier, sin leer la CLI administrativa, reinstalar ni elevarse otra vez.
-- El host usa el controlador local de ZeroTier; no existe token de Central en el EXE, manifiesto, JAR ni repositorio. Session Bridge inicia el autorizador del host al arrancar Minecraft y lo detiene cuando Minecraft termina.
-- Al autorizar un equipo nuevo, el host republica la configuración de red para que una respuesta inicial `ACCESS_DENIED` no quede cacheada hasta el siguiente reintento lento.
-- Session Bridge ejecuta `-NetworkOnly` desde el entrypoint principal al arrancar en host y clientes. Ese chequeo silencioso reutiliza el manifiesto/engine verificado en caché y no depende de una descarga antes de preparar la red. Los callbacks cliente verifican el `gameDir`, comprueban el estado final y reintentan cada diez segundos únicamente si el proceso terminó sin dejar la red lista. Esto puede reparar servicio, unión, perfil o configuración antes de que un fallo de TCP impida siquiera iniciar el login; no cambia mods ni cierra Minecraft.
-- Los clientes quedan con perfil de Windows `Public`. El host queda `Private` y sólo admite entrada TCP 25565 desde `10.77.37.0/24` por la interfaz ZeroTier.
-- Session Bridge crea o repara la entrada `Coco Minecraft` en `servers.dat`. MCWiFiPnP fija 25565 y mantiene UPnP desactivado.
-- e4mc permanece instalado como respaldo; durante una prueba A/B, detener su túnel y usar exclusivamente `Coco Minecraft`.
+## Seguridad
 
-La autorización automática acepta cualquier Node ID que conozca el Network ID mientras el autorizador del host está activo. Es la decisión deliberada de menor fricción; la contención depende del Firewall limitado a Minecraft y de la whitelist del mundo. No confundir autorización del dispositivo con identidad de jugador offline. Registrar ping, pérdida, reconexiones y `zerotier-cli peers` para distinguir `DIRECT` de `RELAY`.
+- No publicar tokens ZeroTier, credenciales GitHub ni secretos del controlador.
+- La autorización automática está limitada a la ventana en que Minecraft del host está activo.
+- Conocer el Network ID permite solicitar incorporación; firewall y whitelist siguen siendo controles independientes.
+- `online-mode=false` permite perfiles offline y, por tanto, suplantación de nombres si no existe whitelist.
+- SmartScreen puede advertir porque el EXE aún no posee una firma de código con reputación.
 
-Si el host no está ejecutando Minecraft, el cliente puede terminar unido pero pendiente de autorización; CocoUpdater espera 120 segundos y explica que debe reintentarse con el host abierto. UAC y una posible advertencia de SmartScreen no pueden omitirse legítimamente.
+## Recuperación y diagnóstico
 
-Antes de 0.5.23 se validó el protocolo completo con una segunda identidad ZeroTier aislada: autorización automática, IP gestionada, ping sin pérdida y TCP 25565. Esa prueba no reemplaza el ensayo del instalador MSI/UAC en el Windows de un amigo ni sirve para estimar su latencia geográfica.
+Si Windows se interrumpe durante el reemplazo de `mods`, el siguiente inicio restaura la transacción pendiente antes de continuar. Las descargas se verifican por SHA-256 y se reintentan.
 
-La identidad del controlador vive en `C:\ProgramData\ZeroTier\One\identity.secret`. No borrarla ni reemplazarla: el Network ID está ligado al Node ID `58997fc5f3`. El updater detecta una identidad distinta y se detiene con un error explícito para evitar crear una red incoherente.
+Logs:
 
-## Riesgo de Windows
+- Updater: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`.
+- Bridge: `bridge-<PID>.log` dentro de la misma carpeta.
+- Minecraft: `%APPDATA%\.minecraft\logs\latest.log`.
+- Crash reports: `%APPDATA%\.minecraft\crash-reports`.
 
-`CocoUpdater.exe` no está firmado con un certificado de firma de código confiable. SmartScreen o un antivirus pueden advertir o bloquear la primera ejecución. La solución definitiva es firmar cada EXE con un certificado que genere reputación; cambiar el icono o empaquetarlo de otra manera no reemplaza esa firma.
+Ante un problema de conexión, registrar hora y comprobar:
+
+1. `zerotier-cli status`, `listnetworks` y `listpeers`.
+2. IP administrada y ruta `DIRECT/RELAY`.
+3. Ping, pérdida y acceso TCP 25565.
+4. Conexiones establecidas en el host.
+5. `latest.log` para separar rechazo de versión, timeout, TPS y errores de mods.
+
+Ante lag grave, recolectar evidencia antes de reiniciar: heap, thread dump, log y, si está activa, captura JFR.

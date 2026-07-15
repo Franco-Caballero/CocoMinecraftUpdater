@@ -1,30 +1,69 @@
 # Coco Minecraft Updater
 
-Sincroniza por JAR el pack Fabric 26.1.2 del mundo Coco. Cada amigo recibe una sola vez `CocoUpdater.exe`; el ejecutable no contiene los mods y descarga únicamente los archivos faltantes o diferentes.
+Coco Minecraft Updater distribuye y mantiene un pack Fabric para Minecraft Java en Windows. Sincroniza JARs de forma transaccional, prepara una LAN virtual privada mediante ZeroTier y mantiene un endpoint estable para un mundo alojado con **Abrir en LAN**, sin port forwarding.
 
-## Primera instalación de un cliente
+## Capacidades
 
-1. Abrir la instancia correcta de Minecraft hasta el menú principal.
+- Detección automática de la instancia mediante `--gameDir`.
+- Descarga incremental de mods con verificación SHA-256.
+- Separación de paquetes host/cliente mediante un marcador local no distribuido.
+- Instalación y reparación automatizada de ZeroTier 1.16.2.
+- Validación de URL, hash y firma Authenticode del MSI oficial.
+- Autorización mediante un controlador ZeroTier local, sin tokens de Central en artefactos públicos.
+- Entrada persistente `Coco Minecraft` en `servers.dat`.
+- Session Bridge y Pack Gate para comprobar red y versión antes del login.
+- Instalación transaccional y recuperación tras interrupciones.
+- Releases inmutables por contenido y actualización automática del bootstrapper.
+
+## Arquitectura
+
+La ruta principal de juego es:
+
+```text
+Minecraft TCP
+  → adaptador virtual ZeroTier
+  → conexión cifrada DIRECT o relay de respaldo
+  → host 10.77.37.1:25565
+```
+
+ZeroTier opera a nivel IP y no interpreta ni multiplexa el protocolo Minecraft. e4mc permanece exclusivamente en el paquete host como contingencia y no forma parte de la ruta normal.
+
+## Incorporación de un cliente
+
+1. Abrir la instancia Fabric 26.1.2 correcta hasta el menú principal.
 2. Ejecutar `CocoUpdater.exe` una vez.
-3. El updater reconoce el `--gameDir`, descarga ZeroTier desde su sitio oficial, verifica SHA-256 y firma Authenticode y solicita como máximo un UAC de Windows cuando necesita instalar o reparar el adaptador. El ayudante administrativo permanece oculto, espera la autorización y devuelve el estado al proceso normal; no hay que ejecutar manualmente el EXE como administrador.
-4. El host autoriza automáticamente el equipo. El updater solicita un cierre normal de Minecraft, instala el pack exacto y deja Session Bridge.
-5. Al volver a abrir Minecraft aparece el servidor `Coco Minecraft` con el endpoint estable `10.77.37.1:25565`.
-6. Desde entonces Session Bridge comprueba silenciosamente sólo la red al arrancar Minecraft. El entrypoint principal inicia el chequeo temprano y los eventos cliente verifican el resultado y reintentan si no aparece el estado listo. Al iniciar un login comprueba además el pack; si hay una reparación o actualización, la realiza y muestra la ventana morada sólo cuando hace falta.
+3. Aceptar SmartScreen o UAC únicamente si Windows los presenta.
+4. Esperar a que el updater prepare la red, cierre Minecraft de forma controlada y sincronice el pack.
+5. Reabrir Minecraft y seleccionar `Coco Minecraft` en Multijugador.
 
-No modifica mundos, cuentas, screenshots ni `options.txt`. Los clientes reciben exactamente los JARs publicados. El host conserva mods adicionales con un Fabric ID nuevo para que puedan incorporarse a la siguiente publicación sin perderse; versiones viejas con el mismo ID no se duplican.
+No se requiere instalar ZeroTier manualmente ni ejecutar el updater manualmente como administrador. Tras la incorporación inicial, Session Bridge realiza verificaciones silenciosas; solo muestra interfaz cuando existe una reparación o actualización.
 
-Session Bridge checks during login, before registry synchronization. This lets it start the updater even when a client is missing a content mod and cannot finish joining.
+## Integridad del pack
 
-## Host y clientes
+Los clientes reciben exactamente los mods publicados. La instalación host actúa como fuente del Publisher y conserva JAR adicionales con un Fabric ID nuevo, evitando que una actualización normal elimine incorporaciones locales pendientes de publicación. El Publisher también bloquea eliminaciones accidentales de IDs ya publicados.
 
-Sólo `config/coco-host.json`, guardado localmente en la instalación del anfitrión, selecciona el paquete host. Ese archivo nunca se distribuye. El cliente no recibe e4mc ni MCWiFiPnP; ambos roles reciben el mismo Session Bridge/Pack Gate.
+El updater no modifica mundos, cuentas, capturas de pantalla ni `options.txt`.
 
-La integración ZeroTier superó el primer ensayo real: instalación desde CocoUpdater, autorización, IP administrada, entrada automática al servidor y juego mediante una ruta `DIRECT` de 32–40 ms sin pérdida observada. El engine carga sus componentes desde memoria para funcionar también con la política predeterminada `Restricted` y reconoce una red cliente sana por su adaptador/IP sin necesitar acceso administrativo posterior. No usa ZeroTier Central ni distribuye tokens administrativos: el host ejecuta un controlador privado y autoriza automáticamente nodos nuevos mientras Minecraft está abierto. e4mc sigue instalado como respaldo durante la validación A/B.
+## Publicación
 
-## Publicar mods
+Con Minecraft completamente cerrado:
 
-Con Minecraft cerrado, ejecutar `dist/CocoPublisher.exe`. Incrementa la versión, compila, valida hashes y roles, crea un release privado como borrador, sube los assets, actualiza la instalación host y finalmente hace visible la versión. Si algo falla, los clientes continúan viendo el release anterior.
+```text
+dist\CocoPublisher.exe
+```
 
-Los diagnósticos de cada cliente quedan en `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`. Los intentos realizados desde Minecraft se registran como `bridge-<PID>.log`, por lo que un fallo de arranque ya no queda silencioso.
+El Publisher incrementa la versión, compila componentes, valida roles/hashes, ejecuta pruebas, crea un release borrador, actualiza el host y publica únicamente si todas las etapas terminan correctamente.
 
-Consulta [docs/OPERACION.md](docs/OPERACION.md) para el flujo operativo y riesgos conocidos.
+## Seguridad
+
+- El manifiesto público no contiene credenciales administrativas.
+- El firewall del host limita la entrada a TCP 25565 desde la subred ZeroTier.
+- Los perfiles offline requieren una política de whitelist independiente de la autorización de red.
+- El EXE todavía no dispone de una firma de código con reputación; SmartScreen puede advertir en la primera ejecución.
+
+## Documentación
+
+- [Operación, publicación y soporte](docs/OPERACION.md)
+- [Canal estable y arquitectura de GitHub](docs/GITHUB_SETUP.md)
+
+Los diagnósticos se almacenan en `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`.
