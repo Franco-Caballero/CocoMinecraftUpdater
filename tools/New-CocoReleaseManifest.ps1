@@ -23,6 +23,15 @@ function Get-Asset([string]$FileName, [string]$Role) {
 $engine = Get-Asset "coco-engine-$Version.zip" 'engine'
 $client = Get-Asset "coco-client-$Version.zip" 'client'
 $hostAsset = Get-Asset "coco-host-$Version.zip" 'host'
+$managedConfigRoot=Join-Path (Split-Path $PSScriptRoot -Parent) 'managed-config'
+if(-not(Test-Path -LiteralPath $managedConfigRoot)){throw "Falta el directorio de configuracion administrada: $managedConfigRoot"}
+$managedConfigFiles=@(Get-ChildItem -LiteralPath $managedConfigRoot -Recurse -File|Sort-Object FullName|ForEach-Object{
+    $relative=$_.FullName.Substring($managedConfigRoot.Length).TrimStart('\','/')-replace'\\','/'
+    $bytes=[IO.File]::ReadAllBytes($_.FullName)
+    $sha=[Security.Cryptography.SHA256]::Create()
+    try{$hash=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
+    [ordered]@{path="config/$relative";sha256=$hash;size=[int64]$bytes.Length;contentBase64=[Convert]::ToBase64String($bytes)}
+})
 
 $manifest = [ordered]@{
     schemaVersion = 1
@@ -49,6 +58,16 @@ $manifest = [ordered]@{
             signerSubjectPattern = '(?i)ZEROTIER,\s*INC\.'
         }
     }
+    clientSettingsMigrations = @(
+        [ordered]@{
+            id = 'pingwheel-location-z-v1'
+            type = 'minecraft-option-default'
+            key = 'key_key.pingwheel.ping_location'
+            from = 'key.mouse.5'
+            to = 'key.keyboard.z'
+        }
+    )
+    managedConfigFiles = $managedConfigFiles
     packages = @(
         [ordered]@{ role = 'client'; url = $client.url; sha256 = $client.sha256; size = $client.size },
         [ordered]@{ role = 'host'; url = $hostAsset.url; sha256 = $hostAsset.sha256; size = $hostAsset.size }

@@ -470,6 +470,22 @@ function Stage-Package($Package, $Manifest, [string]$Root) {
         Copy-Item -LiteralPath $cached -Destination (Join-Path $stageMods $mod.name) -Force
         $completed += [int64]$mod.size
     }
+    foreach($managed in @($Manifest.managedConfigFiles)){
+        if(-not$managed){continue}
+        $relative=([string]$managed.path)-replace'/','\'
+        if(-not$relative-or[IO.Path]::IsPathRooted($relative)-or$relative-notmatch'(?i)^config\\'-or
+           @($relative-split'\\'|Where-Object{$_-eq'..'}).Count){throw "Ruta de configuracion administrada invalida: $relative"}
+        $stageFull=[IO.Path]::GetFullPath($stage).TrimEnd('\')+'\'
+        $destination=[IO.Path]::GetFullPath((Join-Path $stage $relative))
+        if(-not$destination.StartsWith($stageFull,[StringComparison]::OrdinalIgnoreCase)){throw "Ruta fuera del staging: $relative"}
+        try{$bytes=[Convert]::FromBase64String([string]$managed.contentBase64)}catch{throw "Contenido Base64 invalido para $relative"}
+        if($bytes.Length-ne[int64]$managed.size){throw "Tamano invalido para $relative"}
+        $sha=[Security.Cryptography.SHA256]::Create()
+        try{$hash=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
+        if($hash-ne([string]$managed.sha256).ToLowerInvariant()){throw "Hash invalido para $relative"}
+        New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force|Out-Null
+        [IO.File]::WriteAllBytes($destination,$bytes)
+    }
     if($Package.role-eq'host'){
         # The host's mods folder is also the Publisher's source of truth. Keep
         # newly added, unique Fabric mods until they can be published. Never
@@ -495,6 +511,68 @@ function Stage-Package($Package, $Manifest, [string]$Root) {
         }
     }
     return $stage
+}
+
+function Invoke-CocoClientSettingsMigrations([string]$Root, $Manifest) {
+    $applied=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $markerPath=Join-Path $Root $Manifest.detector.markerPath
+    if(Test-Path -LiteralPath $markerPath){
+        try{
+            $previous=Get-Content -LiteralPath $markerPath -Raw|ConvertFrom-Json
+            foreach($id in @($previous.appliedClientSettingsMigrations)){
+                if($id){[void]$applied.Add([string]$id)}
+            }
+        }catch{Write-CocoLog "No se pudo leer el historial de migraciones de cliente: $($_.Exception.Message)"}
+    }
+
+    foreach($migration in @($Manifest.clientSettingsMigrations)){
+        $id=[string]$migration.id
+        if(-not$id-or$applied.Contains($id)){continue}
+        if([string]$migration.type-ne'minecraft-option-default'){
+            throw "Tipo de migracion de cliente no soportado: $($migration.type)"
+        }
+        $key=[string]$migration.key
+        $from=[string]$migration.from
+        $to=[string]$migration.to
+        if(-not$key-or-not$to-or$key.Contains(':')-or$key.Contains("`r")-or$key.Contains("`n")-or
+           $from.Contains("`r")-or$from.Contains("`n")-or$to.Contains("`r")-or$to.Contains("`n")){
+            throw "Migracion de cliente invalida: $id"
+        }
+
+        try{
+            $optionsPath=Join-Path $Root 'options.txt'
+            $lines=[Collections.Generic.List[string]]::new()
+            if(Test-Path -LiteralPath $optionsPath){$lines.AddRange([string[]][IO.File]::ReadAllLines($optionsPath))}
+            $prefix="$key`:"
+            $indices=@(for($i=0;$i-lt$lines.Count;$i++){if($lines[$i].StartsWith($prefix,[StringComparison]::Ordinal)){,$i}})
+            $changed=$false
+            if($indices.Count-eq0){
+                $lines.Add("$prefix$to")
+                $changed=$true
+                Write-CocoLog "Migracion ${id}: valor inicial agregado para $key."
+            }elseif($indices.Count-eq1-and$lines[$indices[0]]-ceq"$prefix$from"){
+                $lines[$indices[0]]="$prefix$to"
+                $changed=$true
+                Write-CocoLog "Migracion ${id}: valor predeterminado actualizado para $key."
+            }else{
+                Write-CocoLog "Migracion ${id}: $key ya fue personalizado; se conserva sin cambios."
+            }
+
+            if($changed){
+                if(Test-Path -LiteralPath $optionsPath){
+                    $safeId=$id-replace'[^A-Za-z0-9._-]','_'
+                    Copy-Item -LiteralPath $optionsPath -Destination "$optionsPath.coco-before-$safeId.bak" -Force
+                }
+                $tmp="$optionsPath.coco.tmp"
+                [IO.File]::WriteAllLines($tmp,$lines,(New-Object Text.UTF8Encoding($false)))
+                Move-Item -LiteralPath $tmp -Destination $optionsPath -Force
+            }
+            [void]$applied.Add($id)
+        }catch{
+            Write-CocoLog "Migracion ${id} omitida sin bloquear el pack: $($_.Exception.Message)"
+        }
+    }
+    return @($applied|Sort-Object)
 }
 
 function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifest) {
@@ -523,6 +601,8 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
         }
     }
 
+    $appliedClientSettingsMigrations=@(Invoke-CocoClientSettingsMigrations $Root $Manifest)
+
     $markerPath = Join-Path $Root $Manifest.detector.markerPath
     New-Item -ItemType Directory -Path (Split-Path $markerPath -Parent) -Force | Out-Null
     [pscustomobject]@{
@@ -531,6 +611,7 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
         role = $Package.role
         installedAt = (Get-Date).ToString('o')
         target = $Root
+        appliedClientSettingsMigrations = $appliedClientSettingsMigrations
     } | ConvertTo-Json | Set-Content -LiteralPath $markerPath -Encoding UTF8
     $targetPath = Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\target.json'
     New-Item -ItemType Directory -Path (Split-Path $targetPath -Parent) -Force | Out-Null

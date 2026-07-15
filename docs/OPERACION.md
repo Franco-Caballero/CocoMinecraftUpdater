@@ -39,6 +39,10 @@ Cliente:
 
 Bridge ejecuta `-NetworkOnly` al arrancar y un chequeo completo al iniciar login. Una instalación actualizada no muestra UI ni mantiene un monitor periódico.
 
+Las migraciones de preferencias declaradas por un release se ejecutan solo durante esa actualización, con Minecraft cerrado, y sus IDs quedan registrados en `coco-updater-state.json`. `pingwheel-location-z-v1` reemplaza Mouse 5 por Z solo si sigue en el valor predeterminado, o agrega Z si la entrada aún no existe. Si el jugador ya eligió otra tecla, se conserva; una vez registrada, publicaciones posteriores tampoco vuelven a tocarla.
+
+`managed-config\Stackable.json` es la fuente publicada de `config\Stackable.json`. El Publisher la incorpora al manifiesto con tamaño, SHA-256 y contenido; el updater la verifica y aplica a ambos roles durante cada actualización. `maxStack` debe permanecer en 256 salvo una decisión explícita de cambiar la mecánica para todo el grupo.
+
 ## Publicar una actualización
 
 1. Cerrar Minecraft y confirmar que la LAN terminó.

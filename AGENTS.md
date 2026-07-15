@@ -107,6 +107,7 @@ Comportamiento:
 Política de mods:
 
 - Los clientes reciben exactamente el conjunto publicado.
+- `managed-config\Stackable.json` se distribuye como `config\Stackable.json` en ambos roles y fija `maxStack = 256`; cambiarlo es una decisión global de mecánica.
 - El host es la fuente del Publisher y conserva JAR adicionales con un Fabric ID nuevo.
 - Una versión anterior cuyo Fabric ID ya está publicado no se duplica.
 - El Publisher bloquea la desaparición de IDs publicados salvo `-AllowModRemoval` y autorización explícita.

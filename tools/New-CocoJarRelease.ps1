@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory=$true)][string]$ReleaseDirectory,
     [Parameter(Mandatory=$true)][string]$BridgeJar,
     [Parameter(Mandatory=$true)][string]$BootstrapExe,
-    [string[]]$ClientExcludePatterns=@('(?i)^e4mc','(?i)^mcwifipnp','(?i)^coco-session-bridge-','(?i)^fly-speed-modifier-'),
+    [string[]]$ClientExcludePatterns=@('(?i)^e4mc','(?i)^mcwifipnp','(?i)^serversidehorror-','(?i)^deimos-','(?i)^coco-session-bridge-','(?i)^fly-speed-modifier-'),
     [string[]]$HostExcludePatterns=@('(?i)^coco-session-bridge-','(?i)^fly-speed-modifier-'),
     [string[]]$KnownE4mcDomains=@()
 )
@@ -66,6 +66,21 @@ function Get-RoleMods([string]$Role,[string[]]$ExcludePatterns) {
 
 $clientMods=Get-RoleMods 'client' $ClientExcludePatterns
 $hostMods=Get-RoleMods 'host' $HostExcludePatterns
+$managedConfigRoot=Join-Path (Split-Path $PSScriptRoot -Parent) 'managed-config'
+if(-not(Test-Path -LiteralPath $managedConfigRoot)){throw "Falta el directorio de configuracion administrada: $managedConfigRoot"}
+$managedConfigFiles=@(Get-ChildItem -LiteralPath $managedConfigRoot -Recurse -File|Sort-Object FullName|ForEach-Object{
+    $relative=$_.FullName.Substring($managedConfigRoot.Length).TrimStart('\','/')-replace'\\','/'
+    $bytes=[IO.File]::ReadAllBytes($_.FullName)
+    $sha=[Security.Cryptography.SHA256]::Create()
+    try{$hash=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
+    [ordered]@{
+        path="config/$relative"
+        sha256=$hash
+        size=[int64]$bytes.Length
+        contentBase64=[Convert]::ToBase64String($bytes)
+    }
+})
+if(-not@($managedConfigFiles|Where-Object{$_.path-eq'config/Stackable.json'})){throw 'Falta managed-config\Stackable.json.'}
 $enginePath=Join-Path $ReleaseDirectory "coco-engine-$Version.zip"
 if(-not(Test-Path $enginePath)){throw "Falta $enginePath"}
 $manifest=[ordered]@{
@@ -97,6 +112,16 @@ $manifest=[ordered]@{
             signerSubjectPattern='(?i)ZEROTIER,\s*INC\.'
         }
     }
+    clientSettingsMigrations=@(
+        [ordered]@{
+            id='pingwheel-location-z-v1'
+            type='minecraft-option-default'
+            key='key_key.pingwheel.ping_location'
+            from='key.mouse.5'
+            to='key.keyboard.z'
+        }
+    )
+    managedConfigFiles=$managedConfigFiles
     packages=@(
         [ordered]@{role='client';mods=$clientMods},
         [ordered]@{role='host';mods=$hostMods}

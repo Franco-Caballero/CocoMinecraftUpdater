@@ -21,6 +21,21 @@ if($network.hostAddress-ne'10.77.37.1'-or$network.subnet-ne'10.77.37.0/24'-or[in
 if($network.installer.url-notmatch'^https://download\.zerotier\.com/RELEASES/1\.16\.2/'){throw 'El MSI no usa la fuente oficial versionada.'}
 if($network.installer.sha256-notmatch'^[0-9a-f]{64}$'){throw 'SHA-256 de ZeroTier invalido.'}
 if(-not$network.installer.signerSubjectPattern){throw 'Falta validar el firmante Authenticode de ZeroTier.'}
+$pingMigration=@($manifest.clientSettingsMigrations|Where-Object{$_.id-eq'pingwheel-location-z-v1'})
+if($pingMigration.Count-ne1-or$pingMigration[0].type-ne'minecraft-option-default'-or
+   $pingMigration[0].key-ne'key_key.pingwheel.ping_location'-or
+   $pingMigration[0].from-ne'key.mouse.5'-or$pingMigration[0].to-ne'key.keyboard.z'){
+    throw 'Falta la migracion unica de Ping Wheel a Z.'
+}
+$managedStackable=@($manifest.managedConfigFiles|Where-Object{$_.path-eq'config/Stackable.json'})
+if($managedStackable.Count-ne1){throw 'Falta la configuracion administrada de Stackable.'}
+$stackableBytes=[Convert]::FromBase64String([string]$managedStackable[0].contentBase64)
+if($stackableBytes.Length-ne[int64]$managedStackable[0].size){throw 'Tamano incorrecto de Stackable.json.'}
+$stackableSha=[Security.Cryptography.SHA256]::Create()
+try{$stackableHash=([BitConverter]::ToString($stackableSha.ComputeHash($stackableBytes))).Replace('-','').ToLowerInvariant()}finally{$stackableSha.Dispose()}
+if($stackableHash-ne$managedStackable[0].sha256){throw 'Hash incorrecto de Stackable.json.'}
+$stackableConfig=[Text.Encoding]::UTF8.GetString($stackableBytes)|ConvertFrom-Json
+if([int]$stackableConfig.maxStack-ne256){throw 'Stackable.json no limita los stacks a 256.'}
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $engineArchive=[IO.Compression.ZipFile]::OpenRead((Resolve-Path $engine))
@@ -50,8 +65,8 @@ foreach($role in 'client','host'){
 }
 $client=@($manifest.packages|Where-Object role -eq client).mods.name
 $hostMods=@($manifest.packages|Where-Object role -eq host).mods.name
-if($client-match'(?i)^(e4mc|mcwifipnp)'){throw 'El paquete cliente contiene mods exclusivos del host.'}
-if(-not($hostMods-match'(?i)^e4mc')-or-not($hostMods-match'(?i)^mcwifipnp')){throw 'El paquete host no contiene e4mc/mcwifipnp.'}
+if($client-match'(?i)^(e4mc|mcwifipnp|serversidehorror-|deimos-)'){throw 'El paquete cliente contiene mods exclusivos del host.'}
+if(-not($hostMods-match'(?i)^e4mc')-or-not($hostMods-match'(?i)^mcwifipnp')-or-not($hostMods-match'(?i)^serversidehorror-')-or-not($hostMods-match'(?i)^deimos-')){throw 'El paquete host no contiene todos los mods exclusivos requeridos.'}
 
 $scripts=@('bootstrap\CocoBootstrapper.ps1','engine\CocoUpdater.ps1','engine\CocoNetwork.ps1','engine\CocoNetworkElevated.ps1','engine\CocoNetworkAuthorizer.ps1','publisher\CocoPublisher.ps1','tools\New-CocoJarRelease.ps1','tools\Publish-CocoRelease.ps1')
 foreach($script in $scripts){[void][scriptblock]::Create([IO.File]::ReadAllText((Resolve-Path $script)))}

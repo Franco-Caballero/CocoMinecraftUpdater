@@ -26,6 +26,23 @@
       "signerSubjectPattern": "(?i)ZEROTIER,\\s*INC\\."
     }
   },
+  "clientSettingsMigrations": [
+    {
+      "id": "pingwheel-location-z-v1",
+      "type": "minecraft-option-default",
+      "key": "key_key.pingwheel.ping_location",
+      "from": "key.mouse.5",
+      "to": "key.keyboard.z"
+    }
+  ],
+  "managedConfigFiles": [
+    {
+      "path": "config/Stackable.json",
+      "sha256": "REEMPLAZAR_SHA256_STACKABLE_CONFIG",
+      "size": 0,
+      "contentBase64": "REEMPLAZAR_BASE64_STACKABLE_CONFIG"
+    }
+  ],
   "packages": [
     {
       "role": "client",

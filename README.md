@@ -42,7 +42,9 @@ No se requiere instalar ZeroTier manualmente ni ejecutar el updater manualmente 
 
 Los clientes reciben exactamente los mods publicados. La instalación host actúa como fuente del Publisher y conserva JAR adicionales con un Fabric ID nuevo, evitando que una actualización normal elimine incorporaciones locales pendientes de publicación. El Publisher también bloquea eliminaciones accidentales de IDs ya publicados.
 
-El updater no modifica mundos, cuentas, capturas de pantalla ni `options.txt`.
+Los archivos declarados como configuración administrada se incluyen con hash y contenido en el manifiesto y se aplican junto con los mods. Actualmente `config/Stackable.json` fija `maxStack` en 256 para host y clientes.
+
+El updater no modifica mundos, cuentas ni capturas de pantalla. Las preferencias de cliente se conservan; excepcionalmente, un release puede declarar una migración inicial identificada y acotada. La migración `pingwheel-location-z-v1` cambia una sola vez el valor predeterminado de Ping Wheel desde Mouse 5 a Z, registra su aplicación y nunca vuelve a imponer esa tecla si el jugador la personaliza.
 
 ## Publicación
 
