@@ -23,10 +23,16 @@ try{
     $managedConfigBytes=[Text.Encoding]::UTF8.GetBytes('{"maxStack":256}')
     $managedConfigSha=[Security.Cryptography.SHA256]::Create()
     try{$managedConfigHash=([BitConverter]::ToString($managedConfigSha.ComputeHash($managedConfigBytes))).Replace('-','').ToLowerInvariant()}finally{$managedConfigSha.Dispose()}
+    $managedJeiBytes=[Text.Encoding]::UTF8.GetBytes("[cheating]`nshowHiddenIngredients = true`n")
+    $managedJeiSha=[Security.Cryptography.SHA256]::Create()
+    try{$managedJeiHash=([BitConverter]::ToString($managedJeiSha.ComputeHash($managedJeiBytes))).Replace('-','').ToLowerInvariant()}finally{$managedJeiSha.Dispose()}
     $manifest=[ordered]@{
         schemaVersion=2;packId='coco-test';version='9.9.9'
         clientSettingsMigrations=@([ordered]@{id='pingwheel-location-z-v1';type='minecraft-option-default';key='key_key.pingwheel.ping_location';from='key.mouse.5';to='key.keyboard.z'})
-        managedConfigFiles=@([ordered]@{path='config/Stackable.json';sha256=$managedConfigHash;size=[int64]$managedConfigBytes.Length;contentBase64=[Convert]::ToBase64String($managedConfigBytes)})
+        managedConfigFiles=@(
+            [ordered]@{path='config/Stackable.json';sha256=$managedConfigHash;size=[int64]$managedConfigBytes.Length;contentBase64=[Convert]::ToBase64String($managedConfigBytes)},
+            [ordered]@{path='config/jei/jei-client.ini';sha256=$managedJeiHash;size=[int64]$managedJeiBytes.Length;contentBase64=[Convert]::ToBase64String($managedJeiBytes)}
+        )
         packages=@([ordered]@{role='client';mods=@([ordered]@{name='bridge.jar';url='unused';sha256=$hash;size=[int64]$sourceJar.Length})})
         detector=[ordered]@{minecraftVersion='26.1.2';markerPath='config/coco-updater-state.json';groupTokens=@();knownE4mcDomains=@();modRules=@()}
     }
@@ -48,6 +54,8 @@ try{
     }
     $installedStackableConfig=Get-Content (Join-Path $game 'config\Stackable.json') -Raw|ConvertFrom-Json
     if([int]$installedStackableConfig.maxStack-ne256){throw 'La configuracion administrada de Stackable no fue instalada.'}
+    $installedJeiConfig=Get-Content (Join-Path $game 'config\jei\jei-client.ini') -Raw
+    if($installedJeiConfig-notmatch'(?m)^\s*showHiddenIngredients\s*=\s*true\s*$'){throw 'La configuracion administrada de JEI no fue instalada.'}
     $options=$options|ForEach-Object{if($_-eq'key_key.pingwheel.ping_location:key.keyboard.z'){'key_key.pingwheel.ping_location:key.keyboard.c'}else{$_}}
     $options|Set-Content (Join-Path $game 'options.txt') -Encoding UTF8
     $manifest.version='9.9.11'

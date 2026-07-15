@@ -18,7 +18,7 @@ https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/latest/downloa
 - assets de mods inmutables por contenido;
 - configuración pública de ZeroTier: Network ID, subred, endpoint, MSI versionado, hash y patrón del firmante;
 - migraciones iniciales de preferencias de cliente, identificadas y acotadas; actualmente `pingwheel-location-z-v1`;
-- configuraciones administradas con ruta, tamaño, SHA-256 y contenido Base64; actualmente `config/Stackable.json` con `maxStack` 256.
+- configuraciones administradas con ruta, tamaño, SHA-256 y contenido Base64; actualmente `config/Stackable.json` con `maxStack` 256 y `config/jei/jei-client.ini` con `showHiddenIngredients = true`.
 
 El manifiesto no contiene tokens ZeroTier, secretos del controlador ni credenciales GitHub.
 

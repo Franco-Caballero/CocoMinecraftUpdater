@@ -41,7 +41,7 @@ Bridge ejecuta `-NetworkOnly` al arrancar y un chequeo completo al iniciar login
 
 Las migraciones de preferencias declaradas por un release se ejecutan solo durante esa actualización, con Minecraft cerrado, y sus IDs quedan registrados en `coco-updater-state.json`. `pingwheel-location-z-v1` reemplaza Mouse 5 por Z solo si sigue en el valor predeterminado, o agrega Z si la entrada aún no existe. Si el jugador ya eligió otra tecla, se conserva; una vez registrada, publicaciones posteriores tampoco vuelven a tocarla.
 
-`managed-config\Stackable.json` es la fuente publicada de `config\Stackable.json`. El Publisher la incorpora al manifiesto con tamaño, SHA-256 y contenido; el updater la verifica y aplica a ambos roles durante cada actualización. `maxStack` debe permanecer en 256 salvo una decisión explícita de cambiar la mecánica para todo el grupo.
+`managed-config\Stackable.json` y `managed-config\jei\jei-client.ini` son las fuentes publicadas de `config\Stackable.json` y `config\jei\jei-client.ini`. El Publisher las incorpora al manifiesto con tamaño, SHA-256 y contenido; el updater las verifica y aplica a ambos roles durante cada actualización. Stackable fija `maxStack` en 256 y JEI fija `showHiddenIngredients = true` para mostrar objetos que no llegan a su lista desde pestañas creativas defectuosas. Cambiar cualquiera de estos valores es una decisión global del pack.
 
 ## Publicar una actualización
 

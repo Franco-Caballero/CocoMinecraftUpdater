@@ -41,6 +41,12 @@
       "sha256": "REEMPLAZAR_SHA256_STACKABLE_CONFIG",
       "size": 0,
       "contentBase64": "REEMPLAZAR_BASE64_STACKABLE_CONFIG"
+    },
+    {
+      "path": "config/jei/jei-client.ini",
+      "sha256": "REEMPLAZAR_SHA256_JEI_CLIENT_CONFIG",
+      "size": 0,
+      "contentBase64": "REEMPLAZAR_BASE64_JEI_CLIENT_CONFIG"
     }
   ],
   "packages": [

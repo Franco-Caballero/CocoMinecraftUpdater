@@ -36,6 +36,15 @@ try{$stackableHash=([BitConverter]::ToString($stackableSha.ComputeHash($stackabl
 if($stackableHash-ne$managedStackable[0].sha256){throw 'Hash incorrecto de Stackable.json.'}
 $stackableConfig=[Text.Encoding]::UTF8.GetString($stackableBytes)|ConvertFrom-Json
 if([int]$stackableConfig.maxStack-ne256){throw 'Stackable.json no limita los stacks a 256.'}
+$managedJei=@($manifest.managedConfigFiles|Where-Object{$_.path-eq'config/jei/jei-client.ini'})
+if($managedJei.Count-ne1){throw 'Falta la configuracion administrada de JEI.'}
+$jeiBytes=[Convert]::FromBase64String([string]$managedJei[0].contentBase64)
+if($jeiBytes.Length-ne[int64]$managedJei[0].size){throw 'Tamano incorrecto de jei-client.ini.'}
+$jeiSha=[Security.Cryptography.SHA256]::Create()
+try{$jeiHash=([BitConverter]::ToString($jeiSha.ComputeHash($jeiBytes))).Replace('-','').ToLowerInvariant()}finally{$jeiSha.Dispose()}
+if($jeiHash-ne$managedJei[0].sha256){throw 'Hash incorrecto de jei-client.ini.'}
+$jeiText=[Text.Encoding]::UTF8.GetString($jeiBytes)
+if($jeiText-notmatch'(?m)^\s*showHiddenIngredients\s*=\s*true\s*$'){throw 'JEI no muestra los ingredientes ocultos.'}
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $engineArchive=[IO.Compression.ZipFile]::OpenRead((Resolve-Path $engine))
