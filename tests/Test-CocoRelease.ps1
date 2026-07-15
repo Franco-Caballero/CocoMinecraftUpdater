@@ -10,6 +10,11 @@ $manifestPath=Join-Path $ReleaseDirectory 'latest.json'
 if(-not(Test-Path $manifestPath)){throw 'Falta latest.json.'}
 $manifest=Get-Content $manifestPath -Raw|ConvertFrom-Json
 if($manifest.version -ne $Version -or $manifest.schemaVersion -ne 2){throw 'Version o esquema incorrecto en latest.json.'}
+$blockedModIdsPath='policy\blocked-mod-ids.txt'
+if(-not(Test-Path $blockedModIdsPath)){throw 'Falta la politica de mods bloqueados.'}
+$blockedModIds=@(Get-Content $blockedModIdsPath|ForEach-Object{$_.Trim()}|Where-Object{$_-and-not$_.StartsWith('#')}|Select-Object -Unique)
+$publishedBlockedIds=@($manifest.packages.mods.fabricId|Where-Object{$_-and$_-in$blockedModIds}|Select-Object -Unique)
+if($publishedBlockedIds.Count){throw "El manifiesto contiene IDs prohibidos: $($publishedBlockedIds -join ', ')."}
 if((Get-FileHash $BootstrapExe -Algorithm SHA256).Hash.ToLowerInvariant()-ne$manifest.bootstrap.sha256){throw 'Hash de bootstrap incorrecto.'}
 $engine=Join-Path $ReleaseDirectory "coco-engine-$Version.zip"
 if((Get-FileHash $engine -Algorithm SHA256).Hash.ToLowerInvariant()-ne$manifest.engine.sha256){throw 'Hash del engine incorrecto.'}

@@ -58,6 +58,8 @@ El Publisher:
 - deduplica contenido e IDs Fabric;
 - conserva en el host JAR adicionales con IDs nuevos;
 - bloquea la desaparición accidental de IDs publicados salvo autorización explícita;
+- rechaza versiones que no sean exactamente la siguiente al canal estable o si `HEAD` no coincide con `origin/main`;
+- rechaza en la fuente viva y en el manifiesto cualquier ID de `policy\blocked-mod-ids.txt`; `tsa-decorations` está retirado permanentemente;
 - verifica tamaños, SHA-256 y assets;
 - prueba recuperación transaccional;
 - mantiene el release como borrador hasta actualizar correctamente el host.

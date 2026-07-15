@@ -17,6 +17,39 @@ $distDir=Join-Path $root 'dist'
 $KnownE4mcDomains=@($KnownE4mcDomainsCsv-split','|Where-Object{$_})
 Write-Output "Contexto: Repository=$Repository MinecraftRoot=$MinecraftRoot Domains=$($KnownE4mcDomains.Count)"
 
+$blockedModIdsPath=Join-Path $root 'policy\blocked-mod-ids.txt'
+if(-not(Test-Path -LiteralPath $blockedModIdsPath)){throw 'Falta policy\blocked-mod-ids.txt.'}
+$blockedModIds=@(Get-Content -LiteralPath $blockedModIdsPath|ForEach-Object{$_.Trim()}|Where-Object{$_-and-not$_.StartsWith('#')}|Select-Object -Unique)
+if(-not$blockedModIds.Count){throw 'La politica de mods bloqueados esta vacia.'}
+
+function Get-LocalFabricModId([string]$JarPath){
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archive=[IO.Compression.ZipFile]::OpenRead($JarPath)
+    try{
+        $entry=$archive.GetEntry('fabric.mod.json');if(-not$entry){return $null}
+        $reader=[IO.StreamReader]::new($entry.Open(),[Text.Encoding]::UTF8)
+        try{return [string](($reader.ReadToEnd()|ConvertFrom-Json).id)}finally{$reader.Dispose()}
+    }finally{$archive.Dispose()}
+}
+
+foreach($jar in @(Get-ChildItem -LiteralPath (Join-Path $MinecraftRoot 'mods') -Filter '*.jar' -File)){
+    $fabricId=Get-LocalFabricModId $jar.FullName
+    if($fabricId-and$fabricId-in$blockedModIds){throw "Publicacion bloqueada: $($jar.Name) usa el Fabric ID prohibido $fabricId."}
+}
+
+$publishedManifestUrl="https://github.com/$Repository/releases/latest/download/latest.json"
+$publishedManifest=Invoke-RestMethod -Uri $publishedManifestUrl -UseBasicParsing -TimeoutSec 30
+$publishedVersion=[version]$publishedManifest.version
+$requestedVersion=[version]$Version
+$expectedVersion=[version]::new($publishedVersion.Major,$publishedVersion.Minor,$publishedVersion.Build+1)
+if($requestedVersion-ne$expectedVersion){throw "Version invalida: el canal publico esta en $publishedVersion y la unica siguiente version permitida es $expectedVersion."}
+
+git fetch origin main --quiet
+if($LASTEXITCODE){throw 'No se pudo actualizar origin/main antes de publicar.'}
+$startingHead=(git rev-parse HEAD).Trim()
+$startingOrigin=(git rev-parse origin/main).Trim()
+if($startingHead-ne$startingOrigin){throw "Publicacion bloqueada: HEAD ($startingHead) no coincide con origin/main ($startingOrigin). Sincroniza el repositorio antes de publicar."}
+
 function Get-PublishedFabricModId($Mod,[string]$JarDirectory){
     if($Mod.fabricId){return [string]$Mod.fabricId}
     $jar=Join-Path $JarDirectory "mod-$($Mod.sha256).jar"
@@ -109,6 +142,8 @@ exit 1
 $candidateManifest=Get-Content (Join-Path $releaseDir 'latest.json') -Raw|ConvertFrom-Json
 $candidateHostPackage=@($candidateManifest.packages|Where-Object role -eq host|Select-Object -First 1)
 $candidateHostModIds=@($candidateHostPackage.mods.fabricId|Where-Object{$_-and$_-ne'coco_session_bridge'}|Select-Object -Unique)
+$candidateBlockedIds=@($candidateManifest.packages.mods.fabricId|Where-Object{$_-and$_-in$blockedModIds}|Select-Object -Unique)
+if($candidateBlockedIds.Count){throw "Publicacion bloqueada: el manifiesto contiene IDs prohibidos ($($candidateBlockedIds -join ', '))."}
 $removedModIds=@($previousHostModIds|Where-Object{$_-notin$candidateHostModIds})
 if($removedModIds.Count-and-not$AllowModRemoval){
     throw "Publicacion bloqueada: desaparecerian mods ya publicados ($($removedModIds -join ', ')). Requiere -AllowModRemoval y confirmacion explicita del usuario."
@@ -120,6 +155,12 @@ if($removedModIds.Count-and-not$AllowModRemoval){
 .\tests\Test-CocoEngineRecovery.ps1
 .\tests\Test-CocoZeroTier.ps1
 .\tests\Test-CocoNetworkEngine.ps1 -MinecraftRoot $MinecraftRoot
+.\tests\Test-CocoPublisherPolicy.ps1 -PublishedVersion $publishedVersion.ToString()
+
+git fetch origin main --quiet
+if($LASTEXITCODE){throw 'No se pudo volver a comprobar origin/main antes del commit.'}
+$currentOrigin=(git rev-parse origin/main).Trim()
+if($currentOrigin-ne$startingOrigin){throw "Publicacion bloqueada: origin/main cambio durante la compilacion ($startingOrigin -> $currentOrigin). Reintenta desde el estado nuevo."}
 
 git add .
 git commit -m "Publish Coco Pack $Version"

@@ -88,11 +88,11 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 Estado publicado:
 
-- Release estable: **0.5.28**
-- Host: 0.5.28, rol `host`
-- Bridge: `coco-session-bridge-0.5.28.jar`
-- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, 0.5.28.0
-- Manifiesto: 69 mods de cliente y 71 de host
+- Release estable: **0.5.32**
+- Host: 0.5.32, rol `host`
+- Bridge: `coco-session-bridge-0.5.32.jar`
+- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, 0.5.32.0
+- Manifiesto: 143 mods de cliente y 147 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
 Comportamiento:
@@ -111,6 +111,8 @@ Política de mods:
 - El host es la fuente del Publisher y conserva JAR adicionales con un Fabric ID nuevo.
 - Una versión anterior cuyo Fabric ID ya está publicado no se duplica.
 - El Publisher bloquea la desaparición de IDs publicados salvo `-AllowModRemoval` y autorización explícita.
+- `tsa-decorations` está retirado permanentemente y `policy\blocked-mod-ids.txt` impide reintroducirlo en la fuente viva o en cualquier rol publicado.
+- El Publisher exige exactamente la siguiente versión pública, `HEAD == origin/main` al comenzar y que `origin/main` no cambie durante la compilación.
 - No mantener listas estáticas completas de JAR en documentación; consultar `mods` y `release\latest.json`.
 
 Publicación, con Minecraft cerrado:

@@ -43,9 +43,9 @@ dist\CocoPublisher.exe
 El Publisher obtiene acceso a GitHub mediante Git Credential Manager y ejecuta una transacción:
 
 1. valida que Minecraft esté cerrado;
-2. incrementa la versión;
+2. confirma que `HEAD` coincide con `origin/main` y que la versión solicitada es exactamente la siguiente a la estable;
 3. compila Bridge, Gate, engine, bootstrapper y Publisher;
-4. genera manifiesto y assets;
+4. genera manifiesto y assets, rechazando los Fabric IDs de `policy/blocked-mod-ids.txt`;
 5. ejecuta pruebas de release, recuperación y red;
 6. crea un release borrador;
 7. sube y verifica tamaños de assets;
