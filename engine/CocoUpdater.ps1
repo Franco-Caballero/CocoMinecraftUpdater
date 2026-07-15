@@ -8,6 +8,7 @@ param(
     [string]$SessionStatePath,
     [switch]$Preview,
     [switch]$DetectOnly,
+    [switch]$NetworkOnly,
     [switch]$Silent
 )
 
@@ -558,7 +559,8 @@ if(Test-Path -LiteralPath $networkLibrary){. $networkLibrary}
 
 try {
     $mutex = New-Object System.Threading.Mutex($false, 'Local\CocoMinecraftUpdater')
-    if (-not $mutex.WaitOne(0)) { exit 0 }
+    $mutexAcquired=if($NetworkOnly){$mutex.WaitOne(0)}else{$mutex.WaitOne([TimeSpan]::FromSeconds(30))}
+    if (-not $mutexAcquired) { exit 0 }
     $engineParent=Split-Path $script:CocoEngineRoot -Parent
     if((Split-Path $engineParent -Leaf)-eq'engine'){
         Get-ChildItem -LiteralPath $engineParent -Directory -ErrorAction SilentlyContinue |
@@ -604,6 +606,10 @@ try {
     if($manifest.network){
         if(-not(Get-Command Ensure-CocoNetwork -ErrorAction SilentlyContinue)){throw 'El engine no contiene los componentes de red requeridos por este pack.'}
         [void](Ensure-CocoNetwork $selected.Root $role $manifest)
+    }
+    if($NetworkOnly){
+        Set-CocoState 'Red Coco lista' 'La LAN virtual esta preparada' 100 $false
+        exit 0
     }
     if (Test-CurrentVersion $selected.Root $manifest $role) {
         Set-CocoState 'Coco Pack actualizado' "Version $($manifest.version) | Todo listo" 100 $false

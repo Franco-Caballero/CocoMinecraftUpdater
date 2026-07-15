@@ -6,6 +6,7 @@ $root=Split-Path $PSScriptRoot -Parent
 $markerPath=Join-Path $MinecraftRoot 'config\coco-updater-state.json'
 if(-not(Test-Path -LiteralPath $markerPath)){throw 'Falta el estado instalado del host para la prueba end-to-end.'}
 $marker=Get-Content -LiteralPath $markerPath -Raw|ConvertFrom-Json
+$markerBytesBefore=[IO.File]::ReadAllBytes($markerPath)
 $mods=@(Get-ChildItem -LiteralPath (Join-Path $MinecraftRoot 'mods') -File -Filter '*.jar'|Sort-Object Name|ForEach-Object{
     [ordered]@{
         name=$_.Name;url='https://invalid.local/not-used'
@@ -13,6 +14,7 @@ $mods=@(Get-ChildItem -LiteralPath (Join-Path $MinecraftRoot 'mods') -File -Filt
         size=[int64]$_.Length
     }
 })
+$modsBefore=@($mods|ForEach-Object{"$($_.name)|$($_.sha256)|$($_.size)"})
 $manifest=[ordered]@{
     schemaVersion=2;packId=[string]$marker.packId;version=[string]$marker.version
     network=[ordered]@{
@@ -39,13 +41,22 @@ $temp=Join-Path $env:TEMP "coco-network-engine-$([guid]::NewGuid().ToString('N')
 try{
     [IO.File]::WriteAllText($temp,($manifest|ConvertTo-Json -Depth 10),(New-Object Text.UTF8Encoding($false)))
     $engine=Join-Path $root 'engine\CocoUpdater.ps1'
-    $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+$engine+'"'),'-ManifestPath',('"'+$temp+'"'),'-GameDir',('"'+$MinecraftRoot+'"'),'-Silent')
+    $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+$engine+'"'),'-ManifestPath',('"'+$temp+'"'),'-GameDir',('"'+$MinecraftRoot+'"'),'-Silent','-NetworkOnly')
     $process=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $arguments -Wait -PassThru
     if($process.ExitCode-ne0){throw "CocoUpdater fallo la prueba end-to-end de red con codigo $($process.ExitCode)."}
 }finally{Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue}
+
+$markerBytesAfter=[IO.File]::ReadAllBytes($markerPath)
+if(-not[Convert]::ToBase64String($markerBytesBefore).Equals([Convert]::ToBase64String($markerBytesAfter))){
+    throw 'El modo -NetworkOnly modifico el estado instalado del pack.'
+}
+$modsAfter=@(Get-ChildItem -LiteralPath (Join-Path $MinecraftRoot 'mods') -File -Filter '*.jar'|Sort-Object Name|ForEach-Object{
+    "$($_.Name)|$((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())|$($_.Length)"
+})
+if(($modsBefore-join"`n")-ne($modsAfter-join"`n")){throw 'El modo -NetworkOnly modifico la carpeta mods.'}
 
 $config=Get-Content -LiteralPath (Join-Path $MinecraftRoot 'config\coco-network.json') -Raw|ConvertFrom-Json
 if($config.address-ne'10.77.37.1:25565'-or$config.role-ne'host'){throw 'CocoUpdater no persistio el endpoint estable del host.'}
 $lan=Get-Content -LiteralPath (Join-Path $MinecraftRoot 'saves\coco\mcwifipnp.json') -Raw|ConvertFrom-Json
 if([int]$lan.port-ne25565-or$lan.'enable-upnp'){throw 'CocoUpdater no fijo MCWiFiPnP en TCP 25565 sin UPnP.'}
-'PASS: CocoUpdater preparo y verifico la red del host sin alterar el pack.'
+'PASS: CocoUpdater -NetworkOnly preparo y verifico la red del host sin alterar el pack.'

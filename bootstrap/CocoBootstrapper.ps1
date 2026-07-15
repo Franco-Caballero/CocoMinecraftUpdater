@@ -5,6 +5,7 @@ param(
     [int64]$MinecraftPid = 0,
     [string]$SessionStatePath,
     [switch]$Preview,
+    [switch]$NetworkOnly,
     [switch]$Silent
 )
 
@@ -318,6 +319,7 @@ if ($GameDir) { $engineParameters.GameDir=$GameDir }
 if ($MinecraftPid -gt 0) { $engineParameters.MinecraftPid=$MinecraftPid }
 if ($SessionStatePath) { $engineParameters.SessionStatePath=$SessionStatePath }
 if ($Preview) { $engineParameters.Preview=$true }
+if ($NetworkOnly) { $engineParameters.NetworkOnly=$true }
 if ($Silent) { $engineParameters.Silent=$true }
 Set-CocoSplash 'Analizando la instalacion de Minecraft...' 12
 $env:COCO_ENGINE_ROOT=$engineRoot

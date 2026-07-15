@@ -9,7 +9,7 @@ Sincroniza por JAR el pack Fabric 26.1.2 del mundo Coco. Cada amigo recibe una s
 3. El updater reconoce el `--gameDir`, descarga ZeroTier desde su sitio oficial, verifica SHA-256 y firma Authenticode y muestra un único UAC de Windows para instalar el adaptador y unirse a la red.
 4. El host autoriza automáticamente el equipo. El updater solicita un cierre normal de Minecraft, instala el pack exacto y deja Session Bridge.
 5. Al volver a abrir Minecraft aparece el servidor `Coco Minecraft` con el endpoint estable `10.77.37.1:25565`.
-6. Desde entonces Session Bridge inicia una comprobación al intentar unirse a un servidor. Si red y pack están actualizados, termina inmediatamente; si hay una reparación o actualización, la realiza y muestra la ventana morada sólo cuando hace falta.
+6. Desde entonces Session Bridge comprueba silenciosamente sólo la red al arrancar Minecraft. Al iniciar un login comprueba además el pack; si hay una reparación o actualización, la realiza y muestra la ventana morada sólo cuando hace falta.
 
 No modifica mundos, cuentas, screenshots ni `options.txt`. Reemplaza exactamente los JARs de `mods` y no conserva respaldos permanentes.
 

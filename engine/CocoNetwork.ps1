@@ -57,6 +57,10 @@ function Invoke-CocoController([string]$Method,[string]$Path,$Body=$null){
 
 function Ensure-CocoControllerNetwork($NetworkConfig){
     $networkId=[string]$NetworkConfig.networkId
+    $status=Invoke-CocoController 'Get' '/status'
+    if(([string]$status.address)-ne$networkId.Substring(0,10)){
+        throw 'La identidad ZeroTier del host no coincide con el controlador Coco. No reinstales ni borres ProgramData de ZeroTier.'
+    }
     $body=[ordered]@{
         name=[string]$NetworkConfig.name
         private=$true
@@ -97,10 +101,26 @@ function Start-CocoNetworkAuthorizer($NetworkConfig,[int64]$WatchPid){
         Write-CocoLog 'Autorizador ZeroTier verificado en modo puntual.'
         return
     }
+    $statusPath=Join-Path $env:LOCALAPPDATA "CocoMinecraftUpdater\network\authorizer-$($NetworkConfig.networkId).json"
+    Remove-Item -LiteralPath $statusPath -Force -ErrorAction SilentlyContinue
     $arguments='-NoProfile -ExecutionPolicy Bypass -File "{0}" -NetworkId {1} -WatchPid {2}' -f `
         ($scriptPath-replace'"','\"'),$NetworkConfig.networkId,$WatchPid
     Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $arguments|Out-Null
-    Write-CocoLog "Autorizador ZeroTier iniciado. WatchPid=$WatchPid"
+    $deadline=(Get-Date).AddSeconds(8)
+    do{
+        if(Test-Path -LiteralPath $statusPath){
+            try{
+                $status=Get-Content -LiteralPath $statusPath -Raw|ConvertFrom-Json
+                if($status.healthy-and$status.running-and([datetime]$status.updatedAt)-gt(Get-Date).AddSeconds(-15)){
+                    Write-CocoLog "Autorizador ZeroTier verificado. WatchPid=$WatchPid ProcessId=$($status.processId)"
+                    return
+                }
+                if($status.error){Write-CocoLog "Autorizador aun no listo: $($status.error)"}
+            }catch{}
+        }
+        Start-Sleep -Milliseconds 250
+    }while((Get-Date)-lt$deadline)
+    throw 'El autorizador ZeroTier del host no pudo iniciar correctamente.'
 }
 
 function Test-CocoZeroTierInstall([string]$MinimumVersion){
@@ -108,7 +128,7 @@ function Test-CocoZeroTierInstall([string]$MinimumVersion){
     if(-not$cli){return $false}
     try{
         $info=Invoke-CocoZeroTierJson $cli @('-j','info')
-        return [bool]($info.online-and(Test-CocoVersionAtLeast ([string]$info.version) $MinimumVersion))
+        return [bool](Test-CocoVersionAtLeast ([string]$info.version) $MinimumVersion)
     }catch{return $false}
 }
 
@@ -125,6 +145,23 @@ function Test-CocoHostFirewall($NetworkConfig){
             $rule.Profile.ToString()-match'Private'-and$port.Protocol-eq'TCP'-and[int]$port.LocalPort-eq[int]$NetworkConfig.minecraftPort-and
             $subnetOkay-and$interface.InterfaceAlias-match'ZeroTier')
     }catch{return $false}
+}
+
+function Test-CocoClientFirewallClean($NetworkConfig){
+    return -not[bool](Get-NetFirewallRule -DisplayName ([string]$NetworkConfig.firewallRuleName) -ErrorAction SilentlyContinue)
+}
+
+function Get-CocoPeerMode($NetworkConfig,[string]$Role){
+    if($Role-ne'client'){return 'UNKNOWN'}
+    try{
+        $peers=@(Invoke-CocoZeroTierJson (Get-CocoZeroTierCli) @('-j','listpeers'))
+        $controller=$NetworkConfig.networkId.Substring(0,10)
+        $peer=@($peers|Where-Object address -eq $controller|Select-Object -First 1)[0]
+        if(-not$peer){return 'UNKNOWN'}
+        $active=@($peer.paths|Where-Object active)
+        if($peer.tunneled -or -not $active.Count){return 'RELAY'}
+        return 'DIRECT'
+    }catch{return 'UNKNOWN'}
 }
 
 function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$InstallRequired){
@@ -169,7 +206,8 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
         $message=if($result.message){[string]$result.message}else{"La configuracion elevada termino con codigo $($process.ExitCode)."}
         throw $message
     }
-    if($result.rebootRequired){throw 'ZeroTier solicito reiniciar Windows. Reinicia y vuelve a ejecutar CocoUpdater.'}
+    $script:CocoNetworkRebootRequired=[bool]$result.rebootRequired
+    if($script:CocoNetworkRebootRequired){Write-CocoLog 'ZeroTier recomendo reiniciar Windows; se intentara completar sin reinicio.'}
 }
 
 function Wait-CocoZeroTierReady($NetworkConfig,[string]$Role){
@@ -189,7 +227,8 @@ function Wait-CocoZeroTierReady($NetworkConfig,[string]$Role){
         Set-CocoState 'Conectando red Coco' "Esperando autorizacion automatica del host... $remaining s" 22
         Start-Sleep -Seconds 2
     }
-    throw 'El host no autorizo esta PC a tiempo. Deja el mundo Coco abierto y vuelve a ejecutar el updater.'
+    if($script:CocoNetworkRebootRequired){throw 'ZeroTier necesita reiniciar Windows para terminar. Reinicia y vuelve a ejecutar CocoUpdater.'}
+    throw 'El host no autorizo esta PC a tiempo. Deja Minecraft del host abierto y vuelve a ejecutar CocoUpdater.'
 }
 
 function Set-CocoMinecraftNetworkConfig([string]$Root,$NetworkConfig,[string]$Role){
@@ -228,11 +267,6 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
     if($unexpectedLeaves.Count){throw 'El manifiesto intento abandonar una red ZeroTier no reconocida.'}
 
     Set-CocoState 'Verificando red Coco' 'Preparando la LAN virtual privada...' 10
-    if($Role-eq'host'){
-        Ensure-CocoControllerNetwork $config
-        Start-CocoNetworkAuthorizer $config $MinecraftPid
-    }
-
     $cli=Get-CocoZeroTierCli
     foreach($obsolete in @($config.leaveNetworkIds)){
         if($cli-and$obsolete-and$obsolete-ne$config.networkId-and(Get-CocoZeroTierNetwork $cli $obsolete)){
@@ -247,21 +281,28 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
     if($adapter){
         try{$profileOkay=(Get-NetConnectionProfile -InterfaceIndex $adapter.ifIndex -ErrorAction Stop).NetworkCategory-eq$desiredProfile}catch{}
     }
-    $firewallOkay=$Role-ne'host'-or(Test-CocoHostFirewall $config)
+    $firewallOkay=if($Role-eq'host'){Test-CocoHostFirewall $config}else{Test-CocoClientFirewallClean $config}
     if($installRequired-or-not$network-or-not$adapter-or-not$profileOkay-or-not$firewallOkay){
         if(-not$script:CocoForm){Show-CocoWindow}
         Invoke-CocoNetworkElevation $config $Role $installRequired
     }
 
-    if($Role-eq'host'){[void](Set-CocoHostMember $config)}
+    if($Role-eq'host'){
+        # Installation/service repair must happen before using the local API.
+        # Fix the host member first so the authorizer never gives it a random IP.
+        Ensure-CocoControllerNetwork $config
+        [void](Set-CocoHostMember $config)
+        Start-CocoNetworkAuthorizer $config $MinecraftPid
+    }
     $network=Wait-CocoZeroTierReady $config $Role
+    $peerMode=Get-CocoPeerMode $config $Role
     Set-CocoMinecraftNetworkConfig $Root $config $Role
     $stateRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\network'
     New-Item -ItemType Directory -Path $stateRoot -Force|Out-Null
     [ordered]@{
         provider='zerotier';networkId=[string]$config.networkId;status=[string]$network.status
-        assignedAddresses=@($network.assignedAddresses);role=$Role;verifiedAt=(Get-Date).ToString('o')
+        assignedAddresses=@($network.assignedAddresses);role=$Role;peerMode=$peerMode;verifiedAt=(Get-Date).ToString('o')
     }|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $stateRoot 'state.json') -Encoding UTF8
-    Write-CocoLog "Red Coco lista. Role=$Role Status=$($network.status) Addresses=$($network.assignedAddresses-join',')"
+    Write-CocoLog "Red Coco lista. Role=$Role Status=$($network.status) PeerMode=$peerMode Addresses=$($network.assignedAddresses-join',')"
     return [pscustomobject]@{enabled=$true;network=$network;address=("{0}:{1}"-f$config.hostAddress,$config.minecraftPort)}
 }

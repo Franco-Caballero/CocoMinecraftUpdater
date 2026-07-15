@@ -40,6 +40,7 @@ La integración está publicada desde 0.5.22. El primer ensayo del cliente se ha
 - CocoUpdater descarga el MSI versionado desde `download.zerotier.com`, exige el SHA-256 fijado y una firma Authenticode válida de `ZEROTIER, INC.`.
 - La instalación del driver/servicio, unión, perfil de red y Firewall usan una sola elevación UAC cuando es necesaria. Una PC ya correcta no se reinstala ni vuelve a elevarse.
 - El host usa el controlador local de ZeroTier; no existe token de Central en el EXE, manifiesto, JAR ni repositorio. Session Bridge inicia el autorizador del host al arrancar Minecraft y lo detiene cuando Minecraft termina.
+- Session Bridge ejecuta `-NetworkOnly` al arrancar en host y clientes. Esto puede reparar servicio, unión, perfil o configuración antes de que un fallo de TCP impida siquiera iniciar el login; no cambia mods ni cierra Minecraft.
 - Los clientes quedan con perfil de Windows `Public`. El host queda `Private` y sólo admite entrada TCP 25565 desde `10.77.37.0/24` por la interfaz ZeroTier.
 - Session Bridge crea o repara la entrada `Coco Minecraft` en `servers.dat`. MCWiFiPnP fija 25565 y mantiene UPnP desactivado.
 - e4mc permanece instalado como respaldo; durante una prueba A/B, detener su túnel y usar exclusivamente `Coco Minecraft`.
@@ -47,6 +48,8 @@ La integración está publicada desde 0.5.22. El primer ensayo del cliente se ha
 La autorización automática acepta cualquier Node ID que conozca el Network ID mientras el autorizador del host está activo. Es la decisión deliberada de menor fricción; la contención depende del Firewall limitado a Minecraft y de la whitelist del mundo. No confundir autorización del dispositivo con identidad de jugador offline. Registrar ping, pérdida, reconexiones y `zerotier-cli peers` para distinguir `DIRECT` de `RELAY`.
 
 Si el host no está ejecutando Minecraft, el cliente puede terminar unido pero pendiente de autorización; CocoUpdater espera 120 segundos y explica que debe reintentarse con el host abierto. UAC y una posible advertencia de SmartScreen no pueden omitirse legítimamente.
+
+La identidad del controlador vive en `C:\ProgramData\ZeroTier\One\identity.secret`. No borrarla ni reemplazarla: el Network ID está ligado al Node ID `58997fc5f3`. El updater detecta una identidad distinta y se detiene con un error explícito para evitar crear una red incoherente.
 
 ## Riesgo de Windows
 

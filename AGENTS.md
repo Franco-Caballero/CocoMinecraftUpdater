@@ -217,7 +217,7 @@ Primera instalación:
 Actualizaciones posteriores:
 
 1. Bridge **no** debe abrir el updater al arrancar Minecraft.
-2. Bridge lo ejecuta al iniciar el login (`ClientLoginConnectionEvents.INIT`), antes de la sincronización de registros. En el host también lo inicia una vez al arrancar Minecraft para mantener activo el autorizador ZeroTier durante esa sesión.
+2. Bridge ejecuta un chequeo `-NetworkOnly` al arrancar Minecraft tanto en host como clientes; no cambia mods ni cierra el juego. Al iniciar el login (`ClientLoginConnectionEvents.INIT`) ejecuta el chequeo completo antes de la sincronización de registros. En el host el chequeo de red mantiene activo el autorizador durante esa sesión.
 3. Si está actualizado, el chequeo termina inmediatamente.
 4. Si está atrasado, Gate rechaza la versión antigua, el updater cierra Minecraft, instala y muestra cuándo se puede reabrir.
 5. No existe un monitor permanente cada 60 segundos en la versión nueva.
@@ -237,6 +237,7 @@ Un cliente todavía en Bridge 0.5.17 puede abrir el updater al iniciar; debe com
 - Autorizar automáticamente nodos en el controlador local del host, sin secretos de Central.
 - Crear/reparar la entrada `Coco Minecraft` en la lista de servidores.
 - Incluir pruebas de red estáticas, de estado vivo y end-to-end mediante el propio engine.
+- La revisión posterior añade heartbeat del autorizador, reintento de MSI/NLA, limpieza de reglas host en clientes, diagnóstico DIRECT/RELAY y reparación `-NetworkOnly` al arrancar. Publicar estos cambios en una versión posterior a 0.5.22 antes del ensayo con un amigo.
 
 Pasaron las pruebas de sintaxis, recuperación transaccional, autorización sintética y ejecución end-to-end de red. El host quedó actualizado antes de exponer el release.
 

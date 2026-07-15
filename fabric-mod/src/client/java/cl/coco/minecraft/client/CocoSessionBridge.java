@@ -22,49 +22,56 @@ public final class CocoSessionBridge implements ClientModInitializer {
     private static final Pattern ACTION = Pattern.compile("\\\"action\\\"\\s*:\\s*\\\"([^\\\"]*)");
     private static final Pattern ADDRESS = Pattern.compile("\\\"address\\\"\\s*:\\s*\\\"([^\\\"]+)");
     private static Path stateFile;
+    private static boolean host;
+    private static boolean serverEntryInstalled;
     private int ticks;
     private boolean closing;
 
     @Override public void onInitializeClient() {
         long pid = ProcessHandle.current().pid();
         stateFile = Path.of(System.getenv("LOCALAPPDATA"), "CocoMinecraftUpdater", "session", pid + ".json");
+        host = Files.isRegularFile(Path.of(System.getProperty("user.dir"), "config", "coco-host.json"));
         try {
             Files.deleteIfExists(stateFile);
         } catch (IOException ignored) {
             // A stale file must never close a new session if Windows reuses a PID.
         }
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
-            if (!closing && ++ticks % 10 == 0 && shouldCloseMinecraft()) {
+            ticks++;
+            if (!closing && ticks % 10 == 0 && shouldCloseMinecraft()) {
                 closing = true;
                 mc.stop();
             }
+            if (!serverEntryInstalled && ticks % 100 == 0) serverEntryInstalled = installServerEntry(mc);
         });
         ClientLifecycleEvents.CLIENT_STARTED.register(mc -> {
-            installServerEntry(mc);
-            // El host debe aceptar nodos mientras Minecraft este abierto. Los
-            // clientes conservan el flujo historico: solo revisan al conectar.
-            if (Files.isRegularFile(mc.gameDirectory.toPath().resolve("config").resolve("coco-host.json"))) {
-                launchUpdater(mc.gameDirectory.toPath(), pid);
-            }
+            host = Files.isRegularFile(mc.gameDirectory.toPath().resolve("config").resolve("coco-host.json"));
+            serverEntryInstalled = installServerEntry(mc);
+            // La comprobacion de arranque solo repara la red. Nunca cambia mods
+            // ni cierra Minecraft. En el host tambien mantiene el autorizador.
+            launchUpdater(mc.gameDirectory.toPath(), pid, true);
         });
         // INIT happens before registry synchronization. A client missing a newly
         // added content mod is rejected during that synchronization and never
         // reaches the play JOIN event.
         ClientLoginConnectionEvents.INIT.register((listener, mc) ->
-            launchUpdater(mc.gameDirectory.toPath(), pid));
+            launchUpdater(mc.gameDirectory.toPath(), pid, false));
         ClientPlayConnectionEvents.JOIN.register((listener, sender, mc) -> {
             ClientPlayNetworking.send(new CocoProtocol.Hello(CocoProtocol.PACK_ID, CocoProtocol.PACK_VERSION));
+            if (host) launchUpdater(mc.gameDirectory.toPath(), pid, true);
         });
     }
 
-    private static void launchUpdater(Path gameDir, long pid) {
+    private static void launchUpdater(Path gameDir, long pid, boolean networkOnly) {
         Path exe = Path.of(System.getenv("LOCALAPPDATA"), "CocoMinecraftUpdater", "CocoUpdater.exe");
         if (!Files.isRegularFile(exe)) {
             return;
         }
         try {
-            new ProcessBuilder(exe.toString(), "-GameDir", gameDir.toString(), "-MinecraftPid", Long.toString(pid),
-                "-SessionStatePath", stateFile.toString(), "-Silent").start();
+            ProcessBuilder process = new ProcessBuilder(exe.toString(), "-GameDir", gameDir.toString(), "-MinecraftPid", Long.toString(pid),
+                "-SessionStatePath", stateFile.toString(), "-Silent");
+            if (networkOnly) process.command().add("-NetworkOnly");
+            process.start();
         } catch (IOException e) {
             // El Gate explicará cómo instalarlo si este cliente intenta entrar desactualizado.
         }
@@ -78,13 +85,13 @@ public final class CocoSessionBridge implements ClientModInitializer {
         } catch (Exception ignored) { return false; }
     }
 
-    private static void installServerEntry(Minecraft minecraft) {
+    private static boolean installServerEntry(Minecraft minecraft) {
         Path config = minecraft.gameDirectory.toPath().resolve("config").resolve("coco-network.json");
-        if (!Files.isRegularFile(config)) return;
+        if (!Files.isRegularFile(config)) return false;
         try {
             String json = Files.readString(config, StandardCharsets.UTF_8);
             String address = value(ADDRESS, json, "");
-            if (address.isBlank()) return;
+            if (address.isBlank()) return false;
             ServerList servers = new ServerList(minecraft);
             servers.load();
             ServerData desired = new ServerData("Coco Minecraft", address, ServerData.Type.OTHER);
@@ -99,8 +106,10 @@ public final class CocoSessionBridge implements ClientModInitializer {
             }
             if (!replaced) servers.add(desired, false);
             servers.save();
+            return true;
         } catch (Exception ignored) {
             // Un servers.dat bloqueado o antiguo no debe impedir arrancar Minecraft.
+            return false;
         }
     }
 

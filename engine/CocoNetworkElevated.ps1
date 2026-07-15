@@ -74,11 +74,19 @@ try{
             throw 'La firma Authenticode del instalador de ZeroTier no es valida.'
         }
         $arguments=@('/i',('"'+$config.installerPath+'"'),'/qn','/norestart')
-        $installer=Start-Process -FilePath 'msiexec.exe' -ArgumentList $arguments -PassThru -Wait
+        for($attempt=1;$attempt-le4;$attempt++){
+            $installer=Start-Process -FilePath 'msiexec.exe' -ArgumentList $arguments -PassThru -Wait
+            if($installer.ExitCode-ne1618){break}
+            if($attempt-lt4){Start-Sleep -Seconds (5*$attempt)}
+        }
         if($installer.ExitCode-notin@(0,1641,3010)){throw "El instalador de ZeroTier termino con codigo $($installer.ExitCode)."}
     }
 
-    $service=Get-Service -Name 'ZeroTierOneService' -ErrorAction Stop
+    $rebootRequired=[bool]($installer-and$installer.ExitCode-in@(1641,3010))
+    try{$service=Get-Service -Name 'ZeroTierOneService' -ErrorAction Stop}catch{
+        if($rebootRequired){throw 'ZeroTier se instalo, pero Windows necesita reiniciarse para activar el adaptador. Reinicia y vuelve a ejecutar CocoUpdater.'}
+        throw
+    }
     if($service.StartType-ne'Automatic'){Set-Service -Name 'ZeroTierOneService' -StartupType Automatic}
     if($service.Status-ne'Running'){Start-Service -Name 'ZeroTierOneService'}
     $deadline=(Get-Date).AddSeconds(45)
@@ -119,15 +127,26 @@ try{
     }while((Get-Date)-lt$deadline)
     if(-not$adapter){throw 'No se encontro el adaptador virtual de la red Coco.'}
 
-    Set-NetConnectionProfile -InterfaceIndex $adapter.ifIndex -NetworkCategory $config.profile -ErrorAction Stop
+    $profileSet=$false
+    $deadline=(Get-Date).AddSeconds(45)
+    do{
+        try{
+            Set-NetConnectionProfile -InterfaceIndex $adapter.ifIndex -NetworkCategory $config.profile -ErrorAction Stop
+            $current=Get-NetConnectionProfile -InterfaceIndex $adapter.ifIndex -ErrorAction Stop
+            if($current.NetworkCategory-eq$config.profile){$profileSet=$true;break}
+        }catch{}
+        Start-Sleep -Milliseconds 500
+    }while((Get-Date)-lt$deadline)
+    if(-not$profileSet){throw "Windows no permitio establecer el perfil ZeroTier como $($config.profile)."}
     if($config.mode-eq'host'){
         Remove-NetFirewallRule -DisplayName $config.firewallRuleName -ErrorAction SilentlyContinue
         New-NetFirewallRule -DisplayName $config.firewallRuleName -Direction Inbound -Action Allow -Protocol TCP `
             -LocalPort ([int]$config.minecraftPort) -RemoteAddress $config.subnet -Profile Private `
-            -InterfaceAlias 'ZeroTier One*' -ErrorAction Stop|Out-Null
+            -InterfaceAlias $adapter.Name -ErrorAction Stop|Out-Null
+    }else{
+        Remove-NetFirewallRule -DisplayName $config.firewallRuleName -ErrorAction SilentlyContinue
     }
 
-    $rebootRequired=[bool]($installer-and$installer.ExitCode-in@(1641,3010))
     Write-Result $true 'ZeroTier configurado.' @{cli=$cli;adapter=$adapter.Name;interfaceIndex=$adapter.ifIndex;rebootRequired=$rebootRequired}
     exit 0
 }catch{

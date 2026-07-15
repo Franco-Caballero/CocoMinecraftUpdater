@@ -49,7 +49,7 @@ if($cli){
     $authorizer=Join-Path $root 'engine\CocoNetworkAuthorizer.ps1'
     $token=(Get-Content 'C:\ProgramData\ZeroTier\One\authtoken.secret' -Raw).Trim()
     $headers=@{'X-ZT1-Auth'=$token}
-    $fakeNode='f0c0c0c001'
+    $fakeNode=[guid]::NewGuid().ToString('N').Substring(0,10)
     $memberUri="http://127.0.0.1:9993/controller/network/$networkId/member/$fakeNode"
     try{
         $pending=Invoke-RestMethod -Method Post -Uri $memberUri -Headers $headers -ContentType 'application/json' -Body '{"authorized":false}' -TimeoutSec 10
@@ -59,8 +59,36 @@ if($cli){
         if($pass.ExitCode-ne0){throw 'El autorizador local no completo una pasada.'}
         $authorized=Invoke-RestMethod -Method Get -Uri $memberUri -Headers $headers -TimeoutSec 10
         if(-not$authorized.authorized){throw 'El autorizador local no acepto un nodo pendiente.'}
+        $recentLog=Get-Content (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\logs\zerotier-authorizer.log') -Tail 6|Out-String
+        if($recentLog-notmatch[regex]::Escape("Nodo autorizado automaticamente: $fakeNode")-or
+            $recentLog-notmatch'Configuracion de red republicada'){
+            throw 'El autorizador no republico la red despues de aceptar el nodo.'
+        }
     }finally{
         try{Invoke-RestMethod -Method Delete -Uri $memberUri -Headers $headers -TimeoutSec 10|Out-Null}catch{}
+    }
+
+    $statusPath=Join-Path $env:LOCALAPPDATA "CocoMinecraftUpdater\network\authorizer-$networkId.json"
+    Remove-Item -LiteralPath $statusPath -Force -ErrorAction SilentlyContinue
+    $watch=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-Command','Start-Sleep -Seconds 5') -PassThru
+    $authorizerProcess=$null
+    try{
+        $arguments='-NoProfile -ExecutionPolicy Bypass -File "{0}" -NetworkId {1} -WatchPid {2} -PollSeconds 1' -f ($authorizer-replace'"','\"'),$networkId,$watch.Id
+        $authorizerProcess=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $arguments -PassThru
+        $deadline=(Get-Date).AddSeconds(4);$heartbeat=$null
+        do{
+            if(Test-Path -LiteralPath $statusPath){try{$heartbeat=Get-Content -LiteralPath $statusPath -Raw|ConvertFrom-Json}catch{}}
+            if($heartbeat.healthy-and$heartbeat.running-and[int64]$heartbeat.watchPid-eq$watch.Id){break}
+            Start-Sleep -Milliseconds 200
+        }while((Get-Date)-lt$deadline)
+        if(-not$heartbeat.healthy-or-not$heartbeat.running-or[int64]$heartbeat.watchPid-ne$watch.Id){throw 'El autorizador persistente no publico un heartbeat sano.'}
+        $watch.WaitForExit()
+        if(-not$authorizerProcess.WaitForExit(5000)){throw 'El autorizador no se detuvo al terminar Minecraft simulado.'}
+        $stopped=Get-Content -LiteralPath $statusPath -Raw|ConvertFrom-Json
+        if($stopped.running){throw 'El heartbeat del autorizador no registro su cierre.'}
+    }finally{
+        if($watch-and-not$watch.HasExited){Stop-Process -Id $watch.Id -Force -ErrorAction SilentlyContinue}
+        if($authorizerProcess-and-not$authorizerProcess.HasExited){Stop-Process -Id $authorizerProcess.Id -Force -ErrorAction SilentlyContinue}
     }
 }
 
