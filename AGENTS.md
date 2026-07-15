@@ -321,3 +321,12 @@ Los amigos que ya instalaron correctamente no necesitan recibir otro EXE: bootst
 - e4mc no fue retirado. Durante la prueba A/B detener su tunel para no mezclar rutas y conservarlo como respaldo.
 - Falta medir con uno o dos amigos ping, perdida, reconexiones y si cada peer aparece `DIRECT` o `RELAY`. No afirmar mejora de latencia antes de esa medicion.
 - Prueba aislada previa a 0.5.23: un segundo nodo ZeroTier 1.16.2 con identidad nueva se unio desde WSL, fue autorizado sin intervencion y recibio automaticamente `10.77.37.11/24` en 10,9 s. Hubo 0 % de perdida, TCP 25565 respondio y el peer fue `DIRECT`. Esta prueba valida controlador, autorizador, asignacion IP, Firewall y transporte; su latencia local no representa la de Chile/Argentina ni sustituye la prueba del MSI/UAC en otro Windows.
+
+### Incidente Ethernet durante la preparacion del primer test
+
+- A las 22:23 el Realtek fisico perdio su concesion DHCP y quedo con una direccion APIPA aunque conservaba enlace de 1 Gbps. Reiniciar Windows restauro DHCP `192.168.1.86`, acceso al router en menos de 1 ms e Internet con 0 % de perdida.
+- ZeroTier se habia instalado correctamente a las 20:23 y creo su adaptador a las 20:38; CocoUpdater termino su ultimo chequeo a las 22:18:56. No hubo instalacion ni reparacion de ZeroTier en el momento de la perdida.
+- Windows registro dos cambios de fuente de energia a las 22:23:10-14 y Ethernet paso a red no identificada a las 22:23:42. El controlador Realtek es `1168.11.1206.2022`; `Power Saving Mode`, Green Ethernet, EEE y Advanced EEE ya estaban desactivados. Esto hace plausible un estado transitorio del controlador/pila de red, pero no demuestra la causa exacta.
+- CocoUpdater selecciona el adaptador exclusivamente por descripcion ZeroTier y MAC/Network ID; no ejecuta cambios sobre Realtek. ZeroTier tampoco instala un filtro sobre el adaptador fisico. No atribuir el incidente a ZeroTier ni descartarlo definitivamente sin una reproduccion.
+- Durante el diagnostico un reinicio administrativo incompleto dejo Ethernet deshabilitado temporalmente; se rehabilito y se devolvio a DHCP antes del reinicio. No confundir ese efecto posterior con la perdida original.
+- Wi-Fi quedo administrativamente deshabilitado por peticion del usuario. La ruta activa es solo Ethernet; ZeroTier esta `ONLINE`, red `OK PRIVATE`, IP `10.77.37.1/24`.

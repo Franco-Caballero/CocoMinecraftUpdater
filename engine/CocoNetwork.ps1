@@ -198,7 +198,7 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
     $arguments='-NoProfile -ExecutionPolicy Bypass -File "{0}" -ConfigPath "{1}" -ResultPath "{2}"' -f `
         ($helper-replace'"','\"'),($configPath-replace'"','\"'),($resultPath-replace'"','\"')
     Set-CocoState 'Configurando red Coco' 'Windows pedira permiso una sola vez. Pulsa Si.' 15
-    try{$process=Start-Process powershell.exe -Verb RunAs -ArgumentList $arguments -PassThru -Wait}
+    try{$process=Start-Process powershell.exe -Verb RunAs -WindowStyle Hidden -ArgumentList $arguments -PassThru -Wait}
     catch{throw 'Se cancelo el permiso de administrador. Vuelve a abrir CocoUpdater y pulsa Si.'}
     try{$result=if(Test-Path -LiteralPath $resultPath){Get-Content -LiteralPath $resultPath -Raw|ConvertFrom-Json}else{$null}}
     finally{Remove-Item -LiteralPath $configPath,$resultPath -Force -ErrorAction SilentlyContinue}

@@ -15,6 +15,9 @@ public final class CocoPackGate implements ModInitializer {
     private final Map<UUID, Long> waiting = new ConcurrentHashMap<>();
 
     @Override public void onInitialize() {
+        // The main entrypoint is delivered reliably even when a launcher misses
+        // client lifecycle callbacks. The launcher itself checks EnvType.CLIENT.
+        CocoUpdaterLauncher.initializeEarly();
         PayloadTypeRegistry.serverboundPlay().register(CocoProtocol.Hello.TYPE, CocoProtocol.Hello.CODEC);
         ServerPlayConnectionEvents.JOIN.register((listener, sender, server) ->
             waiting.put(listener.getPlayer().getUUID(), server.getTickCount() + 160L));

@@ -114,6 +114,7 @@ if($removedModIds.Count-and-not$AllowModRemoval){
     throw "Publicacion bloqueada: desaparecerian mods ya publicados ($($removedModIds -join ', ')). Requiere -AllowModRemoval y confirmacion explicita del usuario."
 }
 .\tests\Test-CocoRelease.ps1 -Version $Version
+.\tests\Test-CocoBridge.ps1
 .\tests\Test-CocoEngineRecovery.ps1
 .\tests\Test-CocoZeroTier.ps1
 .\tests\Test-CocoNetworkEngine.ps1 -MinecraftRoot $MinecraftRoot

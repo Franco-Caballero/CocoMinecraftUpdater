@@ -29,7 +29,7 @@ Después se publica y los clientes lo detectan en el próximo intento de conexi�
 
 Si Windows se apaga durante el reemplazo de `mods`, el próximo inicio restaura automáticamente `.coco-mods-replacing` antes de continuar. Las descargas se verifican por SHA-256 y se reintentan cuatro veces.
 
-Para diagnosticar un PC, pide la carpeta `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`. El updater conserva los 40 registros más recientes.
+Para diagnosticar un PC, pide la carpeta `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`. El updater conserva los 40 registros más recientes. Session Bridge escribe `bridge-<PID>.log` con el entrypoint, cada proceso iniciado y cualquier error de lanzamiento.
 
 ## LAN virtual ZeroTier
 
@@ -38,10 +38,10 @@ La integración y sus correcciones de arranque/primera unión están publicadas 
 - Red privada autocontrolada: `Coco Minecraft` (`58997fc5f3c0c001`).
 - Subred: `10.77.37.0/24`; endpoint fijo del host: `10.77.37.1:25565`.
 - CocoUpdater descarga el MSI versionado desde `download.zerotier.com`, exige el SHA-256 fijado y una firma Authenticode válida de `ZEROTIER, INC.`.
-- La instalación del driver/servicio, unión, perfil de red y Firewall usan una sola elevación UAC cuando es necesaria. Una PC ya correcta no se reinstala ni vuelve a elevarse.
+- La instalación del driver/servicio, unión, perfil de red y Firewall usan una sola elevación UAC cuando es necesaria. Después del consentimiento el PowerShell administrativo se ejecuta oculto. Una PC ya correcta no se reinstala ni vuelve a elevarse.
 - El host usa el controlador local de ZeroTier; no existe token de Central en el EXE, manifiesto, JAR ni repositorio. Session Bridge inicia el autorizador del host al arrancar Minecraft y lo detiene cuando Minecraft termina.
 - Al autorizar un equipo nuevo, el host republica la configuración de red para que una respuesta inicial `ACCESS_DENIED` no quede cacheada hasta el siguiente reintento lento.
-- Session Bridge ejecuta `-NetworkOnly` al arrancar en host y clientes. Esto puede reparar servicio, unión, perfil o configuración antes de que un fallo de TCP impida siquiera iniciar el login; no cambia mods ni cierra Minecraft.
+- Session Bridge ejecuta `-NetworkOnly` desde el entrypoint principal al arrancar en host y clientes. Los callbacks cliente verifican el `gameDir`, comprueban el estado final y reintentan cada diez segundos únicamente si el proceso terminó sin dejar la red lista. Esto puede reparar servicio, unión, perfil o configuración antes de que un fallo de TCP impida siquiera iniciar el login; no cambia mods ni cierra Minecraft.
 - Los clientes quedan con perfil de Windows `Public`. El host queda `Private` y sólo admite entrada TCP 25565 desde `10.77.37.0/24` por la interfaz ZeroTier.
 - Session Bridge crea o repara la entrada `Coco Minecraft` en `servers.dat`. MCWiFiPnP fija 25565 y mantiene UPnP desactivado.
 - e4mc permanece instalado como respaldo; durante una prueba A/B, detener su túnel y usar exclusivamente `Coco Minecraft`.
