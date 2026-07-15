@@ -11,7 +11,7 @@ Sincroniza por JAR el pack Fabric 26.1.2 del mundo Coco. Cada amigo recibe una s
 5. Al volver a abrir Minecraft aparece el servidor `Coco Minecraft` con el endpoint estable `10.77.37.1:25565`.
 6. Desde entonces Session Bridge comprueba silenciosamente sólo la red al arrancar Minecraft. Al iniciar un login comprueba además el pack; si hay una reparación o actualización, la realiza y muestra la ventana morada sólo cuando hace falta.
 
-No modifica mundos, cuentas, screenshots ni `options.txt`. Reemplaza exactamente los JARs de `mods` y no conserva respaldos permanentes.
+No modifica mundos, cuentas, screenshots ni `options.txt`. Los clientes reciben exactamente los JARs publicados. El host conserva mods adicionales con un Fabric ID nuevo para que puedan incorporarse a la siguiente publicación sin perderse; versiones viejas con el mismo ID no se duplican.
 
 Session Bridge checks during login, before registry synchronization. This lets it start the updater even when a client is missing a content mod and cannot finish joining.
 
@@ -19,7 +19,7 @@ Session Bridge checks during login, before registry synchronization. This lets i
 
 Sólo `config/coco-host.json`, guardado localmente en la instalación del anfitrión, selecciona el paquete host. Ese archivo nunca se distribuye. El cliente no recibe e4mc ni MCWiFiPnP; ambos roles reciben el mismo Session Bridge/Pack Gate.
 
-La integración ZeroTier está publicada y reforzada en 0.5.23; queda pendiente únicamente el primer ensayo en el Windows de un amigo. No usa ZeroTier Central ni distribuye tokens administrativos: el host ejecuta un controlador privado y autoriza automáticamente nodos nuevos mientras Minecraft está abierto. e4mc sigue instalado como respaldo durante la validación A/B.
+La integración ZeroTier está publicada y reforzada en 0.5.25; queda pendiente únicamente el primer ensayo en el Windows de un amigo. No usa ZeroTier Central ni distribuye tokens administrativos: el host ejecuta un controlador privado y autoriza automáticamente nodos nuevos mientras Minecraft está abierto. e4mc sigue instalado como respaldo durante la validación A/B.
 
 ## Publicar mods
 

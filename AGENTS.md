@@ -196,14 +196,14 @@ Cuando se cambie comportamiento, actualizar código, pruebas y documentación en
 
 ### Estado verificado
 
-- Release público estable: **0.5.23**.
-- Host instalado: pack 0.5.23, rol `host`.
-- Bridge activo: `coco-session-bridge-0.5.23.jar`.
-- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, versión 0.5.23.0.
-- Manifiesto 0.5.23: 68 mods de cliente y 70 de host. Incluye `pingview` y los mods YUNG's confirmados por el usuario.
+- Release público estable: **0.5.25**.
+- Host instalado: pack 0.5.25, rol `host`.
+- Bridge activo: `coco-session-bridge-0.5.25.jar`.
+- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, versión 0.5.25.0.
+- Manifiesto 0.5.25: 69 mods de cliente y 71 de host. Incluye `pingview`, los mods YUNG's y `geckolib-fabric-26.1.2-5.5.2.jar`, todos confirmados por el usuario.
 - El host se identifica exclusivamente mediante `config\coco-host.json`, que no se distribuye.
 - Cliente excluye e4mc y MCWiFiPnP; host los incluye. Ambos roles reciben Bridge/Gate.
-- El pack reemplaza exactamente la carpeta `mods`: agrega faltantes, reemplaza hashes distintos y elimina extras. No conserva respaldos permanentes.
+- Los clientes reemplazan exactamente la carpeta `mods`. Desde 0.5.25 el host conserva JAR adicionales con un Fabric ID nuevo porque su carpeta es la fuente del Publisher; una versión vieja cuyo ID ya está en el manifiesto no se duplica. El Publisher bloquea la desaparición de IDs publicados salvo `-AllowModRemoval` y autorización explícita. No conserva respaldos permanentes de archivos retirados deliberadamente.
 - Los JAR se publican como assets inmutables por SHA-256; cada actualización descarga solo faltantes/diferentes.
 
 ### Flujo actual esperado
@@ -224,7 +224,7 @@ Actualizaciones posteriores:
 
 Un cliente todavía en Bridge 0.5.17 puede abrir el updater al iniciar; debe completar una última actualización con el comportamiento antiguo.
 
-### Cambios publicados en 0.5.22 y 0.5.23
+### Cambios publicados en 0.5.22 a 0.5.25
 
 `engine\CocoUpdater.ps1` y Session Bridge publicaron estos cambios en 0.5.22:
 
@@ -240,6 +240,8 @@ Un cliente todavía en Bridge 0.5.17 puede abrir el updater al iniciar; debe com
 - 0.5.23 añade heartbeat del autorizador, reintento de MSI/NLA, limpieza de reglas host en clientes, diagnóstico DIRECT/RELAY y reparación `-NetworkOnly` al arrancar.
 - 0.5.23 republica la configuración del controlador inmediatamente después de aceptar nodos nuevos, evitando la carrera inicial en la que un cliente podía conservar `ACCESS_DENIED` aun después de ser autorizado.
 - La secuencia del host instala o repara servicio/adaptador antes de usar el controlador, fija primero su IP `10.77.37.1` y luego inicia el autorizador.
+- 0.5.24 añade un disparador por ticks para `-NetworkOnly`: en este entorno `ClientLifecycleEvents.CLIENT_STARTED` no se entregó aunque el Bridge cargó. El fallback evita depender de ese único evento.
+- 0.5.25 publica GeckoLib 5.5.2, preserva mods adicionales únicos del host y bloquea eliminaciones silenciosas en publicaciones futuras.
 
 Pasaron las pruebas de sintaxis, recuperación transaccional, autorización sintética y ejecución end-to-end de red. El host quedó actualizado antes de exponer el release.
 
@@ -308,7 +310,7 @@ Los amigos que ya instalaron correctamente no necesitan recibir otro EXE: bootst
 
 ## Automatizacion ZeroTier preparada el 14-07-2026
 
-- La implementacion y su segunda pasada correctiva estan publicadas en 0.5.23; sigue pendiente la primera instalacion en un Windows real de un amigo, exclusivamente mediante CocoUpdater.
+- La implementacion y sus correcciones estan publicadas en 0.5.25; sigue pendiente la primera instalacion en un Windows real de un amigo, exclusivamente mediante CocoUpdater.
 - ZeroTier One 1.16.2 esta instalado en el host; servicio automatico, nodo `58997fc5f3`.
 - Se abandono la red de Central `154a350c866b8062` en el host. La red activa es autocontrolada y privada: `Coco Minecraft`, Network ID `58997fc5f3c0c001`, subred `10.77.37.0/24`, host `10.77.37.1/24`.
 - El controlador local evita limites de dispositivos y elimina la necesidad de un token de Central. El autorizador acepta automaticamente los Node ID pendientes mientras Minecraft del host esta abierto.
