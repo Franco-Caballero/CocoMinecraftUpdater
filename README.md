@@ -19,7 +19,7 @@ Session Bridge checks during login, before registry synchronization. This lets i
 
 Sólo `config/coco-host.json`, guardado localmente en la instalación del anfitrión, selecciona el paquete host. Ese archivo nunca se distribuye. El cliente no recibe e4mc ni MCWiFiPnP; ambos roles reciben el mismo Session Bridge/Pack Gate.
 
-La integración ZeroTier está publicada y reforzada en 0.5.25; queda pendiente únicamente el primer ensayo en el Windows de un amigo. No usa ZeroTier Central ni distribuye tokens administrativos: el host ejecuta un controlador privado y autoriza automáticamente nodos nuevos mientras Minecraft está abierto. e4mc sigue instalado como respaldo durante la validación A/B.
+La integración ZeroTier está publicada y reforzada en 0.5.26; queda pendiente únicamente el primer ensayo en el Windows de un amigo. No usa ZeroTier Central ni distribuye tokens administrativos: el host ejecuta un controlador privado y autoriza automáticamente nodos nuevos mientras Minecraft está abierto. e4mc sigue instalado como respaldo durante la validación A/B.
 
 ## Publicar mods
 
