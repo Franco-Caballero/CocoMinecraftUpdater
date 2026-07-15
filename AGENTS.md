@@ -196,11 +196,11 @@ Cuando se cambie comportamiento, actualizar código, pruebas y documentación en
 
 ### Estado verificado
 
-- Release público estable: **0.5.27**.
-- Host instalado: pack 0.5.27, rol `host`.
-- Bridge activo: `coco-session-bridge-0.5.27.jar`.
-- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, versión 0.5.27.0.
-- Manifiesto 0.5.27: 69 mods de cliente y 71 de host. Incluye `pingview`, los mods YUNG's y `geckolib-fabric-26.1.2-5.5.2.jar`, todos confirmados por el usuario.
+- Release público estable: **0.5.28**.
+- Host instalado: pack 0.5.28, rol `host`.
+- Bridge activo: `coco-session-bridge-0.5.28.jar`.
+- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, versión 0.5.28.0.
+- Manifiesto 0.5.28: 69 mods de cliente y 71 de host. Incluye `pingview`, los mods YUNG's y `geckolib-fabric-26.1.2-5.5.2.jar`, todos confirmados por el usuario.
 - El host se identifica exclusivamente mediante `config\coco-host.json`, que no se distribuye.
 - Cliente excluye e4mc y MCWiFiPnP; host los incluye. Ambos roles reciben Bridge/Gate.
 - Los clientes reemplazan exactamente la carpeta `mods`. Desde 0.5.25 el host conserva JAR adicionales con un Fabric ID nuevo porque su carpeta es la fuente del Publisher; una versión vieja cuyo ID ya está en el manifiesto no se duplica. El Publisher bloquea la desaparición de IDs publicados salvo `-AllowModRemoval` y autorización explícita. No conserva respaldos permanentes de archivos retirados deliberadamente.
@@ -224,7 +224,7 @@ Actualizaciones posteriores:
 
 Un cliente todavía en Bridge 0.5.17 puede abrir el updater al iniciar; debe completar una última actualización con el comportamiento antiguo.
 
-### Cambios publicados en 0.5.22 a 0.5.27
+### Cambios publicados en 0.5.22 a 0.5.28
 
 `engine\CocoUpdater.ps1` y Session Bridge publicaron estos cambios en 0.5.22:
 
@@ -244,6 +244,7 @@ Un cliente todavía en Bridge 0.5.17 puede abrir el updater al iniciar; debe com
 - 0.5.25 publica GeckoLib 5.5.2, preserva mods adicionales únicos del host y bloquea eliminaciones silenciosas en publicaciones futuras.
 - 0.5.26 mueve el chequeo temprano `-NetworkOnly` al entrypoint principal de Fabric, conserva callbacks cliente como verificación/reintento cada diez segundos, escribe `bridge-<PID>.log` y deja oculta la consola PowerShell posterior al consentimiento UAC.
 - 0.5.27 carga `CocoNetwork.ps1` como texto y `ScriptBlock` dentro del engine en memoria. Corrige el primer ensayo real, donde Windows del amigo mantenía la política predeterminada `Restricted` y bloqueó el dot-source del archivo secundario. No cambia ni debilita la ExecutionPolicy del computador. El Publisher ejecuta una regresión en un proceso real con `-ExecutionPolicy Restricted`.
+- 0.5.28 elimina la necesidad de “Ejecutar como administrador” manualmente: el helper del UAC espera `OK` e IP, mientras los chequeos posteriores reconocen una instalación sana por servicio/registro y por el adaptador/IP administrada sin leer la CLI protegida. También hace que `-NetworkOnly` reutilice manifiesto/engine verificados en caché, evitando bloqueos de descarga cuando el EXE nace desde Java. Una regresión simula un cliente estándar con `10.77.37.133/24` y ejecuta dinámicamente el bootstrapper contra caché y una URL deliberadamente inválida.
 
 Pasaron las pruebas de sintaxis, recuperación transaccional, autorización sintética y ejecución end-to-end de red. El host quedó actualizado antes de exponer el release.
 
@@ -313,7 +314,7 @@ Los amigos que ya instalaron correctamente no necesitan recibir otro EXE: bootst
 
 ## Automatizacion ZeroTier preparada el 14-07-2026
 
-- La implementacion y sus correcciones estan publicadas en 0.5.27. El primer intento en un Windows real de un amigo llegó correctamente al engine 0.5.26, pero la política predeterminada `Restricted` bloqueó `CocoNetwork.ps1` antes de instalar ZeroTier. 0.5.27 corrige y prueba ese caso; sigue pendiente repetir y completar la instalación exclusivamente mediante CocoUpdater.
+- La implementacion y sus correcciones estan publicadas en 0.5.28. El primer ensayo real terminó correctamente: CocoUpdater instaló ZeroTier, el host autorizó el nodo `bc70a91be7`, recibió `10.77.37.133/24`, la ruta fue `DIRECT`, el ping estabilizado quedó en 32–40 ms con 0 % de pérdida y el amigo entró/jugó mediante `Coco Minecraft`. Durante el ensayo 0.5.27 fue necesario ejecutar el EXE elevado una vez porque el proceso normal no podía leer la CLI protegida; Bridge abrió después una reparación innecesaria por la misma causa. 0.5.28 corrige ambos comportamientos.
 - ZeroTier One 1.16.2 esta instalado en el host; servicio automatico, nodo `58997fc5f3`.
 - Se abandono la red de Central `154a350c866b8062` en el host. La red activa es autocontrolada y privada: `Coco Minecraft`, Network ID `58997fc5f3c0c001`, subred `10.77.37.0/24`, host `10.77.37.1/24`.
 - El controlador local evita limites de dispositivos y elimina la necesidad de un token de Central. El autorizador acepta automaticamente los Node ID pendientes mientras Minecraft del host esta abierto.
@@ -322,7 +323,7 @@ Los amigos que ya instalaron correctamente no necesitan recibir otro EXE: bootst
 - `saves\coco\mcwifipnp.json` usa puerto fijo `25565` y `enable-upnp=false`. Session Bridge crea `Coco Minecraft` en `servers.dat` con `10.77.37.1:25565`.
 - Seguridad deliberada: conocer el Network ID basta para ser autorizado durante la ventana activa. La exposicion queda limitada por Firewall a Minecraft; sigue siendo necesario activar/verificar whitelist por la suplantacion de nombres offline.
 - e4mc no fue retirado. Durante la prueba A/B detener su tunel para no mezclar rutas y conservarlo como respaldo.
-- Falta medir con uno o dos amigos ping, perdida, reconexiones y si cada peer aparece `DIRECT` o `RELAY`. No afirmar mejora de latencia antes de esa medicion.
+- Falta ampliar la prueba a sesiones largas, reconexiones y más amigos. Con el primer amigo se midió `DIRECT`, 32–40 ms estabilizados y 0 % de pérdida; no generalizar ese resultado a otros ISP/equipos antes de medirlos.
 - Prueba aislada previa a 0.5.23: un segundo nodo ZeroTier 1.16.2 con identidad nueva se unio desde WSL, fue autorizado sin intervencion y recibio automaticamente `10.77.37.11/24` en 10,9 s. Hubo 0 % de perdida, TCP 25565 respondio y el peer fue `DIRECT`. Esta prueba valida controlador, autorizador, asignacion IP, Firewall y transporte; su latencia local no representa la de Chile/Argentina ni sustituye la prueba del MSI/UAC en otro Windows.
 
 ### Incidente Ethernet durante la preparacion del primer test
