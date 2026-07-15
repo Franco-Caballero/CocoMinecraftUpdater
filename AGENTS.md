@@ -195,11 +195,11 @@ Cuando se cambie comportamiento, actualizar código, pruebas y documentación en
 
 ### Estado verificado
 
-- Release público estable: **0.5.19**.
-- Host instalado: pack 0.5.19, rol `host`.
-- Bridge activo: `coco-session-bridge-0.5.19.jar`.
-- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, versión 0.5.19.0.
-- Manifiesto 0.5.19: 57 mods de cliente y 59 de host.
+- Release público estable: **0.5.21**.
+- Host instalado: pack 0.5.21, rol `host`.
+- Bridge activo: `coco-session-bridge-0.5.21.jar`.
+- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, versión 0.5.21.0.
+- Manifiesto 0.5.21: 57 mods de cliente y 59 de host.
 - El host se identifica exclusivamente mediante `config\coco-host.json`, que no se distribuye.
 - Cliente excluye e4mc y MCWiFiPnP; host los incluye. Ambos roles reciben Bridge/Gate.
 - El pack reemplaza exactamente la carpeta `mods`: agrega faltantes, reemplaza hashes distintos y elimina extras. No conserva respaldos permanentes.
@@ -216,7 +216,7 @@ Primera instalación:
 Actualizaciones posteriores:
 
 1. Bridge **no** debe abrir el updater al arrancar Minecraft.
-2. Bridge lo ejecuta en el evento de intento/unión a un servidor (`ClientPlayConnectionEvents.JOIN`).
+2. Bridge lo ejecuta al iniciar el login (`ClientLoginConnectionEvents.INIT`), antes de la sincronización de registros. En el host también lo inicia una vez al arrancar Minecraft para mantener activo el autorizador ZeroTier durante esa sesión.
 3. Si está actualizado, el chequeo termina inmediatamente.
 4. Si está atrasado, Gate rechaza la versión antigua, el updater cierra Minecraft, instala y muestra cuándo se puede reabrir.
 5. No existe un monitor permanente cada 60 segundos en la versión nueva.
@@ -225,15 +225,19 @@ Un cliente todavía en Bridge 0.5.17 puede abrir el updater al iniciar; debe com
 
 ### Cambio local pendiente de publicar
 
-`engine\CocoUpdater.ps1` tiene modificaciones locales aún no publicadas después de 0.5.19:
+`engine\CocoUpdater.ps1` tiene modificaciones locales aún no publicadas después de 0.5.21:
 
 - Solicitar cierre normal directamente al PID de Minecraft.
 - Reintentar el cierre automáticamente.
 - Si un cliente no responde en 20 segundos, terminar solo ese proceso de Minecraft.
 - No forzar el cierre del host.
 - Hacer que las pruebas `-Silent` no abran la ventana visual.
+- Instalar/reparar ZeroTier antes de la comprobación de versión del pack, con una única elevación cuando haga falta.
+- Autorizar automáticamente nodos en el controlador local del host, sin secretos de Central.
+- Crear/reparar la entrada `Coco Minecraft` en la lista de servidores.
+- Incluir pruebas de red estáticas, de estado vivo y end-to-end mediante el propio engine.
 
-Las pruebas de sintaxis y recuperación transaccional pasaron. Este cambio debería salir como **0.5.20** mediante Publisher cuando Minecraft y la sesión LAN estén cerrados. Antes de publicar, revisar `git diff`, ejecutar las pruebas y comprobar que la carpeta `mods` representa el pack deseado.
+Las pruebas de sintaxis y recuperación transaccional pasaron. Estos cambios deben salir mediante Publisher cuando Minecraft y la sesión LAN estén cerrados. Antes de publicar, revisar `git diff`, ejecutar las pruebas y comprobar que la carpeta `mods` representa el pack deseado.
 
 ### Publicación
 
@@ -287,4 +291,26 @@ Los amigos que ya instalaron correctamente no necesitan recibir otro EXE: bootst
 - Al tocar Coco Updater: ejecutar al menos sintaxis PowerShell, `tests\Test-CocoRelease.ps1` cuando exista release nuevo y `tests\Test-CocoEngineRecovery.ps1`; confirmar que una prueba silenciosa no abra UI.
 - Mantener `README.md`, `docs\OPERACION.md`, `docs\GITHUB_SETUP.md` y este archivo coherentes.
 
+## Diagnostico de red del 14-07-2026 (18:03-18:16)
 
+- La sesion estaba en e4mc 6.2.0 modern, relay `cl`, Ethernet 1 Gbps y Minecraft con `-Xmx6714M`.
+- No hubo `Can't keep up`, pausas GC relevantes ni errores/descartes en el adaptador Ethernet. El host siguio fluido.
+- Varios clientes remotos perdieron conexion y luego fallaron nuevos intentos de login en streams QUIC distintos (`streamId=57,69,73,81`). El log contiene `ClosedChannelException`, `connection lost`, timeouts y `handleDisconnection() called twice`.
+- Reiniciar la LAN creo una sesion e4mc nueva y los clientes volvieron a entrar. La evidencia apunta a degradacion de la sesion/ruta e4mc QUIC compartida, no a TPS del servidor ni a un mundo/chunk corrupto.
+- El error de cliente `DecoderException: DataFormatException: incorrect header check` coincide con un problema abierto de descompresion en e4mc (#283). Tambien existen reportes abiertos contemporaneos de timeout/ping remoto (#281 y #286).
+- Los timeouts de Packet Fixer ya estaban en 30 segundos durante el incidente: ayudan a retirar conexiones muertas antes, pero no previenen la degradacion.
+- DH tenia `playerBandwidthLimit=1000`, `globalBandwidthLimit=0`, `generationRequestRateLimit=32`, `syncOnLoadRateLimit=16` y `realTimeUpdateDistanceRadiusInChunks=64`. Son candidatos para limitar rafagas de red sin cambiar mecanicas, pero no se ha demostrado que DH originara este incidente.
+- Mitigacion mas fuerte sin cambiar jugabilidad: usar una VPN mesh/LAN virtual y conectar a la IP virtual del host con puerto LAN fijo, dejando e4mc como respaldo. Esto elimina el relay y la sesion QUIC de e4mc del camino.
+
+## Automatizacion ZeroTier preparada el 14-07-2026
+
+- La implementacion esta local y pendiente de publicar/probar con un amigo. El primer cliente debe instalar todo exclusivamente mediante CocoUpdater.
+- ZeroTier One 1.16.2 esta instalado en el host; servicio automatico, nodo `58997fc5f3`.
+- Se abandono la red de Central `154a350c866b8062` en el host. La red activa es autocontrolada y privada: `Coco Minecraft`, Network ID `58997fc5f3c0c001`, subred `10.77.37.0/24`, host `10.77.37.1/24`.
+- El controlador local evita limites de dispositivos y elimina la necesidad de un token de Central. El autorizador acepta automaticamente los Node ID pendientes mientras Minecraft del host esta abierto.
+- CocoUpdater instala/repara ZeroTier con un UAC, valida URL oficial versionada, SHA-256 y firma Authenticode, une la red, ajusta el perfil y espera `OK PRIVATE`. Una instalacion sana no vuelve a elevarse.
+- Host: perfil `Private` y regla `Coco Minecraft - ZeroTier TCP 25565`, limitada a TCP 25565, interfaz ZeroTier y origen `10.77.37.0/24`. Clientes: perfil `Public`.
+- `saves\coco\mcwifipnp.json` usa puerto fijo `25565` y `enable-upnp=false`. Session Bridge crea `Coco Minecraft` en `servers.dat` con `10.77.37.1:25565`.
+- Seguridad deliberada: conocer el Network ID basta para ser autorizado durante la ventana activa. La exposicion queda limitada por Firewall a Minecraft; sigue siendo necesario activar/verificar whitelist por la suplantacion de nombres offline.
+- e4mc no fue retirado. Durante la prueba A/B detener su tunel para no mezclar rutas y conservarlo como respaldo.
+- Falta medir con uno o dos amigos ping, perdida, reconexiones y si cada peer aparece `DIRECT` o `RELAY`. No afirmar mejora de latencia antes de esa medicion.

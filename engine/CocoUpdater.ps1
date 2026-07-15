@@ -553,6 +553,9 @@ function Show-CocoPreview {
     Start-Sleep -Seconds 5
 }
 
+$networkLibrary=Join-Path $script:CocoEngineRoot 'CocoNetwork.ps1'
+if(Test-Path -LiteralPath $networkLibrary){. $networkLibrary}
+
 try {
     $mutex = New-Object System.Threading.Mutex($false, 'Local\CocoMinecraftUpdater')
     if (-not $mutex.WaitOne(0)) { exit 0 }
@@ -598,6 +601,10 @@ try {
         } | ConvertTo-Json -Depth 6
         exit 0
     }
+    if($manifest.network){
+        if(-not(Get-Command Ensure-CocoNetwork -ErrorAction SilentlyContinue)){throw 'El engine no contiene los componentes de red requeridos por este pack.'}
+        [void](Ensure-CocoNetwork $selected.Root $role $manifest)
+    }
     if (Test-CurrentVersion $selected.Root $manifest $role) {
         Set-CocoState 'Coco Pack actualizado' "Version $($manifest.version) | Todo listo" 100 $false
         exit 0
@@ -624,7 +631,8 @@ try {
     Write-CocoLog ("ERROR: " + ($_ | Out-String))
     if (-not $script:CocoForm -and -not $Silent) { Show-CocoWindow }
     $friendly=$_.Exception.Message
-    if($friendly -match '(?i)access.*denied|acceso.*denegado|unauthorized'){$friendly='Windows bloqueo el acceso a la carpeta de Minecraft. Revisa permisos o el antivirus.'}
+    if($friendly -match '(?i)ZeroTier|red Coco|Network ID|autoriz|adaptador virtual|servicio.*ONLINE|permiso de administrador'){$friendly=$_.Exception.Message}
+    elseif($friendly -match '(?i)access.*denied|acceso.*denegado|unauthorized'){$friendly='Windows bloqueo el acceso a la carpeta de Minecraft. Revisa permisos o el antivirus.'}
     elseif($friendly -match '(?i)conectar|connection|nombre remoto|timed out'){$friendly='No pudimos completar la descarga. Revisa internet y vuelve a intentarlo.'}
     elseif($friendly.Length-gt150){$friendly=$friendly.Substring(0,147)+'...'}
     Set-CocoState 'No se pudo actualizar' $friendly 0

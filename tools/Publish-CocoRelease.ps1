@@ -86,6 +86,8 @@ exit 1
 .\tools\New-CocoJarRelease.ps1 -MinecraftRoot $MinecraftRoot -Version $Version -GitHubRepository $Repository -ReleaseDirectory $releaseDir -BridgeJar $bridge -BootstrapExe $bootstrapExe -KnownE4mcDomains $KnownE4mcDomains|Write-Host
 .\tests\Test-CocoRelease.ps1 -Version $Version
 .\tests\Test-CocoEngineRecovery.ps1
+.\tests\Test-CocoZeroTier.ps1
+.\tests\Test-CocoNetworkEngine.ps1 -MinecraftRoot $MinecraftRoot
 
 git add .
 git commit -m "Publish Coco Pack $Version"

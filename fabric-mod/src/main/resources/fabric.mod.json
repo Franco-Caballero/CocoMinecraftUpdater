@@ -3,7 +3,7 @@
   "id": "coco_session_bridge",
   "version": "${version}",
   "name": "Coco Session Bridge & Pack Gate",
-  "description": "Mantiene el pack Coco sincronizado y bloquea clientes desactualizados.",
+  "description": "Mantiene el pack y la red Coco sincronizados, instala el servidor estable y bloquea clientes desactualizados.",
   "authors": ["Coco"],
   "license": "All-Rights-Reserved",
   "environment": "*",

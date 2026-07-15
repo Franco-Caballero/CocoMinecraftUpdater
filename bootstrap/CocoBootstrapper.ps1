@@ -165,6 +165,9 @@ function Download-TextFile([string]$Url,[string]$Destination){
 
 function Test-CocoEngineExtraction([string]$Destination){
     return (Test-Path -LiteralPath (Join-Path $Destination 'CocoUpdater.ps1')) -and
+        (Test-Path -LiteralPath (Join-Path $Destination 'CocoNetwork.ps1')) -and
+        (Test-Path -LiteralPath (Join-Path $Destination 'CocoNetworkElevated.ps1')) -and
+        (Test-Path -LiteralPath (Join-Path $Destination 'CocoNetworkAuthorizer.ps1')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'assets\fullbody.png')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'assets\reynaico.ico'))
 }

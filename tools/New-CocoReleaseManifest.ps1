@@ -35,6 +35,20 @@ $manifest = [ordered]@{
         sha256 = $engine.sha256
         size = $engine.size
     }
+    network = [ordered]@{
+        provider = 'zerotier'; name = 'Coco Minecraft'; networkId = '58997fc5f3c0c001'
+        hostAddress = '10.77.37.1'; subnet = '10.77.37.0/24'
+        ipPoolStart = '10.77.37.2'; ipPoolEnd = '10.77.37.254'
+        minecraftPort = 25565; authorizationTimeoutSeconds = 120
+        firewallRuleName = 'Coco Minecraft - ZeroTier TCP 25565'
+        leaveNetworkIds = @('154a350c866b8062')
+        installer = [ordered]@{
+            version = '1.16.2'
+            url = 'https://download.zerotier.com/RELEASES/1.16.2/dist/ZeroTier%20One.msi'
+            sha256 = '42514072b0fe44b8f66e0395bcd23a0b1d1642c28ed00831f1527b2f41b14670'
+            signerSubjectPattern = '(?i)ZEROTIER,\s*INC\.'
+        }
+    }
     packages = @(
         [ordered]@{ role = 'client'; url = $client.url; sha256 = $client.sha256; size = $client.size },
         [ordered]@{ role = 'host'; url = $hostAsset.url; sha256 = $hostAsset.sha256; size = $hostAsset.size }
