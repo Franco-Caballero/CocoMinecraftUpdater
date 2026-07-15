@@ -115,6 +115,7 @@ if($removedModIds.Count-and-not$AllowModRemoval){
 }
 .\tests\Test-CocoRelease.ps1 -Version $Version
 .\tests\Test-CocoBridge.ps1
+.\tests\Test-CocoExecutionPolicy.ps1
 .\tests\Test-CocoEngineRecovery.ps1
 .\tests\Test-CocoZeroTier.ps1
 .\tests\Test-CocoNetworkEngine.ps1 -MinecraftRoot $MinecraftRoot
