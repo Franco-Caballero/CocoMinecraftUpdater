@@ -24,6 +24,7 @@ public final class CocoSessionBridge implements ClientModInitializer {
     private static Path stateFile;
     private static boolean host;
     private static boolean serverEntryInstalled;
+    private static boolean startupNetworkCheckLaunched;
     private int ticks;
     private boolean closing;
 
@@ -38,6 +39,15 @@ public final class CocoSessionBridge implements ClientModInitializer {
         }
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             ticks++;
+            // CLIENT_STARTED is not delivered reliably by every launcher/API
+            // combination. The first live client ticks are the authoritative
+            // fallback and still provide the exact gameDirectory.
+            if (!startupNetworkCheckLaunched && ticks >= 20) {
+                startupNetworkCheckLaunched = true;
+                host = Files.isRegularFile(mc.gameDirectory.toPath().resolve("config").resolve("coco-host.json"));
+                serverEntryInstalled = installServerEntry(mc);
+                launchUpdater(mc.gameDirectory.toPath(), pid, true);
+            }
             if (!closing && ticks % 10 == 0 && shouldCloseMinecraft()) {
                 closing = true;
                 mc.stop();
@@ -49,7 +59,10 @@ public final class CocoSessionBridge implements ClientModInitializer {
             serverEntryInstalled = installServerEntry(mc);
             // La comprobacion de arranque solo repara la red. Nunca cambia mods
             // ni cierra Minecraft. En el host tambien mantiene el autorizador.
-            launchUpdater(mc.gameDirectory.toPath(), pid, true);
+            if (!startupNetworkCheckLaunched) {
+                startupNetworkCheckLaunched = true;
+                launchUpdater(mc.gameDirectory.toPath(), pid, true);
+            }
         });
         // INIT happens before registry synchronization. A client missing a newly
         // added content mod is rejected during that synchronization and never
