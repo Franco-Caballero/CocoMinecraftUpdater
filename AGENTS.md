@@ -104,7 +104,8 @@ Stack relevante actual: DH 3.2.0-b, e4mc 6.2.0, MCWiFiPnP 2.0.0, C2ME 0.4.0 alph
 Estado al 2026-07-14:
 
 - `SubtleEffects-fabric-26.1-1.14.3.jar`: retirado y en cuarentena durante pruebas de lag.
-- `pingview-fabric-1.6.jar`: retirado y en cuarentena.
+- `pingview-fabric-1.6.jar`: activo nuevamente por decisión explícita del usuario y publicado en 0.5.22.
+- Los diez mods YUNG's y `YungsCaveBiomes` añadidos antes de 0.5.22 son intencionales y forman parte del pack; no retirarlos como si fueran residuos de publicación.
 
 
 El Publisher toma como verdad la carpeta `mods`; por tanto, un JAR puesto aquí queda excluido de futuras publicaciones mientras no vuelva a `mods`.
@@ -195,11 +196,11 @@ Cuando se cambie comportamiento, actualizar código, pruebas y documentación en
 
 ### Estado verificado
 
-- Release público estable: **0.5.21**.
-- Host instalado: pack 0.5.21, rol `host`.
-- Bridge activo: `coco-session-bridge-0.5.21.jar`.
-- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, versión 0.5.21.0.
-- Manifiesto 0.5.21: 57 mods de cliente y 59 de host.
+- Release público estable: **0.5.22**.
+- Host instalado: pack 0.5.22, rol `host`.
+- Bridge activo: `coco-session-bridge-0.5.22.jar`.
+- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, versión 0.5.22.0.
+- Manifiesto 0.5.22: 68 mods de cliente y 70 de host. El aumento incluye `pingview`, los mods YUNG's confirmados por el usuario y el Bridge nuevo.
 - El host se identifica exclusivamente mediante `config\coco-host.json`, que no se distribuye.
 - Cliente excluye e4mc y MCWiFiPnP; host los incluye. Ambos roles reciben Bridge/Gate.
 - El pack reemplaza exactamente la carpeta `mods`: agrega faltantes, reemplaza hashes distintos y elimina extras. No conserva respaldos permanentes.
@@ -223,9 +224,9 @@ Actualizaciones posteriores:
 
 Un cliente todavía en Bridge 0.5.17 puede abrir el updater al iniciar; debe completar una última actualización con el comportamiento antiguo.
 
-### Cambio local pendiente de publicar
+### Cambios publicados en 0.5.22
 
-`engine\CocoUpdater.ps1` tiene modificaciones locales aún no publicadas después de 0.5.21:
+`engine\CocoUpdater.ps1` y Session Bridge publicaron estos cambios en 0.5.22:
 
 - Solicitar cierre normal directamente al PID de Minecraft.
 - Reintentar el cierre automáticamente.
@@ -237,7 +238,7 @@ Un cliente todavía en Bridge 0.5.17 puede abrir el updater al iniciar; debe com
 - Crear/reparar la entrada `Coco Minecraft` en la lista de servidores.
 - Incluir pruebas de red estáticas, de estado vivo y end-to-end mediante el propio engine.
 
-Las pruebas de sintaxis y recuperación transaccional pasaron. Estos cambios deben salir mediante Publisher cuando Minecraft y la sesión LAN estén cerrados. Antes de publicar, revisar `git diff`, ejecutar las pruebas y comprobar que la carpeta `mods` representa el pack deseado.
+Pasaron las pruebas de sintaxis, recuperación transaccional, autorización sintética y ejecución end-to-end de red. El host quedó actualizado antes de exponer el release.
 
 ### Publicación
 
@@ -304,7 +305,7 @@ Los amigos que ya instalaron correctamente no necesitan recibir otro EXE: bootst
 
 ## Automatizacion ZeroTier preparada el 14-07-2026
 
-- La implementacion esta local y pendiente de publicar/probar con un amigo. El primer cliente debe instalar todo exclusivamente mediante CocoUpdater.
+- La implementacion esta publicada en 0.5.22 y pendiente solo de probar con un amigo. El primer cliente debe instalar todo exclusivamente mediante CocoUpdater.
 - ZeroTier One 1.16.2 esta instalado en el host; servicio automatico, nodo `58997fc5f3`.
 - Se abandono la red de Central `154a350c866b8062` en el host. La red activa es autocontrolada y privada: `Coco Minecraft`, Network ID `58997fc5f3c0c001`, subred `10.77.37.0/24`, host `10.77.37.1/24`.
 - El controlador local evita limites de dispositivos y elimina la necesidad de un token de Central. El autorizador acepta automaticamente los Node ID pendientes mientras Minecraft del host esta abierto.

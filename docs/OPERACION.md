@@ -33,7 +33,7 @@ Para diagnosticar un PC, pide la carpeta `%LOCALAPPDATA%\CocoMinecraftUpdater\lo
 
 ## LAN virtual ZeroTier
 
-La integración está implementada localmente y debe publicarse antes del primer ensayo con un amigo. El ensayo del cliente se hace exclusivamente ejecutando CocoUpdater; no se instala ZeroTier a mano.
+La integración está publicada desde 0.5.22. El primer ensayo del cliente se hace exclusivamente ejecutando CocoUpdater; no se instala ZeroTier a mano.
 
 - Red privada autocontrolada: `Coco Minecraft` (`58997fc5f3c0c001`).
 - Subred: `10.77.37.0/24`; endpoint fijo del host: `10.77.37.1:25565`.
