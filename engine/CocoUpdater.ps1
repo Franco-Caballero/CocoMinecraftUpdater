@@ -109,6 +109,19 @@ function Get-Sha256([string]$Path) {
     (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
+function Get-CocoFabricModId([string]$Path) {
+    try {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $archive=[IO.Compression.ZipFile]::OpenRead($Path)
+        try {
+            $entry=$archive.GetEntry('fabric.mod.json')
+            if(-not$entry){return $null}
+            $reader=[IO.StreamReader]::new($entry.Open(),[Text.Encoding]::UTF8)
+            try{return [string](($reader.ReadToEnd()|ConvertFrom-Json).id)}finally{$reader.Dispose()}
+        } finally {$archive.Dispose()}
+    } catch {return $null}
+}
+
 function Get-FileText([string]$Path, [int]$TailLines = 2500) {
     if (-not (Test-Path -LiteralPath $Path)) { return '' }
     try { return (Get-Content -LiteralPath $Path -Tail $TailLines -ErrorAction Stop) -join "`n" }
@@ -457,6 +470,30 @@ function Stage-Package($Package, $Manifest, [string]$Root) {
         Copy-Item -LiteralPath $cached -Destination (Join-Path $stageMods $mod.name) -Force
         $completed += [int64]$mod.size
     }
+    if($Package.role-eq'host'){
+        # The host's mods folder is also the Publisher's source of truth. Keep
+        # newly added, unique Fabric mods until they can be published. Never
+        # keep an old filename when its Fabric ID is already supplied by the
+        # manifest, since that would create a duplicate-ID startup crash.
+        $stagedIds=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        Get-ChildItem -LiteralPath $stageMods -File -Filter '*.jar'|ForEach-Object{
+            $modId=Get-CocoFabricModId $_.FullName
+            if($modId){[void]$stagedIds.Add($modId)}
+        }
+        $manifestNames=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        foreach($mod in @($Package.mods)){[void]$manifestNames.Add([string]$mod.name)}
+        Get-ChildItem -LiteralPath (Join-Path $Root 'mods') -File -Filter '*.jar' -ErrorAction SilentlyContinue|ForEach-Object{
+            if($manifestNames.Contains($_.Name)){return}
+            $modId=Get-CocoFabricModId $_.FullName
+            if($modId-and$stagedIds.Contains($modId)){
+                Write-CocoLog "JAR extra del host omitido por ID Fabric duplicado: $($_.Name) [$modId]"
+                return
+            }
+            Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $stageMods $_.Name) -Force
+            if($modId){[void]$stagedIds.Add($modId)}
+            Write-CocoLog "JAR adicional del host preservado: $($_.Name)$(if($modId){" [$modId]"})"
+        }
+    }
     return $stage
 }
 
@@ -525,7 +562,7 @@ function Test-CurrentVersion([string]$Root, $Manifest, [string]$Role) {
         $package = @($Manifest.packages | Where-Object role -eq $Role) | Select-Object -First 1
         if (-not $package -or -not $package.mods) { return $false }
         $actual = @(Get-ChildItem -LiteralPath (Join-Path $Root 'mods') -File -Filter '*.jar' -ErrorAction SilentlyContinue)
-        if ($actual.Count -ne @($package.mods).Count) { return $false }
+        if ($role-ne'host'-and$actual.Count -ne @($package.mods).Count) { return $false }
         foreach ($mod in @($package.mods)) {
             $path = Join-Path (Join-Path $Root 'mods') $mod.name
             if (-not (Test-Path -LiteralPath $path)) { return $false }

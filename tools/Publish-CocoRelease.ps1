@@ -4,7 +4,8 @@ param(
     [string]$MinecraftRoot="$env:APPDATA\.minecraft",
     [string]$Repository='Franco-Caballero/CocoMinecraftUpdater',
     [string]$KnownE4mcDomainsCsv='',
-    [int64]$PublisherPid=0
+    [int64]$PublisherPid=0,
+    [switch]$AllowModRemoval
 )
 $ErrorActionPreference='Stop'
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
@@ -15,6 +16,27 @@ $releaseDir=Join-Path $root 'release'
 $distDir=Join-Path $root 'dist'
 $KnownE4mcDomains=@($KnownE4mcDomainsCsv-split','|Where-Object{$_})
 Write-Output "Contexto: Repository=$Repository MinecraftRoot=$MinecraftRoot Domains=$($KnownE4mcDomains.Count)"
+
+function Get-PublishedFabricModId($Mod,[string]$JarDirectory){
+    if($Mod.fabricId){return [string]$Mod.fabricId}
+    $jar=Join-Path $JarDirectory "mod-$($Mod.sha256).jar"
+    if(-not(Test-Path -LiteralPath $jar)){return $null}
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archive=[IO.Compression.ZipFile]::OpenRead($jar)
+    try{
+        $entry=$archive.GetEntry('fabric.mod.json');if(-not$entry){return $null}
+        $reader=[IO.StreamReader]::new($entry.Open(),[Text.Encoding]::UTF8)
+        try{return [string](($reader.ReadToEnd()|ConvertFrom-Json).id)}finally{$reader.Dispose()}
+    }finally{$archive.Dispose()}
+}
+
+$previousHostModIds=@()
+$previousManifestPath=Join-Path $releaseDir 'latest.json'
+if(Test-Path -LiteralPath $previousManifestPath){
+    $previousManifest=Get-Content -LiteralPath $previousManifestPath -Raw|ConvertFrom-Json
+    $previousHostPackage=@($previousManifest.packages|Where-Object role -eq host|Select-Object -First 1)
+    $previousHostModIds=@($previousHostPackage.mods|ForEach-Object{Get-PublishedFabricModId $_ (Join-Path $releaseDir 'jars')}|Where-Object{$_-and$_-ne'coco_session_bridge'}|Select-Object -Unique)
+}
 
 function Replace-Text([string]$Path,[string]$Pattern,[string]$Replacement){
     $full=Join-Path $root $Path;$text=[IO.File]::ReadAllText($full)
@@ -84,6 +106,13 @@ exit 1
     Move-Item $publisherNext (Join-Path $root 'dist\CocoPublisher.exe') -Force
 }
 .\tools\New-CocoJarRelease.ps1 -MinecraftRoot $MinecraftRoot -Version $Version -GitHubRepository $Repository -ReleaseDirectory $releaseDir -BridgeJar $bridge -BootstrapExe $bootstrapExe -KnownE4mcDomains $KnownE4mcDomains|Write-Host
+$candidateManifest=Get-Content (Join-Path $releaseDir 'latest.json') -Raw|ConvertFrom-Json
+$candidateHostPackage=@($candidateManifest.packages|Where-Object role -eq host|Select-Object -First 1)
+$candidateHostModIds=@($candidateHostPackage.mods.fabricId|Where-Object{$_-and$_-ne'coco_session_bridge'}|Select-Object -Unique)
+$removedModIds=@($previousHostModIds|Where-Object{$_-notin$candidateHostModIds})
+if($removedModIds.Count-and-not$AllowModRemoval){
+    throw "Publicacion bloqueada: desaparecerian mods ya publicados ($($removedModIds -join ', ')). Requiere -AllowModRemoval y confirmacion explicita del usuario."
+}
 .\tests\Test-CocoRelease.ps1 -Version $Version
 .\tests\Test-CocoEngineRecovery.ps1
 .\tests\Test-CocoZeroTier.ps1

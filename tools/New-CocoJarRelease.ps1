@@ -56,6 +56,7 @@ function Get-RoleMods([string]$Role,[string[]]$ExcludePatterns) {
         if(-not(Test-Path -LiteralPath $destination)){Copy-Item -LiteralPath $file.FullName -Destination $destination -Force}
         [ordered]@{
             name=$file.Name
+            fabricId=$_.ModId
             url="https://github.com/$GitHubRepository/releases/download/mod-assets/$assetName"
             sha256=$hash
             size=[int64]$file.Length
