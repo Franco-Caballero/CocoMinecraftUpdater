@@ -8,7 +8,7 @@ import net.minecraft.resources.Identifier;
 
 public final class CocoProtocol {
     public static final String PACK_ID = "coco-minecraft";
-    public static final String PACK_VERSION = "0.5.27";
+    public static final String PACK_VERSION = "0.5.28";
 
     private CocoProtocol() { }
 

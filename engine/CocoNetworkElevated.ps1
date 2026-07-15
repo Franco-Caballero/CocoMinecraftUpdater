@@ -54,6 +54,8 @@ try{
         throw 'La configuracion elevada contiene un instalador ZeroTier inesperado.'
     }
     if(@($config.leaveNetworkIds|Where-Object{$_-and$_-ne'154a350c866b8062'}).Count){throw 'No se permite abandonar una red ZeroTier desconocida.'}
+    $authorizationTimeout=if($config.authorizationTimeoutSeconds){[int]$config.authorizationTimeoutSeconds}else{120}
+    if($authorizationTimeout-lt30-or$authorizationTimeout-gt300){throw 'Timeout de autorizacion ZeroTier invalido.'}
 
     $installer=$null
     $cli=Get-CliPath
@@ -147,7 +149,33 @@ try{
         Remove-NetFirewallRule -DisplayName $config.firewallRuleName -ErrorAction SilentlyContinue
     }
 
-    Write-Result $true 'ZeroTier configurado.' @{cli=$cli;adapter=$adapter.Name;interfaceIndex=$adapter.ifIndex;rebootRequired=$rebootRequired}
+    if($config.mode-eq'client'){
+        $deadline=(Get-Date).AddSeconds($authorizationTimeout)
+        $attempt=0
+        do{
+            $attempt++
+            $network=Get-Network $cli $config.networkId
+            $addresses=@($network.assignedAddresses|ForEach-Object{([string]$_-split'/')[0]})
+            if($network.status-eq'OK'-and@($addresses|Where-Object{$_-match'^10\.77\.37\.(\d+)$'-and[int]$Matches[1]-ge2-and[int]$Matches[1]-le254}).Count){break}
+            if($attempt%3-eq0){& $cli join $config.networkId 2>&1|Out-Null}
+            Start-Sleep -Seconds 2
+        }while((Get-Date)-lt$deadline)
+        if($network.status-ne'OK'-or-not$addresses.Count){throw 'El host no autorizo esta PC a tiempo. Deja Minecraft del host abierto y vuelve a ejecutar CocoUpdater.'}
+    }
+
+    $peerMode='UNKNOWN'
+    if($config.mode-eq'client'){
+        try{
+            $peers=@(Invoke-CliJson $cli @('-j','listpeers'))
+            $controller=$config.networkId.Substring(0,10)
+            $peer=@($peers|Where-Object address -eq$controller|Select-Object -First 1)[0]
+            if($peer){$peerMode=if($peer.tunneled-or-not@($peer.paths|Where-Object active).Count){'RELAY'}else{'DIRECT'}}
+        }catch{}
+    }
+    Write-Result $true 'ZeroTier configurado.' @{
+        cli=$cli;adapter=$adapter.Name;interfaceIndex=$adapter.ifIndex;rebootRequired=$rebootRequired
+        networkStatus=[string]$network.status;assignedAddresses=@($network.assignedAddresses);peerMode=$peerMode
+    }
     exit 0
 }catch{
     try{Write-Result $false $_.Exception.Message}catch{}

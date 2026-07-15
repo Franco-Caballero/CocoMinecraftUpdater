@@ -257,8 +257,18 @@ $manifestCache = Join-Path $cacheRoot 'latest.json'
 New-Item -ItemType Directory -Path $cacheRoot -Force | Out-Null
 
 Set-CocoSplash 'Comprobando la version mas reciente...' 5
-Download-TextFile $channel.manifestUrl $manifestCache
-$manifest = Get-Content -LiteralPath $manifestCache -Raw | ConvertFrom-Json
+$manifest=$null
+if($Silent-and$NetworkOnly-and(Test-Path -LiteralPath $manifestCache)){
+    try{
+        $cached=Get-Content -LiteralPath $manifestCache -Raw|ConvertFrom-Json
+        $cachedEntry=Join-Path $cacheRoot (Join-Path (Join-Path 'engine' ([string]$cached.engine.version)) 'CocoUpdater.ps1')
+        if($cached.engine.version-and$cached.engine.sha256-and(Test-Path -LiteralPath $cachedEntry)){$manifest=$cached}
+    }catch{$manifest=$null}
+}
+if(-not$manifest){
+    Download-TextFile $channel.manifestUrl $manifestCache
+    $manifest = Get-Content -LiteralPath $manifestCache -Raw | ConvertFrom-Json
+}
 
 if (-not $manifest.engine -or -not $manifest.engine.version -or -not $manifest.engine.url -or -not $manifest.engine.sha256) {
     throw 'El manifiesto remoto no contiene un motor valido.'

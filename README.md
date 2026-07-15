@@ -6,7 +6,7 @@ Sincroniza por JAR el pack Fabric 26.1.2 del mundo Coco. Cada amigo recibe una s
 
 1. Abrir la instancia correcta de Minecraft hasta el menú principal.
 2. Ejecutar `CocoUpdater.exe` una vez.
-3. El updater reconoce el `--gameDir`, descarga ZeroTier desde su sitio oficial, verifica SHA-256 y firma Authenticode y muestra un único UAC de Windows para instalar el adaptador y unirse a la red. Después de aceptar UAC, el ayudante administrativo permanece oculto; no aparece una consola PowerShell vacía.
+3. El updater reconoce el `--gameDir`, descarga ZeroTier desde su sitio oficial, verifica SHA-256 y firma Authenticode y solicita como máximo un UAC de Windows cuando necesita instalar o reparar el adaptador. El ayudante administrativo permanece oculto, espera la autorización y devuelve el estado al proceso normal; no hay que ejecutar manualmente el EXE como administrador.
 4. El host autoriza automáticamente el equipo. El updater solicita un cierre normal de Minecraft, instala el pack exacto y deja Session Bridge.
 5. Al volver a abrir Minecraft aparece el servidor `Coco Minecraft` con el endpoint estable `10.77.37.1:25565`.
 6. Desde entonces Session Bridge comprueba silenciosamente sólo la red al arrancar Minecraft. El entrypoint principal inicia el chequeo temprano y los eventos cliente verifican el resultado y reintentan si no aparece el estado listo. Al iniciar un login comprueba además el pack; si hay una reparación o actualización, la realiza y muestra la ventana morada sólo cuando hace falta.
@@ -19,7 +19,7 @@ Session Bridge checks during login, before registry synchronization. This lets i
 
 Sólo `config/coco-host.json`, guardado localmente en la instalación del anfitrión, selecciona el paquete host. Ese archivo nunca se distribuye. El cliente no recibe e4mc ni MCWiFiPnP; ambos roles reciben el mismo Session Bridge/Pack Gate.
 
-La integración ZeroTier está publicada y reforzada; queda pendiente completar el primer ensayo en el Windows de un amigo. El engine carga sus componentes desde memoria para funcionar también con la política predeterminada `Restricted`, sin pedir al usuario que debilite la seguridad de PowerShell. No usa ZeroTier Central ni distribuye tokens administrativos: el host ejecuta un controlador privado y autoriza automáticamente nodos nuevos mientras Minecraft está abierto. e4mc sigue instalado como respaldo durante la validación A/B.
+La integración ZeroTier superó el primer ensayo real: instalación desde CocoUpdater, autorización, IP administrada, entrada automática al servidor y juego mediante una ruta `DIRECT` de 32–40 ms sin pérdida observada. El engine carga sus componentes desde memoria para funcionar también con la política predeterminada `Restricted` y reconoce una red cliente sana por su adaptador/IP sin necesitar acceso administrativo posterior. No usa ZeroTier Central ni distribuye tokens administrativos: el host ejecuta un controlador privado y autoriza automáticamente nodos nuevos mientras Minecraft está abierto. e4mc sigue instalado como respaldo durante la validación A/B.
 
 ## Publicar mods
 

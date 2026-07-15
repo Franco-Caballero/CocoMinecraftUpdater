@@ -28,12 +28,33 @@ function Test-CocoVersionAtLeast([string]$Actual,[string]$Minimum){
     try{return [version]$Actual-ge[version]$Minimum}catch{return $false}
 }
 
-function Get-CocoZeroTierAdapter($Network){
-    if(-not$Network){return $null}
-    $normalizedMac=([string]$Network.mac).Replace(':','-')
+function Get-CocoZeroTierAdapter($Network,[string]$NetworkId=''){
+    $normalizedMac=if($Network){([string]$Network.mac).Replace(':','-')}else{''}
+    $expectedId=if($Network-and$Network.id){[string]$Network.id}else{$NetworkId}
     return @(Get-NetAdapter -ErrorAction SilentlyContinue|Where-Object{
-        $_.InterfaceDescription-match'ZeroTier'-and($_.MacAddress-eq$normalizedMac-or$_.Name-like"*$($Network.id)*")
+        $_.InterfaceDescription-match'ZeroTier'-and(
+            ($normalizedMac-and$_.MacAddress-eq$normalizedMac)-or
+            ($expectedId-and$_.Name-like"*$expectedId*")
+        )
     }|Select-Object -First 1)[0]
+}
+
+function Get-CocoClientNetworkFromAdapter($Adapter,$NetworkConfig){
+    if(-not$Adapter-or$Adapter.InterfaceDescription-notmatch'ZeroTier'-or$Adapter.Name-notlike"*$($NetworkConfig.networkId)*"){return $null}
+    try{
+        $addresses=@(Get-NetIPAddress -InterfaceIndex $Adapter.ifIndex -AddressFamily IPv4 -ErrorAction Stop|Where-Object{
+            $_.IPAddress-match'^10\.77\.37\.(\d{1,3})$'-and
+            [int]([regex]::Match($_.IPAddress,'(\d+)$').Value)-ge2-and
+            [int]([regex]::Match($_.IPAddress,'(\d+)$').Value)-le254-and
+            $_.AddressState-ne'Duplicate'
+        })
+        if(-not$addresses.Count){return $null}
+        return [pscustomobject]@{
+            id=[string]$NetworkConfig.networkId;nwid=[string]$NetworkConfig.networkId;status='OK'
+            assignedAddresses=@($addresses|ForEach-Object{"$($_.IPAddress)/$($_.PrefixLength)"})
+            mac=([string]$Adapter.MacAddress).Replace('-',':').ToLowerInvariant()
+        }
+    }catch{return $null}
 }
 
 function Get-CocoControllerToken {
@@ -127,8 +148,13 @@ function Test-CocoZeroTierInstall([string]$MinimumVersion){
     $cli=Get-CocoZeroTierCli
     if(-not$cli){return $false}
     try{
-        $info=Invoke-CocoZeroTierJson $cli @('-j','info')
-        return [bool](Test-CocoVersionAtLeast ([string]$info.version) $MinimumVersion)
+        $service=Get-Service -Name 'ZeroTierOneService' -ErrorAction Stop
+        $products=@(
+            Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall','HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall' -ErrorAction SilentlyContinue|
+                ForEach-Object{Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue}|Where-Object DisplayName -eq 'ZeroTier One'
+        )
+        $version=@($products|Where-Object{Test-CocoVersionAtLeast ([string]$_.DisplayVersion) $MinimumVersion}|Select-Object -First 1)[0]
+        return [bool]($service-and$version)
     }catch{return $false}
 }
 
@@ -191,6 +217,7 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
         leaveNetworkIds=@($NetworkConfig.leaveNetworkIds)
         firewallRuleName=[string]$NetworkConfig.firewallRuleName
         minecraftPort=[int]$NetworkConfig.minecraftPort;subnet=[string]$NetworkConfig.subnet
+        authorizationTimeoutSeconds=if($NetworkConfig.authorizationTimeoutSeconds){[int]$NetworkConfig.authorizationTimeoutSeconds}else{120}
     }
     $payload|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $configPath -Encoding UTF8
     $helper=Join-Path $script:CocoEngineRoot 'CocoNetworkElevated.ps1'
@@ -207,7 +234,11 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
         throw $message
     }
     $script:CocoNetworkRebootRequired=[bool]$result.rebootRequired
+    $script:CocoElevatedNetworkStatus=[string]$result.networkStatus
+    $script:CocoElevatedAssignedAddresses=@($result.assignedAddresses)
+    $script:CocoElevatedPeerMode=[string]$result.peerMode
     if($script:CocoNetworkRebootRequired){Write-CocoLog 'ZeroTier recomendo reiniciar Windows; se intentara completar sin reinicio.'}
+    return $result
 }
 
 function Wait-CocoZeroTierReady($NetworkConfig,[string]$Role){
@@ -216,6 +247,11 @@ function Wait-CocoZeroTierReady($NetworkConfig,[string]$Role){
     while($watch.Elapsed.TotalSeconds-lt$timeout){
         $cli=Get-CocoZeroTierCli
         $network=Get-CocoZeroTierNetwork $cli ([string]$NetworkConfig.networkId)
+        if($Role-eq'client'){
+            $adapter=Get-CocoZeroTierAdapter $network ([string]$NetworkConfig.networkId)
+            $adapterNetwork=Get-CocoClientNetworkFromAdapter $adapter $NetworkConfig
+            if($adapterNetwork){return $adapterNetwork}
+        }
         if($Role-eq'host'-and$network-and$network.status-ne'OK'){
             try{[void](Set-CocoHostMember $NetworkConfig)}catch{Write-CocoLog "Autorizacion host pendiente: $($_.Exception.Message)"}
         }
@@ -273,9 +309,10 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
             & $cli leave $obsolete 2>&1|Out-Null
         }
     }
-    $installRequired=-not(Test-CocoZeroTierInstall ([string]$config.installer.version))
     $network=Get-CocoZeroTierNetwork (Get-CocoZeroTierCli) ([string]$config.networkId)
-    $adapter=Get-CocoZeroTierAdapter $network
+    $adapter=Get-CocoZeroTierAdapter $network ([string]$config.networkId)
+    if($Role-eq'client'-and-not$network){$network=Get-CocoClientNetworkFromAdapter $adapter $config}
+    $installRequired=-not(Test-CocoZeroTierInstall ([string]$config.installer.version))
     $desiredProfile=if($Role-eq'host'){'Private'}else{'Public'}
     $profileOkay=$false
     if($adapter){
@@ -284,7 +321,7 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
     $firewallOkay=if($Role-eq'host'){Test-CocoHostFirewall $config}else{Test-CocoClientFirewallClean $config}
     if($installRequired-or-not$network-or-not$adapter-or-not$profileOkay-or-not$firewallOkay){
         if(-not$script:CocoForm){Show-CocoWindow}
-        Invoke-CocoNetworkElevation $config $Role $installRequired
+        [void](Invoke-CocoNetworkElevation $config $Role $installRequired)
     }
 
     if($Role-eq'host'){
@@ -296,6 +333,7 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
     }
     $network=Wait-CocoZeroTierReady $config $Role
     $peerMode=Get-CocoPeerMode $config $Role
+    if($peerMode-eq'UNKNOWN'-and$script:CocoElevatedPeerMode){$peerMode=$script:CocoElevatedPeerMode}
     Set-CocoMinecraftNetworkConfig $Root $config $Role
     $stateRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\network'
     New-Item -ItemType Directory -Path $stateRoot -Force|Out-Null
