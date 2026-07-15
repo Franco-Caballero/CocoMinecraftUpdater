@@ -47,7 +47,7 @@ jobs:
           $template = [IO.File]::ReadAllText((Resolve-Path 'bootstrap/CocoBootstrapper.ps1'))
           $image = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path 'fullbody.png')))
           [IO.File]::WriteAllText('bootstrap.generated.ps1', $template.Replace('__FULLBODY_BASE64__', $image), (New-Object Text.UTF8Encoding($true)))
-          Invoke-ps2exe -InputFile bootstrap.generated.ps1 -OutputFile dist/CocoUpdater.exe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version '0.5.29.0' -NoConsole -IconFile reynaico.ico
+          Invoke-ps2exe -InputFile bootstrap.generated.ps1 -OutputFile dist/CocoUpdater.exe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version '0.5.31.0' -NoConsole -IconFile reynaico.ico
 
       - name: Upload initial distribution
         uses: actions/upload-artifact@v4
