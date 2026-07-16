@@ -88,16 +88,16 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 Estado publicado:
 
-- Release estable al comenzar esta corrección: **0.5.35**
-- Host: 0.5.35, rol `host`
-- Bridge: `coco-session-bridge-0.5.35.jar`
-- EXE canónico: 0.5.34.0 con reemplazo 0.5.35 descargado pero pendiente por el defecto descrito abajo.
-- Manifiesto 0.5.35: 149 mods de cliente y 153 de host
+- Release estable: **0.5.37**
+- Host: 0.5.37, rol `host`
+- Bridge: `coco-session-bridge-0.5.37.jar`
+- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, 0.5.37.0; hash verificado contra el manifiesto público.
+- Manifiesto: 148 mods de cliente y 152 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
-Incidente del 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. 0.5.36 publicó el helper correcto y convirtió la carpeta `mods` en autoritativa, retirando `inventorysorter`; la verificación posterior descubrió que el Publisher intentaba descargar el bootstrap desde el release aún borrador y recibía 404. La corrección preparada instala el EXE compilado localmente antes de actualizar el host. No afirmar que este último ajuste está público hasta publicar y verificar la versión siguiente.
+Incidente resuelto el 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. 0.5.36 publicó el helper correcto y convirtió la carpeta `mods` en autoritativa, retirando `inventorysorter`; la verificación posterior descubrió que el Publisher intentaba descargar el bootstrap desde el release aún borrador y recibía 404. 0.5.37 instala el EXE compilado localmente antes de actualizar el host. Se verificaron release público, host, Bridge, Publisher, EXE canónico/hash, manifiesto, Git y ausencia de Minecraft abierto.
 
-Comportamiento objetivo de la corrección preparada:
+Comportamiento desde 0.5.37:
 
 - Primera instalación: abrir la instancia Fabric correcta hasta el menú y ejecutar el EXE una vez.
 - El bootstrapper se autoactualiza, detecta `--gameDir`, prepara ZeroTier, sincroniza mods e instala Bridge/Gate.
