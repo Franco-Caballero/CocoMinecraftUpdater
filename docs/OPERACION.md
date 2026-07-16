@@ -62,6 +62,7 @@ El Publisher:
 - rechaza en la fuente viva y en el manifiesto cualquier ID de `policy\blocked-mod-ids.txt`; `tsa-decorations` está retirado permanentemente;
 - verifica tamaños, SHA-256 y assets;
 - prueba recuperación transaccional;
+- instala el bootstrap compilado directamente en el host antes de ejecutar el engine, porque los assets de un release borrador todavía no son descargables de forma anónima;
 - mantiene el release como borrador hasta actualizar correctamente el host.
 
 ## ZeroTier

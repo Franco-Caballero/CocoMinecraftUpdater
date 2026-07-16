@@ -15,6 +15,9 @@ try{
     if($publisherText-match'AllowModRemoval'-or$publisherText-match'desaparecerian mods ya publicados'){
         throw 'El Publisher aun exige una bandera oculta para reflejar eliminaciones de la fuente viva.'
     }
+    if($publisherText-notmatch'Install-CocoPublishedBootstrapLocally\s+\$bootstrapExe\s+\$localManifest\.bootstrap\.sha256'){
+        throw 'El Publisher no instala el bootstrap local antes de actualizar el host con un release borrador.'
+    }
 
     $ErrorActionPreference='Continue'
     $output=& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $publisher -Version $PublishedVersion -MinecraftRoot $testRoot 2>&1|Out-String

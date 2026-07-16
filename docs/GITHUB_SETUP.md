@@ -49,7 +49,7 @@ El Publisher obtiene acceso a GitHub mediante Git Credential Manager y ejecuta u
 5. ejecuta pruebas de release, recuperación, red, actualización automática con versión antigua cargada y confirmación visual persistente;
 6. crea un release borrador;
 7. sube y verifica tamaños de assets;
-8. actualiza la instalación host;
+8. instala localmente el bootstrap compilado y actualiza la instalación host, sin depender de descargar un asset todavía oculto en el borrador;
 9. publica el release;
 10. confirma y sincroniza el commit de versión.
 

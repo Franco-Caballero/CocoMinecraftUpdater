@@ -95,7 +95,7 @@ Estado publicado:
 - Manifiesto 0.5.35: 149 mods de cliente y 153 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
-Incidente abierto del 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. La corrección preparada usa un backup temporal válido y una prueba que ejecuta ambos helpers realmente. También se autorizó que la carpeta `mods` sea autoritativa y se vuelva a retirar `inventorysorter`, que había sido restaurado por la política anterior. No afirmar que estas dos correcciones están públicas hasta publicar y verificar la versión siguiente.
+Incidente del 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. 0.5.36 publicó el helper correcto y convirtió la carpeta `mods` en autoritativa, retirando `inventorysorter`; la verificación posterior descubrió que el Publisher intentaba descargar el bootstrap desde el release aún borrador y recibía 404. La corrección preparada instala el EXE compilado localmente antes de actualizar el host. No afirmar que este último ajuste está público hasta publicar y verificar la versión siguiente.
 
 Comportamiento objetivo de la corrección preparada:
 

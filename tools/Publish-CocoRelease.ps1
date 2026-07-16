@@ -62,6 +62,34 @@ function Get-PublishedFabricModId($Mod,[string]$JarDirectory){
     }finally{$archive.Dispose()}
 }
 
+function Install-CocoPublishedBootstrapLocally([string]$Source,[string]$ExpectedHash,[string]$CanonicalRoot=(Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater')){
+    $expected=$ExpectedHash.ToLowerInvariant()
+    if((Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash.ToLowerInvariant()-ne$expected){
+        throw 'El bootstrap compilado no coincide con el hash del manifiesto candidato.'
+    }
+    New-Item -ItemType Directory -Path $CanonicalRoot -Force|Out-Null
+    $destination=Join-Path $CanonicalRoot 'CocoUpdater.exe'
+    if((Test-Path -LiteralPath $destination)-and(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$expected){return}
+    $staging=Join-Path $CanonicalRoot "CocoUpdater.publisher.$PID.new.exe"
+    $backup="$destination.coco-old.publisher.$PID"
+    $lastError=''
+    for($attempt=1;$attempt-le40;$attempt++){
+        try{
+            Copy-Item -LiteralPath $Source -Destination $staging -Force
+            if(Test-Path -LiteralPath $destination){
+                Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
+                [IO.File]::Replace($staging,$destination,$backup,$true)
+            }else{[IO.File]::Move($staging,$destination)}
+            if((Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$expected){
+                Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
+                return
+            }
+        }catch{$lastError=$_.Exception.Message}
+        Start-Sleep -Milliseconds 250
+    }
+    throw "No se pudo instalar el bootstrap compilado en el host. Cierra cualquier CocoUpdater y reintenta. Ultimo error: $lastError"
+}
+
 $previousHostModIds=@()
 $previousManifestPath=Join-Path $releaseDir 'latest.json'
 if(Test-Path -LiteralPath $previousManifestPath){
@@ -151,6 +179,7 @@ if($removedModIds.Count){
 .\tests\Test-CocoBridge.ps1
 .\tests\Test-CocoAutomaticUpdate.ps1
 .\tests\Test-CocoBootstrapReplacement.ps1
+.\tests\Test-CocoPublisherBootstrap.ps1
 .\tests\Test-CocoUpdaterUi.ps1
 .\tests\Test-CocoExecutionPolicy.ps1
 .\tests\Test-CocoClientNetwork.ps1
@@ -258,6 +287,7 @@ if($missing.Count){throw "No se publicaron correctamente: $($missing -join ', ')
 # Instala exactamente el mismo paquete en el host antes de hacerlo visible a los clientes.
 if(-not(Test-Path (Join-Path $MinecraftRoot 'config\coco-host.json'))){throw 'Falta config\coco-host.json en la instalacion host.'}
 $localManifest=Get-Content (Join-Path $releaseDir 'latest.json') -Raw|ConvertFrom-Json
+Install-CocoPublishedBootstrapLocally $bootstrapExe $localManifest.bootstrap.sha256
 $hostPackage=@($localManifest.packages|Where-Object role -eq host|Select-Object -First 1)
 $jarCache=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\downloads\jars'
 New-Item -ItemType Directory -Path $jarCache -Force|Out-Null
