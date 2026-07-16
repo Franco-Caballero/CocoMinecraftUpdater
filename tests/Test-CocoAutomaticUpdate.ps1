@@ -30,7 +30,7 @@ try{
     $savedRunningVersion=$env:COCO_RUNNING_PACK_VERSION
     $env:COCO_RUNNING_PACK_VERSION='9.9.8'
     try{
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $engine -ManifestPath $manifestPath -GameDir $game -MinecraftPid $dummy.Id -SessionStatePath $sessionState -AutomaticCloseTimeoutSeconds 1 -Silent
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $engine -ManifestPath $manifestPath -GameDir $game -MinecraftPid $dummy.Id -SessionStatePath $sessionState -AutomaticCloseTimeoutSeconds 1 -Silent -TestSuppressUi
     }finally{$env:COCO_RUNNING_PACK_VERSION=$savedRunningVersion}
     if($LASTEXITCODE-ne0){throw "Engine automatico termino con codigo $LASTEXITCODE."}
     $dummy.Refresh()
@@ -51,14 +51,33 @@ try{
     $savedRunningVersion=$env:COCO_RUNNING_PACK_VERSION
     $env:COCO_RUNNING_PACK_VERSION=$null
     try{
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $engine -ManifestPath $manifestPath -GameDir $game -MinecraftPid $dummy.Id -SessionStatePath $sessionState -AutomaticCloseTimeoutSeconds 1 -Silent
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $engine -ManifestPath $manifestPath -GameDir $game -MinecraftPid $dummy.Id -SessionStatePath $sessionState -AutomaticCloseTimeoutSeconds 1 -Silent -TestSuppressUi
     }finally{$env:COCO_RUNNING_PACK_VERSION=$savedRunningVersion}
     if($LASTEXITCODE-ne0){throw "Engine manual simulado termino con codigo $LASTEXITCODE."}
     $dummy.Refresh()
     if(-not$dummy.HasExited){throw 'La ejecucion sin version explicita no cerro un Minecraft anterior a installedAt.'}
 
+    $dummy=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-Command','Start-Sleep -Seconds 60') -PassThru
+    [pscustomobject]@{
+        packId='coco-test';version='9.9.8';role='client'
+        installedAt=$dummy.StartTime.AddSeconds(-10).ToString('o')
+    }|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $game 'config\coco-updater-state.json') -Encoding UTF8
+    Remove-Item -LiteralPath $sessionState -Force -ErrorAction SilentlyContinue
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $engine -ManifestPath $manifestPath -GameDir $game -MinecraftPid $dummy.Id -SessionStatePath $sessionState -AutomaticCloseTimeoutSeconds 1 -Silent -TestSuppressUi
+    if($LASTEXITCODE-ne0){throw "Engine legado simulado termino con codigo $LASTEXITCODE."}
+    $dummy.Refresh()
+    if(-not$dummy.HasExited){throw 'Un Bridge antiguo sin version explicita no cerro Minecraft usando el marcador atrasado.'}
+    $legacyLog=Get-ChildItem (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\logs') -Filter 'updater-*.log' -File|Sort-Object LastWriteTime -Descending|Select-Object -First 1
+    if(-not$legacyLog-or(Get-Content $legacyLog.FullName -Raw)-notmatch'Actualizacion conocida antes de preparar la red'){
+        throw 'El engine no detecto la version legado antes de preparar la red.'
+    }
+
     $bootstrapText=[IO.File]::ReadAllText($bootstrap)
     $engineText=[IO.File]::ReadAllText($engine)
+    if($engineText-notmatch'AutomaticCloseTimeoutSeconds\s*=\s*8'-or
+       $engineText-notmatch'Intentando cerrar Minecraft automaticamente'){
+        throw 'El cliente no solicita cierre inmediato con un fallback automatico breve.'
+    }
     if($bootstrapText-match'Move-Item\s+-LiteralPath\s+\$newExe\s+-Destination\s+\$canonicalExe'){
         throw 'El bootstrap vuelve a reemplazar directamente un EXE canonico que puede estar bloqueado.'
     }
@@ -75,7 +94,7 @@ try{
     if($engineText-notmatch'Test-RunningMinecraftPredatesInstalledPack'-or$engineText-notmatch'installedAt\.AddSeconds\(-2\)'){
         throw 'La ejecucion manual no detecta un Minecraft iniciado antes de instalar el pack actual.'
     }
-    'PASS: version cargada/proceso previo fuerzan reinicio y el bootstrap bloqueado se difiere sin abortar.'
+    'PASS: version cargada, proceso previo y marcador legado cierran antes de red; bootstrap bloqueado se difiere.'
 }finally{
     if($dummy-and-not$dummy.HasExited){Stop-Process -Id $dummy.Id -Force -ErrorAction SilentlyContinue}
     Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue

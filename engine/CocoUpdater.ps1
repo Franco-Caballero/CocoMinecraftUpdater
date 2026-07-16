@@ -7,12 +7,13 @@ param(
     [int64]$MinecraftPid = 0,
     [string]$SessionStatePath,
     [string]$RunningPackVersion,
-    [ValidateRange(1,120)][int]$AutomaticCloseTimeoutSeconds = 20,
+    [ValidateRange(1,120)][int]$AutomaticCloseTimeoutSeconds = 8,
     [switch]$Preview,
     [switch]$DetectOnly,
     [switch]$NetworkOnly,
     [switch]$ShowOnUpdate,
-    [switch]$Silent
+    [switch]$Silent,
+    [switch]$TestSuppressUi
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,6 +22,7 @@ if([string]::IsNullOrWhiteSpace($RunningPackVersion)-and-not[string]::IsNullOrWh
     $RunningPackVersion=$env:COCO_RUNNING_PACK_VERSION
 }
 if($env:COCO_SHOW_ON_UPDATE-eq'1'){$ShowOnUpdate=$true}
+$automaticFullCheck=$MinecraftPid-gt0-and-not$NetworkOnly
 $script:CocoEngineRoot=if($env:COCO_ENGINE_ROOT-and(Test-Path -LiteralPath $env:COCO_ENGINE_ROOT)){$env:COCO_ENGINE_ROOT}else{$PSScriptRoot}
 $script:CocoForm = $null
 $script:CocoCurrentProgress = 0
@@ -72,6 +74,7 @@ function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]
 }
 
 function Show-CocoWindow {
+    if($TestSuppressUi){return}
     if ($script:CocoForm) { return }
     $script:CocoVisualWorkStarted = [Diagnostics.Stopwatch]::StartNew()
     Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing
@@ -146,7 +149,7 @@ function Show-CocoSuccessAndWait([string]$Version,[string]$Detail="Ya puedes vol
     if($script:CocoPanel){$script:CocoPanel.Controls.Add($accept)}else{$script:CocoForm.Controls.Add($accept)}
     $script:CocoForm.AcceptButton=$accept
     $script:CocoSuccessAccepted=$false
-    $script:CocoForm.BringToFront();$script:CocoForm.Activate();$accept.Focus();$script:CocoForm.Refresh()
+    $script:CocoForm.BringToFront();$script:CocoForm.Activate();[void]$accept.Focus();$script:CocoForm.Refresh()
     while($script:CocoForm.Visible-and-not$script:CocoSuccessAccepted){
         [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
     }
@@ -530,10 +533,10 @@ function Wait-ForMinecraftExit([string]$Root,[bool]$CloseClientAutomatically=$fa
                 $lastCloseAttempt=$wait.Elapsed.TotalSeconds
             }
             if($wait.Elapsed.TotalSeconds-ge$AutomaticCloseTimeoutSeconds){
-                Set-CocoState 'Preparando actualizacion' 'Minecraft no respondio; completando el cierre...' 3
+                Set-CocoState 'Cerrando Minecraft' 'Minecraft no respondio; completando el cierre automaticamente...' 3
                 Stop-ClientMinecraft $Root
             }else{
-                Set-CocoState 'Preparando actualizacion' 'Cerrando Minecraft automaticamente...' 3
+                Set-CocoState 'Cerrando Minecraft' 'Intentando cerrar Minecraft automaticamente...' 3
             }
         }else{
             Set-CocoState 'Preparando actualizacion' 'Esperando a que Minecraft termine de cerrarse...' 3
@@ -825,6 +828,23 @@ try {
         } | ConvertTo-Json -Depth 6
         exit 0
     }
+    $explicitRunningVersionOutdated=$MinecraftPid-gt0-and-not[string]::IsNullOrWhiteSpace($RunningPackVersion)-and-not[string]::Equals($RunningPackVersion,[string]$manifest.version,[StringComparison]::OrdinalIgnoreCase)
+    $runningPredatesInstalledPack=Test-RunningMinecraftPredatesInstalledPack $selected.Root $manifest
+    $installedMarkerVersion=''
+    try{
+        $installedMarkerPath=Join-Path $selected.Root $manifest.detector.markerPath
+        if(Test-Path -LiteralPath $installedMarkerPath){$installedMarkerVersion=[string]((Get-Content -LiteralPath $installedMarkerPath -Raw|ConvertFrom-Json).version)}
+    }catch{$installedMarkerVersion=''}
+    $installedMarkerOutdated=-not[string]::IsNullOrWhiteSpace($installedMarkerVersion)-and-not[string]::Equals($installedMarkerVersion,[string]$manifest.version,[StringComparison]::OrdinalIgnoreCase)
+    $earlyClientUpdateKnown=$automaticFullCheck-and$role-eq'client'-and($explicitRunningVersionOutdated-or$runningPredatesInstalledPack-or$installedMarkerOutdated)
+    $minecraftCloseRequested=$false
+    if($earlyClientUpdateKnown){
+        if(-not$script:CocoForm){Show-CocoWindow}
+        Set-CocoState 'Actualizacion encontrada' 'Intentando cerrar Minecraft automaticamente...' 2 $true 'closeMinecraft'
+        Write-CocoLog "Actualizacion conocida antes de preparar la red. RunningPackVersion='$RunningPackVersion' InstalledMarker='$installedMarkerVersion' Published='$($manifest.version)' PredatesInstall=$runningPredatesInstalledPack"
+        if(Test-MinecraftRunning $selected.Root){[void](Request-ClientMinecraftClose $selected.Root)}
+        $minecraftCloseRequested=$true
+    }
     if($manifest.network){
         if(-not(Get-Command Ensure-CocoNetwork -ErrorAction SilentlyContinue)){throw 'El engine no contiene los componentes de red requeridos por este pack.'}
         [void](Ensure-CocoNetwork $selected.Root $role $manifest)
@@ -834,8 +854,6 @@ try {
         exit 0
     }
     $diskCurrent=Test-CurrentVersion $selected.Root $manifest $role
-    $explicitRunningVersionOutdated=$MinecraftPid-gt0-and-not[string]::IsNullOrWhiteSpace($RunningPackVersion)-and-not[string]::Equals($RunningPackVersion,[string]$manifest.version,[StringComparison]::OrdinalIgnoreCase)
-    $runningPredatesInstalledPack=Test-RunningMinecraftPredatesInstalledPack $selected.Root $manifest
     $runningClientOutdated=$role-eq'client'-and($explicitRunningVersionOutdated-or$runningPredatesInstalledPack)
     if ($diskCurrent -and -not$runningClientOutdated) {
         Set-CocoState 'Coco Pack actualizado' "Version $($manifest.version) | Todo listo" 100 $false
@@ -843,19 +861,19 @@ try {
         if($script:CocoForm){Show-CocoSuccessAndWait ([string]$manifest.version) 'No hay nada pendiente. Puedes abrir Minecraft y jugar.'}
         exit 0
     }
-    if (-not $script:CocoForm -and (-not$Silent-or$ShowOnUpdate)) { Show-CocoWindow }
+    if (-not $script:CocoForm -and (-not$Silent-or$ShowOnUpdate-or$automaticFullCheck)) { Show-CocoWindow }
     if($runningClientOutdated){
         Write-CocoLog "Minecraft requiere reinicio aunque el disco ya este actualizado. RunningPackVersion='$RunningPackVersion' Published='$($manifest.version)' PredatesInstall=$runningPredatesInstalledPack"
     }
-    if ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client' -and $MinecraftPid -gt 0) {
-        Set-CocoState 'Actualizacion encontrada' 'Cerrando Minecraft de forma segura...' 2 $true 'closeMinecraft'
+    if (-not$minecraftCloseRequested-and(Test-MinecraftRunning $selected.Root) -and $role -eq 'client' -and $MinecraftPid -gt 0) {
+        Set-CocoState 'Actualizacion encontrada' 'Intentando cerrar Minecraft automaticamente...' 2 $true 'closeMinecraft'
         [void](Request-ClientMinecraftClose $selected.Root)
-    } elseif ((Test-MinecraftRunning $selected.Root) -and $role -eq 'client') {
-        Set-CocoState 'Primera instalacion' 'Cerrando Minecraft de forma segura...' 2
+    } elseif (-not$minecraftCloseRequested-and(Test-MinecraftRunning $selected.Root) -and $role -eq 'client') {
+        Set-CocoState 'Primera instalacion' 'Intentando cerrar Minecraft automaticamente...' 2
         if(-not(Request-ClientMinecraftClose $selected.Root)){
             Set-CocoState 'Primera instalacion' 'Cierra Minecraft una vez para instalar Session Bridge' 2
         }
-    } elseif (Test-MinecraftRunning $selected.Root) {
+    } elseif (-not$minecraftCloseRequested-and(Test-MinecraftRunning $selected.Root)) {
         Set-CocoState 'Actualizacion encontrada' 'Eres el host: cierra Minecraft cuando termine la sesion LAN' 2
     }
     Wait-ForMinecraftExit $selected.Root ($role -eq 'client')
@@ -874,7 +892,7 @@ try {
     exit 0
 } catch {
     Write-CocoLog ("ERROR: " + ($_ | Out-String))
-    if (-not $script:CocoForm -and (-not$Silent-or$ShowOnUpdate)) { Show-CocoWindow }
+    if (-not $script:CocoForm -and (-not$Silent-or$ShowOnUpdate-or$automaticFullCheck)) { Show-CocoWindow }
     $friendly=$_.Exception.Message
     if($friendly -match '(?i)ZeroTier|red Coco|Network ID|autoriz|adaptador virtual|servicio.*ONLINE|permiso de administrador'){$friendly=$_.Exception.Message}
     elseif($friendly -match '(?i)access.*denied|acceso.*denegado|unauthorized'){$friendly='Windows bloqueo el acceso a la carpeta de Minecraft. Revisa permisos o el antivirus.'}

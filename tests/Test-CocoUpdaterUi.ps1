@@ -15,6 +15,19 @@ if($engine-notmatch'\.AcceptButton=\$accept'-or$engine-notmatch'\.Add_Click'-or
    $engine-notmatch'while\(\$script:CocoForm\.Visible-and-not\$script:CocoSuccessAccepted\)'){
     throw 'La ventana final no espera ACEPTAR o Enter antes de cerrarse.'
 }
+if($engine-notmatch'\[void\]\$accept\.Focus\(\)'){
+    throw 'Focus() puede filtrar True al pipeline y ps2exe lo convertiria en un cuadro de mensaje.'
+}
+if($engine-notmatch'\$automaticFullCheck=\$MinecraftPid-gt0-and-not\$NetworkOnly'-or
+   ([regex]::Matches($engine,'\$ShowOnUpdate-or\$automaticFullCheck')).Count-lt2){
+    throw 'Un Bridge antiguo todavia podria cerrar Minecraft sin mostrar la confirmacion visual.'
+}
+$earlyUi=$engine.IndexOf('$earlyClientUpdateKnown=')
+$networkSetup=$engine.IndexOf('if($manifest.network)')
+if($earlyUi-lt0-or$networkSetup-lt0-or$earlyUi-gt$networkSetup-or
+   $engine-notmatch'(?s)if\(\$earlyClientUpdateKnown\).*?Show-CocoWindow'){
+    throw 'La reina no se abre antes de preparar la red y cerrar un Minecraft antiguo.'
+}
 if(([regex]::Matches($engine,'Show-CocoSuccessAndWait')).Count-lt4){
     throw 'No todos los caminos operativos de exito terminan en la confirmacion persistente.'
 }
@@ -25,4 +38,4 @@ if($engine-notmatch'if\(\$mutex\)\{\$mutex\.ReleaseMutex\(\)\|Out-Null;\$mutex\.
     throw 'La confirmacion visual conserva el mutex del updater mientras espera al usuario.'
 }
 
-'PASS: final verde, legible y persistente hasta ACEPTAR/Enter validado.'
+'PASS: final verde y persistente; ACEPTAR/Enter cierra sin filtrar True a ps2exe.'

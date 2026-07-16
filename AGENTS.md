@@ -97,6 +97,8 @@ Estado publicado:
 
 Incidente resuelto el 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. 0.5.36 publicó el helper correcto y convirtió la carpeta `mods` en autoritativa, retirando `inventorysorter`; la verificación posterior descubrió que el Publisher intentaba descargar el bootstrap desde el release aún borrador y recibía 404. 0.5.37 instala el EXE compilado localmente antes de actualizar el host. Se verificaron release público, host, Bridge, Publisher, EXE canónico/hash, manifiesto, Git y ausencia de Minecraft abierto.
 
+Corrección pendiente posterior a 0.5.37: `Control.Focus()` devolvía `True` al pipeline y ps2exe lo mostraba como cuadro de diálogo después de `ACEPTAR`. Además, una actualización iniciada por un Bridge antiguo podía cerrar Minecraft sin mostrar la reina porque no enviaba `ShowOnUpdate`. El árbol de trabajo suprime la salida booleana y hace que el engine muestre UI en todo chequeo completo con `MinecraftPid`, excepto `NetworkOnly`; las pruebas específicas pasan. No publicar mientras el Minecraft host actualmente abierto siga activo.
+
 Comportamiento desde 0.5.37:
 
 - Primera instalación: abrir la instancia Fabric correcta hasta el menú y ejecutar el EXE una vez.
