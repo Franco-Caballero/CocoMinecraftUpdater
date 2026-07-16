@@ -12,12 +12,20 @@ if($gate-notmatch'CocoUpdaterLauncher\.initializeEarly\(\)'){
     throw 'El entrypoint principal no inicia CocoUpdater temprano.'
 }
 if($launcher-notmatch'EnvType\.CLIENT'-or$launcher-notmatch'stateIsReady\(\)'-or
-   $launcher-notmatch'nextNetworkAttemptAt'-or$launcher-notmatch'bridge-.*\.log'){
+   $launcher-notmatch'nextNetworkAttemptAt'-or$launcher-notmatch'bridge-.*\.log'-or
+   $launcher-notmatch'NETWORK_STATE_FILE'-or$launcher-notmatch'UPDATE_STATE_FILE'){
     throw 'El launcher temprano no limita clientes, verifica estado, reintenta y registra diagnostico.'
 }
 if($client-notmatch'ticks % 20 == 0'-or$client-notmatch'ensureNetworkCheck'-or
-   $client-notmatch'launchFullCheck'){
+   $client-notmatch'launchFullCheck'-or$client-notmatch'ensureFullCheck'){
     throw 'El Bridge cliente no verifica/reintenta red ni conserva el chequeo completo de login.'
+}
+if($launcher-notmatch'COCO_RUNNING_PACK_VERSION'-or$launcher-notmatch'CocoProtocol\.PACK_VERSION'-or
+   $launcher-notmatch'COCO_SHOW_ON_UPDATE'-or$launcher-notmatch'fullAttempts >= 3'){
+    throw 'El chequeo completo no informa la version cargada, no muestra reparaciones o no reintenta fallos.'
+}
+if($launcher-match'command\.add\("-RunningPackVersion"\)'-or$launcher-match'command\.add\("-ShowOnUpdate"\)'){
+    throw 'El Bridge nuevo dejo de ser compatible con un bootstrap canonico anterior.'
 }
 if($network-notmatch'(?s)Start-Process\s+powershell\.exe\s+-Verb\s+RunAs\s+-WindowStyle\s+Hidden.*?-Wait'){
     throw 'El ayudante elevado de red podria mostrar una consola PowerShell vacia.'

@@ -1,6 +1,6 @@
 # AGENTS.md — contexto canónico de CocoMinecraftUpdater
 
-Última revisión: 2026-07-15 (America/Santiago).
+Última revisión: 2026-07-16 (America/Santiago).
 
 Este archivo contiene el estado operativo necesario para trabajar en `C:\Users\smol\Desktop\random\CocoMinecraftUpdater`. Antes de intervenir, verificar archivos, procesos y logs: los valores observados pueden cambiar durante una sesión. Si cambia la red, el updater, la versión publicada o una decisión operativa, actualizar también `README.md`, `docs\OPERACION.md` y `docs\GITHUB_SETUP.md` cuando corresponda.
 
@@ -88,20 +88,24 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 Estado publicado:
 
-- Release estable: **0.5.32**
-- Host: 0.5.32, rol `host`
-- Bridge: `coco-session-bridge-0.5.32.jar`
-- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, 0.5.32.0
-- Manifiesto: 143 mods de cliente y 147 de host
+- Release estable: **0.5.34**
+- Host: 0.5.34, rol `host`
+- Bridge: `coco-session-bridge-0.5.34.jar`
+- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, 0.5.34.0. Durante la investigación permaneció temporalmente en 0.5.33.0 por un bloqueo; el reemplazo 0.5.34 verificado se aplicó correctamente al cerrar Minecraft.
+- Manifiesto: 148 mods de cliente y 152 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
-Comportamiento:
+Incidente abierto del 2026-07-16: la estable 0.5.34 todavía puede mostrar un falso error al reemplazar el EXE canónico bloqueado, compartir el estado de red/actualización y confundir versión instalada con versión cargada. El árbol de trabajo contiene la corrección y sus pruebas, pero **aún no está publicada**. Minecraft y procesos updater del host quedaron cerrados; falta una orden explícita para publicar el siguiente release mediante el Publisher. No afirmar que los amigos ya poseen la corrección antes de esa publicación.
+
+Comportamiento objetivo del código preparado para el siguiente release:
 
 - Primera instalación: abrir la instancia Fabric correcta hasta el menú y ejecutar el EXE una vez.
 - El bootstrapper se autoactualiza, detecta `--gameDir`, prepara ZeroTier, sincroniza mods e instala Bridge/Gate.
 - La elevación se solicita solo cuando Windows necesita instalar o reparar red. Desde 0.5.28 no se requiere ejecutar manualmente como administrador.
-- Bridge ejecuta `-NetworkOnly` silencioso al arrancar y un chequeo completo al iniciar login. Una red sana no muestra UI ni cierra el juego.
-- Si el pack está atrasado, Gate rechaza la versión, el updater cierra únicamente el cliente afectado, instala y solicita reabrir Minecraft.
+- Bridge ejecuta `-NetworkOnly` silencioso al arrancar y un chequeo completo al iniciar login. Red y actualización usan estados de sesión separados; el chequeo completo se reintenta hasta tres veces. Una red y pack sanos no muestran UI ni cierran el juego.
+- El chequeo de login pasa al engine la versión cargada en la JVM; la ejecución manual compara además el inicio de Minecraft con `installedAt`. Si el release nuevo ya está en disco pero la JVM es anterior, el updater cierra únicamente ese cliente y solicita reabrir sin reinstalar; si faltan archivos, instala antes de solicitarlo.
+- El reemplazo del EXE canónico nunca es requisito para continuar el engine: si Windows lo mantiene mapeado, queda una copia verificada pendiente hasta 12 horas y no se informa un falso error de conexión/mods.
+- Toda operación visible que termina correctamente conserva la ventana de la reina con `TODO LISTO`, indicador verde, texto ampliado y botón `ACEPTAR`; también responde a Enter y no se cierra por temporizador. Los chequeos automáticos sanos siguen sin mostrar UI.
 - No existe un monitor periódico permanente.
 
 Política de mods:

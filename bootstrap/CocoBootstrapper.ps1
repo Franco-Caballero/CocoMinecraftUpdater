@@ -4,8 +4,10 @@ param(
     [string]$GameDir,
     [int64]$MinecraftPid = 0,
     [string]$SessionStatePath,
+    [string]$RunningPackVersion,
     [switch]$Preview,
     [switch]$NetworkOnly,
+    [switch]$ShowOnUpdate,
     [switch]$Silent
 )
 
@@ -55,7 +57,7 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     $form.Show();$form.BringToFront();$form.Activate();[Windows.Forms.Application]::DoEvents()
     $script:Splash=$form;$script:SplashDetail=$detail;$script:SplashFill=$fill;$script:SplashTrack=$track
     $script:SplashTitle=$title
-    $global:CocoSharedUi=@{Form=$form;Title=$title;Detail=$detail;Progress=$fill;Track=$track;Started=[Diagnostics.Stopwatch]::StartNew();BaseProgress=12}
+    $global:CocoSharedUi=@{Form=$form;Panel=$panel;Accent=$accent;Title=$title;Detail=$detail;Progress=$fill;Track=$track;Brand=$brand;Started=[Diagnostics.Stopwatch]::StartNew();BaseProgress=12}
 }
 function Set-CocoSplash([string]$Status,[int]$Progress){
     if(-not$script:Splash){return};$script:SplashTitle.Text='Preparando Coco Updater';$script:SplashDetail.Text=$Status;$script:SplashFill.Width=[Math]::Max(4,[int]($script:SplashTrack.ClientSize.Width*$Progress/100))
@@ -162,6 +164,45 @@ function Download-TextFile([string]$Url,[string]$Destination){
         try{Invoke-WebRequest -Uri $Url -OutFile "$Destination.new" -UseBasicParsing -TimeoutSec 30;Move-Item "$Destination.new" $Destination -Force;return}
         catch{Remove-Item "$Destination.new" -Force -ErrorAction SilentlyContinue;if($attempt -eq 4){throw};Set-CocoSplash "Reintentando conexion ($($attempt + 1)/4)..." 5;Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))}
     }
+}
+
+function Start-CocoBootstrapReplacement([string]$Source,[string]$Destination,[string]$ExpectedHash){
+    # An automatic NetworkOnly check can still have the canonical EXE mapped
+    # while a manually launched copy is updating it. Replacing a mapped EXE is
+    # secondary to running the verified engine, so always defer the operation
+    # and never turn a sharing violation into a failed pack update.
+    $helper=Join-Path (Split-Path $Destination -Parent) "Apply-CocoBootstrapUpdate-$PID.ps1"
+    $logPath=Join-Path (Split-Path $Destination -Parent) 'logs\bootstrap-update.log'
+    $helperText=@'
+param([int64]$WaitPid,[string]$Source,[string]$Destination,[string]$ExpectedHash,[string]$LogPath)
+Wait-Process -Id $WaitPid -ErrorAction SilentlyContinue
+$deadline=[DateTime]::UtcNow.AddHours(12)
+do{
+    try{
+        if((Test-Path -LiteralPath $Destination)-and(Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$ExpectedHash){
+            Remove-Item -LiteralPath $Source -Force -ErrorAction SilentlyContinue
+            exit 0
+        }
+        if(Test-Path -LiteralPath $Destination){
+            [IO.File]::Replace($Source,$Destination,$null,$true)
+        }else{
+            [IO.File]::Move($Source,$Destination)
+        }
+        if((Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$ExpectedHash){exit 0}
+    }catch{}
+    Start-Sleep -Milliseconds 500
+}while([DateTime]::UtcNow-lt$deadline)
+New-Item -ItemType Directory -Path (Split-Path $LogPath -Parent) -Force -ErrorAction SilentlyContinue|Out-Null
+Add-Content -LiteralPath $LogPath "No se pudo aplicar el bootstrap pendiente antes del limite de 12 horas." -ErrorAction SilentlyContinue
+exit 1
+'@
+    [IO.File]::WriteAllText($helper,$helperText,(New-Object Text.UTF8Encoding($true)))
+    $quotedHelper='"'+($helper-replace'"','\"')+'"'
+    $quotedSource='"'+($Source-replace'"','\"')+'"'
+    $quotedDestination='"'+($Destination-replace'"','\"')+'"'
+    $quotedLog='"'+($logPath-replace'"','\"')+'"'
+    Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedHelper,'-WaitPid',$PID,'-Source',$quotedSource,'-Destination',$quotedDestination,'-ExpectedHash',$ExpectedHash,'-LogPath',$quotedLog)
+    $env:COCO_BOOTSTRAP_UPDATE_PENDING='1'
 }
 
 function Test-CocoEngineExtraction([string]$Destination){
@@ -303,23 +344,9 @@ if ([IO.Path]::GetExtension($processPath) -ieq '.exe') {
         $canonicalMatches=(Test-Path -LiteralPath $canonicalExe) -and ((Get-Sha256 $canonicalExe) -eq $manifest.bootstrap.sha256.ToLowerInvariant())
         if(-not$canonicalMatches){
             Set-CocoSplash 'Actualizando Coco Updater...' 11
-            $newExe=Join-Path $cacheRoot 'CocoUpdater.new.exe'
+            $newExe=Join-Path $cacheRoot "CocoUpdater.$PID.new.exe"
             Download-VerifiedFile $manifest.bootstrap.url $newExe $manifest.bootstrap.sha256
-            if(-not[string]::Equals($processPath,$canonicalExe,[StringComparison]::OrdinalIgnoreCase)){
-                Move-Item -LiteralPath $newExe -Destination $canonicalExe -Force
-            }else{
-                $helper=Join-Path $cacheRoot 'Apply-CocoBootstrapUpdate.ps1'
-                $helperText=@'
-param([int]$WaitPid,[string]$Source,[string]$Destination)
-Wait-Process -Id $WaitPid -ErrorAction SilentlyContinue
-for($i=0;$i-lt20;$i++){try{Move-Item -LiteralPath $Source -Destination $Destination -Force;break}catch{Start-Sleep -Milliseconds 250}}
-'@
-                [IO.File]::WriteAllText($helper,$helperText,(New-Object Text.UTF8Encoding($true)))
-                $quotedHelper='"'+($helper-replace'"','\"')+'"'
-                $quotedSource='"'+($newExe-replace'"','\"')+'"'
-                $quotedDestination='"'+($canonicalExe-replace'"','\"')+'"'
-                Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedHelper,'-WaitPid',$PID,'-Source',$quotedSource,'-Destination',$quotedDestination)
-            }
+            Start-CocoBootstrapReplacement $newExe $canonicalExe $manifest.bootstrap.sha256.ToLowerInvariant()
         }
     }
 }
@@ -328,8 +355,10 @@ $engineParameters = @{ManifestPath=$manifestCache;ManifestUrl=$channel.manifestU
 if ($GameDir) { $engineParameters.GameDir=$GameDir }
 if ($MinecraftPid -gt 0) { $engineParameters.MinecraftPid=$MinecraftPid }
 if ($SessionStatePath) { $engineParameters.SessionStatePath=$SessionStatePath }
+if ($RunningPackVersion) { $engineParameters.RunningPackVersion=$RunningPackVersion }
 if ($Preview) { $engineParameters.Preview=$true }
 if ($NetworkOnly) { $engineParameters.NetworkOnly=$true }
+if ($ShowOnUpdate) { $engineParameters.ShowOnUpdate=$true }
 if ($Silent) { $engineParameters.Silent=$true }
 Set-CocoSplash 'Analizando la instalacion de Minecraft...' 12
 $env:COCO_ENGINE_ROOT=$engineRoot

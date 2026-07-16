@@ -37,7 +37,7 @@ Cliente:
 2. Seleccionar `Coco Minecraft` en Multijugador.
 3. Si Gate detecta una versión anterior, dejar que el updater cierre el cliente, actualice y solicite reabrir.
 
-Bridge ejecuta `-NetworkOnly` al arrancar y un chequeo completo al iniciar login. Una instalación actualizada no muestra UI ni mantiene un monitor periódico.
+Bridge ejecuta `-NetworkOnly` al arrancar y un chequeo completo al iniciar login. Red y actualización usan archivos de sesión separados para que un resultado de red no pueda borrar una orden de cierre. El chequeo completo informa además la versión cargada en la JVM; al abrir el EXE manualmente, el engine compara el inicio del proceso con `installedAt`. Si el disco ya contiene el release nuevo pero Minecraft sigue ejecutando el Bridge anterior, cierra solo ese cliente y pide reabrir sin reinstalar. El chequeo se reintenta hasta tres veces si el proceso no llega a producir estado. Una instalación realmente actualizada no muestra UI ni mantiene un monitor periódico. Cuando hubo trabajo visible, el final correcto se reconoce por `TODO LISTO`, color verde y el botón `ACEPTAR`; la ventana no se cierra por tiempo y Enter equivale a pulsar el botón.
 
 Las migraciones de preferencias declaradas por un release se ejecutan solo durante esa actualización, con Minecraft cerrado, y sus IDs quedan registrados en `coco-updater-state.json`. `pingwheel-location-z-v1` reemplaza Mouse 5 por Z solo si sigue en el valor predeterminado, o agrega Z si la entrada aún no existe. Si el jugador ya eligió otra tecla, se conserva; una vez registrada, publicaciones posteriores tampoco vuelven a tocarla.
 
@@ -94,12 +94,13 @@ e4mc permanece instalado solo en el host. En operación ZeroTier se detiene con 
 
 ## Recuperación y diagnóstico
 
-Si Windows se interrumpe durante el reemplazo de `mods`, el siguiente inicio restaura la transacción pendiente antes de continuar. Las descargas se verifican por SHA-256 y se reintentan.
+Si Windows se interrumpe durante el reemplazo de `mods`, el siguiente inicio restaura la transacción pendiente antes de continuar. Las descargas se verifican por SHA-256 y se reintentan. La autoactualización del EXE canónico es secundaria: si otra instancia lo mantiene bloqueado, se deja un reemplazo verificado pendiente durante hasta 12 horas y el engine continúa; esa condición no debe presentarse como fallo de mods o de conexión.
 
 Logs:
 
 - Updater: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`.
 - Bridge: `bridge-<PID>.log` dentro de la misma carpeta.
+- Auto-reemplazo del EXE: `bootstrap-update.log` dentro de la misma carpeta.
 - Minecraft: `%APPDATA%\.minecraft\logs\latest.log`.
 - Crash reports: `%APPDATA%\.minecraft\crash-reports`.
 

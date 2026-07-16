@@ -40,6 +40,7 @@ public final class CocoSessionBridge implements ClientModInitializer {
                 host = Files.isRegularFile(mc.gameDirectory.toPath().resolve("config").resolve("coco-host.json"));
                 serverEntryInstalled = installServerEntry(mc);
                 CocoUpdaterLauncher.ensureNetworkCheck(mc.gameDirectory.toPath(), "client-tick");
+                CocoUpdaterLauncher.ensureFullCheck(mc.gameDirectory.toPath(), "client-tick");
             }
             if (!closing && ticks % 10 == 0 && shouldCloseMinecraft()) {
                 closing = true;

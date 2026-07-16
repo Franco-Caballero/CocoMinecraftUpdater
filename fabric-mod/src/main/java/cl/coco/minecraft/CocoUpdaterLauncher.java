@@ -16,13 +16,18 @@ import net.fabricmc.loader.api.FabricLoader;
 public final class CocoUpdaterLauncher {
     private static final long PID = ProcessHandle.current().pid();
     private static final Path ROOT = Path.of(System.getenv("LOCALAPPDATA"), "CocoMinecraftUpdater");
-    private static final Path STATE_FILE = ROOT.resolve("session").resolve(PID + ".json");
+    private static final Path NETWORK_STATE_FILE = ROOT.resolve("session").resolve(PID + "-network.json");
+    private static final Path UPDATE_STATE_FILE = ROOT.resolve("session").resolve(PID + "-update.json");
     private static final Path LOG_FILE = ROOT.resolve("logs").resolve("bridge-" + PID + ".log");
     private static boolean initialized;
     private static boolean networkReady;
     private static Process networkProcess;
     private static int networkAttempts;
     private static long nextNetworkAttemptAt;
+    private static Process fullProcess;
+    private static boolean fullCheckRequested;
+    private static int fullAttempts;
+    private static long nextFullAttemptAt;
 
     private CocoUpdaterLauncher() { }
 
@@ -31,7 +36,8 @@ public final class CocoUpdaterLauncher {
         if (!initialized) {
             initialized = true;
             try {
-                Files.deleteIfExists(STATE_FILE);
+                Files.deleteIfExists(NETWORK_STATE_FILE);
+                Files.deleteIfExists(UPDATE_STATE_FILE);
             } catch (IOException error) {
                 log("No se pudo borrar el estado anterior: " + error);
             }
@@ -53,22 +59,55 @@ public final class CocoUpdaterLauncher {
         if (now < nextNetworkAttemptAt) return;
         networkAttempts++;
         nextNetworkAttemptAt = now + 10_000L;
-        networkProcess = start(gameDir, true, source + " intento=" + networkAttempts);
+        networkProcess = start(gameDir, NETWORK_STATE_FILE, true, source + " intento=" + networkAttempts);
     }
 
     public static synchronized void launchFullCheck(Path gameDir, String source) {
-        start(gameDir, false, source);
+        if (fullProcess != null && fullProcess.isAlive()) {
+            log("Chequeo completo ya activo. source=" + source + " childPid=" + fullProcess.pid());
+            return;
+        }
+        fullCheckRequested = true;
+        fullAttempts = 0;
+        nextFullAttemptAt = 0L;
+        try {
+            Files.deleteIfExists(UPDATE_STATE_FILE);
+        } catch (IOException error) {
+            log("No se pudo limpiar el estado de actualizacion anterior: " + error);
+        }
+        ensureFullCheck(gameDir, source);
+    }
+
+    public static synchronized void ensureFullCheck(Path gameDir, String source) {
+        if (!fullCheckRequested) return;
+        if (fullProcess != null) {
+            if (fullProcess.isAlive()) return;
+            int exitCode = fullProcess.exitValue();
+            log("Chequeo completo termino. childPid=" + fullProcess.pid() + " exitCode=" + exitCode
+                + " state=" + Files.isRegularFile(UPDATE_STATE_FILE));
+            if (exitCode == 0 && Files.isRegularFile(UPDATE_STATE_FILE)) {
+                fullCheckRequested = false;
+                fullProcess = null;
+                return;
+            }
+            fullProcess = null;
+        }
+        long now = System.currentTimeMillis();
+        if (now < nextFullAttemptAt || fullAttempts >= 3) return;
+        fullAttempts++;
+        nextFullAttemptAt = now + 5_000L;
+        fullProcess = start(gameDir, UPDATE_STATE_FILE, false, source + " intento=" + fullAttempts);
     }
 
     public static Path stateFile() {
-        return STATE_FILE;
+        return UPDATE_STATE_FILE;
     }
 
     public static void logClientEntrypoint() {
         log("Entrypoint cliente inicializado.");
     }
 
-    private static Process start(Path gameDir, boolean networkOnly, String source) {
+    private static Process start(Path gameDir, Path stateFile, boolean networkOnly, String source) {
         Path exe = ROOT.resolve("CocoUpdater.exe");
         if (!Files.isRegularFile(exe)) {
             log("No existe el EXE canonico. source=" + source + " path=" + exe);
@@ -76,14 +115,20 @@ public final class CocoUpdaterLauncher {
         }
         List<String> command = new ArrayList<>(List.of(
             exe.toString(), "-GameDir", gameDir.toAbsolutePath().normalize().toString(),
-            "-MinecraftPid", Long.toString(PID), "-SessionStatePath", STATE_FILE.toString(), "-Silent"
+            "-MinecraftPid", Long.toString(PID), "-SessionStatePath", stateFile.toString(), "-Silent"
         ));
         if (networkOnly) command.add("-NetworkOnly");
         try {
-            Process process = new ProcessBuilder(command)
+            ProcessBuilder builder = new ProcessBuilder(command)
                 .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-                .redirectError(ProcessBuilder.Redirect.DISCARD)
-                .start();
+                .redirectError(ProcessBuilder.Redirect.DISCARD);
+            if (!networkOnly) {
+                // Environment variables keep this handshake compatible with an
+                // older canonical bootstrapper that does not know new switches.
+                builder.environment().put("COCO_RUNNING_PACK_VERSION", CocoProtocol.PACK_VERSION);
+                builder.environment().put("COCO_SHOW_ON_UPDATE", "1");
+            }
+            Process process = builder.start();
             log("CocoUpdater iniciado. childPid=" + process.pid() + " networkOnly=" + networkOnly + " source=" + source
                 + " gameDir=" + gameDir.toAbsolutePath().normalize());
             return process;
@@ -94,9 +139,9 @@ public final class CocoUpdaterLauncher {
     }
 
     private static boolean stateIsReady() {
-        if (!Files.isRegularFile(STATE_FILE)) return false;
+        if (!Files.isRegularFile(NETWORK_STATE_FILE)) return false;
         try {
-            String json = Files.readString(STATE_FILE, StandardCharsets.UTF_8);
+            String json = Files.readString(NETWORK_STATE_FILE, StandardCharsets.UTF_8);
             return json.contains("\"message\":\"Red Coco lista\"") && json.contains("\"progress\":100");
         } catch (IOException ignored) {
             return false;

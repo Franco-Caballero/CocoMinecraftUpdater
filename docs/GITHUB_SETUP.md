@@ -46,7 +46,7 @@ El Publisher obtiene acceso a GitHub mediante Git Credential Manager y ejecuta u
 2. confirma que `HEAD` coincide con `origin/main` y que la versión solicitada es exactamente la siguiente a la estable;
 3. compila Bridge, Gate, engine, bootstrapper y Publisher;
 4. genera manifiesto y assets, rechazando los Fabric IDs de `policy/blocked-mod-ids.txt`;
-5. ejecuta pruebas de release, recuperación y red;
+5. ejecuta pruebas de release, recuperación, red, actualización automática con versión antigua cargada y confirmación visual persistente;
 6. crea un release borrador;
 7. sube y verifica tamaños de assets;
 8. actualiza la instalación host;
@@ -67,7 +67,7 @@ Después de publicar:
 2. Confirmar los tres assets de versión.
 3. Descargar el `latest.json` del enlace estable y verificar la versión.
 4. Comparar SHA-256 del EXE y engine.
-5. Verificar `coco-updater-state.json` y Bridge en el host.
+5. Verificar `coco-updater-state.json` y Bridge en el host; en un cliente de prueba, confirmar que Gate provoca cierre/reapertura si la JVM conserva la versión anterior aunque el disco ya esté actualizado.
 6. Confirmar que `git status` esté limpio y `main` sincronizada con `origin/main`.
 
 No sobrescribir assets inmutables ni reutilizar un tag publicado para contenido diferente.

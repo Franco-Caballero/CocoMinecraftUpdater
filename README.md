@@ -36,7 +36,7 @@ ZeroTier opera a nivel IP y no interpreta ni multiplexa el protocolo Minecraft. 
 4. Esperar a que el updater prepare la red, cierre Minecraft de forma controlada y sincronice el pack.
 5. Reabrir Minecraft y seleccionar `Coco Minecraft` en Multijugador.
 
-No se requiere instalar ZeroTier manualmente ni ejecutar el updater manualmente como administrador. Tras la incorporación inicial, Session Bridge realiza verificaciones silenciosas; solo muestra interfaz cuando existe una reparación o actualización.
+No se requiere instalar ZeroTier manualmente ni ejecutar el updater manualmente como administrador. Tras la incorporación inicial, Session Bridge realiza verificaciones silenciosas; solo muestra interfaz cuando existe una reparación o actualización. El chequeo de login informa la versión que Minecraft tiene cargada, no solo la que ya existe en disco; una ejecución manual también compara el inicio de Minecraft con la hora de instalación. Si una actualización terminó con el juego antiguo aún en memoria, el cliente se cierra y solicita reabrir sin descargar de nuevo. Al terminar, la ventana de la reina cambia a un estado verde de confirmación y permanece abierta hasta pulsar `ACEPTAR` o Enter.
 
 ## Integridad del pack
 
@@ -54,7 +54,7 @@ Con Minecraft completamente cerrado:
 dist\CocoPublisher.exe
 ```
 
-El Publisher exige partir de `origin/main` sincronizado y usar exactamente la versión siguiente a la estable, compila componentes, valida roles/hashes y la política de mods bloqueados, ejecuta pruebas, crea un release borrador, actualiza el host y publica únicamente si todas las etapas terminan correctamente.
+El Publisher exige partir de `origin/main` sincronizado y usar exactamente la versión siguiente a la estable, compila componentes, valida roles/hashes y la política de mods bloqueados, ejecuta pruebas —incluida la carrera entre versión cargada y versión en disco—, crea un release borrador, actualiza el host y publica únicamente si todas las etapas terminan correctamente.
 
 ## Seguridad
 

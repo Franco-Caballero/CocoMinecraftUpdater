@@ -150,6 +150,8 @@ if($removedModIds.Count-and-not$AllowModRemoval){
 }
 .\tests\Test-CocoRelease.ps1 -Version $Version
 .\tests\Test-CocoBridge.ps1
+.\tests\Test-CocoAutomaticUpdate.ps1
+.\tests\Test-CocoUpdaterUi.ps1
 .\tests\Test-CocoExecutionPolicy.ps1
 .\tests\Test-CocoClientNetwork.ps1
 .\tests\Test-CocoEngineRecovery.ps1
