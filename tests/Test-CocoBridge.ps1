@@ -11,14 +11,23 @@ $network=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoNetwork.ps1'))
 if($gate-notmatch'CocoUpdaterLauncher\.initializeEarly\(\)'){
     throw 'El entrypoint principal no inicia CocoUpdater temprano.'
 }
+if($gate-notmatch'Coco Updater se abrira y cerrara Minecraft automaticamente'-or
+   $gate-notmatch'Espera .*TODO LISTO .*ACEPTAR'){
+    throw 'El rechazo del servidor todavia pide cerrar Minecraft manualmente o no explica la confirmacion final.'
+}
 if($launcher-notmatch'EnvType\.CLIENT'-or$launcher-notmatch'stateIsReady\(\)'-or
    $launcher-notmatch'nextNetworkAttemptAt'-or$launcher-notmatch'bridge-.*\.log'-or
    $launcher-notmatch'NETWORK_STATE_FILE'-or$launcher-notmatch'UPDATE_STATE_FILE'){
     throw 'El launcher temprano no limita clientes, verifica estado, reintenta y registra diagnostico.'
 }
 if($client-notmatch'ticks % 20 == 0'-or$client-notmatch'ensureNetworkCheck'-or
-   $client-notmatch'launchFullCheck'-or$client-notmatch'ensureFullCheck'){
+   $client-notmatch'checkLatestAndLaunchFullUpdate'-or$client-notmatch'ensureFullCheck'){
     throw 'El Bridge cliente no verifica/reintenta red ni conserva el chequeo completo de login.'
+}
+if($launcher-notmatch'HttpClient'-or$launcher-notmatch'MANIFEST_VERSION'-or
+   $launcher-notmatch'PACK_VERSION\.equals\(result\)'-or
+   $launcher-notmatch'if \(launchUpdater\) launchFullCheck'){
+    throw 'Un cliente actualizado todavia podria abrir el updater completo solo para consultar la version.'
 }
 if($launcher-notmatch'COCO_RUNNING_PACK_VERSION'-or$launcher-notmatch'CocoProtocol\.PACK_VERSION'-or
    $launcher-notmatch'COCO_SHOW_ON_UPDATE'-or$launcher-notmatch'fullAttempts >= 3'){

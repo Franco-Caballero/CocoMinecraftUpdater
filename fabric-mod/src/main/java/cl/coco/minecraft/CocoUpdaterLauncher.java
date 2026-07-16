@@ -6,8 +6,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
@@ -19,6 +26,10 @@ public final class CocoUpdaterLauncher {
     private static final Path NETWORK_STATE_FILE = ROOT.resolve("session").resolve(PID + "-network.json");
     private static final Path UPDATE_STATE_FILE = ROOT.resolve("session").resolve(PID + "-update.json");
     private static final Path LOG_FILE = ROOT.resolve("logs").resolve("bridge-" + PID + ".log");
+    private static final URI MANIFEST_URI = URI.create("https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/latest/download/latest.json");
+    private static final Pattern MANIFEST_VERSION = Pattern.compile("\\\"version\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"");
+    private static final HttpClient HTTP = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS)
+        .connectTimeout(Duration.ofSeconds(8)).build();
     private static boolean initialized;
     private static boolean networkReady;
     private static Process networkProcess;
@@ -28,6 +39,7 @@ public final class CocoUpdaterLauncher {
     private static boolean fullCheckRequested;
     private static int fullAttempts;
     private static long nextFullAttemptAt;
+    private static boolean versionCheckInFlight;
 
     private CocoUpdaterLauncher() { }
 
@@ -76,6 +88,34 @@ public final class CocoUpdaterLauncher {
             log("No se pudo limpiar el estado de actualizacion anterior: " + error);
         }
         ensureFullCheck(gameDir, source);
+    }
+
+    /** Checks only the public version in-process; starts the visible updater only when needed. */
+    public static synchronized void checkLatestAndLaunchFullUpdate(Path gameDir, String source) {
+        if (versionCheckInFlight || (fullProcess != null && fullProcess.isAlive())) return;
+        versionCheckInFlight = true;
+        Thread.ofVirtual().name("coco-version-check").start(() -> {
+            boolean launchUpdater = true;
+            String result = "unknown";
+            try {
+                URI uncached = URI.create(MANIFEST_URI + "?bridge=" + System.currentTimeMillis());
+                HttpRequest request = HttpRequest.newBuilder(uncached).timeout(Duration.ofSeconds(12))
+                    .header("Cache-Control", "no-cache").GET().build();
+                String json = HTTP.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
+                Matcher match = MANIFEST_VERSION.matcher(json);
+                if (!match.find()) throw new IOException("El manifiesto no contiene version.");
+                result = match.group(1);
+                launchUpdater = !CocoProtocol.PACK_VERSION.equals(result);
+                log("Version publica=" + result + " cargada=" + CocoProtocol.PACK_VERSION + " source=" + source);
+            } catch (Exception error) {
+                // A failed probe delegates retries and the visible diagnostic to
+                // the updater instead of silently abandoning a possible update.
+                log("No se pudo consultar la version publica; se delega al updater. source=" + source + " error=" + error);
+            } finally {
+                synchronized (CocoUpdaterLauncher.class) { versionCheckInFlight = false; }
+            }
+            if (launchUpdater) launchFullCheck(gameDir, source + " publica=" + result);
+        });
     }
 
     public static synchronized void ensureFullCheck(Path gameDir, String source) {

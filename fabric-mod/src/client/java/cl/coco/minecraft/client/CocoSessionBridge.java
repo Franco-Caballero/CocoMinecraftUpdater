@@ -53,11 +53,11 @@ public final class CocoSessionBridge implements ClientModInitializer {
             serverEntryInstalled = installServerEntry(mc);
             CocoUpdaterLauncher.ensureNetworkCheck(mc.gameDirectory.toPath(), "client-started");
         });
-        // INIT happens before registry synchronization. A client missing a newly
-        // added content mod is rejected during that synchronization and never
-        // reaches the play JOIN event.
+        // INIT happens before registry synchronization. Check the public version
+        // in-process so a healthy login launches no updater; a mismatch starts
+        // the complete visual flow before missing content can break sync.
         ClientLoginConnectionEvents.INIT.register((listener, mc) ->
-            CocoUpdaterLauncher.launchFullCheck(mc.gameDirectory.toPath(), "login-init"));
+            CocoUpdaterLauncher.checkLatestAndLaunchFullUpdate(mc.gameDirectory.toPath(), "login-init"));
         ClientPlayConnectionEvents.JOIN.register((listener, sender, mc) -> {
             ClientPlayNetworking.send(new CocoProtocol.Hello(CocoProtocol.PACK_ID, CocoProtocol.PACK_VERSION));
             if (host) CocoUpdaterLauncher.ensureNetworkCheck(mc.gameDirectory.toPath(), "host-join");

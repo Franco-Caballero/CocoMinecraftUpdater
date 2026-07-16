@@ -128,9 +128,9 @@ function Show-CocoSuccessAndWait([string]$Version,[string]$Detail="Ya puedes vol
     $script:CocoTitle.Font=New-Object Drawing.Font('Segoe UI Semibold',[single](27*$scale))
     $script:CocoTitle.ForeColor=$green
     $script:CocoDetail.Text="Coco Pack $Version esta listo.`n$Detail"
-    $script:CocoDetail.Font=New-Object Drawing.Font('Segoe UI Semibold',[single](15*$scale))
+    $script:CocoDetail.Font=New-Object Drawing.Font('Segoe UI Semibold',[single](14*$scale))
     $script:CocoDetail.ForeColor=[Drawing.Color]::White
-    $script:CocoDetail.Size=New-Object Drawing.Size([int](570*$scale),[int](68*$scale))
+    $script:CocoDetail.Size=New-Object Drawing.Size([int](640*$scale),[int](68*$scale))
     $script:CocoProgress.BackColor=$green
     $script:CocoProgress.Width=$script:CocoTrack.ClientSize.Width
     $script:CocoTrack.BackColor=$greenDark
@@ -399,8 +399,15 @@ param([int64]$WaitPid,[string]$Source,[string]$Destination,[string]$ExpectedHash
 Wait-Process -Id $WaitPid -ErrorAction SilentlyContinue
 $deadline=[DateTime]::UtcNow.AddHours(12)
 $lastError=''
+$sourceVersion=try{[version]([Diagnostics.FileVersionInfo]::GetVersionInfo($Source).FileVersion)}catch{$null}
 do{
     try{
+        $destinationVersion=if(Test-Path -LiteralPath $Destination){try{[version]([Diagnostics.FileVersionInfo]::GetVersionInfo($Destination).FileVersion)}catch{$null}}else{$null}
+        if($sourceVersion-and$destinationVersion-and$destinationVersion-gt$sourceVersion){
+            Remove-Item -LiteralPath $Source -Force -ErrorAction SilentlyContinue
+            Add-Content -LiteralPath $LogPath "Bootstrap pendiente $sourceVersion omitido: el destino ya tiene $destinationVersion." -ErrorAction SilentlyContinue
+            exit 0
+        }
         if((Test-Path -LiteralPath $Destination)-and(Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$ExpectedHash){
             Remove-Item -LiteralPath $Source -Force -ErrorAction SilentlyContinue
             Add-Content -LiteralPath $LogPath "Bootstrap actualizado correctamente." -ErrorAction SilentlyContinue
@@ -888,7 +895,7 @@ try {
     Write-CocoLog 'Actualizacion completada correctamente.'
     Write-Status 'Actualizacion terminada.'
     if($mutex){$mutex.ReleaseMutex()|Out-Null;$mutex.Dispose();$mutex=$null}
-    Show-CocoSuccessAndWait ([string]$manifest.version) 'La actualizacion termino correctamente. Ya puedes volver a abrir Minecraft.'
+    Show-CocoSuccessAndWait ([string]$manifest.version) 'Ya puedes volver a abrir Minecraft.'
     exit 0
 } catch {
     Write-CocoLog ("ERROR: " + ($_ | Out-String))

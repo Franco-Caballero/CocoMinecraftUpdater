@@ -27,7 +27,8 @@ public final class CocoPackGate implements ModInitializer {
             if (!CocoProtocol.PACK_ID.equals(payload.packId()) || !CocoProtocol.PACK_VERSION.equals(payload.version())) {
                 player.connection.disconnect(Component.literal("\u00a75\u2726 COCO PACK DESACTUALIZADO \u2726\n\u00a7fTu version: \u00a7d" + payload.version()
                     + "\u00a7f  -  Servidor: \u00a7d" + CocoProtocol.PACK_VERSION
-                    + "\n\n\u00a7fCierra Minecraft. Coco Updater terminara la actualizacion automaticamente."));
+                    + "\n\n\u00a7fCoco Updater se abrira y cerrara Minecraft automaticamente."
+                    + "\n\u00a7fEspera \u00a7aTODO LISTO \u00a7fy pulsa \u00a7aACEPTAR\u00a7f."));
             } else {
                 waiting.remove(player.getUUID());
             }

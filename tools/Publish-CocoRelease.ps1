@@ -70,6 +70,9 @@ function Install-CocoPublishedBootstrapLocally([string]$Source,[string]$Expected
     New-Item -ItemType Directory -Path $CanonicalRoot -Force|Out-Null
     $destination=Join-Path $CanonicalRoot 'CocoUpdater.exe'
     if((Test-Path -LiteralPath $destination)-and(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$expected){return}
+    $sourceVersion=try{[version]([Diagnostics.FileVersionInfo]::GetVersionInfo($Source).FileVersion)}catch{$null}
+    $destinationVersion=if(Test-Path -LiteralPath $destination){try{[version]([Diagnostics.FileVersionInfo]::GetVersionInfo($destination).FileVersion)}catch{$null}}else{$null}
+    if($sourceVersion-and$destinationVersion-and$destinationVersion-gt$sourceVersion){return}
     $staging=Join-Path $CanonicalRoot "CocoUpdater.publisher.$PID.new.exe"
     $backup="$destination.coco-old.publisher.$PID"
     $lastError=''

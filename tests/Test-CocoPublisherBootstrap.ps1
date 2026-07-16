@@ -12,6 +12,9 @@ try{
     if($errors){throw ($errors|Out-String)}
     $functionAst=@($ast.FindAll({param($node)$node-is[Management.Automation.Language.FunctionDefinitionAst]-and$node.Name-eq'Install-CocoPublishedBootstrapLocally'},$true)|Select-Object -First 1)
     if(-not$functionAst){throw 'No existe Install-CocoPublishedBootstrapLocally.'}
+    if($functionAst.Extent.Text-notmatch'\$destinationVersion-gt\$sourceVersion'){
+        throw 'El Publisher podria degradar un bootstrap local de version mayor.'
+    }
     Invoke-Expression $functionAst.Extent.Text
 
     $sourceRoot=Join-Path $testRoot 'source'
@@ -28,6 +31,22 @@ try{
     }
     if(Get-ChildItem $canonicalRoot -Filter '*.coco-old.publisher.*' -File -ErrorAction SilentlyContinue){
         throw 'El Publisher dejo un respaldo temporal despues del reemplazo exitoso.'
+    }
+    $olderCanonical=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\CocoUpdater.exe'
+    $newerCandidate=Join-Path $root 'dist\CocoUpdater.exe'
+    if((Test-Path -LiteralPath $olderCanonical)-and(Test-Path -LiteralPath $newerCandidate)){
+        $olderVersion=try{[version](Get-Item $olderCanonical).VersionInfo.FileVersion}catch{$null}
+        $newerVersion=try{[version](Get-Item $newerCandidate).VersionInfo.FileVersion}catch{$null}
+        if($olderVersion-and$newerVersion-and$newerVersion-gt$olderVersion){
+            Copy-Item -LiteralPath $olderCanonical -Destination $source -Force
+            Copy-Item -LiteralPath $newerCandidate -Destination $destination -Force
+            $newerHash=(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash
+            $olderHash=(Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
+            Install-CocoPublishedBootstrapLocally $source $olderHash $canonicalRoot
+            if((Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash-ne$newerHash){
+                throw "El Publisher degrado el destino $newerVersion con la fuente $olderVersion."
+            }
+        }
     }
     'PASS: Publisher instala y verifica localmente el bootstrap antes de publicar el borrador.'
 }finally{

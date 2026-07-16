@@ -17,7 +17,7 @@ $script:Splash = $null
 $script:EmbeddedFullbodyBase64 = '__FULLBODY_BASE64__'
 
 function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
-    if($Silent -and -not $Preview){return}
+    if($Silent -and -not$Preview-and$env:COCO_SHOW_ON_UPDATE-ne'1'){return}
     Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
     [Windows.Forms.Application]::EnableVisualStyles()
     $key=[Drawing.Color]::FromArgb(1,2,3)
@@ -178,8 +178,15 @@ param([int64]$WaitPid,[string]$Source,[string]$Destination,[string]$ExpectedHash
 Wait-Process -Id $WaitPid -ErrorAction SilentlyContinue
 $deadline=[DateTime]::UtcNow.AddHours(12)
 $lastError=''
+$sourceVersion=try{[version]([Diagnostics.FileVersionInfo]::GetVersionInfo($Source).FileVersion)}catch{$null}
 do{
     try{
+        $destinationVersion=if(Test-Path -LiteralPath $Destination){try{[version]([Diagnostics.FileVersionInfo]::GetVersionInfo($Destination).FileVersion)}catch{$null}}else{$null}
+        if($sourceVersion-and$destinationVersion-and$destinationVersion-gt$sourceVersion){
+            Remove-Item -LiteralPath $Source -Force -ErrorAction SilentlyContinue
+            Add-Content -LiteralPath $LogPath "Bootstrap pendiente $sourceVersion omitido: el destino ya tiene $destinationVersion." -ErrorAction SilentlyContinue
+            exit 0
+        }
         if((Test-Path -LiteralPath $Destination)-and(Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$ExpectedHash){
             Remove-Item -LiteralPath $Source -Force -ErrorAction SilentlyContinue
             exit 0

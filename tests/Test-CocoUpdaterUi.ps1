@@ -18,6 +18,10 @@ if($engine-notmatch'\.AcceptButton=\$accept'-or$engine-notmatch'\.Add_Click'-or
 if($engine-notmatch'\[void\]\$accept\.Focus\(\)'){
     throw 'Focus() puede filtrar True al pipeline y ps2exe lo convertiria en un cuadro de mensaje.'
 }
+if($engine-notmatch'Drawing\.Size\(\[int\]\(640\*\$scale\)'-or
+   $engine-match'La actualizacion termino correctamente\. Ya puedes volver a abrir Minecraft'){
+    throw 'El texto final puede volver a envolverse debajo de la barra de progreso.'
+}
 if($engine-notmatch'\$automaticFullCheck=\$MinecraftPid-gt0-and-not\$NetworkOnly'-or
    ([regex]::Matches($engine,'\$ShowOnUpdate-or\$automaticFullCheck')).Count-lt2){
     throw 'Un Bridge antiguo todavia podria cerrar Minecraft sin mostrar la confirmacion visual.'
@@ -33,6 +37,9 @@ if(([regex]::Matches($engine,'Show-CocoSuccessAndWait')).Count-lt4){
 }
 if($bootstrap-notmatch'Panel=\$panel;Accent=\$accent'-or$bootstrap-notmatch'Brand=\$brand'){
     throw 'El bootstrap no comparte los controles necesarios para transformar la ventana de la reina.'
+}
+if($bootstrap-notmatch"COCO_SHOW_ON_UPDATE-ne'1'"){
+    throw 'Una actualizacion confirmada no muestra la reina desde el inicio del bootstrap.'
 }
 if($engine-notmatch'if\(\$mutex\)\{\$mutex\.ReleaseMutex\(\)\|Out-Null;\$mutex\.Dispose\(\);\$mutex=\$null\}'){
     throw 'La confirmacion visual conserva el mutex del updater mientras espera al usuario.'
