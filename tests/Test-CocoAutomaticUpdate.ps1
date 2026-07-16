@@ -12,6 +12,7 @@ $sessionState=Join-Path $testRoot 'session.json'
 $targetPath=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\target.json'
 $savedTarget=if(Test-Path $targetPath){[IO.File]::ReadAllBytes($targetPath)}else{$null}
 $dummy=$null
+$mutexHolder=$null
 
 try{
     New-Item -ItemType Directory -Path (Join-Path $game 'mods'),(Join-Path $game 'config'),(Join-Path $game 'versions\fabric-loader-26.1.2') -Force|Out-Null
@@ -25,6 +26,28 @@ try{
     }
     $manifest|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $manifestPath -Encoding UTF8
     [pscustomobject]@{packId='coco-test';version='9.9.9';role='client'}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $game 'config\coco-updater-state.json') -Encoding UTF8
+
+    # Reproduce la carrera real: el chequeo NetworkOnly antiguo conserva el
+    # mutex historico mientras el login solicita una actualizacion completa.
+    $mutexReady=Join-Path $testRoot 'legacy-mutex.ready'
+    $mutexHolderScript=Join-Path $testRoot 'Hold-LegacyMutex.ps1'
+    [IO.File]::WriteAllText($mutexHolderScript,@'
+param([string]$ReadyPath)
+$mutex=New-Object System.Threading.Mutex($false,'Local\CocoMinecraftUpdater')
+$acquired=$mutex.WaitOne(0)
+if($acquired){
+    [IO.File]::WriteAllText($ReadyPath,'ready')
+    Start-Sleep -Seconds 60
+    $mutex.ReleaseMutex()|Out-Null
+}
+$mutex.Dispose()
+'@,(New-Object Text.UTF8Encoding($false)))
+    $mutexHolder=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$mutexHolderScript,'-ReadyPath',$mutexReady) -PassThru
+    $mutexReadyWatch=[Diagnostics.Stopwatch]::StartNew()
+    while(-not(Test-Path -LiteralPath $mutexReady)){
+        if($mutexReadyWatch.Elapsed.TotalSeconds-gt5){throw 'No se pudo preparar la carrera del mutex legado.'}
+        Start-Sleep -Milliseconds 50
+    }
 
     $dummy=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-Command','Start-Sleep -Seconds 60') -PassThru
     $savedRunningVersion=$env:COCO_RUNNING_PACK_VERSION
@@ -41,6 +64,8 @@ try{
     }
     $marker=Get-Content -LiteralPath (Join-Path $game 'config\coco-updater-state.json') -Raw|ConvertFrom-Json
     if($marker.version-ne'9.9.9'){throw 'El reinicio automatico altero un pack que ya estaba correcto en disco.'}
+    if($mutexHolder-and-not$mutexHolder.HasExited){Stop-Process -Id $mutexHolder.Id -Force -ErrorAction SilentlyContinue}
+    $mutexHolder=$null
 
     $dummy=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-Command','Start-Sleep -Seconds 60') -PassThru
     [pscustomobject]@{
@@ -78,6 +103,15 @@ try{
        $engineText-notmatch'Intentando cerrar Minecraft automaticamente'){
         throw 'El cliente no solicita cierre inmediato con un fallback automatico breve.'
     }
+    if($engineText-notmatch"Local\\CocoMinecraftUpdaterNetwork"-or
+       $engineText-notmatch"Local\\CocoMinecraftUpdaterUpdate"){
+        throw 'La preparacion de red y la actualizacion completa siguen compartiendo el mismo mutex.'
+    }
+    $earlyWaitIndex=$engineText.IndexOf('Wait-ForMinecraftExit $selected.Root $true')
+    $networkIndex=$engineText.IndexOf('if($manifest.network)')
+    if($earlyWaitIndex-lt0-or$networkIndex-lt0-or$earlyWaitIndex-gt$networkIndex){
+        throw 'El cierre automatico no ocurre antes de preparar la red.'
+    }
     if($bootstrapText-match'Move-Item\s+-LiteralPath\s+\$newExe\s+-Destination\s+\$canonicalExe'){
         throw 'El bootstrap vuelve a reemplazar directamente un EXE canonico que puede estar bloqueado.'
     }
@@ -94,9 +128,10 @@ try{
     if($engineText-notmatch'Test-RunningMinecraftPredatesInstalledPack'-or$engineText-notmatch'installedAt\.AddSeconds\(-2\)'){
         throw 'La ejecucion manual no detecta un Minecraft iniciado antes de instalar el pack actual.'
     }
-    'PASS: version cargada, proceso previo y marcador legado cierran antes de red; bootstrap bloqueado se difiere.'
+    'PASS: el mutex de red no bloquea el updater; version cargada, proceso previo y marcador legado cierran antes de red.'
 }finally{
     if($dummy-and-not$dummy.HasExited){Stop-Process -Id $dummy.Id -Force -ErrorAction SilentlyContinue}
+    if($mutexHolder-and-not$mutexHolder.HasExited){Stop-Process -Id $mutexHolder.Id -Force -ErrorAction SilentlyContinue}
     Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
     if($savedTarget){[IO.File]::WriteAllBytes($targetPath,$savedTarget)}else{Remove-Item -LiteralPath $targetPath -Force -ErrorAction SilentlyContinue}
 }

@@ -46,7 +46,7 @@ El Publisher obtiene acceso a GitHub mediante Git Credential Manager y ejecuta u
 2. confirma que `HEAD` coincide con `origin/main` y que la versión solicitada es exactamente la siguiente a la estable;
 3. compila Bridge, Gate, engine, bootstrapper y Publisher;
 4. refleja altas y bajas de la carpeta `mods`, genera manifiesto y assets, y rechaza los Fabric IDs de `policy/blocked-mod-ids.txt`;
-5. ejecuta pruebas de release, recuperación, red, actualización automática con versión antigua cargada y confirmación visual persistente;
+5. ejecuta pruebas de release, recuperación, red, actualización automática con versión antigua cargada, contención entre el chequeo de red y el updater, y confirmación visual persistente;
 6. crea un release borrador;
 7. sube y verifica tamaños de assets;
 8. instala localmente el bootstrap compilado y actualiza la instalación host, sin depender de descargar un asset todavía oculto en el borrador;

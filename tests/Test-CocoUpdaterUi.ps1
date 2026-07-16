@@ -26,11 +26,11 @@ if($engine-notmatch'\$automaticFullCheck=\$MinecraftPid-gt0-and-not\$NetworkOnly
    ([regex]::Matches($engine,'\$ShowOnUpdate-or\$automaticFullCheck')).Count-lt2){
     throw 'Un Bridge antiguo todavia podria cerrar Minecraft sin mostrar la confirmacion visual.'
 }
-$earlyUi=$engine.IndexOf('$earlyClientUpdateKnown=')
+$earlyUi=$engine.IndexOf('$clientUpdateRequired=')
 $networkSetup=$engine.IndexOf('if($manifest.network)')
 if($earlyUi-lt0-or$networkSetup-lt0-or$earlyUi-gt$networkSetup-or
-   $engine-notmatch'(?s)if\(\$earlyClientUpdateKnown\).*?Show-CocoWindow'){
-    throw 'La reina no se abre antes de preparar la red y cerrar un Minecraft antiguo.'
+   $engine-notmatch'(?s)if\(\$clientUpdateRequired\).*?Show-CocoWindow.*?Wait-ForMinecraftExit \$selected\.Root \$true'){
+    throw 'La reina no se abre y cierra Minecraft antes de preparar la red para cualquier pack atrasado.'
 }
 if(([regex]::Matches($engine,'Show-CocoSuccessAndWait')).Count-lt4){
     throw 'No todos los caminos operativos de exito terminan en la confirmacion persistente.'
@@ -41,7 +41,7 @@ if($bootstrap-notmatch'Panel=\$panel;Accent=\$accent'-or$bootstrap-notmatch'Bran
 if($bootstrap-notmatch"COCO_SHOW_ON_UPDATE-ne'1'"){
     throw 'Una actualizacion confirmada no muestra la reina desde el inicio del bootstrap.'
 }
-if($engine-notmatch'if\(\$mutex\)\{\$mutex\.ReleaseMutex\(\)\|Out-Null;\$mutex\.Dispose\(\);\$mutex=\$null\}'){
+if($engine-notmatch'if\(\$mutex\)\{\$mutex\.ReleaseMutex\(\)\|Out-Null;\$mutexAcquired=\$false;\$mutex\.Dispose\(\);\$mutex=\$null\}'){
     throw 'La confirmacion visual conserva el mutex del updater mientras espera al usuario.'
 }
 

@@ -789,9 +789,25 @@ if(Test-Path -LiteralPath $networkLibrary){
     . $networkBlock
 }
 
+$mutex=$null;$mutexAcquired=$false
+$networkMutex=$null;$networkMutexAcquired=$false
+$legacyNetworkMutex=$null;$legacyNetworkMutexAcquired=$false
+function Enter-CocoMutex($Mutex,[int]$TimeoutMilliseconds){
+    try{return $Mutex.WaitOne($TimeoutMilliseconds)}
+    catch [Threading.AbandonedMutexException]{
+        Write-CocoLog 'Se recupero un bloqueo abandonado por una ejecucion anterior.'
+        return $true
+    }
+}
+
 try {
-    $mutex = New-Object System.Threading.Mutex($false, 'Local\CocoMinecraftUpdater')
-    $mutexAcquired=if($NetworkOnly){$mutex.WaitOne(0)}else{$mutex.WaitOne([TimeSpan]::FromSeconds(30))}
+    # La preparacion silenciosa de red al arrancar Minecraft no debe bloquear
+    # una actualizacion completa disparada durante el login. Cada trabajo tiene
+    # su propia exclusión; el updater completo toma además la de red solamente
+    # cuando realmente va a modificar o verificar ZeroTier.
+    $mutexName=if($NetworkOnly){'Local\CocoMinecraftUpdaterNetwork'}else{'Local\CocoMinecraftUpdaterUpdate'}
+    $mutex = New-Object System.Threading.Mutex($false, $mutexName)
+    $mutexAcquired=if($NetworkOnly){Enter-CocoMutex $mutex 0}else{Enter-CocoMutex $mutex 30000}
     if (-not $mutexAcquired) { exit 0 }
     $engineParent=Split-Path $script:CocoEngineRoot -Parent
     if((Split-Path $engineParent -Leaf)-eq'engine'){
@@ -844,27 +860,62 @@ try {
     }catch{$installedMarkerVersion=''}
     $installedMarkerOutdated=-not[string]::IsNullOrWhiteSpace($installedMarkerVersion)-and-not[string]::Equals($installedMarkerVersion,[string]$manifest.version,[StringComparison]::OrdinalIgnoreCase)
     $earlyClientUpdateKnown=$automaticFullCheck-and$role-eq'client'-and($explicitRunningVersionOutdated-or$runningPredatesInstalledPack-or$installedMarkerOutdated)
-    $minecraftCloseRequested=$false
+    $minecraftExitHandled=$false
     if($earlyClientUpdateKnown){
+        Write-CocoLog "Actualizacion conocida antes de preparar la red. RunningPackVersion='$RunningPackVersion' InstalledMarker='$installedMarkerVersion' Published='$($manifest.version)' PredatesInstall=$runningPredatesInstalledPack"
+    }
+    # Esta comprobacion es completamente local. Debe ocurrir antes de la red
+    # para cubrir Bridges muy antiguos que no informan su version cargada.
+    $diskCurrent=Test-CurrentVersion $selected.Root $manifest $role
+    $runningClientOutdated=$role-eq'client'-and($explicitRunningVersionOutdated-or$runningPredatesInstalledPack)
+    $clientUpdateRequired=-not$NetworkOnly-and$role-eq'client'-and(-not$diskCurrent-or$runningClientOutdated)
+    if($clientUpdateRequired){
         if(-not$script:CocoForm){Show-CocoWindow}
         Set-CocoState 'Actualizacion encontrada' 'Intentando cerrar Minecraft automaticamente...' 2 $true 'closeMinecraft'
-        Write-CocoLog "Actualizacion conocida antes de preparar la red. RunningPackVersion='$RunningPackVersion' InstalledMarker='$installedMarkerVersion' Published='$($manifest.version)' PredatesInstall=$runningPredatesInstalledPack"
+        Write-CocoLog "Cierre de Minecraft previo a red. DiskCurrent=$diskCurrent RunningClientOutdated=$runningClientOutdated"
         if(Test-MinecraftRunning $selected.Root){[void](Request-ClientMinecraftClose $selected.Root)}
-        $minecraftCloseRequested=$true
+        Wait-ForMinecraftExit $selected.Root $true
+        $minecraftExitHandled=$true
     }
     if($manifest.network){
         if(-not(Get-Command Ensure-CocoNetwork -ErrorAction SilentlyContinue)){throw 'El engine no contiene los componentes de red requeridos por este pack.'}
-        [void](Ensure-CocoNetwork $selected.Root $role $manifest)
+        if($NetworkOnly){
+            [void](Ensure-CocoNetwork $selected.Root $role $manifest)
+        }else{
+            $networkMutex=New-Object System.Threading.Mutex($false,'Local\CocoMinecraftUpdaterNetwork')
+            $networkWait=[Diagnostics.Stopwatch]::StartNew()
+            while(-not($networkMutexAcquired=Enter-CocoMutex $networkMutex 250)){
+                if($networkWait.Elapsed.TotalSeconds-ge120){throw 'La comprobacion de red anterior no termino. Vuelve a intentarlo.'}
+                if($script:CocoForm){
+                    Set-CocoState 'Preparando red Coco' 'Esperando que termine la comprobacion de red anterior...' 4
+                    [Windows.Forms.Application]::DoEvents()
+                }
+            }
+            # Compatibilidad con 0.5.39 y anteriores: esos engines usaban este
+            # mutex unico. Se espera solo despues de mostrar UI y cerrar MC.
+            $legacyNetworkMutex=New-Object System.Threading.Mutex($false,'Local\CocoMinecraftUpdater')
+            while(-not($legacyNetworkMutexAcquired=Enter-CocoMutex $legacyNetworkMutex 250)){
+                if($networkWait.Elapsed.TotalSeconds-ge120){throw 'La comprobacion anterior no termino. Vuelve a intentarlo.'}
+                if($script:CocoForm){
+                    Set-CocoState 'Preparando red Coco' 'Esperando que termine la comprobacion anterior...' 4
+                    [Windows.Forms.Application]::DoEvents()
+                }
+            }
+            try{[void](Ensure-CocoNetwork $selected.Root $role $manifest)}finally{
+                if($legacyNetworkMutexAcquired){$legacyNetworkMutex.ReleaseMutex()|Out-Null;$legacyNetworkMutexAcquired=$false}
+                $legacyNetworkMutex.Dispose();$legacyNetworkMutex=$null
+                if($networkMutexAcquired){$networkMutex.ReleaseMutex()|Out-Null;$networkMutexAcquired=$false}
+                $networkMutex.Dispose();$networkMutex=$null
+            }
+        }
     }
     if($NetworkOnly){
         Set-CocoState 'Red Coco lista' 'La LAN virtual esta preparada' 100 $false
         exit 0
     }
-    $diskCurrent=Test-CurrentVersion $selected.Root $manifest $role
-    $runningClientOutdated=$role-eq'client'-and($explicitRunningVersionOutdated-or$runningPredatesInstalledPack)
     if ($diskCurrent -and -not$runningClientOutdated) {
         Set-CocoState 'Coco Pack actualizado' "Version $($manifest.version) | Todo listo" 100 $false
-        if($mutex){$mutex.ReleaseMutex()|Out-Null;$mutex.Dispose();$mutex=$null}
+        if($mutex){$mutex.ReleaseMutex()|Out-Null;$mutexAcquired=$false;$mutex.Dispose();$mutex=$null}
         if($script:CocoForm){Show-CocoSuccessAndWait ([string]$manifest.version) 'No hay nada pendiente. Puedes abrir Minecraft y jugar.'}
         exit 0
     }
@@ -872,21 +923,13 @@ try {
     if($runningClientOutdated){
         Write-CocoLog "Minecraft requiere reinicio aunque el disco ya este actualizado. RunningPackVersion='$RunningPackVersion' Published='$($manifest.version)' PredatesInstall=$runningPredatesInstalledPack"
     }
-    if (-not$minecraftCloseRequested-and(Test-MinecraftRunning $selected.Root) -and $role -eq 'client' -and $MinecraftPid -gt 0) {
-        Set-CocoState 'Actualizacion encontrada' 'Intentando cerrar Minecraft automaticamente...' 2 $true 'closeMinecraft'
-        [void](Request-ClientMinecraftClose $selected.Root)
-    } elseif (-not$minecraftCloseRequested-and(Test-MinecraftRunning $selected.Root) -and $role -eq 'client') {
-        Set-CocoState 'Primera instalacion' 'Intentando cerrar Minecraft automaticamente...' 2
-        if(-not(Request-ClientMinecraftClose $selected.Root)){
-            Set-CocoState 'Primera instalacion' 'Cierra Minecraft una vez para instalar Session Bridge' 2
-        }
-    } elseif (-not$minecraftCloseRequested-and(Test-MinecraftRunning $selected.Root)) {
+    if(-not$minecraftExitHandled-and(Test-MinecraftRunning $selected.Root)){
         Set-CocoState 'Actualizacion encontrada' 'Eres el host: cierra Minecraft cuando termine la sesion LAN' 2
     }
-    Wait-ForMinecraftExit $selected.Root ($role -eq 'client')
+    if(-not$minecraftExitHandled){Wait-ForMinecraftExit $selected.Root ($role -eq 'client')}
     if($diskCurrent){
         Write-CocoLog 'Minecraft antiguo cerrado; los archivos del pack ya estaban actualizados en disco.'
-        if($mutex){$mutex.ReleaseMutex()|Out-Null;$mutex.Dispose();$mutex=$null}
+        if($mutex){$mutex.ReleaseMutex()|Out-Null;$mutexAcquired=$false;$mutex.Dispose();$mutex=$null}
         Show-CocoSuccessAndWait ([string]$manifest.version) 'La version nueva ya estaba instalada. Vuelve a abrir Minecraft.'
         exit 0
     }
@@ -894,7 +937,7 @@ try {
     Install-StagedPackage $selected.Root $stage $package $manifest
     Write-CocoLog 'Actualizacion completada correctamente.'
     Write-Status 'Actualizacion terminada.'
-    if($mutex){$mutex.ReleaseMutex()|Out-Null;$mutex.Dispose();$mutex=$null}
+    if($mutex){$mutex.ReleaseMutex()|Out-Null;$mutexAcquired=$false;$mutex.Dispose();$mutex=$null}
     Show-CocoSuccessAndWait ([string]$manifest.version) 'Ya puedes volver a abrir Minecraft.'
     exit 0
 } catch {
@@ -909,5 +952,16 @@ try {
     Start-Sleep -Seconds 10
     exit 1
 } finally {
-    if ($mutex) { $mutex.ReleaseMutex() | Out-Null; $mutex.Dispose() }
+    if($networkMutex){
+        if($networkMutexAcquired){$networkMutex.ReleaseMutex()|Out-Null}
+        $networkMutex.Dispose()
+    }
+    if($legacyNetworkMutex){
+        if($legacyNetworkMutexAcquired){$legacyNetworkMutex.ReleaseMutex()|Out-Null}
+        $legacyNetworkMutex.Dispose()
+    }
+    if ($mutex) {
+        if($mutexAcquired){$mutex.ReleaseMutex() | Out-Null}
+        $mutex.Dispose()
+    }
 }
