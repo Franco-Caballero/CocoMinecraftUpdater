@@ -1,2 +1,4 @@
 # Fabric IDs forbidden from every Coco pack role.
 tsa-decorations
+krypton
+fastipping
