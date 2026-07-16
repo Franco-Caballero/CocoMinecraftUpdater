@@ -40,7 +40,7 @@ No se requiere instalar ZeroTier manualmente ni ejecutar el updater manualmente 
 
 ## Integridad del pack
 
-Los clientes reciben exactamente los mods publicados. La instalación host actúa como fuente del Publisher y conserva JAR adicionales con un Fabric ID nuevo, evitando que una actualización normal elimine incorporaciones locales pendientes de publicación. El Publisher también bloquea eliminaciones accidentales de IDs ya publicados. Los IDs retirados permanentemente se registran en `policy/blocked-mod-ids.txt`; actualmente `tsa-decorations` no puede volver a publicarse en ningún rol.
+Los clientes reciben exactamente los mods publicados. `%APPDATA%\.minecraft\mods` en el host es la fuente de verdad del Publisher: agregar o quitar un JAR allí agrega o retira ese mod en la publicación siguiente. Durante una actualización normal del host, el updater conserva JAR adicionales con un Fabric ID nuevo para no borrar incorporaciones locales todavía no publicadas. Los IDs retirados permanentemente se registran en `policy/blocked-mod-ids.txt`; actualmente `tsa-decorations` no puede volver a publicarse en ningún rol.
 
 Los archivos declarados como configuración administrada se incluyen con hash y contenido en el manifiesto y se aplican junto con los mods. Actualmente `config/Stackable.json` fija `maxStack` en 256 y `config/jei/jei-client.ini` activa `showHiddenIngredients = true` para host y clientes, de modo que JEI incluya objetos que no estén expuestos correctamente por una pestaña creativa.
 

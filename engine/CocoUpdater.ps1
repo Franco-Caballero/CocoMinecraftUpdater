@@ -395,6 +395,7 @@ function Ensure-BootstrapUpdate($Manifest) {
 param([int64]$WaitPid,[string]$Source,[string]$Destination,[string]$ExpectedHash,[string]$LogPath)
 Wait-Process -Id $WaitPid -ErrorAction SilentlyContinue
 $deadline=[DateTime]::UtcNow.AddHours(12)
+$lastError=''
 do{
     try{
         if((Test-Path -LiteralPath $Destination)-and(Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$ExpectedHash){
@@ -402,16 +403,21 @@ do{
             Add-Content -LiteralPath $LogPath "Bootstrap actualizado correctamente." -ErrorAction SilentlyContinue
             exit 0
         }
-        if(Test-Path -LiteralPath $Destination){[IO.File]::Replace($Source,$Destination,$null,$true)}else{[IO.File]::Move($Source,$Destination)}
+        if(Test-Path -LiteralPath $Destination){
+            $backup="$Destination.coco-old.$PID"
+            Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
+            [IO.File]::Replace($Source,$Destination,$backup,$true)
+        }else{[IO.File]::Move($Source,$Destination)}
         if((Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$ExpectedHash){
+            if($backup){Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue}
             Add-Content -LiteralPath $LogPath "Bootstrap actualizado correctamente." -ErrorAction SilentlyContinue
             exit 0
         }
     }
-    catch{}
+    catch{$lastError=$_.Exception.Message}
     Start-Sleep -Milliseconds 500
 }while([DateTime]::UtcNow-lt$deadline)
-Add-Content -LiteralPath $LogPath "No se pudo aplicar el bootstrap pendiente antes del limite de 12 horas." -ErrorAction SilentlyContinue
+Add-Content -LiteralPath $LogPath "No se pudo aplicar el bootstrap pendiente antes del limite de 12 horas. Ultimo error: $lastError" -ErrorAction SilentlyContinue
 exit 1
 '@
         [IO.File]::WriteAllText($helper,$helperText,(New-Object Text.UTF8Encoding($true)))

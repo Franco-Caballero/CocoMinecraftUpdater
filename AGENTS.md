@@ -88,16 +88,16 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 Estado publicado:
 
-- Release estable: **0.5.34**
-- Host: 0.5.34, rol `host`
-- Bridge: `coco-session-bridge-0.5.34.jar`
-- EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`, 0.5.34.0. Durante la investigación permaneció temporalmente en 0.5.33.0 por un bloqueo; el reemplazo 0.5.34 verificado se aplicó correctamente al cerrar Minecraft.
-- Manifiesto: 148 mods de cliente y 152 de host
+- Release estable al comenzar esta corrección: **0.5.35**
+- Host: 0.5.35, rol `host`
+- Bridge: `coco-session-bridge-0.5.35.jar`
+- EXE canónico: 0.5.34.0 con reemplazo 0.5.35 descargado pero pendiente por el defecto descrito abajo.
+- Manifiesto 0.5.35: 149 mods de cliente y 153 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
-Incidente abierto del 2026-07-16: la estable 0.5.34 todavía puede mostrar un falso error al reemplazar el EXE canónico bloqueado, compartir el estado de red/actualización y confundir versión instalada con versión cargada. El árbol de trabajo contiene la corrección y sus pruebas, pero **aún no está publicada**. Minecraft y procesos updater del host quedaron cerrados; falta una orden explícita para publicar el siguiente release mediante el Publisher. No afirmar que los amigos ya poseen la corrección antes de esa publicación.
+Incidente abierto del 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. La corrección preparada usa un backup temporal válido y una prueba que ejecuta ambos helpers realmente. También se autorizó que la carpeta `mods` sea autoritativa y se vuelva a retirar `inventorysorter`, que había sido restaurado por la política anterior. No afirmar que estas dos correcciones están públicas hasta publicar y verificar la versión siguiente.
 
-Comportamiento objetivo del código preparado para el siguiente release:
+Comportamiento objetivo de la corrección preparada:
 
 - Primera instalación: abrir la instancia Fabric correcta hasta el menú y ejecutar el EXE una vez.
 - El bootstrapper se autoactualiza, detecta `--gameDir`, prepara ZeroTier, sincroniza mods e instala Bridge/Gate.
@@ -114,7 +114,7 @@ Política de mods:
 - `managed-config\Stackable.json` se distribuye como `config\Stackable.json` en ambos roles y fija `maxStack = 256`; cambiarlo es una decisión global de mecánica.
 - El host es la fuente del Publisher y conserva JAR adicionales con un Fabric ID nuevo.
 - Una versión anterior cuyo Fabric ID ya está publicado no se duplica.
-- El Publisher bloquea la desaparición de IDs publicados salvo `-AllowModRemoval` y autorización explícita.
+- La carpeta viva `%APPDATA%\.minecraft\mods` es autoritativa: agregar o quitar JAR se refleja directamente en la publicación siguiente, sin `-AllowModRemoval`.
 - `tsa-decorations` está retirado permanentemente y `policy\blocked-mod-ids.txt` impide reintroducirlo en la fuente viva o en cualquier rol publicado.
 - El Publisher exige exactamente la siguiente versión pública, `HEAD == origin/main` al comenzar y que `origin/main` no cambie durante la compilación.
 - No mantener listas estáticas completas de JAR en documentación; consultar `mods` y `release\latest.json`.

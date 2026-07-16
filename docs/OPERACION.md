@@ -57,14 +57,12 @@ El Publisher:
 - separa roles host/cliente;
 - deduplica contenido e IDs Fabric;
 - conserva en el host JAR adicionales con IDs nuevos;
-- bloquea la desaparición accidental de IDs publicados salvo autorización explícita;
+- toma `%APPDATA%\.minecraft\mods` como fuente autoritativa: los JAR agregados o retirados se reflejan directamente en el release;
 - rechaza versiones que no sean exactamente la siguiente al canal estable o si `HEAD` no coincide con `origin/main`;
 - rechaza en la fuente viva y en el manifiesto cualquier ID de `policy\blocked-mod-ids.txt`; `tsa-decorations` está retirado permanentemente;
 - verifica tamaños, SHA-256 y assets;
 - prueba recuperación transaccional;
 - mantiene el release como borrador hasta actualizar correctamente el host.
-
-No usar `-AllowModRemoval` sin una decisión explícita sobre los IDs retirados.
 
 ## ZeroTier
 

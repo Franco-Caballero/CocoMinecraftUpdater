@@ -4,8 +4,7 @@ param(
     [string]$MinecraftRoot="$env:APPDATA\.minecraft",
     [string]$Repository='Franco-Caballero/CocoMinecraftUpdater',
     [string]$KnownE4mcDomainsCsv='',
-    [int64]$PublisherPid=0,
-    [switch]$AllowModRemoval
+    [int64]$PublisherPid=0
 )
 $ErrorActionPreference='Stop'
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
@@ -145,12 +144,13 @@ $candidateHostModIds=@($candidateHostPackage.mods.fabricId|Where-Object{$_-and$_
 $candidateBlockedIds=@($candidateManifest.packages.mods.fabricId|Where-Object{$_-and$_-in$blockedModIds}|Select-Object -Unique)
 if($candidateBlockedIds.Count){throw "Publicacion bloqueada: el manifiesto contiene IDs prohibidos ($($candidateBlockedIds -join ', '))."}
 $removedModIds=@($previousHostModIds|Where-Object{$_-notin$candidateHostModIds})
-if($removedModIds.Count-and-not$AllowModRemoval){
-    throw "Publicacion bloqueada: desaparecerian mods ya publicados ($($removedModIds -join ', ')). Requiere -AllowModRemoval y confirmacion explicita del usuario."
+if($removedModIds.Count){
+    Write-Output "Mods retirados porque ya no estan en la fuente viva: $($removedModIds -join ', ')."
 }
 .\tests\Test-CocoRelease.ps1 -Version $Version
 .\tests\Test-CocoBridge.ps1
 .\tests\Test-CocoAutomaticUpdate.ps1
+.\tests\Test-CocoBootstrapReplacement.ps1
 .\tests\Test-CocoUpdaterUi.ps1
 .\tests\Test-CocoExecutionPolicy.ps1
 .\tests\Test-CocoClientNetwork.ps1

@@ -62,6 +62,10 @@ try{
     if($bootstrapText-match'Move-Item\s+-LiteralPath\s+\$newExe\s+-Destination\s+\$canonicalExe'){
         throw 'El bootstrap vuelve a reemplazar directamente un EXE canonico que puede estar bloqueado.'
     }
+    if($bootstrapText-match'File\]::Replace\(\$Source,\$Destination,\$null'-or
+       $engineText-match'File\]::Replace\(\$Source,\$Destination,\$null'){
+        throw 'El reemplazo diferido usa un backup nulo, invalido en Windows PowerShell 5.1.'
+    }
     if($bootstrapText-notmatch'AddHours\(12\)'-or$bootstrapText-notmatch'\[IO\.File\]::Replace'-or
        $bootstrapText-notmatch'Apply-CocoBootstrapUpdate-\$PID'-or
        $engineText-notmatch'AddHours\(12\)'-or$engineText-notmatch'COCO_BOOTSTRAP_UPDATE_PENDING'-or

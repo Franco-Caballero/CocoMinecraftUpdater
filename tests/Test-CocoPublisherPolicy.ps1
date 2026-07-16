@@ -11,6 +11,11 @@ $mods=Join-Path $testRoot 'mods'
 New-Item -ItemType Directory -Path $mods -Force|Out-Null
 
 try{
+    $publisherText=[IO.File]::ReadAllText($publisher)
+    if($publisherText-match'AllowModRemoval'-or$publisherText-match'desaparecerian mods ya publicados'){
+        throw 'El Publisher aun exige una bandera oculta para reflejar eliminaciones de la fuente viva.'
+    }
+
     $ErrorActionPreference='Continue'
     $output=& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $publisher -Version $PublishedVersion -MinecraftRoot $testRoot 2>&1|Out-String
     $publisherExitCode=$LASTEXITCODE
@@ -37,7 +42,7 @@ try{
         throw "El Publisher no rechazo tsa-decorations en la fuente viva. Salida: $output"
     }
 
-    'PASS: version monotona y politica permanente de mods bloqueados validadas.'
+    'PASS: la carpeta mods es autoritativa; version monotona y IDs bloqueados siguen protegidos.'
 }finally{
     if(Test-Path -LiteralPath $testRoot){Remove-Item -LiteralPath $testRoot -Recurse -Force}
 }
