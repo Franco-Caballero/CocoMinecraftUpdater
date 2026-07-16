@@ -88,10 +88,10 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 Estado publicado:
 
-- Release estable: **0.5.39**
-- Host: 0.5.39, rol `host`
-- Bridge: `coco-session-bridge-0.5.39.jar`
-- EXE canónico: 0.5.39.0, con hash idéntico al manifiesto y sin helpers pendientes tras la verificación posterior.
+- Release estable: **0.5.40**
+- Host: 0.5.40, rol `host`
+- Bridge: `coco-session-bridge-0.5.40.jar`
+- EXE canónico: 0.5.40.0, con hash idéntico al manifiesto y sin helpers pendientes tras la verificación posterior.
 - Manifiesto: 149 mods de cliente y 153 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
@@ -99,12 +99,15 @@ Incidente resuelto el 2026-07-16: 0.5.35 corrigió el falso error inicial y la d
 
 0.5.38 publicó la supresión de `True`, el cierre automático temprano y la UI para Bridges antiguos. Su verificación posterior detectó que un helper 0.5.37 pendiente reemplazó el EXE 0.5.38 ya instalado. 0.5.39 compara `FileVersion` y prohíbe degradaciones en bootstrap, engine y Publisher, con una prueba real 0.5.38 frente a 0.5.37. También corrige el texto final superpuesto, actualiza el rechazo de Gate y hace que el Bridge consulte la versión pública dentro de Minecraft para no lanzar el updater completo cuando ya está actualizado. Se verificaron release público, hashes, host, Bridge, Publisher, EXE canónico estable tras espera, ausencia de helpers, Git limpio y Minecraft cerrado.
 
-Comportamiento desde 0.5.39:
+El reporte real posterior mostró que 0.5.39 aún podía dejar Minecraft abierto y retrasar la reina: `NetworkOnly` y el updater completo competían por el mismo mutex global, por lo que el flujo de login quedaba esperando antes de escribir la orden de cierre. 0.5.40 separa los mutex de red y actualización, comprueba el disco y cierra o fuerza el cliente antes de tocar la red, y conserva un mutex legado únicamente para serializar ZeroTier después del cierre. La regresión mantiene ocupado el mutex antiguo durante un minuto y confirma que el Minecraft simulado se cierra sin esperar. Se verificaron todas las pruebas, release público, host 0.5.40, Bridge, Publisher, EXE canónico/hash, 149/153 mods, ausencia de helpers y Git sincronizado.
+
+Comportamiento desde 0.5.40:
 
 - Primera instalación: abrir la instancia Fabric correcta hasta el menú y ejecutar el EXE una vez.
 - El bootstrapper se autoactualiza, detecta `--gameDir`, prepara ZeroTier, sincroniza mods e instala Bridge/Gate.
 - La elevación se solicita solo cuando Windows necesita instalar o reparar red. Desde 0.5.28 no se requiere ejecutar manualmente como administrador.
-- Bridge ejecuta `-NetworkOnly` silencioso al arrancar. Consulta solo el número público al iniciar login y lanza el updater completo únicamente ante atraso o fallo de consulta. Red y actualización usan estados de sesión separados; el chequeo completo se reintenta hasta tres veces.
+- Bridge ejecuta `-NetworkOnly` silencioso al arrancar. Consulta solo el número público al iniciar login y lanza el updater completo únicamente ante atraso o fallo de consulta. Red y actualización usan estados de sesión y mutex separados; el chequeo completo se reintenta hasta tres veces.
+- El engine comprueba el estado local antes de preparar la red. Para cualquier cliente atrasado muestra la reina, solicita el cierre normal y fuerza solo ese PID tras ocho segundos si no responde; después serializa ZeroTier con comprobaciones nuevas o antiguas y mantiene visible todo el trabajo.
 - El chequeo de login pasa al engine la versión cargada en la JVM; la ejecución manual compara además el inicio de Minecraft con `installedAt`. Si el release nuevo ya está en disco pero la JVM es anterior, el updater cierra únicamente ese cliente y solicita reabrir sin reinstalar; si faltan archivos, instala antes de solicitarlo.
 - El reemplazo del EXE canónico nunca es requisito para continuar el engine: si Windows lo mantiene mapeado, queda una copia verificada pendiente hasta 12 horas y no se informa un falso error de conexión/mods. Un helper pendiente compara `FileVersion` y jamás puede reemplazar un destino de versión mayor.
 - Toda operación visible que termina correctamente conserva la ventana de la reina con `TODO LISTO`, indicador verde, texto ampliado y botón `ACEPTAR`; también responde a Enter y no se cierra por temporizador. Los chequeos automáticos sanos siguen sin mostrar UI.
