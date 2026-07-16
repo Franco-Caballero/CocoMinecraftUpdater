@@ -88,23 +88,23 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 Estado publicado:
 
-- Release estable: **0.5.38**
-- Host: 0.5.38, rol `host`
-- Bridge: `coco-session-bridge-0.5.38.jar`
-- EXE canónico observado tras publicar: 0.5.37.0, degradado por un helper 0.5.37 que seguía pendiente; la corrección anti-downgrade está preparada para el release siguiente.
-- Manifiesto: 148 mods de cliente y 152 de host
+- Release estable: **0.5.39**
+- Host: 0.5.39, rol `host`
+- Bridge: `coco-session-bridge-0.5.39.jar`
+- EXE canónico: 0.5.39.0, con hash idéntico al manifiesto y sin helpers pendientes tras la verificación posterior.
+- Manifiesto: 149 mods de cliente y 153 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
 Incidente resuelto el 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. 0.5.36 publicó el helper correcto y convirtió la carpeta `mods` en autoritativa, retirando `inventorysorter`; la verificación posterior descubrió que el Publisher intentaba descargar el bootstrap desde el release aún borrador y recibía 404. 0.5.37 instala el EXE compilado localmente antes de actualizar el host. Se verificaron release público, host, Bridge, Publisher, EXE canónico/hash, manifiesto, Git y ausencia de Minecraft abierto.
 
-0.5.38 publicó la supresión de `True`, el cierre automático temprano y la UI para Bridges antiguos. La verificación posterior detectó que un helper 0.5.37 pendiente reemplazó el EXE 0.5.38 ya instalado; el árbol preparado compara `FileVersion` y prohíbe degradaciones en bootstrap, engine y Publisher, con una prueba real 0.5.38 frente a 0.5.37. También corrige el texto final superpuesto, actualiza el rechazo de Gate y hace que el Bridge nuevo consulte la versión pública dentro de Minecraft para no lanzar el updater completo cuando ya está actualizado. Minecraft, updater y Publisher están cerrados; falta publicar y verificar el release siguiente.
+0.5.38 publicó la supresión de `True`, el cierre automático temprano y la UI para Bridges antiguos. Su verificación posterior detectó que un helper 0.5.37 pendiente reemplazó el EXE 0.5.38 ya instalado. 0.5.39 compara `FileVersion` y prohíbe degradaciones en bootstrap, engine y Publisher, con una prueba real 0.5.38 frente a 0.5.37. También corrige el texto final superpuesto, actualiza el rechazo de Gate y hace que el Bridge consulte la versión pública dentro de Minecraft para no lanzar el updater completo cuando ya está actualizado. Se verificaron release público, hashes, host, Bridge, Publisher, EXE canónico estable tras espera, ausencia de helpers, Git limpio y Minecraft cerrado.
 
-Comportamiento publicado en 0.5.38 y endurecido en el código preparado:
+Comportamiento desde 0.5.39:
 
 - Primera instalación: abrir la instancia Fabric correcta hasta el menú y ejecutar el EXE una vez.
 - El bootstrapper se autoactualiza, detecta `--gameDir`, prepara ZeroTier, sincroniza mods e instala Bridge/Gate.
 - La elevación se solicita solo cuando Windows necesita instalar o reparar red. Desde 0.5.28 no se requiere ejecutar manualmente como administrador.
-- Bridge ejecuta `-NetworkOnly` silencioso al arrancar. El código preparado consulta solo el número público al iniciar login y lanza el updater completo únicamente ante atraso o fallo de consulta. Red y actualización usan estados de sesión separados; el chequeo completo se reintenta hasta tres veces.
+- Bridge ejecuta `-NetworkOnly` silencioso al arrancar. Consulta solo el número público al iniciar login y lanza el updater completo únicamente ante atraso o fallo de consulta. Red y actualización usan estados de sesión separados; el chequeo completo se reintenta hasta tres veces.
 - El chequeo de login pasa al engine la versión cargada en la JVM; la ejecución manual compara además el inicio de Minecraft con `installedAt`. Si el release nuevo ya está en disco pero la JVM es anterior, el updater cierra únicamente ese cliente y solicita reabrir sin reinstalar; si faltan archivos, instala antes de solicitarlo.
 - El reemplazo del EXE canónico nunca es requisito para continuar el engine: si Windows lo mantiene mapeado, queda una copia verificada pendiente hasta 12 horas y no se informa un falso error de conexión/mods. Un helper pendiente compara `FileVersion` y jamás puede reemplazar un destino de versión mayor.
 - Toda operación visible que termina correctamente conserva la ventana de la reina con `TODO LISTO`, indicador verde, texto ampliado y botón `ACEPTAR`; también responde a Enter y no se cierra por temporizador. Los chequeos automáticos sanos siguen sin mostrar UI.
