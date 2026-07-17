@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coco — revisión de mods para aligerar</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 1050px; margin: 32px auto; padding: 0 18px; color: #202124; }
+    h1 { margin-bottom: 0; } h2 { margin-top: 2.2em; }
+    .note { background: #fff8db; border-left: 5px solid #d89b00; padding: 12px 16px; }
+    .good { background: #e9f7ee; border-left: 5px solid #258a45; padding: 12px 16px; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0 2em; }
+    th, td { border: 1px solid #d5d8dc; padding: 9px; text-align: left; vertical-align: top; }
+    th { background: #f0f3f5; } .n { width: 3em; text-align: center; }
+    .remove { color: #9c1c1c; font-weight: 650; } .test { color: #7a5700; font-weight: 650; }
+    code { white-space: nowrap; } small { color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Revisión de mods para aligerar Coco</h1>
+  <p><strong>Base revisada:</strong> manifiesto publicado 0.5.40, con 149 mods de cliente y 153 de host. Preparado el 17 de julio de 2026. Esto es una recomendación de utilidad, coste probable y riesgo para el mundo; no una prueba de rendimiento.</p>
+
+  <p><strong>Estado de la selección (17 de julio de 2026):</strong> se retiraron de la fuente viva, sin publicar todavía, 14 JAR elegidos: SmoothGui, Smooth Scrolling Refurbished, /sit, Chat Heads, Chat Impressive Animation, Emojiful, Let Your Friend Eating!, Pickup Notifications, Death Count, Partial Hearts, Numeral Ping, BetterF3, Ping View y Presence Footsteps. Se conservaron en <code>%APPDATA%\.minecraft\mods-disabled\2026-07-17-retiro-ui-social-sonido</code>.</p>
+
+  <div class="good">
+    <strong>Decisión rápida:</strong> los primeros ocho son exactamente los extras que nombraste. Los retiraría juntos en la próxima publicación: son prescindibles, no afectan mecánicas centrales y deberían dar una interfaz más sobria. Su mejora de FPS/TPS será pequeña; la ganancia principal es simplificar el pack.
+  </div>
+
+  <h2>Orden recomendado de retiro</h2>
+  <p>De arriba hacia abajo: primero quita lo que aporta poco y tiene bajo riesgo. “Cliente” significa que no cambia el mundo ni necesita estar en el host. “Revisar mundo” significa que puede haber bloques, ítems o entidades ya guardados: no quitar sin respaldo y prueba de carga.</p>
+  <table>
+    <thead><tr><th class="n">#</th><th>Mod (ID)</th><th>Qué hace</th><th>Motivo / efecto esperado</th><th>Acción</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td><strong>SmoothGui</strong><br><code>smoothgui</code></td><td>Anima la apertura de menús.</td><td>Es el mod de animación de menús que señalaste. Puro adorno.</td><td class="remove">Retirar ahora · cliente</td></tr>
+      <tr><td class="n">2</td><td><strong>Smooth Scrolling Refurbished</strong><br><code>smoothscrollingrefurbished</code></td><td>Hace suave el desplazamiento de listas y barras.</td><td>Es el smooth scroll mencionado. Ninguna mecánica depende de él.</td><td class="remove">Retirar ahora · cliente</td></tr>
+      <tr><td class="n">3</td><td><strong>/sit</strong><br><code>mr_sit_datapack</code></td><td>Añade el comando <code>/sit</code> para sentarse donde sea.</td><td>Es el “seat”. Función social muy concreta; revisar que nadie lo use en una base antes de publicarlo sin él.</td><td class="remove">Retirar ahora · host y cliente</td></tr>
+      <tr><td class="n">4</td><td><strong>Chat Heads</strong><br><code>chat_heads</code></td><td>Muestra la cabeza del jugador junto a mensajes de chat.</td><td>Son los iconos del chat. Solo interfaz.</td><td class="remove">Retirar ahora · cliente</td></tr>
+      <tr><td class="n">5</td><td><strong>Chat Impressive Animation</strong><br><code>chatimpressiveanimation</code></td><td>Anima la apertura y el comportamiento visual del chat.</td><td>Es la animación del chat. Solo interfaz.</td><td class="remove">Retirar ahora · cliente</td></tr>
+      <tr><td class="n">6</td><td><strong>Emojiful</strong><br><code>emojiful</code></td><td>Inserta y renderiza emojis en el chat.</td><td>Es exactamente el paquete de emojis. Prescindible y reduce una capa de renderizado/recursos del chat.</td><td class="remove">Retirar ahora · cliente</td></tr>
+      <tr><td class="n">7</td><td><strong>Let Your Friend Eating!</strong><br><code>letyourfriendeating</code></td><td>Permite dar comida a otro jugador con clic derecho.</td><td>Es “darle de comer a otro”. Mecánica social poco usada.</td><td class="remove">Retirar ahora · host y cliente</td></tr>
+      <tr><td class="n">8</td><td><strong>3D Placeable Food</strong><br><code>placeable_food</code></td><td>Convierte comida en decoración colocable 3D.</td><td>Adorno con bloques/ítems propios. Puede haber comida colocada: comprobar y respaldar antes.</td><td class="test">Retirar tras revisar mundo · host y cliente</td></tr>
+      <tr><td class="n">9</td><td><strong>Pickup Notifications</strong><br><code>pickupnotifications</code></td><td>Muestra avisos al recoger objetos.</td><td>Otro efecto visual repetitivo; aporta poco y puede saturar la pantalla.</td><td class="remove">Retirar ahora · cliente</td></tr>
+      <tr><td class="n">10</td><td><strong>Death Count</strong><br><code>mr_death_count</code></td><td>Pone un contador de muertes en la lista de jugadores.</td><td>Dato social, no es mecánica necesaria.</td><td class="remove">Retirar ahora · host y cliente</td></tr>
+      <tr><td class="n">11</td><td><strong>Partial Hearts</strong><br><code>partialhearts</code></td><td>Muestra la salud exacta como fracciones de corazón.</td><td>Información adicional que se puede vivir sin ella.</td><td class="remove">Retirar ahora · cliente</td></tr>
+      <tr><td class="n">12</td><td><strong>PatPat</strong><br><code>patpat</code></td><td>Permite acariciar/jugar una animación con entidades o jugadores.</td><td>Interacción puramente social.</td><td class="remove">Retirar ahora · cliente y, si está habilitado, host</td></tr>
+      <tr><td class="n">13</td><td><strong>Ping View</strong><br><code>pingview</code></td><td>Muestra el ping propio y ajeno en la lista.</td><td>Duplica en parte la telemetría de <em>Numeral Ping</em>.</td><td class="remove">Retirar uno de los dos · cliente</td></tr>
+      <tr><td class="n">14</td><td><strong>Numeral Ping</strong><br><code>numeralping</code></td><td>Muestra el ping numérico de cada jugador en la lista.</td><td>Duplicado funcional de Ping View. Mantener solo el que prefieran, o ninguno.</td><td class="remove">Retirar uno de los dos · cliente</td></tr>
+      <tr><td class="n">15</td><td><strong>BetterF3</strong><br><code>betterf3</code></td><td>Reemplaza la pantalla de depuración F3 por una configurable.</td><td>Útil para diagnosticar, pero no para jugar. Yo lo dejaría solo en el host/administrador.</td><td class="test">Opcional · cliente</td></tr>
+      <tr><td class="n">16</td><td><strong>Peek</strong><br><code>peek</code></td><td>Añade información extra a las descripciones de ítems.</td><td>Comodidad menor; sin impacto importante esperado.</td><td class="remove">Opcional · cliente</td></tr>
+      <tr><td class="n">17</td><td><strong>AppleSkin</strong><br><code>appleskin</code></td><td>Previsualiza saturación y recuperación de comida.</td><td>Muy útil al principio, prescindible si ya conocen las comidas.</td><td class="remove">Opcional · cliente</td></tr>
+      <tr><td class="n">18</td><td><strong>Jade</strong><br><code>jade</code></td><td>Muestra datos del bloque o entidad que se está mirando.</td><td>Conveniente, pero no esencial. Mantenerlo si se usa para identificar los muchos mods de contenido.</td><td class="test">Opcional · cliente</td></tr>
+      <tr><td class="n">19</td><td><strong>Inventory Management</strong> + <strong>libIPN</strong><br><code>inventorymanagement</code></td><td>Ordena y gestiona el inventario automáticamente.</td><td>Es calidad de vida; al retirarlo también sale su librería, siempre que ningún otro mod la necesite.</td><td class="test">Opcional · cliente, comprobar dependencia</td></tr>
+      <tr><td class="n">20</td><td><strong>Inventory Trash Can</strong><br><code>inventory-trash-can</code></td><td>Añade un botón/papelera para eliminar ítems desde el inventario.</td><td>Conveniencia y además puede provocar borrados accidentales.</td><td class="remove">Opcional · cliente</td></tr>
+      <tr><td class="n">21</td><td><strong>Camerapture</strong><br><code>camerapture</code></td><td>Permite tomar fotos y exhibirlas dentro de Minecraft.</td><td>Bonito, pero es una función grande para uso ocasional; revisar fotos/ítems colocados.</td><td class="test">Retirar tras revisar mundo · host y cliente</td></tr>
+      <tr><td class="n">22</td><td><strong>Ping Wheel</strong><br><code>ping_wheel</code></td><td>Rueda visual para marcar o comunicar ubicaciones.</td><td>Útil solo si el grupo realmente la usa.</td><td class="remove">Opcional · cliente y host si requiere sincronía</td></tr>
+      <tr><td class="n">23</td><td><strong>Visuality</strong><br><code>visuality</code></td><td>Añade partículas y mejoras visuales pequeñas.</td><td>Es cosmético. Puede aliviar un poco GPU/partículas, sobre todo en peleas.</td><td class="test">Buen candidato de prueba · cliente</td></tr>
+      <tr><td class="n">24</td><td><strong>Presence Footsteps</strong><br><code>presencefootsteps</code></td><td>Calcula sonidos de pisadas más detallados según superficie.</td><td>El propio mod se describe como “demasiado complicado”. Es un candidato razonable si hay microstutter al caminar.</td><td class="test">Prueba A/B prioritaria · cliente</td></tr>
+      <tr><td class="n">25</td><td><strong>Sound Physics Remastered</strong><br><code>sound_physics_remastered</code></td><td>Simula oclusión, reverberación y atenuación realista de sonido.</td><td>Mucho más costoso que los adornos de interfaz. Puede causar carga puntual de CPU al moverse o en cuevas.</td><td class="test">Prueba A/B prioritaria · cliente</td></tr>
+      <tr><td class="n">26</td><td><strong>Decorative Lamps</strong><br><code>decorative-lamps</code></td><td>Añade lámparas decorativas.</td><td>Contenido de decoración, no esencial. Hay que revisar bloques existentes antes de retirarlo.</td><td class="test">Retirar solo con auditoría de mundo</td></tr>
+      <tr><td class="n">27</td><td><strong>Macaw's Furniture</strong> y <strong>Macaw's Lights</strong><br><code>mcw-furniture</code>, <code>mcw-lights</code></td><td>Añaden muebles y luminarias decorativas.</td><td>Gran candidato para una versión futura más minimalista, pero peligroso para construcciones ya hechas.</td><td class="test">No retirar del mundo actual sin migración</td></tr>
+      <tr><td class="n">28</td><td><strong>Polydecorations</strong> + <strong>Polymer</strong><br><code>polydecorations</code>, <code>polymer-bundled</code></td><td>Más decoración y la plataforma que la hace funcionar.</td><td>Retirar ambos solo si no hay decoración de este paquete colocada.</td><td class="test">No retirar del mundo actual sin auditoría</td></tr>
+      <tr><td class="n">29</td><td><strong>Comforts</strong><br><code>comforts</code></td><td>Añade sacos de dormir y hamacas.</td><td>Calidad de vida con ítems/bloques propios; revisar inventarios y bases.</td><td class="test">Opcional, con auditoría</td></tr>
+      <tr><td class="n">30</td><td><strong>Traveler's Backpack</strong><br><code>travelersbackpack</code></td><td>Mochilas con inventario y utilidades.</td><td>Muy buen recorte solo para un mundo nuevo. En éste puede contener ítems de jugadores.</td><td class="test">No retirar sin vaciar/migrar mochilas</td></tr>
+      <tr><td class="n">31</td><td><strong>Graves</strong><br><code>graves</code></td><td>Deja una tumba al morir para conservar objetos.</td><td>Es mecánica útil y puede haber tumbas sin recoger. No es una prioridad de rendimiento.</td><td>Conservar por ahora</td></tr>
+      <tr><td class="n">32</td><td><strong>Trash Cans</strong><br><code>trashcans</code></td><td>Añade bloques para desechar ítems.</td><td>Contenido pequeño y prescindible; puede haber bloques colocados.</td><td class="test">Opcional, con auditoría</td></tr>
+      <tr><td class="n">33</td><td><strong>Reliable Gliders</strong><br><code>reliable_gliders</code></td><td>Añade planeadores utilizables.</td><td>Mecánica adicional, no esencial; revisar inventarios.</td><td class="test">Opcional, con auditoría</td></tr>
+      <tr><td class="n">34</td><td><strong>Respawnable Pets</strong><br><code>respawnablepets</code></td><td>Permite recuperar mascotas al morir.</td><td>Útil pero no imprescindible. Su retiro modifica una regla del mundo, no el rendimiento de forma clara.</td><td>Decisión de mecánica</td></tr>
+      <tr><td class="n">35</td><td><strong>Just Hammers</strong><br><code>just-hammers</code></td><td>Añade martillos de minería en área.</td><td>Recortar contenido, no una solución demostrada al stutter.</td><td class="test">Opcional, con auditoría</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Lo que sí puede explicar stutter (pero aún no está probado)</h2>
+  <table>
+    <thead><tr><th>Prioridad de medición</th><th>Grupo</th><th>Por qué mirarlo</th><th>Recomendación</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Distant Horizons</strong> y <strong>DistantFriends</strong></td><td>Renderiza, genera, sincroniza y guarda LOD. En esta instalación tiene radio 128, generación/sincronización activas, cuatro hilos y actualizaciones en tiempo real hasta 64 chunks.</td><td>No quitar ni bajar a ciegas: medir mientras se explora terreno nuevo. Es el candidato más fuerte para stutter de cliente/uso de disco, no una prueba contra él.</td></tr>
+      <tr><td>2</td><td><strong>Iris</strong> + shaderpack (si está activo)</td><td>Los shaders cargan la GPU y pueden causar tirones al compilar o al cambiar de zona.</td><td>Comparar 15 minutos con el mismo recorrido, shaders encendidos y apagados. Mantener Iris si no se usan shaders no aporta mucho.</td></tr>
+      <tr><td>3</td><td><strong>JourneyMap</strong></td><td>Mapea, escribe datos locales y actualiza minimapa. Es más visible al explorar.</td><td>Probar sin él en un cliente de prueba; no borrar sus mapas ni waypoints.</td></tr>
+      <tr><td>4</td><td><strong>Generación de mundo:</strong> Biomes O' Plenty, Terralith, YUNG's Better Caves/Cave Biomes/estructuras, Moog's Structures, Mine Treasure y Variants &amp; Ventures</td><td>La combinación hace más caro descubrir chunks nuevos. YUNG's Cave Biomes además es un JAR grande y añade generación subterránea compleja.</td><td>No retirar de este mundo por rendimiento sin un plan de migración. Medir TPS durante exploración/teletransporte frente a una base ya generada.</td></tr>
+      <tr><td>5</td><td><strong>Fauna:</strong> 29 AnimalGarden, Tom's Mobs, Nemo's Creatures, Cosy Critters, Enhanced Cats y Fish of Thieves</td><td>Muchas especies aumentan la probabilidad de entidades, IA, pathfinding y renderizado. El coste real depende de cuántas haya cargadas, no del número de JAR.</td><td>Antes de sacar nada, contar entidades por dimensión y capturar <code>Thread.print</code>/JFR durante el tirón. Es el candidato más plausible para TPS en zonas con granjas o fauna.</td></tr>
+      <tr><td>6</td><td><strong>C2ME</strong> (alpha)</td><td>Paraleliza carga/generación de chunks: normalmente ayuda, pero al ser alpha puede añadir contención o fallos sutiles.</td><td>No culparlo ni retirarlo sin reproducción. Si los tirones coinciden con carga de chunks, hacer una prueba controlada con copia del mundo.</td></tr>
+      <tr><td>7</td><td><strong>Sound Physics Remastered</strong> y <strong>Presence Footsteps</strong></td><td>Son los candidatos más claros a microstutter local al caminar, entrar a cuevas o haber muchas fuentes sonoras.</td><td>Son la primera prueba A/B de cliente tras retirar los ocho adornos.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>Lo que no haría:</strong> no eliminar Distant Horizons, C2ME, Lithium, FerriteCore, Sodium, ImmediatelyFast, EntityCulling, BadOptimizations, PacketFixer ni las librerías “porque hay muchos mods”. Los primeros son optimizaciones o infraestructura; quitar una librería sin retirar primero su consumidor rompe el inicio. Tampoco atribuiría los picos históricos a Just Hammers, DH, C2ME o PacketFixer: no hay captura que lo sostenga.
+  </div>
+
+  <h2>Plan seguro en dos tandas</h2>
+  <ol>
+    <li><strong>Tanda 1 — ya:</strong> SmoothGui, Smooth Scrolling, /sit, Chat Heads, Chat Impressive Animation, Emojiful, Let Your Friend Eating, y 3D Placeable Food tras comprobar que no esté colocado. Añadir también Pickup Notifications, Death Count y uno de los dos mods de ping si quieren un cliente realmente limpio.</li>
+    <li><strong>Tanda 2 — prueba de stutter:</strong> Presence Footsteps y Sound Physics Remastered. Probar el mismo recorrido y registrar hora, dimensión, jugadores y FPS/TPS. Si el problema es de servidor, capturar <code>jcmd &lt;PID&gt; GC.heap_info</code> y <code>Thread.print</code> antes de reiniciar.</li>
+    <li><strong>Después:</strong> decidir si el mundo quiere menos decoración, mapas, fauna y worldgen. Eso ya es una decisión de contenido y debe hacerse con respaldo específico, auditoría de bloques/entidades y prueba de carga de una copia.</li>
+  </ol>
+
+  <p><small>Fuente: <code>release/latest.json</code> (release 0.5.40) y metadatos <code>fabric.mod.json</code> de los JAR publicados. El manifiesto seguirá siendo la fuente de verdad si el pack cambia.</small></p>
+</body>
+</html>
