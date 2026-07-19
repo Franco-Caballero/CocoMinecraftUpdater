@@ -88,10 +88,10 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 Estado publicado:
 
-- Release estable: **0.5.42**
-- Host: 0.5.42, rol `host`
-- Bridge: `coco-session-bridge-0.5.42.jar`
-- EXE canónico: 0.5.42.0, con hash idéntico al manifiesto y sin helpers pendientes tras la verificación posterior.
+- Release estable: **0.5.43**
+- Host: 0.5.43, rol `host`
+- Bridge: `coco-session-bridge-0.5.43.jar`
+- EXE canónico: 0.5.43.0, con hash idéntico al manifiesto y sin helpers pendientes tras la verificación posterior.
 - Manifiesto: 132 mods de cliente y 136 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
@@ -105,7 +105,9 @@ Un primer cliente desde México expuso el 2026-07-18 que el autorizador del host
 
 La instalación de otro cliente mostró el 2026-07-19 dos fallos adicionales: el destino persistido podía ocultar para siempre una instancia correcta abierta y cualquier proceso Minecraft recibía prioridad sin validar Fabric/Minecraft; además TLauncher reinyectaba `TLSkinCape` 1.39, incompatible de forma explícita con EntityCulling y sus JAR anidados. 0.5.42 compara la versión y Fabric del proceso, hace que la instancia 26.1.2 abierta venza al destino obsoleto, rechaza versiones incorrectas con un mensaje accionable y desactiva `skinVersion`/`activateSkinCapeForUserVersion` en los perfiles TLauncher aplicables. En la misma publicación se retiró `inventoryextended` por decisión del host: duplicaba el inventario principal y estaba roto. Su JAR y los datos de jugadores previos quedaron respaldados en `%LOCALAPPDATA%\CocoMinecraftUpdater\backups\20260719-inventoryextended-removal`. Se verificaron compilación, detección real con proceso Java, reparación TLauncher, recuperación, integración ZeroTier, `NetworkOnly` sin cambios al pack y regresiones específicas; después de publicar se comprobaron release, host, hashes, 132/136 mods, ausencia de helpers y Git sincronizado.
 
-Comportamiento desde 0.5.42:
+La verificación posterior de 0.5.42 detectó que el Publisher instalaba directamente Bridge, mods y estado del host, pero no hidrataba el caché rápido usado por `NetworkOnly`; el host podía quedar en disco 0.5.42 con `latest.json`/engine 0.5.41 dentro de `%LOCALAPPDATA%`. Se reparó el host ejecutando una comprobación completa silenciosa y se archivaron 18 helpers/respaldos antiguos fuera de la raíz activa. 0.5.43 hace permanente el arreglo: antes de publicar hidrata y verifica manifiesto, ZIP y engine extraído del caché local, retira versiones de caché anteriores y mueve artefactos bootstrap obsoletos a un respaldo recuperable. Se verificaron release público, host, caché 0.5.43, hashes, 132/136 mods, cero helpers activos, Git limpio y Minecraft cerrado.
+
+Comportamiento desde 0.5.43:
 
 - Primera instalación: abrir la instancia Fabric 26.1.2 correcta hasta el menú y ejecutar el EXE una vez. Una versión distinta abierta se rechaza en vez de recibir el pack.
 - El bootstrapper se autoactualiza, valida versión/Fabric y detecta `--gameDir`; una instancia compatible abierta reemplaza un destino persistido obsoleto. Luego prepara ZeroTier, sincroniza mods e instala Bridge/Gate.
@@ -117,6 +119,7 @@ Comportamiento desde 0.5.42:
 - Toda operación visible que termina correctamente conserva la ventana de la reina con `TODO LISTO`, indicador verde, texto ampliado y botón `ACEPTAR`; también responde a Enter y no se cierra por temporizador. Los chequeos automáticos sanos siguen sin mostrar UI.
 - La elevación de red permanece oculta pero publica sus etapas y el contador de autorización en la reina; los errores del engine, además de los del bootstrap, crean un TXT de diagnóstico en el Escritorio.
 - En perfiles TLauncher Fabric 26.1.2, el engine desactiva la inyección incompatible de TLSkinCape mediante `TLauncherAdditional.json`/JSON de versión. `CustomSkinLoader` permanece en el pack.
+- El Publisher deja `%LOCALAPPDATA%\CocoMinecraftUpdater\latest.json`, `engine-<versión>.zip` y `engine\<versión>` exactamente en el release nuevo antes de hacerlo público; los helpers bootstrap obsoletos se archivan bajo `backups` y no permanecen activos.
 - No existe un monitor periódico permanente.
 
 Política de mods:

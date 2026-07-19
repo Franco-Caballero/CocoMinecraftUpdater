@@ -93,6 +93,55 @@ function Install-CocoPublishedBootstrapLocally([string]$Source,[string]$Expected
     throw "No se pudo instalar el bootstrap compilado en el host. Cierra cualquier CocoUpdater y reintenta. Ultimo error: $lastError"
 }
 
+function Install-CocoPublishedEngineCacheLocally([string]$ManifestPath,[string]$EngineZip,[string]$CacheRoot=(Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater')){
+    $manifest=Get-Content -LiteralPath $ManifestPath -Raw|ConvertFrom-Json
+    if(-not$manifest.engine.version-or-not$manifest.engine.sha256){throw 'El manifiesto candidato no define un engine cacheable.'}
+    $expected=[string]$manifest.engine.sha256
+    if((Get-FileHash -LiteralPath $EngineZip -Algorithm SHA256).Hash.ToLowerInvariant()-ne$expected.ToLowerInvariant()){
+        throw 'El engine candidato no coincide con el hash del manifiesto.'
+    }
+    New-Item -ItemType Directory -Path $CacheRoot -Force|Out-Null
+    $engineParent=Join-Path $CacheRoot 'engine';New-Item -ItemType Directory -Path $engineParent -Force|Out-Null
+    $engineRoot=Join-Path $engineParent ([string]$manifest.engine.version)
+    $staging="$engineRoot.publisher-$PID.new"
+    Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path $staging -Force|Out-Null
+    try{
+        Expand-Archive -LiteralPath $EngineZip -DestinationPath $staging -Force
+        if(-not(Test-Path -LiteralPath (Join-Path $staging 'CocoUpdater.ps1'))){throw 'El engine candidato no contiene CocoUpdater.ps1.'}
+        if(Test-Path -LiteralPath $engineRoot){Remove-Item -LiteralPath $engineRoot -Recurse -Force}
+        Move-Item -LiteralPath $staging -Destination $engineRoot -Force
+    }finally{Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue}
+    $cachedZip=Join-Path $CacheRoot "engine-$($manifest.engine.version).zip"
+    Copy-Item -LiteralPath $EngineZip -Destination "$cachedZip.publisher-$PID.tmp" -Force
+    Move-Item -LiteralPath "$cachedZip.publisher-$PID.tmp" -Destination $cachedZip -Force
+    $cachedManifest=Join-Path $CacheRoot 'latest.json'
+    Copy-Item -LiteralPath $ManifestPath -Destination "$cachedManifest.publisher-$PID.tmp" -Force
+    Move-Item -LiteralPath "$cachedManifest.publisher-$PID.tmp" -Destination $cachedManifest -Force
+    Get-ChildItem -LiteralPath $engineParent -Directory -ErrorAction SilentlyContinue|Where-Object FullName -ne $engineRoot|Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    Get-ChildItem -LiteralPath $CacheRoot -File -Filter 'engine-*.zip' -ErrorAction SilentlyContinue|Where-Object FullName -ne $cachedZip|Remove-Item -Force -ErrorAction SilentlyContinue
+}
+
+function Archive-StaleCocoBootstrapArtifacts([string]$Version,[string]$CacheRoot=(Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater')){
+    if(-not(Test-Path -LiteralPath $CacheRoot)){return 0}
+    $backupRoot=Join-Path $CacheRoot "backups\publisher-stale-artifacts-$Version"
+    $artifacts=@(Get-ChildItem -LiteralPath $CacheRoot -File -ErrorAction SilentlyContinue|Where-Object{
+        $_.Name-like'Apply-CocoBootstrapUpdate*.ps1'-or
+        $_.Name-match'^CocoUpdater\.[0-9]+\.new\.exe$'-or
+        $_.Name-match'^CocoUpdater\.exe\.coco-old\.'
+    })
+    if(-not$artifacts.Count){return 0}
+    New-Item -ItemType Directory -Path $backupRoot -Force|Out-Null
+    $activeCommandLines=@(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue|ForEach-Object CommandLine|Where-Object{$_})
+    $archived=0
+    foreach($artifact in $artifacts){
+        if($activeCommandLines|Where-Object{$_-like('*'+$artifact.FullName+'*')}){continue}
+        Move-Item -LiteralPath $artifact.FullName -Destination (Join-Path $backupRoot $artifact.Name) -Force
+        $archived++
+    }
+    return $archived
+}
+
 $previousHostModIds=@()
 $previousManifestPath=Join-Path $releaseDir 'latest.json'
 if(Test-Path -LiteralPath $previousManifestPath){
@@ -304,6 +353,9 @@ $manifestArgument='"'+((Join-Path $releaseDir 'latest.json')-replace'"','\"')+'"
 $gameArgument='"'+($MinecraftRoot-replace'"','\"')+'"'
 $install=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$engineScript,'-ManifestPath',$manifestArgument,'-GameDir',$gameArgument,'-Silent') -Wait -PassThru
 if($install.ExitCode-ne0){throw 'No se pudo actualizar la instalacion host; el release seguira oculto como borrador.'}
+$candidateEngineZip=Join-Path $releaseDir "coco-engine-$Version.zip"
+Install-CocoPublishedEngineCacheLocally (Join-Path $releaseDir 'latest.json') $candidateEngineZip
+[void](Archive-StaleCocoBootstrapArtifacts $Version)
 
 $publishBody=@{draft=$false;prerelease=$false}|ConvertTo-Json
 $release=Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($release.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $publishBody

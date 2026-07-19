@@ -54,7 +54,7 @@ Con Minecraft completamente cerrado:
 dist\CocoPublisher.exe
 ```
 
-El Publisher exige partir de `origin/main` sincronizado y usar exactamente la versión siguiente a la estable, compila componentes, valida roles/hashes y la política de mods bloqueados, ejecuta pruebas —incluida la carrera entre versión cargada y versión en disco—, crea un release borrador, actualiza el host y publica únicamente si todas las etapas terminan correctamente.
+El Publisher exige partir de `origin/main` sincronizado y usar exactamente la versión siguiente a la estable, compila componentes, valida roles/hashes y la política de mods bloqueados, ejecuta pruebas —incluida la carrera entre versión cargada y versión en disco—, crea un release borrador, actualiza el host, hidrata el caché local verificado de `NetworkOnly` y publica únicamente si todas las etapas terminan correctamente. Los helpers bootstrap obsoletos se conservan fuera de la raíz activa en un respaldo recuperable.
 
 ## Seguridad
 

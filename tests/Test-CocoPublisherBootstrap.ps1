@@ -16,6 +16,11 @@ try{
         throw 'El Publisher podria degradar un bootstrap local de version mayor.'
     }
     Invoke-Expression $functionAst.Extent.Text
+    $cacheFunctionAst=@($ast.FindAll({param($node)$node-is[Management.Automation.Language.FunctionDefinitionAst]-and$node.Name-eq'Install-CocoPublishedEngineCacheLocally'},$true)|Select-Object -First 1)
+    $archiveFunctionAst=@($ast.FindAll({param($node)$node-is[Management.Automation.Language.FunctionDefinitionAst]-and$node.Name-eq'Archive-StaleCocoBootstrapArtifacts'},$true)|Select-Object -First 1)
+    if(-not$cacheFunctionAst-or-not$archiveFunctionAst){throw 'Falta hidratar el cache del engine o archivar helpers obsoletos.'}
+    Invoke-Expression $cacheFunctionAst.Extent.Text
+    Invoke-Expression $archiveFunctionAst.Extent.Text
 
     $sourceRoot=Join-Path $testRoot 'source'
     $canonicalRoot=Join-Path $testRoot 'canonical'
@@ -31,6 +36,27 @@ try{
     }
     if(Get-ChildItem $canonicalRoot -Filter '*.coco-old.publisher.*' -File -ErrorAction SilentlyContinue){
         throw 'El Publisher dejo un respaldo temporal despues del reemplazo exitoso.'
+    }
+    $engineSource=Join-Path $sourceRoot 'engine-content';New-Item -ItemType Directory -Path $engineSource|Out-Null
+    'param()'|Set-Content (Join-Path $engineSource 'CocoUpdater.ps1') -Encoding UTF8
+    $engineZip=Join-Path $sourceRoot 'coco-engine-9.9.9.zip';Compress-Archive -Path (Join-Path $engineSource '*') -DestinationPath $engineZip
+    $engineHash=(Get-FileHash -LiteralPath $engineZip -Algorithm SHA256).Hash.ToLowerInvariant()
+    $manifestPath=Join-Path $sourceRoot 'latest.json'
+    [ordered]@{version='9.9.9';engine=[ordered]@{version='9.9.9';sha256=$engineHash}}|ConvertTo-Json -Depth 4|Set-Content $manifestPath -Encoding UTF8
+    New-Item -ItemType Directory -Path (Join-Path $canonicalRoot 'engine\9.9.8') -Force|Out-Null
+    'old'|Set-Content (Join-Path $canonicalRoot 'engine-9.9.8.zip') -Encoding UTF8
+    Install-CocoPublishedEngineCacheLocally $manifestPath $engineZip $canonicalRoot
+    if((Get-Content (Join-Path $canonicalRoot 'latest.json') -Raw|ConvertFrom-Json).version-ne'9.9.9'-or
+       -not(Test-Path (Join-Path $canonicalRoot 'engine\9.9.9\CocoUpdater.ps1'))-or
+       (Test-Path (Join-Path $canonicalRoot 'engine\9.9.8'))-or(Test-Path (Join-Path $canonicalRoot 'engine-9.9.8.zip'))){
+        throw 'El Publisher no dejo el manifiesto y engine nuevos como unico cache rapido.'
+    }
+    'stale'|Set-Content (Join-Path $canonicalRoot 'Apply-CocoBootstrapUpdate-123.ps1') -Encoding UTF8
+    'old'|Set-Content (Join-Path $canonicalRoot 'CocoUpdater.exe.coco-old.123') -Encoding UTF8
+    if((Archive-StaleCocoBootstrapArtifacts '9.9.9' $canonicalRoot)-ne2-or
+       (Test-Path (Join-Path $canonicalRoot 'Apply-CocoBootstrapUpdate-123.ps1'))-or
+       -not(Test-Path (Join-Path $canonicalRoot 'backups\publisher-stale-artifacts-9.9.9\CocoUpdater.exe.coco-old.123'))){
+        throw 'El Publisher no archivo los helpers obsoletos de forma recuperable.'
     }
     $olderCanonical=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\CocoUpdater.exe'
     $newerCandidate=Join-Path $root 'dist\CocoUpdater.exe'
@@ -48,7 +74,7 @@ try{
             }
         }
     }
-    'PASS: Publisher instala y verifica localmente el bootstrap antes de publicar el borrador.'
+    'PASS: Publisher instala bootstrap, hidrata engine/manifiesto y archiva helpers antes de publicar.'
 }finally{
     Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
 }

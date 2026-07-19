@@ -65,6 +65,8 @@ El Publisher:
 - verifica tamaños, SHA-256 y assets;
 - prueba recuperación transaccional;
 - instala el bootstrap compilado directamente en el host antes de ejecutar el engine, porque los assets de un release borrador todavía no son descargables de forma anónima;
+- hidrata en `%LOCALAPPDATA%\CocoMinecraftUpdater` el manifiesto, ZIP y engine extraído verificados del mismo release para que el siguiente `NetworkOnly` no use una versión anterior;
+- archiva helpers y respaldos bootstrap obsoletos bajo `backups\publisher-stale-artifacts-<versión>` después de verificar el EXE canónico;
 - mantiene el release como borrador hasta actualizar correctamente el host.
 
 `inventoryextended` está prohibido desde 0.5.42: duplicaba el inventario principal y fue retirado por decisión operativa. El respaldo previo del JAR y los datos `saves\coco\players\data` está en `%LOCALAPPDATA%\CocoMinecraftUpdater\backups\20260719-inventoryextended-removal`; usarlo si un objeto de las filas extra queda inaccesible.
