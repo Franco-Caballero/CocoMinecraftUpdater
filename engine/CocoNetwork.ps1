@@ -123,6 +123,17 @@ function Start-CocoNetworkAuthorizer($NetworkConfig,[int64]$WatchPid){
         return
     }
     $statusPath=Join-Path $env:LOCALAPPDATA "CocoMinecraftUpdater\network\authorizer-$($NetworkConfig.networkId).json"
+    if(Test-Path -LiteralPath $statusPath){
+        try{
+            $existing=Get-Content -LiteralPath $statusPath -Raw|ConvertFrom-Json
+            $existingProcess=if([int64]$existing.processId-gt0){Get-Process -Id ([int64]$existing.processId) -ErrorAction SilentlyContinue}else{$null}
+            if($existing.healthy-and$existing.running-and$existingProcess-and
+               [int64]$existing.watchPid-eq$WatchPid-and([datetime]$existing.updatedAt)-gt(Get-Date).AddSeconds(-15)){
+                Write-CocoLog "Autorizador ZeroTier existente reutilizado. WatchPid=$WatchPid ProcessId=$($existing.processId)"
+                return
+            }
+        }catch{}
+    }
     Remove-Item -LiteralPath $statusPath -Force -ErrorAction SilentlyContinue
     $arguments='-NoProfile -ExecutionPolicy Bypass -File "{0}" -NetworkId {1} -WatchPid {2}' -f `
         ($scriptPath-replace'"','\"'),$NetworkConfig.networkId,$WatchPid
@@ -209,6 +220,7 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
     $id=[guid]::NewGuid().ToString('N')
     $configPath=Join-Path $networkRoot "elevated-$id.json"
     $resultPath=Join-Path $networkRoot "elevated-$id-result.json"
+    $progressPath=Join-Path $networkRoot "elevated-$id-progress.json"
     $payload=[ordered]@{
         mode=$Role;networkId=[string]$NetworkConfig.networkId;minimumVersion=[string]$NetworkConfig.installer.version
         installerPath=$installerPath;installerSha256=[string]$NetworkConfig.installer.sha256
@@ -222,13 +234,25 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
     $payload|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $configPath -Encoding UTF8
     $helper=Join-Path $script:CocoEngineRoot 'CocoNetworkElevated.ps1'
     if(-not(Test-Path -LiteralPath $helper)){throw 'Falta el componente elevado de red.'}
-    $arguments='-NoProfile -ExecutionPolicy Bypass -File "{0}" -ConfigPath "{1}" -ResultPath "{2}"' -f `
-        ($helper-replace'"','\"'),($configPath-replace'"','\"'),($resultPath-replace'"','\"')
+    $arguments='-NoProfile -ExecutionPolicy Bypass -File "{0}" -ConfigPath "{1}" -ResultPath "{2}" -ProgressPath "{3}"' -f `
+        ($helper-replace'"','\"'),($configPath-replace'"','\"'),($resultPath-replace'"','\"'),($progressPath-replace'"','\"')
     Set-CocoState 'Configurando red Coco' 'Windows pedira permiso una sola vez. Pulsa Si.' 15
-    try{$process=Start-Process powershell.exe -Verb RunAs -WindowStyle Hidden -ArgumentList $arguments -PassThru -Wait}
+    try{$process=Start-Process powershell.exe -Verb RunAs -WindowStyle Hidden -ArgumentList $arguments -PassThru}
     catch{throw 'Se cancelo el permiso de administrador. Vuelve a abrir CocoUpdater y pulsa Si.'}
+    while(-not$process.HasExited){
+        if(Test-Path -LiteralPath $progressPath){
+            try{
+                $networkProgress=Get-Content -LiteralPath $progressPath -Raw|ConvertFrom-Json
+                if($networkProgress.message-and$networkProgress.detail){
+                    Set-CocoState ([string]$networkProgress.message) ([string]$networkProgress.detail) ([int]$networkProgress.progress)
+                }
+            }catch{}
+        }elseif($script:CocoForm){[Windows.Forms.Application]::DoEvents()}
+        Start-Sleep -Milliseconds 250
+        $process.Refresh()
+    }
     try{$result=if(Test-Path -LiteralPath $resultPath){Get-Content -LiteralPath $resultPath -Raw|ConvertFrom-Json}else{$null}}
-    finally{Remove-Item -LiteralPath $configPath,$resultPath -Force -ErrorAction SilentlyContinue}
+    finally{Remove-Item -LiteralPath $configPath,$resultPath,$progressPath -Force -ErrorAction SilentlyContinue}
     if($process.ExitCode-ne0-or-not$result-or-not$result.success){
         $message=if($result.message){[string]$result.message}else{"La configuracion elevada termino con codigo $($process.ExitCode)."}
         throw $message

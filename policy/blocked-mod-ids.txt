@@ -2,3 +2,4 @@
 tsa-decorations
 krypton
 fastipping
+inventoryextended

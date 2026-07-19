@@ -1,6 +1,6 @@
 # AGENTS.md — contexto canónico de CocoMinecraftUpdater
 
-Última revisión: 2026-07-16 (America/Santiago).
+Última revisión: 2026-07-19 (America/Santiago).
 
 Este archivo contiene el estado operativo necesario para trabajar en `C:\Users\smol\Desktop\random\CocoMinecraftUpdater`. Antes de intervenir, verificar archivos, procesos y logs: los valores observados pueden cambiar durante una sesión. Si cambia la red, el updater, la versión publicada o una decisión operativa, actualizar también `README.md`, `docs\OPERACION.md` y `docs\GITHUB_SETUP.md` cuando corresponda.
 
@@ -88,11 +88,11 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 Estado publicado:
 
-- Release estable: **0.5.40**
-- Host: 0.5.40, rol `host`
-- Bridge: `coco-session-bridge-0.5.40.jar`
-- EXE canónico: 0.5.40.0, con hash idéntico al manifiesto y sin helpers pendientes tras la verificación posterior.
-- Manifiesto: 149 mods de cliente y 153 de host
+- Release estable: **0.5.42**
+- Host: 0.5.42, rol `host`
+- Bridge: `coco-session-bridge-0.5.42.jar`
+- EXE canónico: 0.5.42.0, con hash idéntico al manifiesto y sin helpers pendientes tras la verificación posterior.
+- Manifiesto: 132 mods de cliente y 136 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
 Incidente resuelto el 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. 0.5.36 publicó el helper correcto y convirtió la carpeta `mods` en autoritativa, retirando `inventorysorter`; la verificación posterior descubrió que el Publisher intentaba descargar el bootstrap desde el release aún borrador y recibía 404. 0.5.37 instala el EXE compilado localmente antes de actualizar el host. Se verificaron release público, host, Bridge, Publisher, EXE canónico/hash, manifiesto, Git y ausencia de Minecraft abierto.
@@ -101,16 +101,22 @@ Incidente resuelto el 2026-07-16: 0.5.35 corrigió el falso error inicial y la d
 
 El reporte real posterior mostró que 0.5.39 aún podía dejar Minecraft abierto y retrasar la reina: `NetworkOnly` y el updater completo competían por el mismo mutex global, por lo que el flujo de login quedaba esperando antes de escribir la orden de cierre. 0.5.40 separa los mutex de red y actualización, comprueba el disco y cierra o fuerza el cliente antes de tocar la red, y conserva un mutex legado únicamente para serializar ZeroTier después del cierre. La regresión mantiene ocupado el mutex antiguo durante un minuto y confirma que el Minecraft simulado se cierra sin esperar. Se verificaron todas las pruebas, release público, host 0.5.40, Bridge, Publisher, EXE canónico/hash, 149/153 mods, ausencia de helpers y Git sincronizado.
 
-Comportamiento desde 0.5.40:
+Un primer cliente desde México expuso el 2026-07-18 que el autorizador del host no estaba realmente vivo: Java dejaba la entrada estándar del EXE como `PIPE` y el wrapper de `ps2exe` la leía hasta EOF antes de ejecutar PowerShell, de modo que `NetworkOnly` despertaba recién al cerrar Minecraft. La solicitud había llegado al controlador por ruta `DIRECT`, pero quedó pendiente. La instalación elevada del cliente esperaba además sus 120 segundos dentro de un helper oculto mientras la reina estaba bloqueada, y el timeout del engine no creaba el TXT del Escritorio reservado hasta entonces al bootstrap. Se autorizó el único nodo confirmado, recibió `10.77.37.213` y `wichinn` entró al servidor a las 19:40:55. 0.5.42 descarta `stdin` desde Bridge, reutiliza un autorizador sano de la misma JVM, bombea a la reina el progreso y contador del helper elevado y genera `CocoUpdater-error-*.txt` también para errores del engine.
 
-- Primera instalación: abrir la instancia Fabric correcta hasta el menú y ejecutar el EXE una vez.
-- El bootstrapper se autoactualiza, detecta `--gameDir`, prepara ZeroTier, sincroniza mods e instala Bridge/Gate.
+La instalación de otro cliente mostró el 2026-07-19 dos fallos adicionales: el destino persistido podía ocultar para siempre una instancia correcta abierta y cualquier proceso Minecraft recibía prioridad sin validar Fabric/Minecraft; además TLauncher reinyectaba `TLSkinCape` 1.39, incompatible de forma explícita con EntityCulling y sus JAR anidados. 0.5.42 compara la versión y Fabric del proceso, hace que la instancia 26.1.2 abierta venza al destino obsoleto, rechaza versiones incorrectas con un mensaje accionable y desactiva `skinVersion`/`activateSkinCapeForUserVersion` en los perfiles TLauncher aplicables. En la misma publicación se retiró `inventoryextended` por decisión del host: duplicaba el inventario principal y estaba roto. Su JAR y los datos de jugadores previos quedaron respaldados en `%LOCALAPPDATA%\CocoMinecraftUpdater\backups\20260719-inventoryextended-removal`. Se verificaron compilación, detección real con proceso Java, reparación TLauncher, recuperación, integración ZeroTier, `NetworkOnly` sin cambios al pack y regresiones específicas; después de publicar se comprobaron release, host, hashes, 132/136 mods, ausencia de helpers y Git sincronizado.
+
+Comportamiento desde 0.5.42:
+
+- Primera instalación: abrir la instancia Fabric 26.1.2 correcta hasta el menú y ejecutar el EXE una vez. Una versión distinta abierta se rechaza en vez de recibir el pack.
+- El bootstrapper se autoactualiza, valida versión/Fabric y detecta `--gameDir`; una instancia compatible abierta reemplaza un destino persistido obsoleto. Luego prepara ZeroTier, sincroniza mods e instala Bridge/Gate.
 - La elevación se solicita solo cuando Windows necesita instalar o reparar red. Desde 0.5.28 no se requiere ejecutar manualmente como administrador.
-- Bridge ejecuta `-NetworkOnly` silencioso al arrancar. Consulta solo el número público al iniciar login y lanza el updater completo únicamente ante atraso o fallo de consulta. Red y actualización usan estados de sesión y mutex separados; el chequeo completo se reintenta hasta tres veces.
+- Bridge ejecuta `-NetworkOnly` silencioso al arrancar con `stdin` descartado, por lo que `ps2exe` comienza antes de que Minecraft cierre. Consulta solo el número público al iniciar login y lanza el updater completo únicamente ante atraso o fallo de consulta. Red y actualización usan estados de sesión y mutex separados; el chequeo completo se reintenta hasta tres veces y reutiliza el autorizador sano del mismo PID.
 - El engine comprueba el estado local antes de preparar la red. Para cualquier cliente atrasado muestra la reina, solicita el cierre normal y fuerza solo ese PID tras ocho segundos si no responde; después serializa ZeroTier con comprobaciones nuevas o antiguas y mantiene visible todo el trabajo.
 - El chequeo de login pasa al engine la versión cargada en la JVM; la ejecución manual compara además el inicio de Minecraft con `installedAt`. Si el release nuevo ya está en disco pero la JVM es anterior, el updater cierra únicamente ese cliente y solicita reabrir sin reinstalar; si faltan archivos, instala antes de solicitarlo.
 - El reemplazo del EXE canónico nunca es requisito para continuar el engine: si Windows lo mantiene mapeado, queda una copia verificada pendiente hasta 12 horas y no se informa un falso error de conexión/mods. Un helper pendiente compara `FileVersion` y jamás puede reemplazar un destino de versión mayor.
 - Toda operación visible que termina correctamente conserva la ventana de la reina con `TODO LISTO`, indicador verde, texto ampliado y botón `ACEPTAR`; también responde a Enter y no se cierra por temporizador. Los chequeos automáticos sanos siguen sin mostrar UI.
+- La elevación de red permanece oculta pero publica sus etapas y el contador de autorización en la reina; los errores del engine, además de los del bootstrap, crean un TXT de diagnóstico en el Escritorio.
+- En perfiles TLauncher Fabric 26.1.2, el engine desactiva la inyección incompatible de TLSkinCape mediante `TLauncherAdditional.json`/JSON de versión. `CustomSkinLoader` permanece en el pack.
 - No existe un monitor periódico permanente.
 
 Política de mods:
@@ -121,6 +127,7 @@ Política de mods:
 - Una versión anterior cuyo Fabric ID ya está publicado no se duplica.
 - La carpeta viva `%APPDATA%\.minecraft\mods` es autoritativa: agregar o quitar JAR se refleja directamente en la publicación siguiente, sin `-AllowModRemoval`.
 - `tsa-decorations` está retirado permanentemente y `policy\blocked-mod-ids.txt` impide reintroducirlo en la fuente viva o en cualquier rol publicado.
+- `inventoryextended` está retirado y bloqueado porque duplicaba el inventario principal de forma rota. Antes del retiro se respaldaron JAR, `players\data` y `level.dat`; revisar ese respaldo si faltan objetos que estaban en las filas extra.
 - El Publisher exige exactamente la siguiente versión pública, `HEAD == origin/main` al comenzar y que `origin/main` no cambie durante la compilación.
 - No mantener listas estáticas completas de JAR en documentación; consultar `mods` y `release\latest.json`.
 

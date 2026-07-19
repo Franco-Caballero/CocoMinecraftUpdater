@@ -160,6 +160,10 @@ public final class CocoUpdaterLauncher {
         if (networkOnly) command.add("-NetworkOnly");
         try {
             ProcessBuilder builder = new ProcessBuilder(command)
+                // ps2exe consumes redirected stdin completely before it starts
+                // the embedded PowerShell script. Close the pipe immediately so
+                // the updater can run while Minecraft is still alive.
+                .redirectInput(ProcessBuilder.Redirect.DISCARD)
                 .redirectOutput(ProcessBuilder.Redirect.DISCARD)
                 .redirectError(ProcessBuilder.Redirect.DISCARD);
             if (!networkOnly) {

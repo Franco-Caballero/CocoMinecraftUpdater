@@ -36,8 +36,16 @@ if($launcher-notmatch'COCO_RUNNING_PACK_VERSION'-or$launcher-notmatch'CocoProtoc
 if($launcher-match'command\.add\("-RunningPackVersion"\)'-or$launcher-match'command\.add\("-ShowOnUpdate"\)'){
     throw 'El Bridge nuevo dejo de ser compatible con un bootstrap canonico anterior.'
 }
-if($network-notmatch'(?s)Start-Process\s+powershell\.exe\s+-Verb\s+RunAs\s+-WindowStyle\s+Hidden.*?-Wait'){
-    throw 'El ayudante elevado de red podria mostrar una consola PowerShell vacia.'
+if($launcher-notmatch'redirectInput\(ProcessBuilder\.Redirect\.DISCARD\)'){
+    throw 'El EXE iniciado por Java puede quedar esperando stdin hasta que Minecraft se cierre.'
+}
+if($network-notmatch'(?s)Start-Process\s+powershell\.exe\s+-Verb\s+RunAs\s+-WindowStyle\s+Hidden'-or
+   $network-match'(?s)Start-Process\s+powershell\.exe\s+-Verb\s+RunAs\s+-WindowStyle\s+Hidden.*?-Wait'){
+    throw 'La elevacion debe permanecer oculta sin bloquear el bombeo de la UI.'
+}
+if($network-notmatch'Autorizador ZeroTier existente reutilizado'-or
+   $network-notmatch'\[int64\]\$existing\.watchPid-eq\$WatchPid'){
+    throw 'Un chequeo repetido puede invalidar un autorizador sano de la misma sesion.'
 }
 
-'PASS: launcher temprano, reintento, diagnostico y elevacion oculta validados.'
+'PASS: launcher temprano sin stdin bloqueante, reintento, diagnostico y elevacion oculta validados.'

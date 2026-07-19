@@ -16,7 +16,7 @@
 2. En el equipo cliente, abrir la instancia Fabric 26.1.2 correcta hasta el menú.
 3. Ejecutar el `CocoUpdater.exe` del release estable.
 4. Aceptar SmartScreen/UAC si Windows lo solicita.
-5. El updater detecta `--gameDir`, instala o repara ZeroTier, espera autorización, sincroniza mods e instala Bridge/Gate.
+5. El updater valida que el proceso sea Fabric 26.1.2, detecta `--gameDir`, corrige la integración incompatible de TLSkinCape en TLauncher, instala o repara ZeroTier, espera autorización, sincroniza mods e instala Bridge/Gate.
 6. Reabrir Minecraft y usar la entrada `Coco Minecraft`.
 
 No instalar ZeroTier manualmente ni usar “Ejecutar como administrador” como procedimiento normal. Una instalación sana se reconoce por servicio, registro, adaptador e IP administrada y no vuelve a elevarse.
@@ -37,7 +37,9 @@ Cliente:
 2. Seleccionar `Coco Minecraft` en Multijugador.
 3. Si Gate detecta una versión anterior, dejar que el updater cierre el cliente, actualice y solicite reabrir.
 
-Bridge ejecuta `-NetworkOnly` al arrancar y consulta dentro de Minecraft únicamente el número de versión pública al iniciar login. Si coincide, no lanza el updater completo; si difiere o la consulta falla, inicia el flujo visual y reintentable. Red y actualización usan archivos de sesión y mutex distintos: una comprobación silenciosa de red ya iniciada no puede bloquear la reina ni el cierre del cliente. El flujo completo comprueba primero los archivos locales; ante cualquier pack cliente atrasado muestra la reina, pide el cierre normal y fuerza únicamente ese PID tras ocho segundos si no responde. Después espera de forma visible cualquier operación de red anterior —incluidos engines hasta 0.5.39 que usaban el mutex único— y continúa con ZeroTier, descargas e instalación. El chequeo completo informa además la versión cargada en la JVM; al abrir el EXE manualmente, el engine compara el inicio del proceso con `installedAt`. Si el disco ya contiene el release nuevo pero Minecraft sigue ejecutando el Bridge anterior, cierra solo ese cliente y pide reabrir sin reinstalar. El engine considera visible cualquier chequeo completo asociado a un PID de Minecraft, aunque el Bridge antiguo no envíe `ShowOnUpdate`. El chequeo se reintenta hasta tres veces si el proceso no llega a producir estado. Una instalación realmente actualizada no abre el updater de mods ni mantiene un monitor periódico. Cuando hubo trabajo visible, el final correcto se reconoce por `TODO LISTO`, color verde y el botón `ACEPTAR`; la ventana no se cierra por tiempo, Enter equivale a pulsar el botón y no aparece texto superpuesto ni un cuadro booleano posterior.
+Bridge ejecuta `-NetworkOnly` al arrancar y consulta dentro de Minecraft únicamente el número de versión pública al iniciar login. El proceso Java descarta explícitamente la entrada estándar del EXE: `ps2exe` recibe EOF inmediato y comienza el script sin esperar que Minecraft termine. Si la versión coincide, no lanza el updater completo; si difiere o la consulta falla, inicia el flujo visual y reintentable. Red y actualización usan archivos de sesión y mutex distintos: una comprobación silenciosa de red ya iniciada no puede bloquear la reina ni el cierre del cliente. El flujo completo comprueba primero los archivos locales; ante cualquier pack cliente atrasado muestra la reina, pide el cierre normal y fuerza únicamente ese PID tras ocho segundos si no responde. Después espera de forma visible cualquier operación de red anterior —incluidos engines hasta 0.5.39 que usaban el mutex único— y continúa con ZeroTier, descargas e instalación. Un autorizador persistente sano y ligado al mismo PID se reutiliza en vez de borrar su heartbeat o competir por el mutex. El chequeo completo informa además la versión cargada en la JVM; al abrir el EXE manualmente, el engine compara el inicio del proceso con `installedAt`. Si el disco ya contiene el release nuevo pero Minecraft sigue ejecutando el Bridge anterior, cierra solo ese cliente y pide reabrir sin reinstalar. El engine considera visible cualquier chequeo completo asociado a un PID de Minecraft, aunque el Bridge antiguo no envíe `ShowOnUpdate`. El chequeo se reintenta hasta tres veces si el proceso no llega a producir estado. Una instalación realmente actualizada no abre el updater de mods ni mantiene un monitor periódico. Cuando hubo trabajo visible, el final correcto se reconoce por `TODO LISTO`, color verde y el botón `ACEPTAR`; la ventana no se cierra por tiempo, Enter equivale a pulsar el botón y no aparece texto superpuesto ni un cuadro booleano posterior.
+
+En ejecución manual sin `-GameDir`, solo un proceso Minecraft que anuncie Fabric y la versión publicada recibe prioridad. Ese proceso compatible vence al destino persistido aunque una instalación anterior ya tenga marcador Coco. Si está abierta una versión distinta, el updater se detiene con instrucciones para abrir Fabric 26.1.2; si hay dos instancias compatibles, solicita dejar solo una abierta. En carpetas TLauncher Fabric 26.1.2, pone en `false` los campos `skinVersion` y `activateSkinCapeForUserVersion` presentes en `TLauncherAdditional.json` o en el JSON de versión, porque TLSkinCape es incompatible con EntityCulling/TRenderer/Transition. No retirar EntityCulling como solución.
 
 Las migraciones de preferencias declaradas por un release se ejecutan solo durante esa actualización, con Minecraft cerrado, y sus IDs quedan registrados en `coco-updater-state.json`. `pingwheel-location-z-v1` reemplaza Mouse 5 por Z solo si sigue en el valor predeterminado, o agrega Z si la entrada aún no existe. Si el jugador ya eligió otra tecla, se conserva; una vez registrada, publicaciones posteriores tampoco vuelven a tocarla.
 
@@ -59,11 +61,13 @@ El Publisher:
 - conserva en el host JAR adicionales con IDs nuevos;
 - toma `%APPDATA%\.minecraft\mods` como fuente autoritativa: los JAR agregados o retirados se reflejan directamente en el release;
 - rechaza versiones que no sean exactamente la siguiente al canal estable o si `HEAD` no coincide con `origin/main`;
-- rechaza en la fuente viva y en el manifiesto cualquier ID de `policy\blocked-mod-ids.txt`; `tsa-decorations` está retirado permanentemente;
+- rechaza en la fuente viva y en el manifiesto cualquier ID de `policy\blocked-mod-ids.txt`; `tsa-decorations` e `inventoryextended` están retirados;
 - verifica tamaños, SHA-256 y assets;
 - prueba recuperación transaccional;
 - instala el bootstrap compilado directamente en el host antes de ejecutar el engine, porque los assets de un release borrador todavía no son descargables de forma anónima;
 - mantiene el release como borrador hasta actualizar correctamente el host.
+
+`inventoryextended` está prohibido desde 0.5.42: duplicaba el inventario principal y fue retirado por decisión operativa. El respaldo previo del JAR y los datos `saves\coco\players\data` está en `%LOCALAPPDATA%\CocoMinecraftUpdater\backups\20260719-inventoryextended-removal`; usarlo si un objeto de las filas extra queda inaccesible.
 
 ## ZeroTier
 
@@ -75,7 +79,7 @@ El Publisher:
 - El firewall permite únicamente TCP 25565 desde la subred ZeroTier por la interfaz virtual.
 - Los clientes usan perfil Public; el host usa Private.
 
-El helper elevado valida el MSI oficial y espera estado `OK` e IP. Las comprobaciones posteriores no necesitan leer la CLI administrativa. `-NetworkOnly` reutiliza engine/manifiesto verificados en caché para iniciar rápidamente desde Bridge.
+El helper elevado valida el MSI oficial y espera estado `OK` e IP. Permanece oculto, pero escribe un estado lateral que la reina consume mientras el proceso sigue activo; instalación, servicio, adaptador, perfil y la cuenta regresiva de autorización permanecen visibles. Las comprobaciones posteriores no necesitan leer la CLI administrativa. `-NetworkOnly` reutiliza engine/manifiesto verificados en caché para iniciar rápidamente desde Bridge.
 
 No borrar `C:\ProgramData\ZeroTier\One\identity.secret`: la identidad del controlador determina el Network ID.
 
@@ -100,6 +104,7 @@ Logs:
 - Updater: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`.
 - Bridge: `bridge-<PID>.log` dentro de la misma carpeta.
 - Auto-reemplazo del EXE: `bootstrap-update.log` dentro de la misma carpeta.
+- Fallos visibles: `CocoUpdater-error-<fecha>.txt` en el Escritorio, tanto para bootstrap como para engine.
 - Minecraft: `%APPDATA%\.minecraft\logs\latest.log`.
 - Crash reports: `%APPDATA%\.minecraft\crash-reports`.
 

@@ -41,6 +41,62 @@ $script:CocoLogPath = Join-Path $script:CocoLogDirectory ("updater-{0}-{1}.log" 
 function Write-CocoLog([string]$Text) {
     try { Add-Content -LiteralPath $script:CocoLogPath -Value ("{0:o} {1}" -f (Get-Date),$Text) -Encoding UTF8 } catch { }
 }
+function Write-CocoEngineDiagnostic([Management.Automation.ErrorRecord]$Record){
+    try{
+        $stamp=Get-Date -Format 'yyyyMMdd-HHmmss'
+        $diagnosticPath=Join-Path $script:CocoLogDirectory "engine-$stamp-$PID-error.txt"
+        $manifestVersion='Unknown'
+        try{if($manifest-and$manifest.version){$manifestVersion=[string]$manifest.version}}catch{}
+        $selectedRoot='Unknown'
+        try{if($selected-and$selected.Root){$selectedRoot=[string]$selected.Root}}catch{}
+        $updaterLog=try{if(Test-Path -LiteralPath $script:CocoLogPath){Get-Content -LiteralPath $script:CocoLogPath -Raw}else{'Updater log not created.'}}catch{"Unavailable: $($_.Exception.Message)"}
+        $networkStatePath=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\network\state.json'
+        $networkState=try{if(Test-Path -LiteralPath $networkStatePath){Get-Content -LiteralPath $networkStatePath -Raw}else{'Network state not created.'}}catch{"Unavailable: $($_.Exception.Message)"}
+        $serviceState=try{Get-Service -Name 'ZeroTierOneService' -ErrorAction Stop|Select-Object Name,Status,StartType|Format-List|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
+        $report=@"
+Coco Updater engine diagnostic
+Timestamp: $((Get-Date).ToString('o'))
+Engine PID: $PID
+Minecraft PID: $MinecraftPid
+Manifest version: $manifestVersion
+Manifest path: $ManifestPath
+Engine root: $script:CocoEngineRoot
+Selected Minecraft root: $selectedRoot
+NetworkOnly / Silent / ShowOnUpdate: $NetworkOnly / $Silent / $ShowOnUpdate
+Windows: $([Environment]::OSVersion.VersionString)
+PowerShell: $($PSVersionTable.PSVersion)
+Language mode: $($ExecutionContext.SessionState.LanguageMode)
+
+Exception.ToString():
+$($Record.Exception.ToString())
+
+ErrorRecord:
+$($Record|Format-List * -Force|Out-String)
+
+Script stack trace:
+$($Record.ScriptStackTrace)
+
+Updater log:
+$updaterLog
+
+ZeroTier service:
+$serviceState
+
+Last network state:
+$networkState
+"@
+        [IO.File]::WriteAllText($diagnosticPath,$report,(New-Object Text.UTF8Encoding($true)))
+        $desktop=[Environment]::GetFolderPath('Desktop')
+        if($desktop-and(Test-Path -LiteralPath $desktop)){
+            $desktopPath=Join-Path $desktop "CocoUpdater-error-$stamp.txt"
+            [IO.File]::WriteAllText($desktopPath,$report,(New-Object Text.UTF8Encoding($true)))
+            $diagnosticPath=$desktopPath
+        }
+        Get-ChildItem -LiteralPath $script:CocoLogDirectory -File -Filter 'engine-*-error.txt' -ErrorAction SilentlyContinue|
+            Sort-Object LastWriteTime -Descending|Select-Object -Skip 20|Remove-Item -Force -ErrorAction SilentlyContinue
+        return $diagnosticPath
+    }catch{return $null}
+}
 Write-CocoLog "Inicio. EnginePid=$PID GameDir='$GameDir' MinecraftPid=$MinecraftPid RunningPackVersion='$RunningPackVersion' Silent=$Silent ShowOnUpdate=$ShowOnUpdate"
 if($global:CocoSharedUi){
     $script:CocoForm=$global:CocoSharedUi.Form;$script:CocoTitle=$global:CocoSharedUi.Title
@@ -214,16 +270,13 @@ function Get-PersistedTarget {
     return $null
 }
 
-function Get-CandidateRoots {
+function Get-CandidateRoots([string[]]$PreferredRoots=@()) {
     $roots = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     $persisted=Get-PersistedTarget
     if($persisted){
         Repair-InterruptedInstall $persisted
-        if((Test-GameDirectory $persisted)-and(Test-Path (Join-Path $persisted 'config\coco-updater-state.json'))){
-            return @((Resolve-Path -LiteralPath $persisted).Path)
-        }
     }
-    $known = @(
+    $known = @($PreferredRoots)+@(
         $persisted,
         (Join-Path $env:APPDATA '.minecraft'),
         (Join-Path $env:LOCALAPPDATA '.minecraft'),
@@ -256,15 +309,46 @@ function Get-CandidateRoots {
     return @($roots | Sort-Object)
 }
 
-function Get-RunningGameDirectories {
-    $paths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+function Get-RunningMinecraftInstances($Manifest) {
+    $instances=[System.Collections.Generic.List[object]]::new()
     try {
         Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction Stop | ForEach-Object {
-            $commandLine = $_.CommandLine
-            if ($commandLine -match '(?i)--gameDir\s+"([^"]+)"') { [void]$paths.Add($matches[1]) }
-            elseif ($commandLine -match '(?i)--gameDir\s+([^\s]+)') { [void]$paths.Add($matches[1]) }
+            $commandLine=[string]$_.CommandLine
+            $gameDir=$null;$versionId='desconocida'
+            if($commandLine-match'(?i)--gameDir\s+"([^"]+)"'){$gameDir=$matches[1]}
+            elseif($commandLine-match'(?i)--gameDir\s+([^\s]+)'){$gameDir=$matches[1]}
+            if(-not$gameDir){return}
+            if($commandLine-match'(?i)--version\s+"([^"]+)"'){$versionId=$matches[1]}
+            elseif($commandLine-match'(?i)--version\s+([^\s]+)'){$versionId=$matches[1]}
+            $isMinecraft=$commandLine-match'(?i)KnotClient|net\.minecraft\.client|--assetsDir'
+            if(-not$isMinecraft){return}
+            $isFabric=$versionId-match'(?i)fabric'-or$commandLine-match'(?i)fabric-loader|KnotClient'
+            $versionPattern="(?:^|[-_+ .])"+[regex]::Escape([string]$Manifest.detector.minecraftVersion)+"(?:$|[-_+ .])"
+            $isExpectedVersion=$versionId-match$versionPattern
+            if(-not$isExpectedVersion){
+                $isExpectedVersion=$commandLine-match("(?i)(?:^|[\\/;\s_-])"+[regex]::Escape([string]$Manifest.detector.minecraftVersion)+"(?:[\\/;\s_+.-]|$)")
+            }
+            $instances.Add([pscustomobject]@{
+                ProcessId=[int64]$_.ProcessId;GameDir=[string]$gameDir;VersionId=[string]$versionId
+                Compatible=[bool]($isFabric-and$isExpectedVersion)
+            })
         }
     } catch { }
+    return @($instances)
+}
+
+function Get-RunningGameDirectories {
+    # Los cierres y las esperas deben reconocer cualquier version que use la
+    # carpeta seleccionada. La seleccion inicial, en cambio, usa solamente las
+    # instancias compatibles de Get-RunningMinecraftInstances.
+    $paths=[System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    try{
+        Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction Stop|ForEach-Object{
+            $commandLine=[string]$_.CommandLine
+            if($commandLine-match'(?i)--gameDir\s+"([^"]+)"'){[void]$paths.Add($matches[1])}
+            elseif($commandLine-match'(?i)--gameDir\s+([^\s]+)'){[void]$paths.Add($matches[1])}
+        }
+    }catch{}
     return @($paths)
 }
 
@@ -294,7 +378,7 @@ function Get-CandidateScore([string]$Root, $Manifest, [string[]]$RunningGameDirs
     foreach ($running in $RunningGameDirs) {
         if ([string]::Equals($Root.TrimEnd('\'), $running.TrimEnd('\'), [System.StringComparison]::OrdinalIgnoreCase)) {
             $score += 1000000
-            $evidence.Add('Minecraft abierto con este --gameDir (+1000000)')
+            $evidence.Add("Minecraft Fabric $($Manifest.detector.minecraftVersion) abierto con este --gameDir (+1000000)")
         }
     }
 
@@ -350,6 +434,41 @@ function Get-Role([string]$Root, $Manifest) {
     # Esto evita clasificar como host a amigos que recibieron una copia de los mismos mods.
     if (Test-Path -LiteralPath (Join-Path $Root 'config\coco-host.json')) { return 'host' }
     return 'client'
+}
+
+function Disable-TLauncherSkinCape([string]$Root,$Manifest){
+    $versionsRoot=Join-Path $Root 'versions'
+    if(-not(Test-Path -LiteralPath $versionsRoot)){return 0}
+    $repaired=0
+    $versionPattern="(?:^|[-_+ .])"+[regex]::Escape([string]$Manifest.detector.minecraftVersion)+"(?:$|[-_+ .])"
+    $versionDirectories=@(Get-ChildItem -LiteralPath $versionsRoot -Directory -ErrorAction SilentlyContinue|Where-Object{
+        $_.Name-match'(?i)fabric'-and$_.Name-match$versionPattern
+    })
+    foreach($directory in $versionDirectories){
+        $files=@(
+            (Join-Path $directory.FullName 'TLauncherAdditional.json'),
+            (Join-Path $directory.FullName ($directory.Name+'.json'))
+        )|Where-Object{Test-Path -LiteralPath $_}|Select-Object -Unique
+        foreach($path in $files){
+            try{
+                $config=Get-Content -LiteralPath $path -Raw|ConvertFrom-Json
+                $changed=$false
+                foreach($name in 'activateSkinCapeForUserVersion','skinVersion'){
+                    $property=$config.PSObject.Properties[$name]
+                    if($property-and[bool]$property.Value){$property.Value=$false;$changed=$true}
+                }
+                if($changed){
+                    $tmp="$path.coco-$PID.tmp"
+                    $json=$config|ConvertTo-Json -Depth 100
+                    [IO.File]::WriteAllText($tmp,$json,(New-Object Text.UTF8Encoding($false)))
+                    Move-Item -LiteralPath $tmp -Destination $path -Force
+                    $repaired++
+                    Write-CocoLog "TLSkinCape de TLauncher desactivado en '$path'."
+                }
+            }catch{Write-CocoLog "No se pudo ajustar TLSkinCape en '$path': $($_.Exception.Message)"}
+        }
+    }
+    return $repaired
 }
 
 function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$ExpectedHash, [int64]$CompletedBytes = 0, [int64]$AllBytes = 0) {
@@ -826,11 +945,20 @@ try {
     if (-not $Silent) { Show-CocoWindow }
     Set-CocoState 'Buscando Minecraft' 'Identificando automaticamente la instalacion correcta...' 6
     if($GameDir){Repair-InterruptedInstall $GameDir}
-    $runningDirs = Get-RunningGameDirectories
+    $runningInstances=@(Get-RunningMinecraftInstances $manifest)
+    $compatibleRunningDirs=@($runningInstances|Where-Object Compatible|ForEach-Object GameDir|Select-Object -Unique)
+    if(-not$GameDir-and$compatibleRunningDirs.Count-gt1){
+        throw "Hay mas de un Minecraft Fabric $($manifest.detector.minecraftVersion) abierto. Deja abierta solo la instalacion que quieres actualizar."
+    }
+    if(-not$GameDir-and$runningInstances.Count-and-not$compatibleRunningDirs.Count){
+        $versions=@($runningInstances|ForEach-Object VersionId|Select-Object -Unique)-join', '
+        throw "El Minecraft abierto no es Fabric $($manifest.detector.minecraftVersion) (detectado: $versions). Abre la version Coco correcta hasta el menu y vuelve a ejecutar el updater."
+    }
+    $runningDirs=$compatibleRunningDirs
     if ($GameDir -and (Test-GameDirectory $GameDir)) {
         $candidates = @(Get-CandidateScore (Resolve-Path -LiteralPath $GameDir).Path $manifest $runningDirs)
     } else {
-        $candidates = @(Get-CandidateRoots | ForEach-Object { Get-CandidateScore $_ $manifest $runningDirs })
+        $candidates = @(Get-CandidateRoots $compatibleRunningDirs | ForEach-Object { Get-CandidateScore $_ $manifest $runningDirs })
     }
     if ($candidates.Count -eq 0) { throw 'No se encontro ninguna carpeta de Minecraft con mods.' }
     $selected = $candidates | Sort-Object @{ Expression = 'Score'; Descending = $true }, @{ Expression = 'Root'; Descending = $false } | Select-Object -First 1
@@ -851,6 +979,8 @@ try {
         } | ConvertTo-Json -Depth 6
         exit 0
     }
+    $tlauncherRepairs=if($NetworkOnly){0}else{Disable-TLauncherSkinCape $selected.Root $manifest}
+    if($tlauncherRepairs){Write-CocoLog "Compatibilidad TLauncher reparada en $tlauncherRepairs archivo(s)."}
     $explicitRunningVersionOutdated=$MinecraftPid-gt0-and-not[string]::IsNullOrWhiteSpace($RunningPackVersion)-and-not[string]::Equals($RunningPackVersion,[string]$manifest.version,[StringComparison]::OrdinalIgnoreCase)
     $runningPredatesInstalledPack=Test-RunningMinecraftPredatesInstalledPack $selected.Root $manifest
     $installedMarkerVersion=''
@@ -942,12 +1072,14 @@ try {
     exit 0
 } catch {
     Write-CocoLog ("ERROR: " + ($_ | Out-String))
+    $diagnosticPath=Write-CocoEngineDiagnostic $_
     if (-not $script:CocoForm -and (-not$Silent-or$ShowOnUpdate-or$automaticFullCheck)) { Show-CocoWindow }
     $friendly=$_.Exception.Message
     if($friendly -match '(?i)ZeroTier|red Coco|Network ID|autoriz|adaptador virtual|servicio.*ONLINE|permiso de administrador'){$friendly=$_.Exception.Message}
     elseif($friendly -match '(?i)access.*denied|acceso.*denegado|unauthorized'){$friendly='Windows bloqueo el acceso a la carpeta de Minecraft. Revisa permisos o el antivirus.'}
     elseif($friendly -match '(?i)conectar|connection|nombre remoto|timed out'){$friendly='No pudimos completar la descarga. Revisa internet y vuelve a intentarlo.'}
     elseif($friendly.Length-gt150){$friendly=$friendly.Substring(0,147)+'...'}
+    if($diagnosticPath){$friendly+="`nEnvia por Discord: $([IO.Path]::GetFileName($diagnosticPath))"}
     Set-CocoState 'No se pudo actualizar' $friendly 0
     Start-Sleep -Seconds 10
     exit 1

@@ -5,6 +5,8 @@ $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $engine=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoUpdater.ps1'))
 $bootstrap=[IO.File]::ReadAllText((Join-Path $root 'bootstrap\CocoBootstrapper.ps1'))
+$network=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoNetwork.ps1'))
+$elevated=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoNetworkElevated.ps1'))
 
 if($engine-notmatch'function Show-CocoSuccessAndWait'-or
    $engine-notmatch"\.Text='ACEPTAR'"-or$engine-notmatch'0x2714'-or
@@ -44,5 +46,15 @@ if($bootstrap-notmatch"COCO_SHOW_ON_UPDATE-ne'1'"){
 if($engine-notmatch'if\(\$mutex\)\{\$mutex\.ReleaseMutex\(\)\|Out-Null;\$mutexAcquired=\$false;\$mutex\.Dispose\(\);\$mutex=\$null\}'){
     throw 'La confirmacion visual conserva el mutex del updater mientras espera al usuario.'
 }
+if($network-notmatch'elevated-\$id-progress\.json'-or
+   $network-notmatch'while\(-not\$process\.HasExited\)'-or
+   $elevated-notmatch'Esperando autorizacion automatica del host\.\.\. \$remaining s'){
+    throw 'La primera instalacion no publica o muestra la cuenta regresiva elevada.'
+}
+if($engine-notmatch'function Write-CocoEngineDiagnostic'-or
+   $engine-notmatch'CocoUpdater-error-\$stamp\.txt'-or
+   $engine-notmatch'Envia por Discord'){
+    throw 'Los errores del engine no generan un diagnostico visible en el Escritorio.'
+}
 
-'PASS: final verde y persistente; ACEPTAR/Enter cierra sin filtrar True a ps2exe.'
+'PASS: final persistente, cuenta regresiva elevada y diagnostico del engine validados.'

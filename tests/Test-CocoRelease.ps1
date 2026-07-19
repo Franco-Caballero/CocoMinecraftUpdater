@@ -75,6 +75,7 @@ foreach($role in 'client','host'){
         if((Get-FileHash $asset -Algorithm SHA256).Hash.ToLowerInvariant()-ne$mod.sha256){throw "Hash incorrecto para $($mod.name)."}
     }
     if(@($mods.name|Where-Object{$_-match'(?i)fly-speed-modifier'}).Count){throw "fly-speed-modifier roto sigue presente en $role."}
+    if(@($mods.fabricId|Where-Object{$_-eq'inventoryextended'}).Count){throw "Inventory: Extended roto sigue presente en $role."}
     if(@($mods.name|Where-Object{$_-match'(?i)coco-session-bridge'}).Count -ne 1){throw "Session Bridge debe aparecer una vez en $role."}
 }
 $client=@($manifest.packages|Where-Object role -eq client).mods.name

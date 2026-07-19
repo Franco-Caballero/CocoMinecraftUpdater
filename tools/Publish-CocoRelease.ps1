@@ -184,6 +184,7 @@ if($removedModIds.Count){
 .\tests\Test-CocoBootstrapReplacement.ps1
 .\tests\Test-CocoPublisherBootstrap.ps1
 .\tests\Test-CocoUpdaterUi.ps1
+.\tests\Test-CocoDetection.ps1
 .\tests\Test-CocoExecutionPolicy.ps1
 .\tests\Test-CocoClientNetwork.ps1
 .\tests\Test-CocoEngineRecovery.ps1

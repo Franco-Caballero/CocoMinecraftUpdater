@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)][string]$ConfigPath,
-    [Parameter(Mandatory=$true)][string]$ResultPath
+    [Parameter(Mandatory=$true)][string]$ResultPath,
+    [Parameter(Mandatory=$true)][string]$ProgressPath
 )
 
 $ErrorActionPreference='Stop'
@@ -12,6 +13,15 @@ function Write-Result([bool]$Success,[string]$Message,[hashtable]$Extra=@{}){
     $tmp="$ResultPath.tmp"
     $value|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $tmp -Encoding UTF8
     Move-Item -LiteralPath $tmp -Destination $ResultPath -Force
+}
+
+function Write-NetworkProgress([string]$Message,[string]$Detail,[int]$Progress){
+    try{
+        $tmp="$ProgressPath.tmp-$PID"
+        [ordered]@{message=$Message;detail=$Detail;progress=$Progress;updatedAt=(Get-Date).ToString('o')}|
+            ConvertTo-Json -Compress|Set-Content -LiteralPath $tmp -Encoding UTF8
+        Move-Item -LiteralPath $tmp -Destination $ProgressPath -Force
+    }catch{}
 }
 
 function Get-CliPath {
@@ -56,6 +66,7 @@ try{
     if(@($config.leaveNetworkIds|Where-Object{$_-and$_-ne'154a350c866b8062'}).Count){throw 'No se permite abandonar una red ZeroTier desconocida.'}
     $authorizationTimeout=if($config.authorizationTimeoutSeconds){[int]$config.authorizationTimeoutSeconds}else{120}
     if($authorizationTimeout-lt30-or$authorizationTimeout-gt300){throw 'Timeout de autorizacion ZeroTier invalido.'}
+    Write-NetworkProgress 'Configurando red Coco' 'Comprobando ZeroTier con permisos de administrador...' 15
 
     $installer=$null
     $cli=Get-CliPath
@@ -68,6 +79,7 @@ try{
     }
 
     if($needsInstall){
+        Write-NetworkProgress 'Instalando red Coco' 'Instalando ZeroTier desde el paquete oficial verificado...' 17
         if(-not$config.installerPath-or-not(Test-Path -LiteralPath $config.installerPath)){throw 'Falta el instalador verificado de ZeroTier.'}
         $hash=(Get-FileHash -LiteralPath $config.installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
         if($hash-ne([string]$config.installerSha256).ToLowerInvariant()){throw 'El MSI de ZeroTier no coincide con el SHA-256 esperado.'}
@@ -85,6 +97,7 @@ try{
     }
 
     $rebootRequired=[bool]($installer-and$installer.ExitCode-in@(1641,3010))
+    Write-NetworkProgress 'Iniciando red Coco' 'Esperando que el servicio ZeroTier quede en linea...' 18
     try{$service=Get-Service -Name 'ZeroTierOneService' -ErrorAction Stop}catch{
         if($rebootRequired){throw 'ZeroTier se instalo, pero Windows necesita reiniciarse para activar el adaptador. Reinicia y vuelve a ejecutar CocoUpdater.'}
         throw
@@ -105,6 +118,7 @@ try{
     }
     $network=Get-Network $cli $config.networkId
     if(-not$network){
+        Write-NetworkProgress 'Uniendo red Coco' 'Registrando esta PC en la LAN virtual privada...' 19
         $join=(& $cli join $config.networkId 2>&1|Out-String).Trim()
         if($LASTEXITCODE-ne0-or$join-notmatch'200\s+join\s+OK'){throw "No se pudo unir a la red Coco: $join"}
     }
@@ -119,6 +133,7 @@ try{
 
     $normalizedMac=([string]$network.mac).Replace(':','-')
     $adapter=$null
+    Write-NetworkProgress 'Preparando red Coco' 'Esperando el adaptador virtual de ZeroTier...' 20
     $deadline=(Get-Date).AddSeconds(45)
     do{
         $adapter=@(Get-NetAdapter -ErrorAction SilentlyContinue|Where-Object{
@@ -130,6 +145,7 @@ try{
     if(-not$adapter){throw 'No se encontro el adaptador virtual de la red Coco.'}
 
     $profileSet=$false
+    Write-NetworkProgress 'Protegiendo red Coco' 'Aplicando el perfil de red y las reglas de seguridad...' 21
     $deadline=(Get-Date).AddSeconds(45)
     do{
         try{
@@ -157,10 +173,13 @@ try{
             $network=Get-Network $cli $config.networkId
             $addresses=@($network.assignedAddresses|ForEach-Object{([string]$_-split'/')[0]})
             if($network.status-eq'OK'-and@($addresses|Where-Object{$_-match'^10\.77\.37\.(\d+)$'-and[int]$Matches[1]-ge2-and[int]$Matches[1]-le254}).Count){break}
+            $remaining=[Math]::Max(0,[int][Math]::Ceiling(($deadline-(Get-Date)).TotalSeconds))
+            Write-NetworkProgress 'Conectando red Coco' "Esperando autorizacion automatica del host... $remaining s" 22
             if($attempt%3-eq0){& $cli join $config.networkId 2>&1|Out-Null}
             Start-Sleep -Seconds 2
         }while((Get-Date)-lt$deadline)
         if($network.status-ne'OK'-or-not$addresses.Count){throw 'El host no autorizo esta PC a tiempo. Deja Minecraft del host abierto y vuelve a ejecutar CocoUpdater.'}
+        Write-NetworkProgress 'Red Coco autorizada' "Esta PC recibio $($addresses[0]). Finalizando..." 24
     }
 
     $peerMode='UNKNOWN'
