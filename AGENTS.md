@@ -88,10 +88,10 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 Estado publicado:
 
-- Release estable: **0.5.43**
-- Host: 0.5.43, rol `host`
-- Bridge: `coco-session-bridge-0.5.43.jar`
-- EXE canónico: 0.5.43.0, con hash idéntico al manifiesto y sin helpers pendientes tras la verificación posterior.
+- Release estable: **0.5.44**
+- Host: 0.5.44, rol `host`
+- Bridge: `coco-session-bridge-0.5.44.jar`
+- EXE canónico: 0.5.44.0, con hash idéntico al manifiesto y sin helpers pendientes tras la verificación posterior.
 - Manifiesto: 132 mods de cliente y 136 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
@@ -107,12 +107,14 @@ La instalación de otro cliente mostró el 2026-07-19 dos fallos adicionales: el
 
 La verificación posterior de 0.5.42 detectó que el Publisher instalaba directamente Bridge, mods y estado del host, pero no hidrataba el caché rápido usado por `NetworkOnly`; el host podía quedar en disco 0.5.42 con `latest.json`/engine 0.5.41 dentro de `%LOCALAPPDATA%`. Se reparó el host ejecutando una comprobación completa silenciosa y se archivaron 18 helpers/respaldos antiguos fuera de la raíz activa. 0.5.43 hace permanente el arreglo: antes de publicar hidrata y verifica manifiesto, ZIP y engine extraído del caché local, retira versiones de caché anteriores y mueve artefactos bootstrap obsoletos a un respaldo recuperable. Se verificaron release público, host, caché 0.5.43, hashes, 132/136 mods, cero helpers activos, Git limpio y Minecraft cerrado.
 
-Comportamiento desde 0.5.43:
+Al abrir el host después de esa publicación, 0.5.43 expuso una regresión en el Bridge: `ProcessBuilder.Redirect.DISCARD` es un redirect de tipo `WRITE`, inválido como entrada estándar, y Java 25 abortaba el entrypoint antes del menú con `Redirect invalid for reading: WRITE`. 0.5.44 mantiene la entrada como `PIPE` y cierra inmediatamente `process.getOutputStream()` después de iniciar el hijo, enviando EOF a `ps2exe` sin bloquear Minecraft ni usar un redirect inválido. La regresión comprueba además que el patrón inválido no reaparezca.
+
+Comportamiento desde 0.5.44:
 
 - Primera instalación: abrir la instancia Fabric 26.1.2 correcta hasta el menú y ejecutar el EXE una vez. Una versión distinta abierta se rechaza en vez de recibir el pack.
 - El bootstrapper se autoactualiza, valida versión/Fabric y detecta `--gameDir`; una instancia compatible abierta reemplaza un destino persistido obsoleto. Luego prepara ZeroTier, sincroniza mods e instala Bridge/Gate.
 - La elevación se solicita solo cuando Windows necesita instalar o reparar red. Desde 0.5.28 no se requiere ejecutar manualmente como administrador.
-- Bridge ejecuta `-NetworkOnly` silencioso al arrancar con `stdin` descartado, por lo que `ps2exe` comienza antes de que Minecraft cierre. Consulta solo el número público al iniciar login y lanza el updater completo únicamente ante atraso o fallo de consulta. Red y actualización usan estados de sesión y mutex separados; el chequeo completo se reintenta hasta tres veces y reutiliza el autorizador sano del mismo PID.
+- Bridge ejecuta `-NetworkOnly` silencioso al arrancar y cierra inmediatamente el pipe de `stdin`, por lo que `ps2exe` recibe EOF y comienza antes de que Minecraft cierre. Consulta solo el número público al iniciar login y lanza el updater completo únicamente ante atraso o fallo de consulta. Red y actualización usan estados de sesión y mutex separados; el chequeo completo se reintenta hasta tres veces y reutiliza el autorizador sano del mismo PID.
 - El engine comprueba el estado local antes de preparar la red. Para cualquier cliente atrasado muestra la reina, solicita el cierre normal y fuerza solo ese PID tras ocho segundos si no responde; después serializa ZeroTier con comprobaciones nuevas o antiguas y mantiene visible todo el trabajo.
 - El chequeo de login pasa al engine la versión cargada en la JVM; la ejecución manual compara además el inicio de Minecraft con `installedAt`. Si el release nuevo ya está en disco pero la JVM es anterior, el updater cierra únicamente ese cliente y solicita reabrir sin reinstalar; si faltan archivos, instala antes de solicitarlo.
 - El reemplazo del EXE canónico nunca es requisito para continuar el engine: si Windows lo mantiene mapeado, queda una copia verificada pendiente hasta 12 horas y no se informa un falso error de conexión/mods. Un helper pendiente compara `FileVersion` y jamás puede reemplazar un destino de versión mayor.

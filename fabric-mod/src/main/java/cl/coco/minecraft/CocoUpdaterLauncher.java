@@ -160,10 +160,6 @@ public final class CocoUpdaterLauncher {
         if (networkOnly) command.add("-NetworkOnly");
         try {
             ProcessBuilder builder = new ProcessBuilder(command)
-                // ps2exe consumes redirected stdin completely before it starts
-                // the embedded PowerShell script. Close the pipe immediately so
-                // the updater can run while Minecraft is still alive.
-                .redirectInput(ProcessBuilder.Redirect.DISCARD)
                 .redirectOutput(ProcessBuilder.Redirect.DISCARD)
                 .redirectError(ProcessBuilder.Redirect.DISCARD);
             if (!networkOnly) {
@@ -173,6 +169,16 @@ public final class CocoUpdaterLauncher {
                 builder.environment().put("COCO_SHOW_ON_UPDATE", "1");
             }
             Process process = builder.start();
+            // ps2exe consumes stdin completely before it starts the embedded
+            // PowerShell script. ProcessBuilder leaves stdin as a PIPE; closing
+            // the parent side immediately sends EOF without using DISCARD,
+            // which is a WRITE redirect and therefore invalid for stdin.
+            try {
+                process.getOutputStream().close();
+            } catch (IOException error) {
+                process.destroy();
+                throw error;
+            }
             log("CocoUpdater iniciado. childPid=" + process.pid() + " networkOnly=" + networkOnly + " source=" + source
                 + " gameDir=" + gameDir.toAbsolutePath().normalize());
             return process;
