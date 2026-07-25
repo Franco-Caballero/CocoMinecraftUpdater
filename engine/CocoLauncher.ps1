@@ -1604,7 +1604,14 @@ function Show-CocoUsernameDialog([string]$Suggested=''){
             [Windows.Forms.MessageBox]::Show('Usa entre 3 y 16 letras, numeros o guion bajo.','Nombre invalido')|Out-Null
         }
     })
-    $dialog.AcceptButton=$ok;$dialog.Controls.AddRange(@($label,$input,$ok));$result=$dialog.ShowDialog($script:CocoForm);$name=[string]$dialog.Tag;$dialog.Dispose()
+    $input.Add_KeyDown({
+        param($s,$e)
+        if($e.KeyCode -eq [Windows.Forms.Keys]::Enter){
+            $e.SuppressKeyPress=$true
+            $ok.PerformClick()
+        }
+    })
+    $dialog.Controls.AddRange(@($label,$input,$ok));$result=$dialog.ShowDialog($script:CocoForm);$name=[string]$dialog.Tag;$dialog.Dispose()
     if($result-ne[Windows.Forms.DialogResult]::OK-or-not(Test-CocoMinecraftUsername $name)){throw 'La configuracion del nombre local fue cancelada.'}
     $name
 }
