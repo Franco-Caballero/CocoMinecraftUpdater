@@ -6,13 +6,13 @@
   "engine": {
     "version": "0.5.54",
     "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.54/coco-engine-0.5.54.zip",
-    "sha256": "01437ede22640797daba875d963944d66e52ad2fc496d8f82c283e8add5d9acf",
-    "size": 563579
+    "sha256": "c8fde65b093d422760f3d67ab4b3bc05ec3428ddd85f59555ec81b655d708233",
+    "size": 563626
   },
   "bootstrap": {
     "version": "0.5.54",
     "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.54/CocoUpdater.exe",
-    "sha256": "8646c5e797dd52872c2a185f16b66f9c6037e61d5c0b9b7e0f8b9c568349bead",
+    "sha256": "e267eb2852b27ef4fbf7944464a60cbcbc94a1e730e306477a6ad3bcbed1a39e",
     "size": 190976
   },
   "network": {
