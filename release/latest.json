@@ -1,0 +1,2030 @@
+{
+  "schemaVersion": 2,
+  "packId": "coco-fabric-26.1.2",
+  "version": "0.5.50",
+  "publishedAt": "2026-07-25T09:20:14.4894412Z",
+  "engine": {
+    "version": "0.5.50",
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.50/coco-engine-0.5.50.zip",
+    "sha256": "d373f319d6c65b53fb7398496a0e604716318883b985b5d1fb75eafb651d27fb",
+    "size": 563423
+  },
+  "bootstrap": {
+    "version": "0.5.50",
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.50/CocoUpdater.exe",
+    "sha256": "540b09742625d8b1d5111faf65f33961d56360f6b4ba5fa06a0f597ca03ec631",
+    "size": 190976
+  },
+  "network": {
+    "provider": "zerotier",
+    "name": "Coco Minecraft",
+    "networkId": "58997fc5f3c0c001",
+    "hostAddress": "10.77.37.1",
+    "subnet": "10.77.37.0/24",
+    "ipPoolStart": "10.77.37.2",
+    "ipPoolEnd": "10.77.37.254",
+    "minecraftPort": 25565,
+    "authorizationTimeoutSeconds": 120,
+    "firewallRuleName": "Coco Minecraft - ZeroTier TCP 25565",
+    "sessionPort": 25564,
+    "sessionFirewallRuleName": "Coco Launcher - ZeroTier TCP 25564",
+    "leaveNetworkIds": [
+      "154a350c866b8062"
+    ],
+    "installer": {
+      "version": "1.16.2",
+      "url": "https://download.zerotier.com/RELEASES/1.16.2/dist/ZeroTier%20One.msi",
+      "sha256": "42514072b0fe44b8f66e0395bcd23a0b1d1642c28ed00831f1527b2f41b14670",
+      "signerSubjectPattern": "(?i)ZEROTIER,\\s*INC\\."
+    }
+  },
+  "clientSettingsMigrations": [
+    {
+      "id": "pingwheel-location-z-v1",
+      "type": "minecraft-option-default",
+      "key": "key_key.pingwheel.ping_location",
+      "from": "key.mouse.5",
+      "to": "key.keyboard.z"
+    }
+  ],
+  "managedConfigFiles": [
+    {
+      "path": "config/jei/jei-client.ini",
+      "sha256": "0677b2e9c00ce43f80aa391f08a0a2dfb66b52476d360570ceff81cdef0efb11",
+      "size": 1649,
+      "contentBase64": "W2FwcGVhcmFuY2VdCgljZW50ZXJTZWFyY2ggPSBmYWxzZQoJcmVjaXBlR3VpSGVpZ2h0ID0gMzUwCgpbY2hlYXRpbmddCglnaXZlTW9kZSA9IE1PVVNFX1BJQ0tVUAoJY2hlYXRUb0hvdGJhclVzaW5nSG90a2V5c0VuYWJsZWQgPSBmYWxzZQoJc2hvd0hpZGRlbkluZ3JlZGllbnRzID0gdHJ1ZQoJc2hvd1RhZ1JlY2lwZXNFbmFibGVkID0gZmFsc2UKCltib29rbWFya3NdCglhZGRCb29rbWFya3NUb0Zyb250RW5hYmxlZCA9IGZhbHNlCglkcmFnVG9SZWFycmFuZ2VCb29rbWFya3NFbmFibGVkID0gdHJ1ZQoKW3Rvb2x0aXBzXQoJYm9va21hcmtUb29sdGlwRmVhdHVyZXMgPSBQUkVWSUVXCglob2xkU2hpZnRUb1Nob3dCb29rbWFya1Rvb2x0aXBGZWF0dXJlcyA9IHRydWUKCXNob3dDcmVhdGl2ZVRhYk5hbWVzRW5hYmxlZCA9IGZhbHNlCgl0YWdDb250ZW50VG9vbHRpcEVuYWJsZWQgPSB0cnVlCgloaWRlU2luZ2xlVGFnQ29udGVudFRvb2x0aXBFbmFibGVkID0gdHJ1ZQoJZW5hYmxlUmVjaXBlc0d1aUluZ3JlZGllbnRzU3VtbWFyeSA9IGZhbHNlCgpbcGVyZm9ybWFuY2VdCglsb3dNZW1vcnlTbG93U2VhcmNoRW5hYmxlZCA9IGZhbHNlCgpbbG9va3Vwc10KCWxvb2t1cEZsdWlkQ29udGVudHNFbmFibGVkID0gZmFsc2UKCWxvb2t1cEJsb2NrVGFnc0VuYWJsZWQgPSB0cnVlCgpbbG9va3VwSGlzdG9yeV0KCWVuYWJsZWQgPSBmYWxzZQoJbWF4Um93cyA9IDIKCW1heEluZ3JlZGllbnRzID0gMTAwCglkaXNwbGF5U2lkZSA9IExFRlQKClthZHZhbmNlZF0KCWNhdGNoUmVuZGVyRXJyb3JzRW5hYmxlZCA9IHRydWUKCltpbnB1dF0KCWRyYWdEZWxheUluTWlsbGlzZWNvbmRzID0gMTUwCglzbW9vdGhTY3JvbGxSYXRlID0gOQoKW3NvcnRpbmddCglpbmdyZWRpZW50U29ydFN0YWdlcyA9IE1PRF9OQU1FLCBJTkdSRURJRU5UX1RZUEUsIENSRUFUSVZFX01FTlUKCXJlY2lwZVNvcnRlclN0YWdlcyA9IEJPT0tNQVJLRUQsIENSQUZUQUJMRQoKW3NlYXJjaF0KCW1vZE5hbWVTZWFyY2hNb2RlID0gUkVRVUlSRV9QUkVGSVgKCXRhZ1NlYXJjaE1vZGUgPSBSRVFVSVJFX1BSRUZJWAoJdG9vbHRpcFNlYXJjaE1vZGUgPSBFTkFCTEVECgljb2xvclNlYXJjaE1vZGUgPSBESVNBQkxFRAoJaWRlbnRpZmllclNlYXJjaE1vZGUgPSBESVNBQkxFRAoJY3JlYXRpdmVUYWJTZWFyY2hNb2RlID0gRElTQUJMRUQKCXNlYXJjaEFkdmFuY2VkVG9vbHRpcHMgPSBmYWxzZQoJc2VhcmNoTW9kSWRzID0gdHJ1ZQoJc2VhcmNoTW9kQWxpYXNlcyA9IHRydWUKCXNlYXJjaFNob3J0TW9kTmFtZXMgPSBmYWxzZQoJc2VhcmNoSW5ncmVkaWVudEFsaWFzZXMgPSB0cnVlCgpbaW5ncmVkaWVudExpc3RdCgltYXhSb3dzID0gMTYKCW1heENvbHVtbnMgPSA5Cglob3Jpem9udGFsQWxpZ25tZW50ID0gUklHSFQKCXZlcnRpY2FsQWxpZ25tZW50ID0gVE9QCglidXR0b25OYXZpZ2F0aW9uVmlzaWJpbGl0eSA9IEVOQUJMRUQKCWRyYXdCYWNrZ3JvdW5kID0gZmFsc2UKCltib29rbWFya0xpc3RdCgltYXhSb3dzID0gMTYKCW1heENvbHVtbnMgPSA5Cglob3Jpem9udGFsQWxpZ25tZW50ID0gTEVGVAoJdmVydGljYWxBbGlnbm1lbnQgPSBUT1AKCWJ1dHRvbk5hdmlnYXRpb25WaXNpYmlsaXR5ID0gRU5BQkxFRAoJZHJhd0JhY2tncm91bmQgPSBmYWxzZQo="
+    },
+    {
+      "path": "config/Stackable.json",
+      "sha256": "3946d2b1633b6b961ccc42ab18d0b6277fdf3f7770ac84dc2aa6d589f9423763",
+      "size": 3197,
+      "contentBase64": "ewogICJtYXhTdGFjayI6IDI1NiwKICAiYnVuZGxlU3RhY2tQZW5hbHR5IjogOCwKICAidHJ1bmNhdGVJdGVtQ291bnQiOiBmYWxzZSwKICAiU3RhY2tzaXplT3ZlcnJpZGUiOiBbCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6ZWdnIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6YnJvd25fZWdnIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6Ymx1ZV9lZ2ciLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpzbm93YmFsbCIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0Om9ha19zaWduIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6cGFsZV9vYWtfc2lnbiIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0OnNwcnVjZV9zaWduIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6YmlyY2hfc2lnbiIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0Omp1bmdsZV9zaWduIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6YWNhY2lhX3NpZ24iLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpkYXJrX29ha19zaWduIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6Y3JpbXNvbl9zaWduIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6d2FycGVkX3NpZ24iLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDptYW5ncm92ZV9zaWduIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6Y2hlcnJ5X3NpZ24iLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpiYW1ib29fc2lnbiIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0Om9ha19oYW5naW5nX3NpZ24iLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpwYWxlX29ha19oYW5naW5nX3NpZ24iLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpzcHJ1Y2VfaGFuZ2luZ19zaWduIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6YmlyY2hfaGFuZ2luZ19zaWduIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6anVuZ2xlX2hhbmdpbmdfc2lnbiIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0OmFjYWNpYV9oYW5naW5nX3NpZ24iLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpkYXJrX29ha19oYW5naW5nX3NpZ24iLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpjcmltc29uX2hhbmdpbmdfc2lnbiIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0OndhcnBlZF9oYW5naW5nX3NpZ24iLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDptYW5ncm92ZV9oYW5naW5nX3NpZ24iLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpjaGVycnlfaGFuZ2luZ19zaWduIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6YmFtYm9vX2hhbmdpbmdfc2lnbiIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0OmhvbmV5X2JvdHRsZSIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0OndoaXRlX2Jhbm5lciIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0Om9yYW5nZV9iYW5uZXIiLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDptYWdlbnRhX2Jhbm5lciIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0OmxpZ2h0X2JsdWVfYmFubmVyIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6eWVsbG93X2Jhbm5lciIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0OmxpbWVfYmFubmVyIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6cGlua19iYW5uZXIiLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpncmF5X2Jhbm5lciIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0OmxpZ2h0X2dyYXlfYmFubmVyIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6Y3lhbl9iYW5uZXIiLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpwdXJwbGVfYmFubmVyIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6Ymx1ZV9iYW5uZXIiLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpicm93bl9iYW5uZXIiLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpncmVlbl9iYW5uZXIiLCAidmFsdWUiOiAyNTYgfSwKICAgIHsgIm5hbWVzcGFjZUlEIjogIm1pbmVjcmFmdDpyZWRfYmFubmVyIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6YmxhY2tfYmFubmVyIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6d3JpdGFibGVfYm9vayIsICJ2YWx1ZSI6IDI1NiB9LAogICAgeyAibmFtZXNwYWNlSUQiOiAibWluZWNyYWZ0OmVuZGVyX3BlYXJsIiwgInZhbHVlIjogMjU2IH0sCiAgICB7ICJuYW1lc3BhY2VJRCI6ICJtaW5lY3JhZnQ6YXJtb3Jfc3RhbmQiLCAidmFsdWUiOiAyNTYgfQogIF0KfQo="
+    }
+  ],
+  "packages": [
+    {
+      "role": "client",
+      "mods": [
+        {
+          "name": "3d_placeable_food-3.0.2-fabric-26.1.2.jar",
+          "fabricId": "placeable_food",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-bf3dc879d2d28364b8f0f66afbf4da9a09d46b43dfeb6a315b7c081be5a3dcdc.jar",
+          "sha256": "bf3dc879d2d28364b8f0f66afbf4da9a09d46b43dfeb6a315b7c081be5a3dcdc",
+          "size": 1034995
+        },
+        {
+          "name": "additionaladditions-fabric-10.0.9.jar",
+          "fabricId": "additionaladditions",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-1af880daad97fa26dfe66340959780b550c978ce8b2635415d21991bc907d494.jar",
+          "sha256": "1af880daad97fa26dfe66340959780b550c978ce8b2635415d21991bc907d494",
+          "size": 4484306
+        },
+        {
+          "name": "animalgarden_alligatorgar-1.0.0-fabric-26.1.1-0.145.4.jar",
+          "fabricId": "animalgarden_alligatorgar",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-06dc9b6aa6dfcad99db508cbc207b73eb3161b43fbfdc878e6db392a3d27ab49.jar",
+          "sha256": "06dc9b6aa6dfcad99db508cbc207b73eb3161b43fbfdc878e6db392a3d27ab49",
+          "size": 118060
+        },
+        {
+          "name": "animalgarden_bullshark-1.1.1-fabric-26.1.1-0.145.4.jar",
+          "fabricId": "animalgarden_bullshark",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-b4ab44aadf88e1deea39639af1800b184359e42e3b0d6a681867e4993b016648.jar",
+          "sha256": "b4ab44aadf88e1deea39639af1800b184359e42e3b0d6a681867e4993b016648",
+          "size": 58983
+        },
+        {
+          "name": "animalgarden_crocodile-1.1.0-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_crocodile",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-cd27dc2aca3ce43a6b054e404c576ad57c9729105c8a5a2a6e0f92da6a69826f.jar",
+          "sha256": "cd27dc2aca3ce43a6b054e404c576ad57c9729105c8a5a2a6e0f92da6a69826f",
+          "size": 800761
+        },
+        {
+          "name": "animalgarden_fennecfox-1.0.2-fabric-26.2-0.152.2.jar",
+          "fabricId": "animalgarden_fennecfox",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-f863394dea1b1a3c32309d475bc5eaedbcb16fa7e87caefefd346855c99d5f0c.jar",
+          "sha256": "f863394dea1b1a3c32309d475bc5eaedbcb16fa7e87caefefd346855c99d5f0c",
+          "size": 200298
+        },
+        {
+          "name": "animalgarden_hippopotamus-1.0.2-fabric-26.1.1-0.145.4.jar",
+          "fabricId": "animalgarden_hippopotamus",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3670cba3c1ec9721f0a38d1314d5b341d3db85ce1df56e9cef61f8602e6ac5f4.jar",
+          "sha256": "3670cba3c1ec9721f0a38d1314d5b341d3db85ce1df56e9cef61f8602e6ac5f4",
+          "size": 310391
+        },
+        {
+          "name": "animalgarden_lion-1.0.3-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_lion",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-2334163cffb44e7742c13ae6fcd955ca32b3ee4e45940f9e036156f010c28a6b.jar",
+          "sha256": "2334163cffb44e7742c13ae6fcd955ca32b3ee4e45940f9e036156f010c28a6b",
+          "size": 491105
+        },
+        {
+          "name": "animalgarden_manatee-1.0.2-fabirc-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_manatee",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0decc703525381876a928f2a1acff4cae8e7b9698ed7cb3d29bd89730f4bd54e.jar",
+          "sha256": "0decc703525381876a928f2a1acff4cae8e7b9698ed7cb3d29bd89730f4bd54e",
+          "size": 100180
+        },
+        {
+          "name": "animalgarden_meerkat-1.0.6-fabric-26.1.2-0.145.2.jar",
+          "fabricId": "animalgarden_meerkat",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a4c8f1a59d2c346c4cfd4a2baa452237b376ece307ed259197f04b824ed49052.jar",
+          "sha256": "a4c8f1a59d2c346c4cfd4a2baa452237b376ece307ed259197f04b824ed49052",
+          "size": 74128
+        },
+        {
+          "name": "animalgarden_mouse-1.0.6-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_mouse",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-9f49b668286b07b3f965ce9065b9e49817809779d7c133e82fac81f3cfdc8df6.jar",
+          "sha256": "9f49b668286b07b3f965ce9065b9e49817809779d7c133e82fac81f3cfdc8df6",
+          "size": 110832
+        },
+        {
+          "name": "animalgarden_owl-1.2.8-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_owl",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ab93fbdf06de4e86b3b729bf7c562dd1317f6d741e59c09be9d7375c23ee0eca.jar",
+          "sha256": "ab93fbdf06de4e86b3b729bf7c562dd1317f6d741e59c09be9d7375c23ee0eca",
+          "size": 162755
+        },
+        {
+          "name": "animalgarden_porcupine-1.0.5-fabric-26.1.1-0.145.2.jar",
+          "fabricId": "animalgarden_porcupine",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5ca31dd85e966ef7a3d38873d2e82dbbc714bd7511c70d97958b80fedfc5d3cc.jar",
+          "sha256": "5ca31dd85e966ef7a3d38873d2e82dbbc714bd7511c70d97958b80fedfc5d3cc",
+          "size": 35540
+        },
+        {
+          "name": "animalgarden_prairiedog-1.0.3-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_prairiedog",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a4190dd18dc73c832482b8f58bcdd6ec135c0a389309beaffe3cae178363aca1.jar",
+          "sha256": "a4190dd18dc73c832482b8f58bcdd6ec135c0a389309beaffe3cae178363aca1",
+          "size": 147515
+        },
+        {
+          "name": "animalgarden_redpanda-1.1.3-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_redpanda",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-94a161708fc8330e4a1bea01e2a3764ba39cfa634e02a924dd3a2e7f73ab6c27.jar",
+          "sha256": "94a161708fc8330e4a1bea01e2a3764ba39cfa634e02a924dd3a2e7f73ab6c27",
+          "size": 107271
+        },
+        {
+          "name": "animalgarden_spottedhyena-1.1.1-fabric-26.2-0.152.2.jar",
+          "fabricId": "animalgarden_spottedhyena",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5abe1b4e4896b3bb3619a7858a098e63e950366cc3ea2fac722d1d8535b0f987.jar",
+          "sha256": "5abe1b4e4896b3bb3619a7858a098e63e950366cc3ea2fac722d1d8535b0f987",
+          "size": 408621
+        },
+        {
+          "name": "animalgarden_sugarglider-1.0.2-fabric-26.2-0.152.2.jar",
+          "fabricId": "animalgarden_sugarglider",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7420b2d4c4dd202e7a0edaa8bd506ef425a6bcc1b5e08a4628b2fae47d80e9d8.jar",
+          "sha256": "7420b2d4c4dd202e7a0edaa8bd506ef425a6bcc1b5e08a4628b2fae47d80e9d8",
+          "size": 232595
+        },
+        {
+          "name": "animalgarden_westerngorilla-1.0.1-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_westerngorilla",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-4f823b0b7feaefd02788b3dc1b2fdaea24d74ac4f7bf3032234bf4621c8f5cda.jar",
+          "sha256": "4f823b0b7feaefd02788b3dc1b2fdaea24d74ac4f7bf3032234bf4621c8f5cda",
+          "size": 253659
+        },
+        {
+          "name": "animalgarden_whiterhinoceros-1.0.1-fabric-26.1.1-0.145.4.jar",
+          "fabricId": "animalgarden_whiterhinoceros",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-1dfeb6673a4745299286bcbf51812ed7f03fca81659176d4761931f065e2b06d.jar",
+          "sha256": "1dfeb6673a4745299286bcbf51812ed7f03fca81659176d4761931f065e2b06d",
+          "size": 227394
+        },
+        {
+          "name": "animalgarden-bongo-1.0.1-fabric-26.2-0.152.1.jar",
+          "fabricId": "animalgarden_bongo",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ff4634655f92b7b56607eb690479ee3af14316a7105184fb2b2e7cb08dfd6450.jar",
+          "sha256": "ff4634655f92b7b56607eb690479ee3af14316a7105184fb2b2e7cb08dfd6450",
+          "size": 111479
+        },
+        {
+          "name": "animalgarden-commonraven-1.0.1-fabric-26.2-0.152.2.jar",
+          "fabricId": "animalgarden_commonraven",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-050a7002da82c03934b54c3626cd0f7331655c5b75d5a1ae30751a4d5a52d1cd.jar",
+          "sha256": "050a7002da82c03934b54c3626cd0f7331655c5b75d5a1ae30751a4d5a52d1cd",
+          "size": 208784
+        },
+        {
+          "name": "animalgarden-harpseal-1.0.1-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_harpseal",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-6dede543c0497bfae8cf1da330c1502a9b2866afed2a8e414e1c62caa96e93dc.jar",
+          "sha256": "6dede543c0497bfae8cf1da330c1502a9b2866afed2a8e414e1c62caa96e93dc",
+          "size": 627505
+        },
+        {
+          "name": "animalgarden-narwhal-1.0.1-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_narwhal",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-138b9d5b5a7fab729d6efe94c2b1d2bb21eb3ebdd0f3c880e6cd55abf04df42e.jar",
+          "sha256": "138b9d5b5a7fab729d6efe94c2b1d2bb21eb3ebdd0f3c880e6cd55abf04df42e",
+          "size": 368031
+        },
+        {
+          "name": "animalgarden-redriverhog-1.0.0-fabric-26.1.1-0.145.2.jar",
+          "fabricId": "animalgarden_redriverhog",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-898b861878281515ebd741bc103ee5c87bdb7f470685e9f7bf506bc3f6c12b3c.jar",
+          "sha256": "898b861878281515ebd741bc103ee5c87bdb7f470685e9f7bf506bc3f6c12b3c",
+          "size": 553562
+        },
+        {
+          "name": "animalgarden-seaotter-1.1.1-fabric-26.2-0.152.2.jar",
+          "fabricId": "animalgarden_seaotter",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-8eb174fb3cf0d7736e27acfbfaa94261dc1285f55233fb0dbb0ec91ffcc7a720.jar",
+          "sha256": "8eb174fb3cf0d7736e27acfbfaa94261dc1285f55233fb0dbb0ec91ffcc7a720",
+          "size": 279687
+        },
+        {
+          "name": "animalgarden-snowleopard-1.0.1-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_snowleopard",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0ea24c6cdf6054f1e2cc4fbfee58272f55983bb804c9836dd859021e7caa1ff9.jar",
+          "sha256": "0ea24c6cdf6054f1e2cc4fbfee58272f55983bb804c9836dd859021e7caa1ff9",
+          "size": 365700
+        },
+        {
+          "name": "animalgarden-springhare-1.0.1-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_springhare",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-d26be16516996f19c7bf380702f226edd1b2420badc05d003eb62cb5efd02c4b.jar",
+          "sha256": "d26be16516996f19c7bf380702f226edd1b2420badc05d003eb62cb5efd02c4b",
+          "size": 128305
+        },
+        {
+          "name": "animalgarden-vicuna-1.0.1-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_vicuna",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-538469ef91fbed0160fccd178df2da3dd7f5b545e0fba716bc7eb7fe367ad384.jar",
+          "sha256": "538469ef91fbed0160fccd178df2da3dd7f5b545e0fba716bc7eb7fe367ad384",
+          "size": 125066
+        },
+        {
+          "name": "animalgarden-yellowmongoose-1.0.0-fabric-26.2-0.154.0.jar",
+          "fabricId": "animalgarden_yellowmongoose",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-c5063a32a0e167718156a52a79c1cf6a06a9e7e7df7ad97380b584aa9bb67a35.jar",
+          "sha256": "c5063a32a0e167718156a52a79c1cf6a06a9e7e7df7ad97380b584aa9bb67a35",
+          "size": 140157
+        },
+        {
+          "name": "antismooth-2.0.2.jar",
+          "fabricId": "antismooth",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-27c3ad7cd3d90cdf03ac7f63de1af1a7fed76e9e058a2110af2c186cd26bb165.jar",
+          "sha256": "27c3ad7cd3d90cdf03ac7f63de1af1a7fed76e9e058a2110af2c186cd26bb165",
+          "size": 26653
+        },
+        {
+          "name": "appleskin-fabric-mc26.1.2-3.0.10.jar",
+          "fabricId": "appleskin",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-6a03ad4fcf0a2c831ebabd56fc1b5aca2463e35f289a927adfdbaaf0e944d41c.jar",
+          "sha256": "6a03ad4fcf0a2c831ebabd56fc1b5aca2463e35f289a927adfdbaaf0e944d41c",
+          "size": 181584
+        },
+        {
+          "name": "aquarius_libs-1.2.0-fabric-26.2-0.152.1.jar",
+          "fabricId": "aquarius_libs",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-6bfc32c08d5f96492a076c95d976825b948bd0df47514d8aa9c21cd9a82a10d5.jar",
+          "sha256": "6bfc32c08d5f96492a076c95d976825b948bd0df47514d8aa9c21cd9a82a10d5",
+          "size": 206811
+        },
+        {
+          "name": "BadOptimizations-2.4.1-26.1-fabric.jar",
+          "fabricId": "badoptimizations",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3eecf1754bccf6ea69fda6f707a000de9efb8562073d466bd9d186957f0ce199.jar",
+          "sha256": "3eecf1754bccf6ea69fda6f707a000de9efb8562073d466bd9d186957f0ce199",
+          "size": 61928
+        },
+        {
+          "name": "bettershields-fabric-1.10.0+mc26.1.jar",
+          "fabricId": "bettershields",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7174a8023319805bd395b957162b52e5046a3e365f4527adf5f0f343490e8a8c.jar",
+          "sha256": "7174a8023319805bd395b957162b52e5046a3e365f4527adf5f0f343490e8a8c",
+          "size": 36465
+        },
+        {
+          "name": "BiomesOPlenty-fabric-26.1.2-26.1.2.0.22.jar",
+          "fabricId": "biomesoplenty",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-02f7f0324f952aeb560a3f61e8cb175de1ed58e448e4ff08f7d0d09acc73f97c.jar",
+          "sha256": "02f7f0324f952aeb560a3f61e8cb175de1ed58e448e4ff08f7d0d09acc73f97c",
+          "size": 23075883
+        },
+        {
+          "name": "bubblellaneous-3.0.4.jar",
+          "fabricId": "mr_bubblellaneous",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-b6f6acf7709a2a072cdd1f139a92eb0ac1e8fa2c44fae852e8ebf6ee1ae45f30.jar",
+          "sha256": "b6f6acf7709a2a072cdd1f139a92eb0ac1e8fa2c44fae852e8ebf6ee1ae45f30",
+          "size": 12294323
+        },
+        {
+          "name": "Butterbee 1.0.5 - 26.1.jar",
+          "fabricId": "butterbee",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-480d888692a5ee70ef828f83b85aabae1dc14656dbe3fbfb8c32902419ea9abe.jar",
+          "sha256": "480d888692a5ee70ef828f83b85aabae1dc14656dbe3fbfb8c32902419ea9abe",
+          "size": 417484
+        },
+        {
+          "name": "c2me-fabric-mc26.1.2-0.4.0-alpha.0.31.jar",
+          "fabricId": "c2me",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-20c64d2ae384e6930fa66f64e74921aa125fb1ef715d8a77f7d22c04383196ae.jar",
+          "sha256": "20c64d2ae384e6930fa66f64e74921aa125fb1ef715d8a77f7d22c04383196ae",
+          "size": 3781815
+        },
+        {
+          "name": "camerapture-1.10.14+mc26.1.2.jar",
+          "fabricId": "camerapture",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-343a1e10002d160f74bdc3316c107dfd1dc4547d9dfab4680588e9fe727f596c.jar",
+          "sha256": "343a1e10002d160f74bdc3316c107dfd1dc4547d9dfab4680588e9fe727f596c",
+          "size": 2434754
+        },
+        {
+          "name": "cloth-config-26.1.154.jar",
+          "fabricId": "cloth-config",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-fb7a5d869ce10eaac2c2fe9ab84b4fc011a1fbfa575a93be9845a386a7f0c7d3.jar",
+          "sha256": "fb7a5d869ce10eaac2c2fe9ab84b4fc011a1fbfa575a93be9845a386a7f0c7d3",
+          "size": 1135373
+        },
+        {
+          "name": "coco-session-bridge-0.5.48.jar",
+          "fabricId": "coco_session_bridge",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-876cf69363a8253a64761560739311ba704a0576b405518cf598f8f99c7d7c1a.jar",
+          "sha256": "876cf69363a8253a64761560739311ba704a0576b405518cf598f8f99c7d7c1a",
+          "size": 16481
+        },
+        {
+          "name": "comforts-fabric-15.0.0+26.1.2.jar",
+          "fabricId": "comforts",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-2c654ee209d314c1509d983f1ea967bb38f2f72e477169b4b4eeb6e950a2a342.jar",
+          "sha256": "2c654ee209d314c1509d983f1ea967bb38f2f72e477169b4b4eeb6e950a2a342",
+          "size": 961535
+        },
+        {
+          "name": "cosycritters-0.3.3+26.1-fabric.jar",
+          "fabricId": "cosycritters",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-baa1d06127c5086f372f5a5c5cdf91f35640e7e8f9981c6527f81bc363a6148e.jar",
+          "sha256": "baa1d06127c5086f372f5a5c5cdf91f35640e7e8f9981c6527f81bc363a6148e",
+          "size": 100927
+        },
+        {
+          "name": "CustomSkinLoader_Universal-15.0.1.jar",
+          "fabricId": "customskinloader-bootstrap",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc.jar",
+          "sha256": "026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc",
+          "size": 218215
+        },
+        {
+          "name": "decorative-lamps_Fabric-26.1-1.8.1.jar",
+          "fabricId": "decorativelamps",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0c271dda10b45e27fd5f35e4aa9b2698db353df679e90769f5e6af12b888398a.jar",
+          "sha256": "0c271dda10b45e27fd5f35e4aa9b2698db353df679e90769f5e6af12b888398a",
+          "size": 1034137
+        },
+        {
+          "name": "DistantFriends-fabric-26.1.2-0.15.1.jar",
+          "fabricId": "distantfriends",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-6caf6249708dea74356799ec3a07041eea188132cea49454a5aaf2f45d157e30.jar",
+          "sha256": "6caf6249708dea74356799ec3a07041eea188132cea49454a5aaf2f45d157e30",
+          "size": 36966
+        },
+        {
+          "name": "DistantHorizons-3.2.0-b-26.1.2-fabric-neoforge.jar",
+          "fabricId": "distanthorizons",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-56edf91220d6778c383a57d21fd57c7dc45bb775ee1e0271a2e812f91ad2728e.jar",
+          "sha256": "56edf91220d6778c383a57d21fd57c7dc45bb775ee1e0271a2e812f91ad2728e",
+          "size": 30220786
+        },
+        {
+          "name": "EnhancedCats-26.1.x-1.0.1.jar",
+          "fabricId": "enhanced-cats",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-634a2cc578488cfaca032ba077223937edae049e1c8efd93c8b5cc9d3474398d.jar",
+          "sha256": "634a2cc578488cfaca032ba077223937edae049e1c8efd93c8b5cc9d3474398d",
+          "size": 1476422
+        },
+        {
+          "name": "entityculling-fabric-1.10.5-mc26.1.jar",
+          "fabricId": "entityculling",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-9b4443f072ff54288d51466b8dc3f327490848ebb5b75ee8755890949aa1f4a7.jar",
+          "sha256": "9b4443f072ff54288d51466b8dc3f327490848ebb5b75ee8755890949aa1f4a7",
+          "size": 1581987
+        },
+        {
+          "name": "EuphoriaPatcher-1.9.3-r5.8.1-fabric.jar",
+          "fabricId": "euphoria_patcher",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-b42bd00c7ab6e044d21f845dedc58a4524e45643f3685bf1c2343098e74d662e.jar",
+          "sha256": "b42bd00c7ab6e044d21f845dedc58a4524e45643f3685bf1c2343098e74d662e",
+          "size": 4296552
+        },
+        {
+          "name": "ExpOre-26.1.2-0.1.jar",
+          "fabricId": "expore",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-745aab51b9e3cd4ff15af27112035ca3689e9da1a6ef5fb741f4c7834c0d8b29.jar",
+          "sha256": "745aab51b9e3cd4ff15af27112035ca3689e9da1a6ef5fb741f4c7834c0d8b29",
+          "size": 37225
+        },
+        {
+          "name": "fabric-api-0.154.2+26.1.2.jar",
+          "fabricId": "fabric-api",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-89b232cdf0c73a6e0cc8338a7520d2ac197b9cb65adca0554860b68873ea03e1.jar",
+          "sha256": "89b232cdf0c73a6e0cc8338a7520d2ac197b9cb65adca0554860b68873ea03e1",
+          "size": 2514491
+        },
+        {
+          "name": "fabric-language-kotlin-1.13.13+kotlin.2.4.10.jar",
+          "fabricId": "fabric-language-kotlin",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-34ccdacf13bb9351fe43ce61912c2e09b72364e43e787d36ba3d2d04dec75a52.jar",
+          "sha256": "34ccdacf13bb9351fe43ce61912c2e09b72364e43e787d36ba3d2d04dec75a52",
+          "size": 8076363
+        },
+        {
+          "name": "FarmersDelight-26.1-3.6.7+refabricated.jar",
+          "fabricId": "farmersdelight",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-25adee6361b37f1e559373bf6aedc90fa62b2da8ab084e3dee53f037ffcac636.jar",
+          "sha256": "25adee6361b37f1e559373bf6aedc90fa62b2da8ab084e3dee53f037ffcac636",
+          "size": 3336950
+        },
+        {
+          "name": "ferritecore-9.0.0-fabric.jar",
+          "fabricId": "ferritecore",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-213966c72ed967acc7392beb28a866fba301ff56b9976c2e7801c2db7de6bf22.jar",
+          "sha256": "213966c72ed967acc7392beb28a866fba301ff56b9976c2e7801c2db7de6bf22",
+          "size": 72677
+        },
+        {
+          "name": "filament-1.6.1+26.1.2.jar",
+          "fabricId": "filament",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-712478da465b2b104b7883d2f99687f61405716edb77fd0e9c405c57c0a7cbf1.jar",
+          "sha256": "712478da465b2b104b7883d2f99687f61405716edb77fd0e9c405c57c0a7cbf1",
+          "size": 11146175
+        },
+        {
+          "name": "fish_of_thieves-mc26.1.2-v26.1.2.2.0-fabric.jar",
+          "fabricId": "fishofthieves",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5c2958c8b6238f530fbc12594c01bd29519898e82520d3db4895e6b508202770.jar",
+          "sha256": "5c2958c8b6238f530fbc12594c01bd29519898e82520d3db4895e6b508202770",
+          "size": 1956558
+        },
+        {
+          "name": "ForgeConfigAPIPort-v26.1.5-mc26.1.x-Fabric.jar",
+          "fabricId": "forgeconfigapiport",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-271ead0c8191902aa9e13a6f79a065633ed6bf7e13be024e82c8c0abc4da4775.jar",
+          "sha256": "271ead0c8191902aa9e13a6f79a065633ed6bf7e13be024e82c8c0abc4da4775",
+          "size": 609711
+        },
+        {
+          "name": "fzzy_config-0.7.6+26.1.jar",
+          "fabricId": "fzzy_config",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-1fde1eb7ea7a0c28c6619871c9b768969368e66bff3962ebb804dfab6556b8a6.jar",
+          "sha256": "1fde1eb7ea7a0c28c6619871c9b768969368e66bff3962ebb804dfab6556b8a6",
+          "size": 2372905
+        },
+        {
+          "name": "geckolib-fabric-26.1.2-5.5.2.jar",
+          "fabricId": "geckolib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3572efb3eb8aa199a323fca78398fdf84012babaece49da340de11d40f3aace5.jar",
+          "sha256": "3572efb3eb8aa199a323fca78398fdf84012babaece49da340de11d40f3aace5",
+          "size": 696572
+        },
+        {
+          "name": "giant_cherry_blossom_bonsai_tree-1.0.0 Fabric 26.1.X.jar",
+          "fabricId": "giant_cherry_blossom_bonsai_tree",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-581d529b29d09c20df9e0041547aa553237dbdb1df6404abfc83311a0d576a65.jar",
+          "sha256": "581d529b29d09c20df9e0041547aa553237dbdb1df6404abfc83311a0d576a65",
+          "size": 74869
+        },
+        {
+          "name": "giant_natural_additions-1.0.0 Fabric 26.1.jar",
+          "fabricId": "giant_natural_additions",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7b886ee5a500bb361f03ca51e5a4ed2e8a55bdcf2bf0551524c22ad4f8bdcf38.jar",
+          "sha256": "7b886ee5a500bb361f03ca51e5a4ed2e8a55bdcf2bf0551524c22ad4f8bdcf38",
+          "size": 1336868
+        },
+        {
+          "name": "GlitchCore-fabric-26.1.2-26.1.2.0.2.jar",
+          "fabricId": "glitchcore",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-31a6e2a05b241c90e790d5f79f1afd5721a62a22dd14168549141f412cefc109.jar",
+          "sha256": "31a6e2a05b241c90e790d5f79f1afd5721a62a22dd14168549141f412cefc109",
+          "size": 334853
+        },
+        {
+          "name": "graves-fabric-26.1.2-1.0.17.jar",
+          "fabricId": "graves",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-53bc228640b955a93c4e1de356d84b626c89ede542b62cbbaa466d49fd831ea3.jar",
+          "sha256": "53bc228640b955a93c4e1de356d84b626c89ede542b62cbbaa466d49fd831ea3",
+          "size": 51478
+        },
+        {
+          "name": "haul-data-pack-v1.3.4.jar",
+          "fabricId": "mr_haul_datapack",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-30766c99c8e4fa673c7d21c18bfc515d36037a844c1fa7b9a6b46b16d7b1dc25.jar",
+          "sha256": "30766c99c8e4fa673c7d21c18bfc515d36037a844c1fa7b9a6b46b16d7b1dc25",
+          "size": 150768
+        },
+        {
+          "name": "HollowSteve-v1.0.0-Fabric+mc26.1.2.jar",
+          "fabricId": "hollowsteve",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-c37c56b84bb462e0a899704ca090668736bca81fe62812b91d42e63293dfd2eb.jar",
+          "sha256": "c37c56b84bb462e0a899704ca090668736bca81fe62812b91d42e63293dfd2eb",
+          "size": 2186471
+        },
+        {
+          "name": "ImmediatelyFast-Fabric-1.15.3+26.1.jar",
+          "fabricId": "immediatelyfast",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5329c19ea79fbeacce6c355eeb884dcdb1c5baed632c2f8e9e92d6a4ae233cba.jar",
+          "sha256": "5329c19ea79fbeacce6c355eeb884dcdb1c5baed632c2f8e9e92d6a4ae233cba",
+          "size": 310057
+        },
+        {
+          "name": "inventorymanagement-fabric-2.0.1+26.1.jar",
+          "fabricId": "inventorymanagement",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-cb7ec37d5f3213caa58178ec09598f56b3ffa268528019e3893dbff4a98e97d5.jar",
+          "sha256": "cb7ec37d5f3213caa58178ec09598f56b3ffa268528019e3893dbff4a98e97d5",
+          "size": 935263
+        },
+        {
+          "name": "inventory-trash-can-2.0.0-fabric-26.1.2.jar",
+          "fabricId": "inventory_trash_can",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-50900bed72498d7497298b3d6bbc33f17923aa84a21196963636fdaa8eec2303.jar",
+          "sha256": "50900bed72498d7497298b3d6bbc33f17923aa84a21196963636fdaa8eec2303",
+          "size": 56386
+        },
+        {
+          "name": "iris-fabric-1.11.2+mc26.1.2.jar",
+          "fabricId": "iris",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-093769901decfa18c6e2f1f71f0c4d5889b87331d0c39442f1f40074ae4b345d.jar",
+          "sha256": "093769901decfa18c6e2f1f71f0c4d5889b87331d0c39442f1f40074ae4b345d",
+          "size": 2815786
+        },
+        {
+          "name": "Jade-mc26.1-Fabric-26.1.8.jar",
+          "fabricId": "jade",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a65c132a809cc16c606efc6e6a8bd8d14fc34a4a75e2f920256487880d95a0a9.jar",
+          "sha256": "a65c132a809cc16c606efc6e6a8bd8d14fc34a4a75e2f920256487880d95a0a9",
+          "size": 1018743
+        },
+        {
+          "name": "jagmkiwis-fabric-26.1-1.2.4.jar",
+          "fabricId": "jagmkiwis",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3afb4f09629fa54eaee45ff368eeddf6af52f73208151d3592ba1e9955e02da4.jar",
+          "sha256": "3afb4f09629fa54eaee45ff368eeddf6af52f73208151d3592ba1e9955e02da4",
+          "size": 173895
+        },
+        {
+          "name": "jei-26.1.2-fabric-29.15.0.44.jar",
+          "fabricId": "jei",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ad51d6db5a91053482494e544fabd21db93ec372a1b06e7ccc660b66fcc6171c.jar",
+          "sha256": "ad51d6db5a91053482494e544fabd21db93ec372a1b06e7ccc660b66fcc6171c",
+          "size": 1615273
+        },
+        {
+          "name": "journeymap-fabric-26.1.2-6.0.0.jar",
+          "fabricId": "journeymap",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3019d925a4c5117622b5cae6e60d40bb73073b9e483ea038d1057c1401831e94.jar",
+          "sha256": "3019d925a4c5117622b5cae6e60d40bb73073b9e483ea038d1057c1401831e94",
+          "size": 4190702
+        },
+        {
+          "name": "just-hammers-fabric-26.1.2.1.jar",
+          "fabricId": "justhammers",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-552243f7819bcebf9dda031555513775d51345263e8293a2d39e735562dc8c9c.jar",
+          "sha256": "552243f7819bcebf9dda031555513775d51345263e8293a2d39e735562dc8c9c",
+          "size": 116327
+        },
+        {
+          "name": "libIPN-fabric-26.1.2-6.8.2.jar",
+          "fabricId": "libipn",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-e72cd91ee26077c9b7c7db12f8ec1db9d3547b9410f1b9290492809d12cc4683.jar",
+          "sha256": "e72cd91ee26077c9b7c7db12f8ec1db9d3547b9410f1b9290492809d12cc4683",
+          "size": 630741
+        },
+        {
+          "name": "lithium-fabric-0.24.6+mc26.1.2.jar",
+          "fabricId": "lithium",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-509e7f770c7d48bd37e9592917329db2768e4695c72a43e22c19ef64d0f9839f.jar",
+          "sha256": "509e7f770c7d48bd37e9592917329db2768e4695c72a43e22c19ef64d0f9839f",
+          "size": 911415
+        },
+        {
+          "name": "lithostitched-1.7.13-fabric-26.1.jar",
+          "fabricId": "lithostitched",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-62e5a47c66e19b407ccac15d549f0809a8e6f9df0cd4ed783ab90aa54b1dac37.jar",
+          "sha256": "62e5a47c66e19b407ccac15d549f0809a8e6f9df0cd4ed783ab90aa54b1dac37",
+          "size": 858679
+        },
+        {
+          "name": "mcw-furniture-3.4.2-mc26.1fabric.jar",
+          "fabricId": "mcwfurnitures",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-f4a2459e2167d67174b2047f4166acfee33a2c0e4100ce721122e1d3d8b1ab9b.jar",
+          "sha256": "f4a2459e2167d67174b2047f4166acfee33a2c0e4100ce721122e1d3d8b1ab9b",
+          "size": 2386998
+        },
+        {
+          "name": "mcw-lights-1.1.5-mc26.1fabric.jar",
+          "fabricId": "mcwlights",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5f4e71c1170a8e060d3268be6dbfd60899f2f215be249857447e23fac7b1dade.jar",
+          "sha256": "5f4e71c1170a8e060d3268be6dbfd60899f2f215be249857447e23fac7b1dade",
+          "size": 545996
+        },
+        {
+          "name": "mine-treasure-1.6.3.jar",
+          "fabricId": "mr_mine_treasure",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-bb2ff11b0c528c87234f5c2c83dfe0589fe7edf95654d3f4aba99bf2c12d196e.jar",
+          "sha256": "bb2ff11b0c528c87234f5c2c83dfe0589fe7edf95654d3f4aba99bf2c12d196e",
+          "size": 10994380
+        },
+        {
+          "name": "modmenu-18.0.0.jar",
+          "fabricId": "modmenu",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ea15f4eb0812f23ebe20cc6b0144cdd5455da0a0a0b1f21b5b733970b20a4d7e.jar",
+          "sha256": "ea15f4eb0812f23ebe20cc6b0144cdd5455da0a0a0b1f21b5b733970b20a4d7e",
+          "size": 857151
+        },
+        {
+          "name": "moogs_structures-fabric-26.1.2-3.0.4.jar",
+          "fabricId": "moogs_structures",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-9f9b4188865c9f85966e1c191c05c0144c0e565552138e5ace42465536ae80f3.jar",
+          "sha256": "9f9b4188865c9f85966e1c191c05c0144c0e565552138e5ace42465536ae80f3",
+          "size": 334326
+        },
+        {
+          "name": "MoogsNetherStructures-1.21-3.0.0.jar",
+          "fabricId": "mns",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-024bce3098fcba6b7eb55f3526708cbf9dfdf3b074da057ce72b896a2567a6af.jar",
+          "sha256": "024bce3098fcba6b7eb55f3526708cbf9dfdf3b074da057ce72b896a2567a6af",
+          "size": 3794509
+        },
+        {
+          "name": "more-chest-variants-1.5.14+26.1.1-fabric.jar",
+          "fabricId": "lolmcv",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-260d2bc223a78cb7d8cd8b60b092a6812e76459ec12da5543e1e15ba81c68d33.jar",
+          "sha256": "260d2bc223a78cb7d8cd8b60b092a6812e76459ec12da5543e1e15ba81c68d33",
+          "size": 190079
+        },
+        {
+          "name": "nemos-creatures-26.1.2-2.0.jar",
+          "fabricId": "nemos-creatures",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-4b0eb53d6937bf4d440e8bceaa3645a3463e12b0ce2c96db11f593a9ebec198f.jar",
+          "sha256": "4b0eb53d6937bf4d440e8bceaa3645a3463e12b0ce2c96db11f593a9ebec198f",
+          "size": 314199
+        },
+        {
+          "name": "packetfixer-fabric-3.3.5-26.1.2.jar",
+          "fabricId": "packetfixer",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-400f6f3d694cb69b18da14841654a20e794a83aaef3775a3a3695d0112ca826f.jar",
+          "sha256": "400f6f3d694cb69b18da14841654a20e794a83aaef3775a3a3695d0112ca826f",
+          "size": 30516
+        },
+        {
+          "name": "PatPat-1.2.6+26.1+fabric.jar",
+          "fabricId": "patpat",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-19d9709cc330d5bb9f330dd6d6850fdbc1a652fc3478afa25580fb564d85f0fc.jar",
+          "sha256": "19d9709cc330d5bb9f330dd6d6850fdbc1a652fc3478afa25580fb564d85f0fc",
+          "size": 1169014
+        },
+        {
+          "name": "peek-fabric-1.4.11+26.1.2.jar",
+          "fabricId": "peek",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0f124313a9e87949de5a150d5948d01c8d2254bfb27aa9942ad2f41bd4de324b.jar",
+          "sha256": "0f124313a9e87949de5a150d5948d01c8d2254bfb27aa9942ad2f41bd4de324b",
+          "size": 493896
+        },
+        {
+          "name": "Ping-Wheel-1.12.1-fabric-26.1.2.jar",
+          "fabricId": "pingwheel",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5c63142592d4a39bd3b69ea0304d3e61c592eeed79cce6d436bf38699e2e5561.jar",
+          "sha256": "5c63142592d4a39bd3b69ea0304d3e61c592eeed79cce6d436bf38699e2e5561",
+          "size": 152006
+        },
+        {
+          "name": "placeholder-api-3.0.0+26.1.jar",
+          "fabricId": "placeholder-api",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7c4893195ab4bec56d05a5fd4521bd9bc8619ef11aa0a5c83a426a99d2191062.jar",
+          "sha256": "7c4893195ab4bec56d05a5fd4521bd9bc8619ef11aa0a5c83a426a99d2191062",
+          "size": 254376
+        },
+        {
+          "name": "polydecorations-0.11.0+26.1.jar",
+          "fabricId": "polydecorations",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-2f7f5fe63a87e102622645fed2b9626d51d8bd109137502db8016df7fc666530.jar",
+          "sha256": "2f7f5fe63a87e102622645fed2b9626d51d8bd109137502db8016df7fc666530",
+          "size": 1757709
+        },
+        {
+          "name": "polymer-bundled-0.16.5+26.1.2.jar",
+          "fabricId": "polymer-bundled",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-2fe7f917357fe319e7fb3e7462f0e90bc5f0a028a0a650af33f726d3a9ad4fd3.jar",
+          "sha256": "2fe7f917357fe319e7fb3e7462f0e90bc5f0a028a0a650af33f726d3a9ad4fd3",
+          "size": 1384042
+        },
+        {
+          "name": "PuzzlesLib-v26.1.11-mc26.1.x-Fabric.jar",
+          "fabricId": "puzzleslib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3200b6556309eed4f47050a92bf3e6511523aa0d7e57ee998113a1f6ab786165.jar",
+          "sha256": "3200b6556309eed4f47050a92bf3e6511523aa0d7e57ee998113a1f6ab786165",
+          "size": 1143972
+        },
+        {
+          "name": "reeses-sodium-options-fabric-2.2.2+mc26.1.2.jar",
+          "fabricId": "reeses-sodium-options",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-d39fc07ccec1e2d91564ec996f439f31fe80d680231891e22d26fa35781d29f9.jar",
+          "sha256": "d39fc07ccec1e2d91564ec996f439f31fe80d680231891e22d26fa35781d29f9",
+          "size": 257107
+        },
+        {
+          "name": "reliable_gliders-fabric-26.1.2-1.3.2.jar",
+          "fabricId": "reliable_gliders",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3e544c72dda3d8ce4e33319c1a67a25189daa4f653df88defafc06417b2295c1.jar",
+          "sha256": "3e544c72dda3d8ce4e33319c1a67a25189daa4f653df88defafc06417b2295c1",
+          "size": 63454
+        },
+        {
+          "name": "ResourcefulLib-4.0.1.jar",
+          "fabricId": "resourcefullib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-18ce43a6fd581735ecc89638422cb8be3c4479d1504ea07d0b7fcb85c69b90a5.jar",
+          "sha256": "18ce43a6fd581735ecc89638422cb8be3c4479d1504ea07d0b7fcb85c69b90a5",
+          "size": 452977
+        },
+        {
+          "name": "respawnablepets-26.1-r2.jar",
+          "fabricId": "respawnablepets",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-1fe53f48d94645b9c69160b48166ffbe8d0fb8f8bf70b252a7ee44280c9f8131.jar",
+          "sha256": "1fe53f48d94645b9c69160b48166ffbe8d0fb8f8bf70b252a7ee44280c9f8131",
+          "size": 189903
+        },
+        {
+          "name": "roomfortwo-fabric-26.1.2-0.2.0.jar",
+          "fabricId": "roomfortwo",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-566b762f2b9a512dfa308d2cd2965a635631510d09d6d10fe768d43532815dfe.jar",
+          "sha256": "566b762f2b9a512dfa308d2cd2965a635631510d09d6d10fe768d43532815dfe",
+          "size": 29672
+        },
+        {
+          "name": "rusticdelight-fabric-26.1-1.6.0.jar",
+          "fabricId": "rusticdelight",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-daf6881cfbf5ec72b6a27d51006d1ab1f26f5b6fa5056f334b9656ecb3036a46.jar",
+          "sha256": "daf6881cfbf5ec72b6a27d51006d1ab1f26f5b6fa5056f334b9656ecb3036a46",
+          "size": 588266
+        },
+        {
+          "name": "ScalableLux-fabric-0.3.0-alpha.0.2-all.jar",
+          "fabricId": "scalablelux",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-49534dd464679b8f7531f3d8d05890b0b37eb0c368a8c2bbdb6003e444a6d64c.jar",
+          "sha256": "49534dd464679b8f7531f3d8d05890b0b37eb0c368a8c2bbdb6003e444a6d64c",
+          "size": 193884
+        },
+        {
+          "name": "snuffles-1.8.0+26.1.jar",
+          "fabricId": "snuffles",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-22947f0a44e3b181399a035cfdbf05a6e439e312741ca46bbb756096401fbab9.jar",
+          "sha256": "22947f0a44e3b181399a035cfdbf05a6e439e312741ca46bbb756096401fbab9",
+          "size": 406602
+        },
+        {
+          "name": "sodium-extra-fabric-0.9.3+mc26.1.2.jar",
+          "fabricId": "sodium-extra",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-08c25f25f359eeba73ed73a44be09d4b1c425ef96f8bc4eb6d7221942f90f713.jar",
+          "sha256": "08c25f25f359eeba73ed73a44be09d4b1c425ef96f8bc4eb6d7221942f90f713",
+          "size": 477705
+        },
+        {
+          "name": "sodium-fabric-0.9.1+mc26.1.2.jar",
+          "fabricId": "sodium",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-56d2eb7e8fb7f129286ab9cc89f460fe5a4cea340081ef3c50ac65bce9501b1d.jar",
+          "sha256": "56d2eb7e8fb7f129286ab9cc89f460fe5a4cea340081ef3c50ac65bce9501b1d",
+          "size": 1889595
+        },
+        {
+          "name": "sound-physics-remastered-fabric-1.5.1+26.1.2.jar",
+          "fabricId": "sound_physics_remastered",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7392f46fcf5d0921805dd4c91c9d99482d59a4ff92870c52c6da2e76798c88cb.jar",
+          "sha256": "7392f46fcf5d0921805dd4c91c9d99482d59a4ff92870c52c6da2e76798c88cb",
+          "size": 201734
+        },
+        {
+          "name": "stackable-fabric-26.1.2-2.1.1.jar",
+          "fabricId": "stackable",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-8ed8dc1128cd0c74495b7eb5bf9af7569684e6eaf979adc392f9689d7ef37d5b.jar",
+          "sha256": "8ed8dc1128cd0c74495b7eb5bf9af7569684e6eaf979adc392f9689d7ef37d5b",
+          "size": 37266
+        },
+        {
+          "name": "strawberrylib-26.1-r8.jar",
+          "fabricId": "strawberrylib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ffad5fb760e808211da89f4de27836291d02013bd732b2fbc6f4f53d6e6b318c.jar",
+          "sha256": "ffad5fb760e808211da89f4de27836291d02013bd732b2fbc6f4f53d6e6b318c",
+          "size": 1019632
+        },
+        {
+          "name": "supermartijn642configlib-1.1.8-fabric-mc26.1.jar",
+          "fabricId": "supermartijn642configlib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-f287a6ad9cdb5b152290711e65083c9d4f55e28e78a430d771557dcf769941cc.jar",
+          "sha256": "f287a6ad9cdb5b152290711e65083c9d4f55e28e78a430d771557dcf769941cc",
+          "size": 206149
+        },
+        {
+          "name": "supermartijn642corelib-1.1.21b-fabric-mc26.1.jar",
+          "fabricId": "supermartijn642corelib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-2cf9963fe04d8a322e9ffa5ae17dc36813d07069a75faba7c8631fcf57edd78b.jar",
+          "sha256": "2cf9963fe04d8a322e9ffa5ae17dc36813d07069a75faba7c8631fcf57edd78b",
+          "size": 692055
+        },
+        {
+          "name": "TerraBlender-fabric-26.1.2-26.1.2.0.3.jar",
+          "fabricId": "terrablender",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-931517520c3c3a45da7c9d5de73f840fe0f6450292fa537eb0fe58bc42636f4e.jar",
+          "sha256": "931517520c3c3a45da7c9d5de73f840fe0f6450292fa537eb0fe58bc42636f4e",
+          "size": 356065
+        },
+        {
+          "name": "Terralith_26.1_v2.6.2_Fabric.jar",
+          "fabricId": "terralith",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a07b50381d688d11893f162f2d29cd3ea4cefafd2f8ac010e700f56394747ab7.jar",
+          "sha256": "a07b50381d688d11893f162f2d29cd3ea4cefafd2f8ac010e700f56394747ab7",
+          "size": 2976106
+        },
+        {
+          "name": "the-backrooms-2.10.11.jar",
+          "fabricId": "mr_the_backrooms",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3aa11bae147f1dd53fe1ea9f7f1a19ed5ee01cf9d05298dff506c48423e53ce4.jar",
+          "sha256": "3aa11bae147f1dd53fe1ea9f7f1a19ed5ee01cf9d05298dff506c48423e53ce4",
+          "size": 204808533
+        },
+        {
+          "name": "toms_mobs-3.0.3+26.1.2.jar",
+          "fabricId": "toms_mobs",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-4cdfe924ff1b5d5fd9d8760c04c3889ad79595f9487c350cf4cf547ac87b0fe6.jar",
+          "sha256": "4cdfe924ff1b5d5fd9d8760c04c3889ad79595f9487c350cf4cf547ac87b0fe6",
+          "size": 2594127
+        },
+        {
+          "name": "trashcans-1.0.18-fabric-mc26.1.jar",
+          "fabricId": "trashcans",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-d52356472e6e0c1614813d7f8cb4462cfc00cdd7f6bf65a680a927f96397c178.jar",
+          "sha256": "d52356472e6e0c1614813d7f8cb4462cfc00cdd7f6bf65a680a927f96397c178",
+          "size": 180306
+        },
+        {
+          "name": "travelersbackpack-fabric-26.1.2-11.2.7.jar",
+          "fabricId": "travelersbackpack",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0970895d0382f882f72f9d465068394e5a42701aead4f6f812c04e529f6b24ac.jar",
+          "sha256": "0970895d0382f882f72f9d465068394e5a42701aead4f6f812c04e529f6b24ac",
+          "size": 1485535
+        },
+        {
+          "name": "ukulib-fabric-2.0.0+26.1.jar",
+          "fabricId": "ukulib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-9847e7e32f79422fdd4f0c70988761f3014d54c46ca8452f39003359a325432b.jar",
+          "sha256": "9847e7e32f79422fdd4f0c70988761f3014d54c46ca8452f39003359a325432b",
+          "size": 445580
+        },
+        {
+          "name": "variantsandventures-fabric-1.0.26+mc26.1.2.jar",
+          "fabricId": "variantsandventures",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-99f5053d8a719a8867260167e44f129131f3c963657ba1ce4e0a737b318b24c4.jar",
+          "sha256": "99f5053d8a719a8867260167e44f129131f3c963657ba1ce4e0a737b318b24c4",
+          "size": 1093217
+        },
+        {
+          "name": "visuality-0.7.13+26.1.jar",
+          "fabricId": "visuality",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-14d44503562adc0228b0dcbbe2532b1af6d55afe9930e9565c574b3347bc70b7.jar",
+          "sha256": "14d44503562adc0228b0dcbbe2532b1af6d55afe9930e9565c574b3347bc70b7",
+          "size": 82146
+        },
+        {
+          "name": "VisualWorkbench-v26.1.0-mc26.1.x-Fabric.jar",
+          "fabricId": "visualworkbench",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-e2a846b16bb296c3dabbe7e6cb5ae5dcf3cac9234c8dda71794b058e866ab001.jar",
+          "sha256": "e2a846b16bb296c3dabbe7e6cb5ae5dcf3cac9234c8dda71794b058e866ab001",
+          "size": 66611
+        },
+        {
+          "name": "yet_another_config_lib_v3-3.9.5+26.1-fabric.jar",
+          "fabricId": "yet_another_config_lib_v3",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-836c823e18cdd9d15e7011a2e8b64f93bf4fb44e8f8e8df38d9114d265d1fe41.jar",
+          "sha256": "836c823e18cdd9d15e7011a2e8b64f93bf4fb44e8f8e8df38d9114d265d1fe41",
+          "size": 1121083
+        },
+        {
+          "name": "YungsApi-26.1.2-Fabric-6.1.0.jar",
+          "fabricId": "yungsapi",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-deb948a10cede07529e150b0df411968d76b9a2d0d460d43e9b5d29a9f18f6ad.jar",
+          "sha256": "deb948a10cede07529e150b0df411968d76b9a2d0d460d43e9b5d29a9f18f6ad",
+          "size": 1265155
+        },
+        {
+          "name": "YungsBetterCaves-26.1.2-Fabric-4.1.0.jar",
+          "fabricId": "bettercaves",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5858f32e50519191438293659b9d3e361ff6024ce17b41cf63fb4b008c61cf0a.jar",
+          "sha256": "5858f32e50519191438293659b9d3e361ff6024ce17b41cf63fb4b008c61cf0a",
+          "size": 520457
+        },
+        {
+          "name": "YungsBetterDesertTemples-26.1.2-Fabric-5.1.0.jar",
+          "fabricId": "betterdeserttemples",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-9492f2810d264e04c834ff1db4aae999c237cf2f422fad1e98c307fedf597ac2.jar",
+          "sha256": "9492f2810d264e04c834ff1db4aae999c237cf2f422fad1e98c307fedf597ac2",
+          "size": 1040188
+        },
+        {
+          "name": "YungsBetterDungeons-26.1.2-Fabric-6.1.0.jar",
+          "fabricId": "betterdungeons",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-eef0e43c8c90cdc4e4e5b07f260d760658076c90882aef2dc5ac0d7b65999cd8.jar",
+          "sha256": "eef0e43c8c90cdc4e4e5b07f260d760658076c90882aef2dc5ac0d7b65999cd8",
+          "size": 924885
+        },
+        {
+          "name": "YungsBetterEndIsland-26.1.2-Fabric-4.1.0.jar",
+          "fabricId": "betterendisland",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-b7efd5dbe5424b28d0e9eb7dd85075476a8b3703ce8700f0ad93b59bf07d47a5.jar",
+          "sha256": "b7efd5dbe5424b28d0e9eb7dd85075476a8b3703ce8700f0ad93b59bf07d47a5",
+          "size": 527574
+        },
+        {
+          "name": "YungsBetterJungleTemples-26.1.2-Fabric-4.1.0.jar",
+          "fabricId": "betterjungletemples",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7159542a576ed7db66b6ca4c981277b92ccb97ee24ece09bd1bbbdc26bcb0b84.jar",
+          "sha256": "7159542a576ed7db66b6ca4c981277b92ccb97ee24ece09bd1bbbdc26bcb0b84",
+          "size": 929059
+        },
+        {
+          "name": "YungsBetterMineshafts-26.1.2-Fabric-6.1.0.jar",
+          "fabricId": "bettermineshafts",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-b9a25b58825387e18c22336b78b861049d835018eddf49a3378df2d8f1eebdca.jar",
+          "sha256": "b9a25b58825387e18c22336b78b861049d835018eddf49a3378df2d8f1eebdca",
+          "size": 620958
+        },
+        {
+          "name": "YungsBetterNetherFortresses-26.1.2-Fabric-4.1.0.jar",
+          "fabricId": "betterfortresses",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-391cbda122f4009dcf30df6728fea237faea5101f0c1a39b6e5e2a5e307629af.jar",
+          "sha256": "391cbda122f4009dcf30df6728fea237faea5101f0c1a39b6e5e2a5e307629af",
+          "size": 742903
+        },
+        {
+          "name": "YungsBetterOceanMonuments-26.1.2-Fabric-5.1.0.jar",
+          "fabricId": "betteroceanmonuments",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-10e959fa768fc5a9907ac8e557895125118a1e045fb4994ac4ff9918982345f0.jar",
+          "sha256": "10e959fa768fc5a9907ac8e557895125118a1e045fb4994ac4ff9918982345f0",
+          "size": 1153976
+        },
+        {
+          "name": "YungsBetterStrongholds-26.1.2-Fabric-6.1.0.jar",
+          "fabricId": "betterstrongholds",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-6e0c99f04c0b4476341f95027fc250cc8b33aa8dfc90068c5204b076dd135d91.jar",
+          "sha256": "6e0c99f04c0b4476341f95027fc250cc8b33aa8dfc90068c5204b076dd135d91",
+          "size": 593289
+        },
+        {
+          "name": "YungsBetterWitchHuts-26.1.2-Fabric-5.1.0.jar",
+          "fabricId": "betterwitchhuts",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-aed274ca2d47f17512f59d6ade943ff290f417a4dbfe80095360513f1aa50149.jar",
+          "sha256": "aed274ca2d47f17512f59d6ade943ff290f417a4dbfe80095360513f1aa50149",
+          "size": 300621
+        },
+        {
+          "name": "YungsBridges-26.1.2-Fabric-6.1.0.jar",
+          "fabricId": "yungsbridges",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-73f0515092a9d8b2ec43f6cd4d28bd51fb079c5d28aad89f91bad3c3e927fd43.jar",
+          "sha256": "73f0515092a9d8b2ec43f6cd4d28bd51fb079c5d28aad89f91bad3c3e927fd43",
+          "size": 264632
+        },
+        {
+          "name": "YungsCaveBiomes-26.1.2-Fabric-4.1.0.jar",
+          "fabricId": "yungscavebiomes",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3a4a68eba7ceb2f9da54c42274261b514f6ab11827ec17d59eb98d1dbe49aa25.jar",
+          "sha256": "3a4a68eba7ceb2f9da54c42274261b514f6ab11827ec17d59eb98d1dbe49aa25",
+          "size": 13152799
+        },
+        {
+          "name": "zfastnoise-1.0.39+26.1.2.jar",
+          "fabricId": "zfastnoise",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ed67fd0ee0ef3f9f0da73c1a81e9578b3050334b9ab72b80542c1686da17c26f.jar",
+          "sha256": "ed67fd0ee0ef3f9f0da73c1a81e9578b3050334b9ab72b80542c1686da17c26f",
+          "size": 478614
+        }
+      ]
+    },
+    {
+      "role": "host",
+      "mods": [
+        {
+          "name": "3d_placeable_food-3.0.2-fabric-26.1.2.jar",
+          "fabricId": "placeable_food",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-bf3dc879d2d28364b8f0f66afbf4da9a09d46b43dfeb6a315b7c081be5a3dcdc.jar",
+          "sha256": "bf3dc879d2d28364b8f0f66afbf4da9a09d46b43dfeb6a315b7c081be5a3dcdc",
+          "size": 1034995
+        },
+        {
+          "name": "additionaladditions-fabric-10.0.9.jar",
+          "fabricId": "additionaladditions",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-1af880daad97fa26dfe66340959780b550c978ce8b2635415d21991bc907d494.jar",
+          "sha256": "1af880daad97fa26dfe66340959780b550c978ce8b2635415d21991bc907d494",
+          "size": 4484306
+        },
+        {
+          "name": "animalgarden_alligatorgar-1.0.0-fabric-26.1.1-0.145.4.jar",
+          "fabricId": "animalgarden_alligatorgar",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-06dc9b6aa6dfcad99db508cbc207b73eb3161b43fbfdc878e6db392a3d27ab49.jar",
+          "sha256": "06dc9b6aa6dfcad99db508cbc207b73eb3161b43fbfdc878e6db392a3d27ab49",
+          "size": 118060
+        },
+        {
+          "name": "animalgarden_bullshark-1.1.1-fabric-26.1.1-0.145.4.jar",
+          "fabricId": "animalgarden_bullshark",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-b4ab44aadf88e1deea39639af1800b184359e42e3b0d6a681867e4993b016648.jar",
+          "sha256": "b4ab44aadf88e1deea39639af1800b184359e42e3b0d6a681867e4993b016648",
+          "size": 58983
+        },
+        {
+          "name": "animalgarden_crocodile-1.1.0-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_crocodile",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-cd27dc2aca3ce43a6b054e404c576ad57c9729105c8a5a2a6e0f92da6a69826f.jar",
+          "sha256": "cd27dc2aca3ce43a6b054e404c576ad57c9729105c8a5a2a6e0f92da6a69826f",
+          "size": 800761
+        },
+        {
+          "name": "animalgarden_fennecfox-1.0.2-fabric-26.2-0.152.2.jar",
+          "fabricId": "animalgarden_fennecfox",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-f863394dea1b1a3c32309d475bc5eaedbcb16fa7e87caefefd346855c99d5f0c.jar",
+          "sha256": "f863394dea1b1a3c32309d475bc5eaedbcb16fa7e87caefefd346855c99d5f0c",
+          "size": 200298
+        },
+        {
+          "name": "animalgarden_hippopotamus-1.0.2-fabric-26.1.1-0.145.4.jar",
+          "fabricId": "animalgarden_hippopotamus",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3670cba3c1ec9721f0a38d1314d5b341d3db85ce1df56e9cef61f8602e6ac5f4.jar",
+          "sha256": "3670cba3c1ec9721f0a38d1314d5b341d3db85ce1df56e9cef61f8602e6ac5f4",
+          "size": 310391
+        },
+        {
+          "name": "animalgarden_lion-1.0.3-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_lion",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-2334163cffb44e7742c13ae6fcd955ca32b3ee4e45940f9e036156f010c28a6b.jar",
+          "sha256": "2334163cffb44e7742c13ae6fcd955ca32b3ee4e45940f9e036156f010c28a6b",
+          "size": 491105
+        },
+        {
+          "name": "animalgarden_manatee-1.0.2-fabirc-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_manatee",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0decc703525381876a928f2a1acff4cae8e7b9698ed7cb3d29bd89730f4bd54e.jar",
+          "sha256": "0decc703525381876a928f2a1acff4cae8e7b9698ed7cb3d29bd89730f4bd54e",
+          "size": 100180
+        },
+        {
+          "name": "animalgarden_meerkat-1.0.6-fabric-26.1.2-0.145.2.jar",
+          "fabricId": "animalgarden_meerkat",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a4c8f1a59d2c346c4cfd4a2baa452237b376ece307ed259197f04b824ed49052.jar",
+          "sha256": "a4c8f1a59d2c346c4cfd4a2baa452237b376ece307ed259197f04b824ed49052",
+          "size": 74128
+        },
+        {
+          "name": "animalgarden_mouse-1.0.6-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_mouse",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-9f49b668286b07b3f965ce9065b9e49817809779d7c133e82fac81f3cfdc8df6.jar",
+          "sha256": "9f49b668286b07b3f965ce9065b9e49817809779d7c133e82fac81f3cfdc8df6",
+          "size": 110832
+        },
+        {
+          "name": "animalgarden_owl-1.2.8-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_owl",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ab93fbdf06de4e86b3b729bf7c562dd1317f6d741e59c09be9d7375c23ee0eca.jar",
+          "sha256": "ab93fbdf06de4e86b3b729bf7c562dd1317f6d741e59c09be9d7375c23ee0eca",
+          "size": 162755
+        },
+        {
+          "name": "animalgarden_porcupine-1.0.5-fabric-26.1.1-0.145.2.jar",
+          "fabricId": "animalgarden_porcupine",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5ca31dd85e966ef7a3d38873d2e82dbbc714bd7511c70d97958b80fedfc5d3cc.jar",
+          "sha256": "5ca31dd85e966ef7a3d38873d2e82dbbc714bd7511c70d97958b80fedfc5d3cc",
+          "size": 35540
+        },
+        {
+          "name": "animalgarden_prairiedog-1.0.3-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_prairiedog",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a4190dd18dc73c832482b8f58bcdd6ec135c0a389309beaffe3cae178363aca1.jar",
+          "sha256": "a4190dd18dc73c832482b8f58bcdd6ec135c0a389309beaffe3cae178363aca1",
+          "size": 147515
+        },
+        {
+          "name": "animalgarden_redpanda-1.1.3-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_redpanda",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-94a161708fc8330e4a1bea01e2a3764ba39cfa634e02a924dd3a2e7f73ab6c27.jar",
+          "sha256": "94a161708fc8330e4a1bea01e2a3764ba39cfa634e02a924dd3a2e7f73ab6c27",
+          "size": 107271
+        },
+        {
+          "name": "animalgarden_spottedhyena-1.1.1-fabric-26.2-0.152.2.jar",
+          "fabricId": "animalgarden_spottedhyena",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5abe1b4e4896b3bb3619a7858a098e63e950366cc3ea2fac722d1d8535b0f987.jar",
+          "sha256": "5abe1b4e4896b3bb3619a7858a098e63e950366cc3ea2fac722d1d8535b0f987",
+          "size": 408621
+        },
+        {
+          "name": "animalgarden_sugarglider-1.0.2-fabric-26.2-0.152.2.jar",
+          "fabricId": "animalgarden_sugarglider",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7420b2d4c4dd202e7a0edaa8bd506ef425a6bcc1b5e08a4628b2fae47d80e9d8.jar",
+          "sha256": "7420b2d4c4dd202e7a0edaa8bd506ef425a6bcc1b5e08a4628b2fae47d80e9d8",
+          "size": 232595
+        },
+        {
+          "name": "animalgarden_westerngorilla-1.0.1-fabric-26.1.2-0.145.4.jar",
+          "fabricId": "animalgarden_westerngorilla",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-4f823b0b7feaefd02788b3dc1b2fdaea24d74ac4f7bf3032234bf4621c8f5cda.jar",
+          "sha256": "4f823b0b7feaefd02788b3dc1b2fdaea24d74ac4f7bf3032234bf4621c8f5cda",
+          "size": 253659
+        },
+        {
+          "name": "animalgarden_whiterhinoceros-1.0.1-fabric-26.1.1-0.145.4.jar",
+          "fabricId": "animalgarden_whiterhinoceros",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-1dfeb6673a4745299286bcbf51812ed7f03fca81659176d4761931f065e2b06d.jar",
+          "sha256": "1dfeb6673a4745299286bcbf51812ed7f03fca81659176d4761931f065e2b06d",
+          "size": 227394
+        },
+        {
+          "name": "animalgarden-bongo-1.0.1-fabric-26.2-0.152.1.jar",
+          "fabricId": "animalgarden_bongo",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ff4634655f92b7b56607eb690479ee3af14316a7105184fb2b2e7cb08dfd6450.jar",
+          "sha256": "ff4634655f92b7b56607eb690479ee3af14316a7105184fb2b2e7cb08dfd6450",
+          "size": 111479
+        },
+        {
+          "name": "animalgarden-commonraven-1.0.1-fabric-26.2-0.152.2.jar",
+          "fabricId": "animalgarden_commonraven",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-050a7002da82c03934b54c3626cd0f7331655c5b75d5a1ae30751a4d5a52d1cd.jar",
+          "sha256": "050a7002da82c03934b54c3626cd0f7331655c5b75d5a1ae30751a4d5a52d1cd",
+          "size": 208784
+        },
+        {
+          "name": "animalgarden-harpseal-1.0.1-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_harpseal",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-6dede543c0497bfae8cf1da330c1502a9b2866afed2a8e414e1c62caa96e93dc.jar",
+          "sha256": "6dede543c0497bfae8cf1da330c1502a9b2866afed2a8e414e1c62caa96e93dc",
+          "size": 627505
+        },
+        {
+          "name": "animalgarden-narwhal-1.0.1-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_narwhal",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-138b9d5b5a7fab729d6efe94c2b1d2bb21eb3ebdd0f3c880e6cd55abf04df42e.jar",
+          "sha256": "138b9d5b5a7fab729d6efe94c2b1d2bb21eb3ebdd0f3c880e6cd55abf04df42e",
+          "size": 368031
+        },
+        {
+          "name": "animalgarden-redriverhog-1.0.0-fabric-26.1.1-0.145.2.jar",
+          "fabricId": "animalgarden_redriverhog",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-898b861878281515ebd741bc103ee5c87bdb7f470685e9f7bf506bc3f6c12b3c.jar",
+          "sha256": "898b861878281515ebd741bc103ee5c87bdb7f470685e9f7bf506bc3f6c12b3c",
+          "size": 553562
+        },
+        {
+          "name": "animalgarden-seaotter-1.1.1-fabric-26.2-0.152.2.jar",
+          "fabricId": "animalgarden_seaotter",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-8eb174fb3cf0d7736e27acfbfaa94261dc1285f55233fb0dbb0ec91ffcc7a720.jar",
+          "sha256": "8eb174fb3cf0d7736e27acfbfaa94261dc1285f55233fb0dbb0ec91ffcc7a720",
+          "size": 279687
+        },
+        {
+          "name": "animalgarden-snowleopard-1.0.1-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_snowleopard",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0ea24c6cdf6054f1e2cc4fbfee58272f55983bb804c9836dd859021e7caa1ff9.jar",
+          "sha256": "0ea24c6cdf6054f1e2cc4fbfee58272f55983bb804c9836dd859021e7caa1ff9",
+          "size": 365700
+        },
+        {
+          "name": "animalgarden-springhare-1.0.1-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_springhare",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-d26be16516996f19c7bf380702f226edd1b2420badc05d003eb62cb5efd02c4b.jar",
+          "sha256": "d26be16516996f19c7bf380702f226edd1b2420badc05d003eb62cb5efd02c4b",
+          "size": 128305
+        },
+        {
+          "name": "animalgarden-vicuna-1.0.1-fabric-26.1.1-0.145.3.jar",
+          "fabricId": "animalgarden_vicuna",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-538469ef91fbed0160fccd178df2da3dd7f5b545e0fba716bc7eb7fe367ad384.jar",
+          "sha256": "538469ef91fbed0160fccd178df2da3dd7f5b545e0fba716bc7eb7fe367ad384",
+          "size": 125066
+        },
+        {
+          "name": "animalgarden-yellowmongoose-1.0.0-fabric-26.2-0.154.0.jar",
+          "fabricId": "animalgarden_yellowmongoose",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-c5063a32a0e167718156a52a79c1cf6a06a9e7e7df7ad97380b584aa9bb67a35.jar",
+          "sha256": "c5063a32a0e167718156a52a79c1cf6a06a9e7e7df7ad97380b584aa9bb67a35",
+          "size": 140157
+        },
+        {
+          "name": "antismooth-2.0.2.jar",
+          "fabricId": "antismooth",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-27c3ad7cd3d90cdf03ac7f63de1af1a7fed76e9e058a2110af2c186cd26bb165.jar",
+          "sha256": "27c3ad7cd3d90cdf03ac7f63de1af1a7fed76e9e058a2110af2c186cd26bb165",
+          "size": 26653
+        },
+        {
+          "name": "appleskin-fabric-mc26.1.2-3.0.10.jar",
+          "fabricId": "appleskin",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-6a03ad4fcf0a2c831ebabd56fc1b5aca2463e35f289a927adfdbaaf0e944d41c.jar",
+          "sha256": "6a03ad4fcf0a2c831ebabd56fc1b5aca2463e35f289a927adfdbaaf0e944d41c",
+          "size": 181584
+        },
+        {
+          "name": "aquarius_libs-1.2.0-fabric-26.2-0.152.1.jar",
+          "fabricId": "aquarius_libs",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-6bfc32c08d5f96492a076c95d976825b948bd0df47514d8aa9c21cd9a82a10d5.jar",
+          "sha256": "6bfc32c08d5f96492a076c95d976825b948bd0df47514d8aa9c21cd9a82a10d5",
+          "size": 206811
+        },
+        {
+          "name": "BadOptimizations-2.4.1-26.1-fabric.jar",
+          "fabricId": "badoptimizations",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3eecf1754bccf6ea69fda6f707a000de9efb8562073d466bd9d186957f0ce199.jar",
+          "sha256": "3eecf1754bccf6ea69fda6f707a000de9efb8562073d466bd9d186957f0ce199",
+          "size": 61928
+        },
+        {
+          "name": "bettershields-fabric-1.10.0+mc26.1.jar",
+          "fabricId": "bettershields",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7174a8023319805bd395b957162b52e5046a3e365f4527adf5f0f343490e8a8c.jar",
+          "sha256": "7174a8023319805bd395b957162b52e5046a3e365f4527adf5f0f343490e8a8c",
+          "size": 36465
+        },
+        {
+          "name": "BiomesOPlenty-fabric-26.1.2-26.1.2.0.22.jar",
+          "fabricId": "biomesoplenty",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-02f7f0324f952aeb560a3f61e8cb175de1ed58e448e4ff08f7d0d09acc73f97c.jar",
+          "sha256": "02f7f0324f952aeb560a3f61e8cb175de1ed58e448e4ff08f7d0d09acc73f97c",
+          "size": 23075883
+        },
+        {
+          "name": "bubblellaneous-3.0.4.jar",
+          "fabricId": "mr_bubblellaneous",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-b6f6acf7709a2a072cdd1f139a92eb0ac1e8fa2c44fae852e8ebf6ee1ae45f30.jar",
+          "sha256": "b6f6acf7709a2a072cdd1f139a92eb0ac1e8fa2c44fae852e8ebf6ee1ae45f30",
+          "size": 12294323
+        },
+        {
+          "name": "Butterbee 1.0.5 - 26.1.jar",
+          "fabricId": "butterbee",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-480d888692a5ee70ef828f83b85aabae1dc14656dbe3fbfb8c32902419ea9abe.jar",
+          "sha256": "480d888692a5ee70ef828f83b85aabae1dc14656dbe3fbfb8c32902419ea9abe",
+          "size": 417484
+        },
+        {
+          "name": "c2me-fabric-mc26.1.2-0.4.0-alpha.0.31.jar",
+          "fabricId": "c2me",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-20c64d2ae384e6930fa66f64e74921aa125fb1ef715d8a77f7d22c04383196ae.jar",
+          "sha256": "20c64d2ae384e6930fa66f64e74921aa125fb1ef715d8a77f7d22c04383196ae",
+          "size": 3781815
+        },
+        {
+          "name": "camerapture-1.10.14+mc26.1.2.jar",
+          "fabricId": "camerapture",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-343a1e10002d160f74bdc3316c107dfd1dc4547d9dfab4680588e9fe727f596c.jar",
+          "sha256": "343a1e10002d160f74bdc3316c107dfd1dc4547d9dfab4680588e9fe727f596c",
+          "size": 2434754
+        },
+        {
+          "name": "cloth-config-26.1.154.jar",
+          "fabricId": "cloth-config",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-fb7a5d869ce10eaac2c2fe9ab84b4fc011a1fbfa575a93be9845a386a7f0c7d3.jar",
+          "sha256": "fb7a5d869ce10eaac2c2fe9ab84b4fc011a1fbfa575a93be9845a386a7f0c7d3",
+          "size": 1135373
+        },
+        {
+          "name": "coco-session-bridge-0.5.48.jar",
+          "fabricId": "coco_session_bridge",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-876cf69363a8253a64761560739311ba704a0576b405518cf598f8f99c7d7c1a.jar",
+          "sha256": "876cf69363a8253a64761560739311ba704a0576b405518cf598f8f99c7d7c1a",
+          "size": 16481
+        },
+        {
+          "name": "comforts-fabric-15.0.0+26.1.2.jar",
+          "fabricId": "comforts",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-2c654ee209d314c1509d983f1ea967bb38f2f72e477169b4b4eeb6e950a2a342.jar",
+          "sha256": "2c654ee209d314c1509d983f1ea967bb38f2f72e477169b4b4eeb6e950a2a342",
+          "size": 961535
+        },
+        {
+          "name": "cosycritters-0.3.3+26.1-fabric.jar",
+          "fabricId": "cosycritters",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-baa1d06127c5086f372f5a5c5cdf91f35640e7e8f9981c6527f81bc363a6148e.jar",
+          "sha256": "baa1d06127c5086f372f5a5c5cdf91f35640e7e8f9981c6527f81bc363a6148e",
+          "size": 100927
+        },
+        {
+          "name": "CustomSkinLoader_Universal-15.0.1.jar",
+          "fabricId": "customskinloader-bootstrap",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc.jar",
+          "sha256": "026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc",
+          "size": 218215
+        },
+        {
+          "name": "decorative-lamps_Fabric-26.1-1.8.1.jar",
+          "fabricId": "decorativelamps",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0c271dda10b45e27fd5f35e4aa9b2698db353df679e90769f5e6af12b888398a.jar",
+          "sha256": "0c271dda10b45e27fd5f35e4aa9b2698db353df679e90769f5e6af12b888398a",
+          "size": 1034137
+        },
+        {
+          "name": "deimos-26.1.2-fabric-2.7.jar",
+          "fabricId": "deimos",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-27a5df4cad9212c9dffed416231c0799917098355b662358b7d7f98f6eee8683.jar",
+          "sha256": "27a5df4cad9212c9dffed416231c0799917098355b662358b7d7f98f6eee8683",
+          "size": 49890
+        },
+        {
+          "name": "DistantFriends-fabric-26.1.2-0.15.1.jar",
+          "fabricId": "distantfriends",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-6caf6249708dea74356799ec3a07041eea188132cea49454a5aaf2f45d157e30.jar",
+          "sha256": "6caf6249708dea74356799ec3a07041eea188132cea49454a5aaf2f45d157e30",
+          "size": 36966
+        },
+        {
+          "name": "DistantHorizons-3.2.0-b-26.1.2-fabric-neoforge.jar",
+          "fabricId": "distanthorizons",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-56edf91220d6778c383a57d21fd57c7dc45bb775ee1e0271a2e812f91ad2728e.jar",
+          "sha256": "56edf91220d6778c383a57d21fd57c7dc45bb775ee1e0271a2e812f91ad2728e",
+          "size": 30220786
+        },
+        {
+          "name": "e4mc-fabric-6.2.0-modern.jar",
+          "fabricId": "e4mc",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-bb5c88bf50d583b8457c06b1cc3b1931932482d0df812420f042088dec0052b0.jar",
+          "sha256": "bb5c88bf50d583b8457c06b1cc3b1931932482d0df812420f042088dec0052b0",
+          "size": 661928
+        },
+        {
+          "name": "EnhancedCats-26.1.x-1.0.1.jar",
+          "fabricId": "enhanced-cats",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-634a2cc578488cfaca032ba077223937edae049e1c8efd93c8b5cc9d3474398d.jar",
+          "sha256": "634a2cc578488cfaca032ba077223937edae049e1c8efd93c8b5cc9d3474398d",
+          "size": 1476422
+        },
+        {
+          "name": "entityculling-fabric-1.10.5-mc26.1.jar",
+          "fabricId": "entityculling",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-9b4443f072ff54288d51466b8dc3f327490848ebb5b75ee8755890949aa1f4a7.jar",
+          "sha256": "9b4443f072ff54288d51466b8dc3f327490848ebb5b75ee8755890949aa1f4a7",
+          "size": 1581987
+        },
+        {
+          "name": "EuphoriaPatcher-1.9.3-r5.8.1-fabric.jar",
+          "fabricId": "euphoria_patcher",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-b42bd00c7ab6e044d21f845dedc58a4524e45643f3685bf1c2343098e74d662e.jar",
+          "sha256": "b42bd00c7ab6e044d21f845dedc58a4524e45643f3685bf1c2343098e74d662e",
+          "size": 4296552
+        },
+        {
+          "name": "ExpOre-26.1.2-0.1.jar",
+          "fabricId": "expore",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-745aab51b9e3cd4ff15af27112035ca3689e9da1a6ef5fb741f4c7834c0d8b29.jar",
+          "sha256": "745aab51b9e3cd4ff15af27112035ca3689e9da1a6ef5fb741f4c7834c0d8b29",
+          "size": 37225
+        },
+        {
+          "name": "fabric-api-0.154.2+26.1.2.jar",
+          "fabricId": "fabric-api",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-89b232cdf0c73a6e0cc8338a7520d2ac197b9cb65adca0554860b68873ea03e1.jar",
+          "sha256": "89b232cdf0c73a6e0cc8338a7520d2ac197b9cb65adca0554860b68873ea03e1",
+          "size": 2514491
+        },
+        {
+          "name": "fabric-language-kotlin-1.13.13+kotlin.2.4.10.jar",
+          "fabricId": "fabric-language-kotlin",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-34ccdacf13bb9351fe43ce61912c2e09b72364e43e787d36ba3d2d04dec75a52.jar",
+          "sha256": "34ccdacf13bb9351fe43ce61912c2e09b72364e43e787d36ba3d2d04dec75a52",
+          "size": 8076363
+        },
+        {
+          "name": "FarmersDelight-26.1-3.6.7+refabricated.jar",
+          "fabricId": "farmersdelight",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-25adee6361b37f1e559373bf6aedc90fa62b2da8ab084e3dee53f037ffcac636.jar",
+          "sha256": "25adee6361b37f1e559373bf6aedc90fa62b2da8ab084e3dee53f037ffcac636",
+          "size": 3336950
+        },
+        {
+          "name": "ferritecore-9.0.0-fabric.jar",
+          "fabricId": "ferritecore",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-213966c72ed967acc7392beb28a866fba301ff56b9976c2e7801c2db7de6bf22.jar",
+          "sha256": "213966c72ed967acc7392beb28a866fba301ff56b9976c2e7801c2db7de6bf22",
+          "size": 72677
+        },
+        {
+          "name": "filament-1.6.1+26.1.2.jar",
+          "fabricId": "filament",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-712478da465b2b104b7883d2f99687f61405716edb77fd0e9c405c57c0a7cbf1.jar",
+          "sha256": "712478da465b2b104b7883d2f99687f61405716edb77fd0e9c405c57c0a7cbf1",
+          "size": 11146175
+        },
+        {
+          "name": "fish_of_thieves-mc26.1.2-v26.1.2.2.0-fabric.jar",
+          "fabricId": "fishofthieves",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5c2958c8b6238f530fbc12594c01bd29519898e82520d3db4895e6b508202770.jar",
+          "sha256": "5c2958c8b6238f530fbc12594c01bd29519898e82520d3db4895e6b508202770",
+          "size": 1956558
+        },
+        {
+          "name": "ForgeConfigAPIPort-v26.1.5-mc26.1.x-Fabric.jar",
+          "fabricId": "forgeconfigapiport",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-271ead0c8191902aa9e13a6f79a065633ed6bf7e13be024e82c8c0abc4da4775.jar",
+          "sha256": "271ead0c8191902aa9e13a6f79a065633ed6bf7e13be024e82c8c0abc4da4775",
+          "size": 609711
+        },
+        {
+          "name": "fzzy_config-0.7.6+26.1.jar",
+          "fabricId": "fzzy_config",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-1fde1eb7ea7a0c28c6619871c9b768969368e66bff3962ebb804dfab6556b8a6.jar",
+          "sha256": "1fde1eb7ea7a0c28c6619871c9b768969368e66bff3962ebb804dfab6556b8a6",
+          "size": 2372905
+        },
+        {
+          "name": "geckolib-fabric-26.1.2-5.5.2.jar",
+          "fabricId": "geckolib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3572efb3eb8aa199a323fca78398fdf84012babaece49da340de11d40f3aace5.jar",
+          "sha256": "3572efb3eb8aa199a323fca78398fdf84012babaece49da340de11d40f3aace5",
+          "size": 696572
+        },
+        {
+          "name": "giant_cherry_blossom_bonsai_tree-1.0.0 Fabric 26.1.X.jar",
+          "fabricId": "giant_cherry_blossom_bonsai_tree",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-581d529b29d09c20df9e0041547aa553237dbdb1df6404abfc83311a0d576a65.jar",
+          "sha256": "581d529b29d09c20df9e0041547aa553237dbdb1df6404abfc83311a0d576a65",
+          "size": 74869
+        },
+        {
+          "name": "giant_natural_additions-1.0.0 Fabric 26.1.jar",
+          "fabricId": "giant_natural_additions",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7b886ee5a500bb361f03ca51e5a4ed2e8a55bdcf2bf0551524c22ad4f8bdcf38.jar",
+          "sha256": "7b886ee5a500bb361f03ca51e5a4ed2e8a55bdcf2bf0551524c22ad4f8bdcf38",
+          "size": 1336868
+        },
+        {
+          "name": "GlitchCore-fabric-26.1.2-26.1.2.0.2.jar",
+          "fabricId": "glitchcore",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-31a6e2a05b241c90e790d5f79f1afd5721a62a22dd14168549141f412cefc109.jar",
+          "sha256": "31a6e2a05b241c90e790d5f79f1afd5721a62a22dd14168549141f412cefc109",
+          "size": 334853
+        },
+        {
+          "name": "graves-fabric-26.1.2-1.0.17.jar",
+          "fabricId": "graves",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-53bc228640b955a93c4e1de356d84b626c89ede542b62cbbaa466d49fd831ea3.jar",
+          "sha256": "53bc228640b955a93c4e1de356d84b626c89ede542b62cbbaa466d49fd831ea3",
+          "size": 51478
+        },
+        {
+          "name": "haul-data-pack-v1.3.4.jar",
+          "fabricId": "mr_haul_datapack",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-30766c99c8e4fa673c7d21c18bfc515d36037a844c1fa7b9a6b46b16d7b1dc25.jar",
+          "sha256": "30766c99c8e4fa673c7d21c18bfc515d36037a844c1fa7b9a6b46b16d7b1dc25",
+          "size": 150768
+        },
+        {
+          "name": "HollowSteve-v1.0.0-Fabric+mc26.1.2.jar",
+          "fabricId": "hollowsteve",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-c37c56b84bb462e0a899704ca090668736bca81fe62812b91d42e63293dfd2eb.jar",
+          "sha256": "c37c56b84bb462e0a899704ca090668736bca81fe62812b91d42e63293dfd2eb",
+          "size": 2186471
+        },
+        {
+          "name": "ImmediatelyFast-Fabric-1.15.3+26.1.jar",
+          "fabricId": "immediatelyfast",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5329c19ea79fbeacce6c355eeb884dcdb1c5baed632c2f8e9e92d6a4ae233cba.jar",
+          "sha256": "5329c19ea79fbeacce6c355eeb884dcdb1c5baed632c2f8e9e92d6a4ae233cba",
+          "size": 310057
+        },
+        {
+          "name": "inventorymanagement-fabric-2.0.1+26.1.jar",
+          "fabricId": "inventorymanagement",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-cb7ec37d5f3213caa58178ec09598f56b3ffa268528019e3893dbff4a98e97d5.jar",
+          "sha256": "cb7ec37d5f3213caa58178ec09598f56b3ffa268528019e3893dbff4a98e97d5",
+          "size": 935263
+        },
+        {
+          "name": "inventory-trash-can-2.0.0-fabric-26.1.2.jar",
+          "fabricId": "inventory_trash_can",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-50900bed72498d7497298b3d6bbc33f17923aa84a21196963636fdaa8eec2303.jar",
+          "sha256": "50900bed72498d7497298b3d6bbc33f17923aa84a21196963636fdaa8eec2303",
+          "size": 56386
+        },
+        {
+          "name": "iris-fabric-1.11.2+mc26.1.2.jar",
+          "fabricId": "iris",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-093769901decfa18c6e2f1f71f0c4d5889b87331d0c39442f1f40074ae4b345d.jar",
+          "sha256": "093769901decfa18c6e2f1f71f0c4d5889b87331d0c39442f1f40074ae4b345d",
+          "size": 2815786
+        },
+        {
+          "name": "Jade-mc26.1-Fabric-26.1.8.jar",
+          "fabricId": "jade",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a65c132a809cc16c606efc6e6a8bd8d14fc34a4a75e2f920256487880d95a0a9.jar",
+          "sha256": "a65c132a809cc16c606efc6e6a8bd8d14fc34a4a75e2f920256487880d95a0a9",
+          "size": 1018743
+        },
+        {
+          "name": "jagmkiwis-fabric-26.1-1.2.4.jar",
+          "fabricId": "jagmkiwis",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3afb4f09629fa54eaee45ff368eeddf6af52f73208151d3592ba1e9955e02da4.jar",
+          "sha256": "3afb4f09629fa54eaee45ff368eeddf6af52f73208151d3592ba1e9955e02da4",
+          "size": 173895
+        },
+        {
+          "name": "jei-26.1.2-fabric-29.15.0.44.jar",
+          "fabricId": "jei",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ad51d6db5a91053482494e544fabd21db93ec372a1b06e7ccc660b66fcc6171c.jar",
+          "sha256": "ad51d6db5a91053482494e544fabd21db93ec372a1b06e7ccc660b66fcc6171c",
+          "size": 1615273
+        },
+        {
+          "name": "journeymap-fabric-26.1.2-6.0.0.jar",
+          "fabricId": "journeymap",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3019d925a4c5117622b5cae6e60d40bb73073b9e483ea038d1057c1401831e94.jar",
+          "sha256": "3019d925a4c5117622b5cae6e60d40bb73073b9e483ea038d1057c1401831e94",
+          "size": 4190702
+        },
+        {
+          "name": "just-hammers-fabric-26.1.2.1.jar",
+          "fabricId": "justhammers",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-552243f7819bcebf9dda031555513775d51345263e8293a2d39e735562dc8c9c.jar",
+          "sha256": "552243f7819bcebf9dda031555513775d51345263e8293a2d39e735562dc8c9c",
+          "size": 116327
+        },
+        {
+          "name": "libIPN-fabric-26.1.2-6.8.2.jar",
+          "fabricId": "libipn",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-e72cd91ee26077c9b7c7db12f8ec1db9d3547b9410f1b9290492809d12cc4683.jar",
+          "sha256": "e72cd91ee26077c9b7c7db12f8ec1db9d3547b9410f1b9290492809d12cc4683",
+          "size": 630741
+        },
+        {
+          "name": "lithium-fabric-0.24.6+mc26.1.2.jar",
+          "fabricId": "lithium",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-509e7f770c7d48bd37e9592917329db2768e4695c72a43e22c19ef64d0f9839f.jar",
+          "sha256": "509e7f770c7d48bd37e9592917329db2768e4695c72a43e22c19ef64d0f9839f",
+          "size": 911415
+        },
+        {
+          "name": "lithostitched-1.7.13-fabric-26.1.jar",
+          "fabricId": "lithostitched",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-62e5a47c66e19b407ccac15d549f0809a8e6f9df0cd4ed783ab90aa54b1dac37.jar",
+          "sha256": "62e5a47c66e19b407ccac15d549f0809a8e6f9df0cd4ed783ab90aa54b1dac37",
+          "size": 858679
+        },
+        {
+          "name": "mcw-furniture-3.4.2-mc26.1fabric.jar",
+          "fabricId": "mcwfurnitures",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-f4a2459e2167d67174b2047f4166acfee33a2c0e4100ce721122e1d3d8b1ab9b.jar",
+          "sha256": "f4a2459e2167d67174b2047f4166acfee33a2c0e4100ce721122e1d3d8b1ab9b",
+          "size": 2386998
+        },
+        {
+          "name": "mcwifipnp-2.0.0-26.1.2-fabric.jar",
+          "fabricId": "mcwifipnp",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0100341f829ec1dcb84489da6d1ff246f05e3051da2daf5365d175c1a671ff2e.jar",
+          "sha256": "0100341f829ec1dcb84489da6d1ff246f05e3051da2daf5365d175c1a671ff2e",
+          "size": 120243
+        },
+        {
+          "name": "mcw-lights-1.1.5-mc26.1fabric.jar",
+          "fabricId": "mcwlights",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5f4e71c1170a8e060d3268be6dbfd60899f2f215be249857447e23fac7b1dade.jar",
+          "sha256": "5f4e71c1170a8e060d3268be6dbfd60899f2f215be249857447e23fac7b1dade",
+          "size": 545996
+        },
+        {
+          "name": "mine-treasure-1.6.3.jar",
+          "fabricId": "mr_mine_treasure",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-bb2ff11b0c528c87234f5c2c83dfe0589fe7edf95654d3f4aba99bf2c12d196e.jar",
+          "sha256": "bb2ff11b0c528c87234f5c2c83dfe0589fe7edf95654d3f4aba99bf2c12d196e",
+          "size": 10994380
+        },
+        {
+          "name": "modmenu-18.0.0.jar",
+          "fabricId": "modmenu",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ea15f4eb0812f23ebe20cc6b0144cdd5455da0a0a0b1f21b5b733970b20a4d7e.jar",
+          "sha256": "ea15f4eb0812f23ebe20cc6b0144cdd5455da0a0a0b1f21b5b733970b20a4d7e",
+          "size": 857151
+        },
+        {
+          "name": "moogs_structures-fabric-26.1.2-3.0.4.jar",
+          "fabricId": "moogs_structures",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-9f9b4188865c9f85966e1c191c05c0144c0e565552138e5ace42465536ae80f3.jar",
+          "sha256": "9f9b4188865c9f85966e1c191c05c0144c0e565552138e5ace42465536ae80f3",
+          "size": 334326
+        },
+        {
+          "name": "MoogsNetherStructures-1.21-3.0.0.jar",
+          "fabricId": "mns",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-024bce3098fcba6b7eb55f3526708cbf9dfdf3b074da057ce72b896a2567a6af.jar",
+          "sha256": "024bce3098fcba6b7eb55f3526708cbf9dfdf3b074da057ce72b896a2567a6af",
+          "size": 3794509
+        },
+        {
+          "name": "more-chest-variants-1.5.14+26.1.1-fabric.jar",
+          "fabricId": "lolmcv",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-260d2bc223a78cb7d8cd8b60b092a6812e76459ec12da5543e1e15ba81c68d33.jar",
+          "sha256": "260d2bc223a78cb7d8cd8b60b092a6812e76459ec12da5543e1e15ba81c68d33",
+          "size": 190079
+        },
+        {
+          "name": "nemos-creatures-26.1.2-2.0.jar",
+          "fabricId": "nemos-creatures",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-4b0eb53d6937bf4d440e8bceaa3645a3463e12b0ce2c96db11f593a9ebec198f.jar",
+          "sha256": "4b0eb53d6937bf4d440e8bceaa3645a3463e12b0ce2c96db11f593a9ebec198f",
+          "size": 314199
+        },
+        {
+          "name": "packetfixer-fabric-3.3.5-26.1.2.jar",
+          "fabricId": "packetfixer",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-400f6f3d694cb69b18da14841654a20e794a83aaef3775a3a3695d0112ca826f.jar",
+          "sha256": "400f6f3d694cb69b18da14841654a20e794a83aaef3775a3a3695d0112ca826f",
+          "size": 30516
+        },
+        {
+          "name": "PatPat-1.2.6+26.1+fabric.jar",
+          "fabricId": "patpat",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-19d9709cc330d5bb9f330dd6d6850fdbc1a652fc3478afa25580fb564d85f0fc.jar",
+          "sha256": "19d9709cc330d5bb9f330dd6d6850fdbc1a652fc3478afa25580fb564d85f0fc",
+          "size": 1169014
+        },
+        {
+          "name": "peek-fabric-1.4.11+26.1.2.jar",
+          "fabricId": "peek",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0f124313a9e87949de5a150d5948d01c8d2254bfb27aa9942ad2f41bd4de324b.jar",
+          "sha256": "0f124313a9e87949de5a150d5948d01c8d2254bfb27aa9942ad2f41bd4de324b",
+          "size": 493896
+        },
+        {
+          "name": "Ping-Wheel-1.12.1-fabric-26.1.2.jar",
+          "fabricId": "pingwheel",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5c63142592d4a39bd3b69ea0304d3e61c592eeed79cce6d436bf38699e2e5561.jar",
+          "sha256": "5c63142592d4a39bd3b69ea0304d3e61c592eeed79cce6d436bf38699e2e5561",
+          "size": 152006
+        },
+        {
+          "name": "placeholder-api-3.0.0+26.1.jar",
+          "fabricId": "placeholder-api",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7c4893195ab4bec56d05a5fd4521bd9bc8619ef11aa0a5c83a426a99d2191062.jar",
+          "sha256": "7c4893195ab4bec56d05a5fd4521bd9bc8619ef11aa0a5c83a426a99d2191062",
+          "size": 254376
+        },
+        {
+          "name": "polydecorations-0.11.0+26.1.jar",
+          "fabricId": "polydecorations",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-2f7f5fe63a87e102622645fed2b9626d51d8bd109137502db8016df7fc666530.jar",
+          "sha256": "2f7f5fe63a87e102622645fed2b9626d51d8bd109137502db8016df7fc666530",
+          "size": 1757709
+        },
+        {
+          "name": "polymer-bundled-0.16.5+26.1.2.jar",
+          "fabricId": "polymer-bundled",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-2fe7f917357fe319e7fb3e7462f0e90bc5f0a028a0a650af33f726d3a9ad4fd3.jar",
+          "sha256": "2fe7f917357fe319e7fb3e7462f0e90bc5f0a028a0a650af33f726d3a9ad4fd3",
+          "size": 1384042
+        },
+        {
+          "name": "PuzzlesLib-v26.1.11-mc26.1.x-Fabric.jar",
+          "fabricId": "puzzleslib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3200b6556309eed4f47050a92bf3e6511523aa0d7e57ee998113a1f6ab786165.jar",
+          "sha256": "3200b6556309eed4f47050a92bf3e6511523aa0d7e57ee998113a1f6ab786165",
+          "size": 1143972
+        },
+        {
+          "name": "reeses-sodium-options-fabric-2.2.2+mc26.1.2.jar",
+          "fabricId": "reeses-sodium-options",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-d39fc07ccec1e2d91564ec996f439f31fe80d680231891e22d26fa35781d29f9.jar",
+          "sha256": "d39fc07ccec1e2d91564ec996f439f31fe80d680231891e22d26fa35781d29f9",
+          "size": 257107
+        },
+        {
+          "name": "reliable_gliders-fabric-26.1.2-1.3.2.jar",
+          "fabricId": "reliable_gliders",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3e544c72dda3d8ce4e33319c1a67a25189daa4f653df88defafc06417b2295c1.jar",
+          "sha256": "3e544c72dda3d8ce4e33319c1a67a25189daa4f653df88defafc06417b2295c1",
+          "size": 63454
+        },
+        {
+          "name": "ResourcefulLib-4.0.1.jar",
+          "fabricId": "resourcefullib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-18ce43a6fd581735ecc89638422cb8be3c4479d1504ea07d0b7fcb85c69b90a5.jar",
+          "sha256": "18ce43a6fd581735ecc89638422cb8be3c4479d1504ea07d0b7fcb85c69b90a5",
+          "size": 452977
+        },
+        {
+          "name": "respawnablepets-26.1-r2.jar",
+          "fabricId": "respawnablepets",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-1fe53f48d94645b9c69160b48166ffbe8d0fb8f8bf70b252a7ee44280c9f8131.jar",
+          "sha256": "1fe53f48d94645b9c69160b48166ffbe8d0fb8f8bf70b252a7ee44280c9f8131",
+          "size": 189903
+        },
+        {
+          "name": "roomfortwo-fabric-26.1.2-0.2.0.jar",
+          "fabricId": "roomfortwo",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-566b762f2b9a512dfa308d2cd2965a635631510d09d6d10fe768d43532815dfe.jar",
+          "sha256": "566b762f2b9a512dfa308d2cd2965a635631510d09d6d10fe768d43532815dfe",
+          "size": 29672
+        },
+        {
+          "name": "rusticdelight-fabric-26.1-1.6.0.jar",
+          "fabricId": "rusticdelight",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-daf6881cfbf5ec72b6a27d51006d1ab1f26f5b6fa5056f334b9656ecb3036a46.jar",
+          "sha256": "daf6881cfbf5ec72b6a27d51006d1ab1f26f5b6fa5056f334b9656ecb3036a46",
+          "size": 588266
+        },
+        {
+          "name": "ScalableLux-fabric-0.3.0-alpha.0.2-all.jar",
+          "fabricId": "scalablelux",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-49534dd464679b8f7531f3d8d05890b0b37eb0c368a8c2bbdb6003e444a6d64c.jar",
+          "sha256": "49534dd464679b8f7531f3d8d05890b0b37eb0c368a8c2bbdb6003e444a6d64c",
+          "size": 193884
+        },
+        {
+          "name": "serversidehorror-26.1.2-fabric-4.2.jar",
+          "fabricId": "serversidehorror",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0ceaf896535e0a46270aff8b99147f4d3f982a7276258731e791a22e0744195e.jar",
+          "sha256": "0ceaf896535e0a46270aff8b99147f4d3f982a7276258731e791a22e0744195e",
+          "size": 394332
+        },
+        {
+          "name": "snuffles-1.8.0+26.1.jar",
+          "fabricId": "snuffles",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-22947f0a44e3b181399a035cfdbf05a6e439e312741ca46bbb756096401fbab9.jar",
+          "sha256": "22947f0a44e3b181399a035cfdbf05a6e439e312741ca46bbb756096401fbab9",
+          "size": 406602
+        },
+        {
+          "name": "sodium-extra-fabric-0.9.3+mc26.1.2.jar",
+          "fabricId": "sodium-extra",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-08c25f25f359eeba73ed73a44be09d4b1c425ef96f8bc4eb6d7221942f90f713.jar",
+          "sha256": "08c25f25f359eeba73ed73a44be09d4b1c425ef96f8bc4eb6d7221942f90f713",
+          "size": 477705
+        },
+        {
+          "name": "sodium-fabric-0.9.1+mc26.1.2.jar",
+          "fabricId": "sodium",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-56d2eb7e8fb7f129286ab9cc89f460fe5a4cea340081ef3c50ac65bce9501b1d.jar",
+          "sha256": "56d2eb7e8fb7f129286ab9cc89f460fe5a4cea340081ef3c50ac65bce9501b1d",
+          "size": 1889595
+        },
+        {
+          "name": "sound-physics-remastered-fabric-1.5.1+26.1.2.jar",
+          "fabricId": "sound_physics_remastered",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7392f46fcf5d0921805dd4c91c9d99482d59a4ff92870c52c6da2e76798c88cb.jar",
+          "sha256": "7392f46fcf5d0921805dd4c91c9d99482d59a4ff92870c52c6da2e76798c88cb",
+          "size": 201734
+        },
+        {
+          "name": "stackable-fabric-26.1.2-2.1.1.jar",
+          "fabricId": "stackable",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-8ed8dc1128cd0c74495b7eb5bf9af7569684e6eaf979adc392f9689d7ef37d5b.jar",
+          "sha256": "8ed8dc1128cd0c74495b7eb5bf9af7569684e6eaf979adc392f9689d7ef37d5b",
+          "size": 37266
+        },
+        {
+          "name": "strawberrylib-26.1-r8.jar",
+          "fabricId": "strawberrylib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ffad5fb760e808211da89f4de27836291d02013bd732b2fbc6f4f53d6e6b318c.jar",
+          "sha256": "ffad5fb760e808211da89f4de27836291d02013bd732b2fbc6f4f53d6e6b318c",
+          "size": 1019632
+        },
+        {
+          "name": "supermartijn642configlib-1.1.8-fabric-mc26.1.jar",
+          "fabricId": "supermartijn642configlib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-f287a6ad9cdb5b152290711e65083c9d4f55e28e78a430d771557dcf769941cc.jar",
+          "sha256": "f287a6ad9cdb5b152290711e65083c9d4f55e28e78a430d771557dcf769941cc",
+          "size": 206149
+        },
+        {
+          "name": "supermartijn642corelib-1.1.21b-fabric-mc26.1.jar",
+          "fabricId": "supermartijn642corelib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-2cf9963fe04d8a322e9ffa5ae17dc36813d07069a75faba7c8631fcf57edd78b.jar",
+          "sha256": "2cf9963fe04d8a322e9ffa5ae17dc36813d07069a75faba7c8631fcf57edd78b",
+          "size": 692055
+        },
+        {
+          "name": "TerraBlender-fabric-26.1.2-26.1.2.0.3.jar",
+          "fabricId": "terrablender",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-931517520c3c3a45da7c9d5de73f840fe0f6450292fa537eb0fe58bc42636f4e.jar",
+          "sha256": "931517520c3c3a45da7c9d5de73f840fe0f6450292fa537eb0fe58bc42636f4e",
+          "size": 356065
+        },
+        {
+          "name": "Terralith_26.1_v2.6.2_Fabric.jar",
+          "fabricId": "terralith",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a07b50381d688d11893f162f2d29cd3ea4cefafd2f8ac010e700f56394747ab7.jar",
+          "sha256": "a07b50381d688d11893f162f2d29cd3ea4cefafd2f8ac010e700f56394747ab7",
+          "size": 2976106
+        },
+        {
+          "name": "the-backrooms-2.10.11.jar",
+          "fabricId": "mr_the_backrooms",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3aa11bae147f1dd53fe1ea9f7f1a19ed5ee01cf9d05298dff506c48423e53ce4.jar",
+          "sha256": "3aa11bae147f1dd53fe1ea9f7f1a19ed5ee01cf9d05298dff506c48423e53ce4",
+          "size": 204808533
+        },
+        {
+          "name": "toms_mobs-3.0.3+26.1.2.jar",
+          "fabricId": "toms_mobs",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-4cdfe924ff1b5d5fd9d8760c04c3889ad79595f9487c350cf4cf547ac87b0fe6.jar",
+          "sha256": "4cdfe924ff1b5d5fd9d8760c04c3889ad79595f9487c350cf4cf547ac87b0fe6",
+          "size": 2594127
+        },
+        {
+          "name": "trashcans-1.0.18-fabric-mc26.1.jar",
+          "fabricId": "trashcans",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-d52356472e6e0c1614813d7f8cb4462cfc00cdd7f6bf65a680a927f96397c178.jar",
+          "sha256": "d52356472e6e0c1614813d7f8cb4462cfc00cdd7f6bf65a680a927f96397c178",
+          "size": 180306
+        },
+        {
+          "name": "travelersbackpack-fabric-26.1.2-11.2.7.jar",
+          "fabricId": "travelersbackpack",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0970895d0382f882f72f9d465068394e5a42701aead4f6f812c04e529f6b24ac.jar",
+          "sha256": "0970895d0382f882f72f9d465068394e5a42701aead4f6f812c04e529f6b24ac",
+          "size": 1485535
+        },
+        {
+          "name": "ukulib-fabric-2.0.0+26.1.jar",
+          "fabricId": "ukulib",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-9847e7e32f79422fdd4f0c70988761f3014d54c46ca8452f39003359a325432b.jar",
+          "sha256": "9847e7e32f79422fdd4f0c70988761f3014d54c46ca8452f39003359a325432b",
+          "size": 445580
+        },
+        {
+          "name": "variantsandventures-fabric-1.0.26+mc26.1.2.jar",
+          "fabricId": "variantsandventures",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-99f5053d8a719a8867260167e44f129131f3c963657ba1ce4e0a737b318b24c4.jar",
+          "sha256": "99f5053d8a719a8867260167e44f129131f3c963657ba1ce4e0a737b318b24c4",
+          "size": 1093217
+        },
+        {
+          "name": "visuality-0.7.13+26.1.jar",
+          "fabricId": "visuality",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-14d44503562adc0228b0dcbbe2532b1af6d55afe9930e9565c574b3347bc70b7.jar",
+          "sha256": "14d44503562adc0228b0dcbbe2532b1af6d55afe9930e9565c574b3347bc70b7",
+          "size": 82146
+        },
+        {
+          "name": "VisualWorkbench-v26.1.0-mc26.1.x-Fabric.jar",
+          "fabricId": "visualworkbench",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-e2a846b16bb296c3dabbe7e6cb5ae5dcf3cac9234c8dda71794b058e866ab001.jar",
+          "sha256": "e2a846b16bb296c3dabbe7e6cb5ae5dcf3cac9234c8dda71794b058e866ab001",
+          "size": 66611
+        },
+        {
+          "name": "yet_another_config_lib_v3-3.9.5+26.1-fabric.jar",
+          "fabricId": "yet_another_config_lib_v3",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-836c823e18cdd9d15e7011a2e8b64f93bf4fb44e8f8e8df38d9114d265d1fe41.jar",
+          "sha256": "836c823e18cdd9d15e7011a2e8b64f93bf4fb44e8f8e8df38d9114d265d1fe41",
+          "size": 1121083
+        },
+        {
+          "name": "YungsApi-26.1.2-Fabric-6.1.0.jar",
+          "fabricId": "yungsapi",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-deb948a10cede07529e150b0df411968d76b9a2d0d460d43e9b5d29a9f18f6ad.jar",
+          "sha256": "deb948a10cede07529e150b0df411968d76b9a2d0d460d43e9b5d29a9f18f6ad",
+          "size": 1265155
+        },
+        {
+          "name": "YungsBetterCaves-26.1.2-Fabric-4.1.0.jar",
+          "fabricId": "bettercaves",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-5858f32e50519191438293659b9d3e361ff6024ce17b41cf63fb4b008c61cf0a.jar",
+          "sha256": "5858f32e50519191438293659b9d3e361ff6024ce17b41cf63fb4b008c61cf0a",
+          "size": 520457
+        },
+        {
+          "name": "YungsBetterDesertTemples-26.1.2-Fabric-5.1.0.jar",
+          "fabricId": "betterdeserttemples",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-9492f2810d264e04c834ff1db4aae999c237cf2f422fad1e98c307fedf597ac2.jar",
+          "sha256": "9492f2810d264e04c834ff1db4aae999c237cf2f422fad1e98c307fedf597ac2",
+          "size": 1040188
+        },
+        {
+          "name": "YungsBetterDungeons-26.1.2-Fabric-6.1.0.jar",
+          "fabricId": "betterdungeons",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-eef0e43c8c90cdc4e4e5b07f260d760658076c90882aef2dc5ac0d7b65999cd8.jar",
+          "sha256": "eef0e43c8c90cdc4e4e5b07f260d760658076c90882aef2dc5ac0d7b65999cd8",
+          "size": 924885
+        },
+        {
+          "name": "YungsBetterEndIsland-26.1.2-Fabric-4.1.0.jar",
+          "fabricId": "betterendisland",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-b7efd5dbe5424b28d0e9eb7dd85075476a8b3703ce8700f0ad93b59bf07d47a5.jar",
+          "sha256": "b7efd5dbe5424b28d0e9eb7dd85075476a8b3703ce8700f0ad93b59bf07d47a5",
+          "size": 527574
+        },
+        {
+          "name": "YungsBetterJungleTemples-26.1.2-Fabric-4.1.0.jar",
+          "fabricId": "betterjungletemples",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-7159542a576ed7db66b6ca4c981277b92ccb97ee24ece09bd1bbbdc26bcb0b84.jar",
+          "sha256": "7159542a576ed7db66b6ca4c981277b92ccb97ee24ece09bd1bbbdc26bcb0b84",
+          "size": 929059
+        },
+        {
+          "name": "YungsBetterMineshafts-26.1.2-Fabric-6.1.0.jar",
+          "fabricId": "bettermineshafts",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-b9a25b58825387e18c22336b78b861049d835018eddf49a3378df2d8f1eebdca.jar",
+          "sha256": "b9a25b58825387e18c22336b78b861049d835018eddf49a3378df2d8f1eebdca",
+          "size": 620958
+        },
+        {
+          "name": "YungsBetterNetherFortresses-26.1.2-Fabric-4.1.0.jar",
+          "fabricId": "betterfortresses",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-391cbda122f4009dcf30df6728fea237faea5101f0c1a39b6e5e2a5e307629af.jar",
+          "sha256": "391cbda122f4009dcf30df6728fea237faea5101f0c1a39b6e5e2a5e307629af",
+          "size": 742903
+        },
+        {
+          "name": "YungsBetterOceanMonuments-26.1.2-Fabric-5.1.0.jar",
+          "fabricId": "betteroceanmonuments",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-10e959fa768fc5a9907ac8e557895125118a1e045fb4994ac4ff9918982345f0.jar",
+          "sha256": "10e959fa768fc5a9907ac8e557895125118a1e045fb4994ac4ff9918982345f0",
+          "size": 1153976
+        },
+        {
+          "name": "YungsBetterStrongholds-26.1.2-Fabric-6.1.0.jar",
+          "fabricId": "betterstrongholds",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-6e0c99f04c0b4476341f95027fc250cc8b33aa8dfc90068c5204b076dd135d91.jar",
+          "sha256": "6e0c99f04c0b4476341f95027fc250cc8b33aa8dfc90068c5204b076dd135d91",
+          "size": 593289
+        },
+        {
+          "name": "YungsBetterWitchHuts-26.1.2-Fabric-5.1.0.jar",
+          "fabricId": "betterwitchhuts",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-aed274ca2d47f17512f59d6ade943ff290f417a4dbfe80095360513f1aa50149.jar",
+          "sha256": "aed274ca2d47f17512f59d6ade943ff290f417a4dbfe80095360513f1aa50149",
+          "size": 300621
+        },
+        {
+          "name": "YungsBridges-26.1.2-Fabric-6.1.0.jar",
+          "fabricId": "yungsbridges",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-73f0515092a9d8b2ec43f6cd4d28bd51fb079c5d28aad89f91bad3c3e927fd43.jar",
+          "sha256": "73f0515092a9d8b2ec43f6cd4d28bd51fb079c5d28aad89f91bad3c3e927fd43",
+          "size": 264632
+        },
+        {
+          "name": "YungsCaveBiomes-26.1.2-Fabric-4.1.0.jar",
+          "fabricId": "yungscavebiomes",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-3a4a68eba7ceb2f9da54c42274261b514f6ab11827ec17d59eb98d1dbe49aa25.jar",
+          "sha256": "3a4a68eba7ceb2f9da54c42274261b514f6ab11827ec17d59eb98d1dbe49aa25",
+          "size": 13152799
+        },
+        {
+          "name": "zfastnoise-1.0.39+26.1.2.jar",
+          "fabricId": "zfastnoise",
+          "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-ed67fd0ee0ef3f9f0da73c1a81e9578b3050334b9ab72b80542c1686da17c26f.jar",
+          "sha256": "ed67fd0ee0ef3f9f0da73c1a81e9578b3050334b9ab72b80542c1686da17c26f",
+          "size": 478614
+        }
+      ]
+    }
+  ],
+  "detector": {
+    "minecraftVersion": "26.1.2",
+    "markerPath": "config/coco-updater-state.json",
+    "groupTokens": [
+      "smolbird",
+      "nadicon",
+      "nazorepulgadora",
+      "cuisinho2",
+      "Shayjiji",
+      "Shukaloslw",
+      "ZoeSokolov88"
+    ],
+    "knownE4mcDomains": [
+      "hunger-napkin.cl.e4mc.link",
+      "unsterile-think.cl.e4mc.link",
+      "list-handclasp.cl.e4mc.link",
+      "despair-juvenile.cl.e4mc.link",
+      "crawling-ditto.cl.e4mc.link",
+      "unbolted-unpaid.cl.e4mc.link",
+      "skilled-lung.cl.e4mc.link",
+      "rebuff-ashy.cl.e4mc.link"
+    ],
+    "modRules": [
+      {
+        "name": "Sodium",
+        "pattern": "(?i)^sodium-.*26\\.1\\.2.*\\.jar$",
+        "weight": 15
+      },
+      {
+        "name": "Iris",
+        "pattern": "(?i)^iris-.*26\\.1\\.2.*\\.jar$",
+        "weight": 15
+      },
+      {
+        "name": "JourneyMap",
+        "pattern": "(?i)^journeymap-.*26\\.1\\.2.*\\.jar$",
+        "weight": 20
+      },
+      {
+        "name": "Distant Horizons",
+        "pattern": "(?i)^DistantHorizons-.*26\\.1\\.2.*\\.jar$",
+        "weight": 20
+      },
+      {
+        "name": "Fabric API",
+        "pattern": "(?i)^fabric-api-.*26\\.1\\.2.*\\.jar$",
+        "weight": 10
+      }
+    ]
+  }
+}
