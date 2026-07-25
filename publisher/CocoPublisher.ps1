@@ -3,8 +3,27 @@ $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
 [Windows.Forms.Application]::EnableVisualStyles()
 $runningPath=[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
-if([IO.Path]::GetExtension($runningPath)-ieq'.exe'){$root=Split-Path (Split-Path $runningPath -Parent) -Parent}else{$root=Split-Path $PSScriptRoot -Parent}
-if(-not(Test-Path (Join-Path $root 'tools\Publish-CocoRelease.ps1'))){[Windows.Forms.MessageBox]::Show('No se encontro el proyecto CocoMinecraftUpdater.','Coco Publisher');exit 1}
+$candidateRoots=@()
+if($runningPath){
+    $p1 = Split-Path $runningPath -Parent
+    if($p1){
+        $candidateRoots += (Split-Path $p1 -Parent)
+        $candidateRoots += $p1
+    }
+}
+if(Test-Path Variable:PSScriptRoot){
+    if($PSScriptRoot){
+        $candidateRoots += $PSScriptRoot
+        $p2 = Split-Path $PSScriptRoot -Parent
+        if($p2){ $candidateRoots += $p2 }
+    }
+}
+$candidateRoots += 'C:\Users\smol\Desktop\random\CocoMinecraftUpdater'
+$root=$null
+foreach($c in $candidateRoots){
+    if($c -and (Test-Path (Join-Path $c 'tools\Publish-CocoRelease.ps1'))){$root=$c;break}
+}
+if(-not$root){[Windows.Forms.MessageBox]::Show('No se encontro la carpeta del proyecto CocoMinecraftUpdater.','Coco Publisher');exit 1}
 
 $mutex=New-Object Threading.Mutex($false,'Local\CocoMinecraftPublisher')
 if(-not$mutex.WaitOne(0)){exit 0}

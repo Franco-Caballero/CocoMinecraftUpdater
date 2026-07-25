@@ -42,7 +42,7 @@ exit 3
     }
 
     $catalog=Read-CocoLauncherCatalog (Join-Path $root 'launcher\catalog.template.json')
-    $experience=@($catalog.experiences|Where-Object id -eq 'iron-lung'|Select-Object -First 1)[0]
+    $experience=@($catalog.experiences|Where-Object{$_.managementMode-eq'managed'-and$_.launch.workflow-ne'external-launcher'}|Select-Object -First 1)[0]
     $paths=[pscustomobject]@{
         SessionStatePath=$statePath
         SessionLogPath=(Join-Path $testRoot 'session.log')
