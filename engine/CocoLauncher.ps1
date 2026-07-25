@@ -1111,7 +1111,8 @@ function Set-CocoManagedInstancePreferences($Experience, [string]$InstanceRoot){
     if(-not (Test-Path -LiteralPath $voiceDir)){ New-Item -ItemType Directory -Path $voiceDir -Force | Out-Null }
     $voicePropsPath = Join-Path $voiceDir 'voicechat-client.properties'
     if(-not (Test-Path -LiteralPath $voicePropsPath -PathType Leaf)){
-        $voiceProps = "recording_device=`r`nspeaker_device=`r`nvoice_activation_type=VOICE`r`nvoice_activation_threshold=-50.0`r`nnoise_suppression=true`r`ndenoiser=RNNNOISE`r`nmicrophone_amplification=1.0`r`nshow_wizard=false`r`nwizard_completed=true`r`ncompleted_wizard=true`r`n"
+        $voiceProps = "recording_device=`r`nspeaker_device=`r`nvoice_activation_type=VOICE`r`nvoice_activation_threshold=-50.0`r`nnoise_suppression=true`r`ndenoiser=RNNNOISE`r`nmicrophone_amplification=1.0`r`nonboarding_finished=true
+show_wizard=false`r`nwizard_completed=true`r`ncompleted_wizard=true`r`n"
         [IO.File]::WriteAllText($voicePropsPath, $voiceProps, (New-Object Text.UTF8Encoding($false)))
     }
     

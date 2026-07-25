@@ -11,7 +11,7 @@ $expected=[IO.Path]::GetFullPath((Join-Path $env:TEMP 'coco-backrooms-runtime-au
 $audit=[IO.Path]::GetFullPath($AuditRoot).TrimEnd('\')
 if(-not[string]::Equals($audit,$expected,[StringComparison]::OrdinalIgnoreCase)){throw "La prueba sólo admite la raíz desechable exacta: $expected"}
 $instance=Join-Path $audit 'experiences\dread-arrenek'
-if(Get-CimInstance Win32_Process -Filter "Name='java.exe' OR Name='javaw.exe'" -ErrorAction SilentlyContinue){throw 'Cierra cualquier Minecraft/Java antes de iniciar la prueba.'}
+if(Get-CimInstance Win32_Process -Filter "Name='java.exe' OR Name='javaw.exe'" -ErrorAction SilentlyContinue|Where-Object{$_.CommandLine-notmatch'GradleDaemon'}){throw 'Cierra cualquier Minecraft/Java antes de iniciar la prueba.'}
 if(Get-NetTCPConnection -State Listen -LocalPort 25564,25565 -ErrorAction SilentlyContinue){throw 'Los puertos Coco 25564/25565 ya están ocupados.'}
 $os=Get-CimInstance Win32_OperatingSystem
 $freeGb=[math]::Round($os.FreePhysicalMemory*1KB/1GB,2)
@@ -19,7 +19,7 @@ if($freeGb-lt$RequiredFreeMemoryGb){throw "Memoria insuficiente para la prueba j
 
 $devRoot=Join-Path $audit 'dev-launcher';$engineOutput=Join-Path $devRoot 'build';$engineRoot=Join-Path $devRoot 'engine'
 New-Item -ItemType Directory -Path $engineOutput -Force|Out-Null
-$engineResult=& (Join-Path $repoRoot 'tools\New-CocoEngine.ps1') -Version '0.5.47' -OutputDirectory $engineOutput|ConvertFrom-Json
+$engineResult=& (Join-Path $repoRoot 'tools\New-CocoEngine.ps1') -Version '0.5.48' -OutputDirectory $engineOutput|ConvertFrom-Json
 if(Test-Path -LiteralPath $engineRoot){
     try{Remove-Item -LiteralPath $engineRoot -Recurse -Force -ErrorAction Stop}
     catch{$engineRoot=Join-Path $devRoot "engine-$([guid]::NewGuid().ToString('N').Substring(0,8))"}
