@@ -1591,10 +1591,10 @@ function Show-CocoUsernameDialog([string]$Suggested=''){
     $dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='FixedDialog';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.TopMost=$true
     $label=New-Object Windows.Forms.Label;$label.Location=New-Object Drawing.Point(22,20);$label.Size=New-Object Drawing.Size(370,45);$label.Text='Este nombre determina tu inventario y avances. Debe permanecer siempre igual.'
     $initialText=if(Test-CocoMinecraftUsername $Suggested){$Suggested}else{''}
-    $input=New-Object Windows.Forms.TextBox;$input.Location=New-Object Drawing.Point(25,76);$input.Size=New-Object Drawing.Size(365,25);$input.Text=$initialText;$input.MaxLength=16
+    $txtUsername=New-Object Windows.Forms.TextBox;$txtUsername.Location=New-Object Drawing.Point(25,76);$txtUsername.Size=New-Object Drawing.Size(365,25);$txtUsername.Text=$initialText;$txtUsername.MaxLength=16
     $ok=New-Object Windows.Forms.Button;$ok.Text='Guardar';$ok.Location=New-Object Drawing.Point(235,118);$ok.Size=New-Object Drawing.Size(155,34)
     $ok.Add_Click({
-        $rawVal=[string]$input.Text
+        $rawVal=[string]$txtUsername.Text
         $cleanVal=[regex]::Replace($rawVal,'[^A-Za-z0-9_]','')
         if(Test-CocoMinecraftUsername $cleanVal){
             $dialog.Tag=$cleanVal
@@ -1604,14 +1604,14 @@ function Show-CocoUsernameDialog([string]$Suggested=''){
             [Windows.Forms.MessageBox]::Show('Usa entre 3 y 16 letras, numeros o guion bajo.','Nombre invalido')|Out-Null
         }
     })
-    $input.Add_KeyDown({
+    $txtUsername.Add_KeyDown({
         param($s,$e)
         if($e.KeyCode -eq [Windows.Forms.Keys]::Enter){
             $e.SuppressKeyPress=$true
             $ok.PerformClick()
         }
     })
-    $dialog.Controls.AddRange(@($label,$input,$ok));$result=$dialog.ShowDialog($script:CocoForm);$name=[string]$dialog.Tag;$dialog.Dispose()
+    $dialog.Controls.AddRange(@($label,$txtUsername,$ok));$result=$dialog.ShowDialog($script:CocoForm);$name=[string]$dialog.Tag;$dialog.Dispose()
     if($result-ne[Windows.Forms.DialogResult]::OK-or-not(Test-CocoMinecraftUsername $name)){throw 'La configuracion del nombre local fue cancelada.'}
     $name
 }
