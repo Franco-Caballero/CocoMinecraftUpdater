@@ -85,7 +85,9 @@ function Get-CocoLauncherIdentityHint([string]$MinecraftRoot){
 }
 
 function Test-CocoMinecraftUsername([string]$Username){
-    return -not[string]::IsNullOrWhiteSpace($Username)-and$Username-match'^[A-Za-z0-9_]{3,16}$'
+    if([string]::IsNullOrWhiteSpace($Username)){return $false}
+    $clean=[regex]::Replace($Username,'[^A-Za-z0-9_]','')
+    return $clean.Length -ge 3 -and $clean.Length -le 16
 }
 
 function Read-CocoLauncherIdentityState([string]$Path){
@@ -1589,7 +1591,7 @@ function Show-CocoUsernameDialog([string]$Suggested=''){
     $dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='FixedDialog';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.TopMost=$true
     $label=New-Object Windows.Forms.Label;$label.Location=New-Object Drawing.Point(22,20);$label.Size=New-Object Drawing.Size(370,45);$label.Text='Este nombre determina tu inventario y avances. Debe permanecer siempre igual.'
     $input=New-Object Windows.Forms.TextBox;$input.Location=New-Object Drawing.Point(25,76);$input.Size=New-Object Drawing.Size(365,25);$input.Text=$Suggested;$input.MaxLength=16
-    $ok=New-Object Windows.Forms.Button;$ok.Text='Guardar';$ok.Location=New-Object Drawing.Point(235,118);$ok.Size=New-Object Drawing.Size(155,34);$ok.Add_Click({$cleanVal=[string]$input.Text; if($cleanVal){$cleanVal=$cleanVal.Trim()}; if(Test-CocoMinecraftUsername $cleanVal){$dialog.Tag=$cleanVal;$dialog.DialogResult=[Windows.Forms.DialogResult]::OK;$dialog.Close()}else{[Windows.Forms.MessageBox]::Show('Usa 3 a 16 letras, numeros o guion bajo.','Nombre invalido')|Out-Null}})
+    $ok=New-Object Windows.Forms.Button;$ok.Text='Guardar';$ok.Location=New-Object Drawing.Point(235,118);$ok.Size=New-Object Drawing.Size(155,34);$ok.Add_Click({$rawVal=[string]$input.Text; $cleanVal=[regex]::Replace($rawVal,'[^A-Za-z0-9_]',''); if(Test-CocoMinecraftUsername $cleanVal){$dialog.Tag=$cleanVal;$dialog.DialogResult=[Windows.Forms.DialogResult]::OK;$dialog.Close()}else{[Windows.Forms.MessageBox]::Show('Usa 3 a 16 letras, numeros o guion bajo.','Nombre invalido')|Out-Null}})
     $dialog.AcceptButton=$ok;$dialog.Controls.AddRange(@($label,$input,$ok));$result=$dialog.ShowDialog($script:CocoForm);$name=[string]$dialog.Tag;$dialog.Dispose()
     if($result-ne[Windows.Forms.DialogResult]::OK-or-not(Test-CocoMinecraftUsername $name)){throw 'La configuracion del nombre local fue cancelada.'}
     $name
