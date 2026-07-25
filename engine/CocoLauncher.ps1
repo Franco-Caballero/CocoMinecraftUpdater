@@ -1630,12 +1630,27 @@ function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$P
         $selected=Select-CocoMicrosoftSessionDialog $completion.Sessions
         return Save-CocoLauncherIdentityState $Paths.IdentityPath microsoft $selected.Username $selected.Uuid 'portablemc-account-choice'
     }
-    Set-CocoState 'Inicia sesion con Microsoft' 'Coco abrira el navegador oficial. No escribas tu contrasena dentro de Coco.' 24
+    Set-CocoState 'Inicia sesion con Microsoft' 'Abriendo el navegador oficial para autenticar con Microsoft...' 24
     $authLog=Join-Path $Paths.CacheRoot ("logs\launcher-auth-"+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.log')
     $auth=Start-CocoPortableMcGame $backend @('--main-dir',$Paths.MainDir,'--msa-db-file',$Paths.AccountDb,'--output','human','auth','login') $authLog
     $authFailure=''
+    $browserOpened=$false
     try{
-        while(-not$auth.HasExited){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
+        while(-not$auth.HasExited){
+            [Windows.Forms.Application]::DoEvents()
+            if(-not$browserOpened -and (Test-Path -LiteralPath $authLog)){
+                $logText=Get-Content -LiteralPath $authLog -Raw -ErrorAction SilentlyContinue
+                if($logText -match 'https?://[^\s'"]+'){
+                    $url=$matches[0]
+                    try{Start-Process $url; $browserOpened=$true}catch{}
+                }
+                if($logText -match 'code\s+([A-Z0-9]{6,12})'){
+                    $code=$matches[1]
+                    Set-CocoState 'Inicia sesion con Microsoft' ("Ingresa el codigo {0} en tu navegador ({1})" -f $code, $url) 24
+                }
+            }
+            Start-Sleep -Milliseconds 150
+        }
         if($auth.ExitCode-ne0){$authFailure=if(Test-Path $authLog){(Get-Content $authLog -Tail 25)-join' '}else{'Microsoft no completo el login.'}}
     }finally{$auth.Dispose()}
     if($authFailure){
