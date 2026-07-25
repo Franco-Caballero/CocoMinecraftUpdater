@@ -171,15 +171,15 @@ function Test-CocoZeroTierInstall([string]$MinimumVersion){
 
 function Test-CocoInboundFirewallRule([string]$Name,[int]$ExpectedPort,[string]$Subnet){
     try{
-        $rule=Get-NetFirewallRule -DisplayName $Name -ErrorAction Stop
+        $rule=Get-NetFirewallRule -DisplayName $Name -ErrorAction SilentlyContinue
+        if(-not$rule){return $false}
         $port=$rule|Get-NetFirewallPortFilter
         $address=$rule|Get-NetFirewallAddressFilter
-        $interface=$rule|Get-NetFirewallInterfaceFilter
         $remote=@($address.RemoteAddress)
         $subnetOkay=$remote-contains$Subnet-or($Subnet-eq'10.77.37.0/24'-and$remote-contains'10.77.37.0/255.255.255.0')
         return [bool]($rule.Enabled-eq'True'-and$rule.Direction-eq'Inbound'-and$rule.Action-eq'Allow'-and
             $rule.Profile.ToString()-match'Private'-and$port.Protocol-eq'TCP'-and[int]$port.LocalPort-eq$ExpectedPort-and
-            $subnetOkay-and$interface.InterfaceAlias-match'ZeroTier')
+            $subnetOkay)
     }catch{return $false}
 }
 

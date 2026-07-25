@@ -3,3 +3,5 @@ tsa-decorations
 krypton
 fastipping
 inventoryextended
+essential
+essential-container

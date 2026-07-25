@@ -163,12 +163,12 @@ try{
         Remove-NetFirewallRule -DisplayName $config.firewallRuleName -ErrorAction SilentlyContinue
         New-NetFirewallRule -DisplayName $config.firewallRuleName -Direction Inbound -Action Allow -Protocol TCP `
             -LocalPort ([int]$config.minecraftPort) -RemoteAddress $config.subnet -Profile Private `
-            -InterfaceAlias $adapter.Name -ErrorAction Stop|Out-Null
+            -ErrorAction Stop|Out-Null
         if($config.sessionPort){
             Remove-NetFirewallRule -DisplayName $config.sessionFirewallRuleName -ErrorAction SilentlyContinue
             New-NetFirewallRule -DisplayName $config.sessionFirewallRuleName -Direction Inbound -Action Allow -Protocol TCP `
                 -LocalPort ([int]$config.sessionPort) -RemoteAddress $config.subnet -Profile Private `
-                -InterfaceAlias $adapter.Name -ErrorAction Stop|Out-Null
+                -ErrorAction Stop|Out-Null
         }
     }else{
         Remove-NetFirewallRule -DisplayName $config.firewallRuleName -ErrorAction SilentlyContinue
