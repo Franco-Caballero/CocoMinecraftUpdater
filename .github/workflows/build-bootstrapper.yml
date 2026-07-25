@@ -50,7 +50,7 @@ jobs:
           [IO.File]::WriteAllText('bootstrap.generated.ps1', $template.Replace('__FULLBODY_BASE64__', $image), (New-Object Text.UTF8Encoding($true)))
           $version = [string](Get-Content release/latest.json -Raw | ConvertFrom-Json).version
           if($version -notmatch '^\d+\.\d+\.\d+$'){ throw "Version de release invalida: $version" }
-          Invoke-ps2exe -InputFile bootstrap.generated.ps1 -OutputFile dist/CocoUpdater.exe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version "$version.0" -NoConsole -IconFile reynaico.ico
+          Invoke-ps2exe -InputFile bootstrap.generated.ps1 -OutputFile dist/CocoUpdater.exe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version "$Version.0" -NoConsole -IconFile reynaico.ico
 
       - name: Upload initial distribution
         uses: actions/upload-artifact@v4

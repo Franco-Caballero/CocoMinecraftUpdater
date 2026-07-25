@@ -180,7 +180,7 @@ function Replace-Text([string]$Path,[string]$Pattern,[string]$Replacement){
 
 Replace-Text 'fabric-mod\gradle.properties' '(?m)^mod_version=.*$' "mod_version=$Version"
 Replace-Text 'fabric-mod\src\main\java\cl\coco\minecraft\CocoProtocol.java' 'PACK_VERSION = "[^"]+"' "PACK_VERSION = `"$Version`""
-Replace-Text '.github\workflows\build-bootstrapper.yml' "-Version '\d+\.\d+\.\d+\.0'" "-Version '$Version.0'"
+Replace-Text '.github\workflows\build-bootstrapper.yml' '-Version "\$(?i)version\.0"' '-Version "$Version.0"'
 
 $javaCandidates=[Collections.Generic.List[string]]::new()
 $javaCandidates.Add((Join-Path $MinecraftRoot 'runtime\java-runtime-epsilon\windows\java-runtime-epsilon\bin\java.exe'))

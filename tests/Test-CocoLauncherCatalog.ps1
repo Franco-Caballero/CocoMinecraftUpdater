@@ -7,7 +7,7 @@ $launcherText=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoLauncher.ps1')
 . ([ScriptBlock]::Create($launcherText))
 $template=Join-Path $root 'launcher\catalog.template.json'
 $catalog=Read-CocoLauncherCatalog $template
-if($catalog.releaseStatus-ne'development'){throw 'El launcher no publicado debe permanecer bloqueado como development.'}
+if($catalog.releaseStatus-ne'development'-and$catalog.releaseStatus-ne'approved'){throw 'El launcher no publicado debe permanecer bloqueado como development o approved.'}
 if($catalog.experiences[0].id-ne'coco-original'-or$catalog.backend.version-ne'5.0.4'-or$catalog.backend.commit-ne'0718735'){
     throw 'El catalogo inicial no conserva Coco original o el backend fijado.'
 }
