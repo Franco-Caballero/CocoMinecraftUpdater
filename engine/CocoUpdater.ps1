@@ -13,7 +13,8 @@ param(
     [switch]$NetworkOnly,
     [switch]$ShowOnUpdate,
     [switch]$Silent,
-    [switch]$TestSuppressUi
+    [switch]$TestSuppressUi,
+    [string]$LauncherTestRoot
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,36 +39,129 @@ $downloadRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\downloads'
 Get-ChildItem -LiteralPath $downloadRoot -Directory -Filter 'stage-*' -ErrorAction SilentlyContinue |
     Where-Object LastWriteTime -lt (Get-Date).AddDays(-1) | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 $script:CocoLogPath = Join-Path $script:CocoLogDirectory ("updater-{0}-{1}.log" -f (Get-Date -Format 'yyyyMMdd-HHmmss'),$PID)
+$script:CocoRunId=if($env:COCO_RUN_ID-match'^[a-fA-F0-9]{12,32}$'){$env:COCO_RUN_ID.ToLowerInvariant()}else{[guid]::NewGuid().ToString('N')}
+$env:COCO_RUN_ID=$script:CocoRunId
+$script:CocoRunStartedUtc=[DateTime]::UtcNow
+$script:CocoRunWatch=[Diagnostics.Stopwatch]::StartNew()
+$script:CocoTimelinePath=Join-Path $script:CocoLogDirectory "run-$($script:CocoRunId).jsonl"
+$script:CocoTimelineSequence=0
+$script:CocoLastTimelineSignature=''
+$script:CocoLastTimelineAt=[DateTime]::MinValue
+$script:CocoDiagnosticContext=[ordered]@{component='engine';mode=if($NetworkOnly){'network-only'}elseif($DetectOnly){'detect-only'}else{'updater'};role='';experienceId='';packVersion='';instanceRoot='';stage='Engine iniciado'}
 function Write-CocoLog([string]$Text) {
     try { Add-Content -LiteralPath $script:CocoLogPath -Value ("{0:o} {1}" -f (Get-Date),$Text) -Encoding UTF8 } catch { }
+}
+function Set-CocoDiagnosticContext([hashtable]$Values){
+    if(-not$Values){return}
+    foreach($key in $Values.Keys){$script:CocoDiagnosticContext[[string]$key]=[string]$Values[$key]}
+}
+function Write-CocoTimelineEvent([string]$Message,[string]$Detail,[int]$Progress,[string]$Action=''){
+    try{
+        $now=[DateTime]::UtcNow
+        $signature="$Message|$Detail|$Progress|$Action"
+        # Descargas pueden informar varios chunks por milisegundo. Conservamos
+        # cada cambio de etapa y, dentro de una misma etapa, hasta cuatro
+        # muestras por segundo: suficiente para reconstruir velocidad/progreso
+        # sin crear diagnósticos gigantes.
+        $stageChanged=$Message-ne$script:CocoDiagnosticContext.stage
+        if(-not$stageChanged-and$signature-eq$script:CocoLastTimelineSignature){return}
+        if(-not$stageChanged-and($now-$script:CocoLastTimelineAt).TotalMilliseconds-lt250){return}
+        $script:CocoDiagnosticContext.stage=$Message
+        $script:CocoTimelineSequence++
+        $event=[ordered]@{
+            timestampUtc=$now.ToString('o');elapsedMs=[int64]$script:CocoRunWatch.ElapsedMilliseconds
+            sequence=$script:CocoTimelineSequence;runId=$script:CocoRunId;component=[string]$script:CocoDiagnosticContext.component
+            mode=[string]$script:CocoDiagnosticContext.mode;role=[string]$script:CocoDiagnosticContext.role
+            experienceId=[string]$script:CocoDiagnosticContext.experienceId;packVersion=[string]$script:CocoDiagnosticContext.packVersion
+            instanceRoot=[string]$script:CocoDiagnosticContext.instanceRoot;message=$Message;detail=$Detail
+            progress=$Progress;action=$Action
+        }
+        Add-Content -LiteralPath $script:CocoTimelinePath -Value ($event|ConvertTo-Json -Compress) -Encoding UTF8
+        Write-CocoLog ("STATE {0}% | {1} | {2} | Action={3}"-f$Progress,$Message,$Detail,$Action)
+        $script:CocoLastTimelineSignature=$signature;$script:CocoLastTimelineAt=$now
+    }catch{}
+}
+function Get-CocoDiagnosticTail([string]$Path,[int]$Lines=120){
+    try{
+        if([string]::IsNullOrWhiteSpace($Path)-or-not(Test-Path -LiteralPath $Path -PathType Leaf)){return "No existe: $Path"}
+        return ((Get-Content -LiteralPath $Path -Tail $Lines -ErrorAction Stop)-join"`r`n")
+    }catch{return "No disponible ($Path): $($_.Exception.Message)"}
+}
+function Get-CocoFailureClassification([string]$Message){
+    $value=([string]$Message).ToLowerInvariant()
+    if($value-match'hash|sha-?256|tamano fijado|integridad|zip slip'){return [pscustomobject]@{Code='PACK-INTEGRITY';Action='No reutilices el archivo manualmente. Reabre Coco para que elimine/reintente la descarga verificada.'}}
+    if($value-match'espacio|disk|disco|no space'){return [pscustomobject]@{Code='DISK-SPACE';Action='Libera espacio en C: y vuelve a abrir Coco; las descargas verificadas ya completas se reutilizan.'}}
+    if($value-match'microsoft|xbox|minecraft java|auth|cuenta'){return [pscustomobject]@{Code='IDENTITY';Action='Reabre Coco y completa el navegador Microsoft, o revisa la identidad local guardada si corresponde.'}}
+    if($value-match'zerotier|adaptador|network id|autoriz|25564|red coco'){return [pscustomobject]@{Code='ZEROTIER';Action='Comprueba que el host tenga Coco/Minecraft abierto y vuelve a ejecutar; adjunta este informe si vuelve a fallar.'}}
+    if($value-match'25565|puerto|listen|socket|connection|conectar|timeout|timed out|nombre remoto'){return [pscustomobject]@{Code='CONNECTIVITY';Action='Verifica internet/host y vuelve a abrir Coco. No borres la instancia: el proceso es reanudable.'}}
+    if($value-match'access|acceso|denegado|permission|administrador|uac'){return [pscustomobject]@{Code='WINDOWS-PERMISSION';Action='Permite Coco/ZeroTier en Windows o antivirus y vuelve a ejecutar. No hace falta mover la instancia.'}}
+    if($value-match'java|forge|fabric|portablemc|minecraft.*codigo|loader'){return [pscustomobject]@{Code='RUNTIME';Action='Reabre Coco para reparar Java/loader. Conserva este TXT y el launcher log indicado.'}}
+    [pscustomobject]@{Code='INTERNAL';Action='No borres nada. Envia este TXT completo junto con la hora aproximada del fallo.'}
 }
 function Write-CocoEngineDiagnostic([Management.Automation.ErrorRecord]$Record){
     try{
         $stamp=Get-Date -Format 'yyyyMMdd-HHmmss'
+        $failureId="COCO-$($script:CocoRunId)-$('{0:D4}'-f($script:CocoTimelineSequence+1))"
         $diagnosticPath=Join-Path $script:CocoLogDirectory "engine-$stamp-$PID-error.txt"
-        $manifestVersion='Unknown'
-        try{if($manifest-and$manifest.version){$manifestVersion=[string]$manifest.version}}catch{}
-        $selectedRoot='Unknown'
-        try{if($selected-and$selected.Root){$selectedRoot=[string]$selected.Root}}catch{}
-        $updaterLog=try{if(Test-Path -LiteralPath $script:CocoLogPath){Get-Content -LiteralPath $script:CocoLogPath -Raw}else{'Updater log not created.'}}catch{"Unavailable: $($_.Exception.Message)"}
+        $classification=Get-CocoFailureClassification ([string]$Record.Exception.Message)
+        try{Write-CocoTimelineEvent 'ERROR' ("$($classification.Code): $($Record.Exception.Message)") $script:CocoCurrentProgress 'failure'}catch{}
+        $manifestVersion=try{if($manifest-and$manifest.version){[string]$manifest.version}else{'Unknown'}}catch{'Unknown'}
+        $selectedRoot=try{if($selected-and$selected.Root){[string]$selected.Root}elseif($script:CocoDiagnosticContext.instanceRoot){[string]$script:CocoDiagnosticContext.instanceRoot}else{'Unknown'}}catch{'Unknown'}
+        $contextJson=try{$script:CocoDiagnosticContext|ConvertTo-Json -Depth 6}catch{'Unavailable'}
+        $timeline=Get-CocoDiagnosticTail $script:CocoTimelinePath 300
+        $bootstrapTimeline=Get-CocoDiagnosticTail (Join-Path $script:CocoLogDirectory "bootstrap-run-$($script:CocoRunId).log") 250
+        $updaterLog=Get-CocoDiagnosticTail $script:CocoLogPath 300
         $networkStatePath=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\network\state.json'
-        $networkState=try{if(Test-Path -LiteralPath $networkStatePath){Get-Content -LiteralPath $networkStatePath -Raw}else{'Network state not created.'}}catch{"Unavailable: $($_.Exception.Message)"}
+        $networkState=Get-CocoDiagnosticTail $networkStatePath 120
         $serviceState=try{Get-Service -Name 'ZeroTierOneService' -ErrorAction Stop|Select-Object Name,Status,StartType|Format-List|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
+        $networkAdapters=try{Get-NetAdapter -IncludeHidden -ErrorAction Stop|Where-Object{$_.Name-match'ZeroTier'-or$_.InterfaceDescription-match'ZeroTier'}|Select-Object Name,Status,MacAddress,LinkSpeed,ifIndex|Format-Table -AutoSize|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
+        $ports=try{Get-NetTCPConnection -LocalPort 25564,25565 -ErrorAction Stop|Select-Object LocalAddress,LocalPort,RemoteAddress,RemotePort,State,OwningProcess|Format-Table -AutoSize|Out-String}catch{'No Coco TCP connections/listeners observed.'}
+        $javaProcesses=try{Get-CimInstance Win32_Process -Filter "Name='java.exe' OR Name='javaw.exe'" -ErrorAction Stop|Select-Object ProcessId,Name,CreationDate,CommandLine|Format-List|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
+        $cocoProcesses=try{Get-CimInstance Win32_Process -ErrorAction Stop|Where-Object{$_.Name-match'(?i)CocoUpdater|powershell|portablemc'-and$_.CommandLine-match'(?i)coco|portablemc'}|Select-Object ProcessId,ParentProcessId,Name,CreationDate,CommandLine|Format-List|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
+        $computer=try{Get-CimInstance Win32_ComputerSystem -ErrorAction Stop|Select-Object Manufacturer,Model,@{n='PhysicalMemoryGB';e={[math]::Round($_.TotalPhysicalMemory/1GB,2)}}|Format-List|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
+        $disk=try{$drive=[IO.DriveInfo]::new([IO.Path]::GetPathRoot([IO.Path]::GetFullPath($(if($selectedRoot-ne'Unknown'){$selectedRoot}else{$env:LOCALAPPDATA}))));$drive|Select-Object Name,DriveFormat,@{n='FreeGB';e={[math]::Round($_.AvailableFreeSpace/1GB,2)}},@{n='TotalGB';e={[math]::Round($_.TotalSize/1GB,2)}}|Format-List|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
+        $identityPath=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\launcher\identity.json'
+        $identity=try{if(Test-Path -LiteralPath $identityPath){$value=Get-Content -LiteralPath $identityPath -Raw|ConvertFrom-Json;[pscustomobject]@{schemaVersion=$value.schemaVersion;mode=$value.mode;username=$value.username;uuid=$value.uuid;decisionSource=$value.decisionSource;configuredAtUtc=$value.configuredAtUtc}|Format-List|Out-String}else{'No Coco launcher identity configured.'}}catch{"Unavailable: $($_.Exception.Message)"}
+        $managedStatePath=if($selectedRoot-ne'Unknown'){Join-Path $selectedRoot '.coco\managed-state.json'}else{''}
+        $managedState=Get-CocoDiagnosticTail $managedStatePath 180
+        $minecraftLogPath=if($selectedRoot-ne'Unknown'){Join-Path $selectedRoot 'logs\latest.log'}else{''}
+        $minecraftLog=Get-CocoDiagnosticTail $minecraftLogPath 220
+        $recentLauncherLogs=''
+        try{
+            foreach($file in @(Get-ChildItem -LiteralPath $script:CocoLogDirectory -File -Filter 'launcher-*.log' -ErrorAction SilentlyContinue|Sort-Object LastWriteTime -Descending|Select-Object -First 3)){
+                $recentLauncherLogs+="`r`n--- $($file.FullName) ---`r`n$(Get-CocoDiagnosticTail $file.FullName 140)`r`n"
+            }
+            if(-not$recentLauncherLogs){$recentLauncherLogs='No launcher logs found.'}
+        }catch{$recentLauncherLogs="Unavailable: $($_.Exception.Message)"}
+        $cacheSummary=try{
+            $cacheRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater'
+            $downloads=Get-ChildItem -LiteralPath (Join-Path $cacheRoot 'downloads') -Recurse -File -ErrorAction SilentlyContinue
+            $runtime=Get-ChildItem -LiteralPath (Join-Path $cacheRoot 'launcher\runtime') -Recurse -File -ErrorAction SilentlyContinue
+            [pscustomobject]@{CacheRoot=$cacheRoot;DownloadedFiles=@($downloads).Count;DownloadedBytes=(@($downloads|Measure-Object Length -Sum).Sum);RuntimeFiles=@($runtime).Count;RuntimeBytes=(@($runtime|Measure-Object Length -Sum).Sum)}|Format-List|Out-String
+        }catch{"Unavailable: $($_.Exception.Message)"}
         $report=@"
-Coco Updater engine diagnostic
+COCO LAUNCHER - DIAGNOSTICO COMPLETO
+====================================
+Failure ID: $failureId
+Run ID: $($script:CocoRunId)
 Timestamp: $((Get-Date).ToString('o'))
-Engine PID: $PID
-Minecraft PID: $MinecraftPid
-Manifest version: $manifestVersion
-Manifest path: $ManifestPath
-Engine root: $script:CocoEngineRoot
-Selected Minecraft root: $selectedRoot
-NetworkOnly / Silent / ShowOnUpdate: $NetworkOnly / $Silent / $ShowOnUpdate
-Windows: $([Environment]::OSVersion.VersionString)
-PowerShell: $($PSVersionTable.PSVersion)
-Language mode: $($ExecutionContext.SessionState.LanguageMode)
+Elapsed: $($script:CocoRunWatch.Elapsed)
+Classification: $($classification.Code)
+Recommended next action: $($classification.Action)
+Last visible stage: $($script:CocoDiagnosticContext.stage)
+Last progress: $($script:CocoCurrentProgress)%
 
-Exception.ToString():
+RESUMEN DE LA OPERACION
+-----------------------
+$contextJson
+Engine PID / Minecraft PID: $PID / $MinecraftPid
+Manifest version/path: $manifestVersion / $ManifestPath
+Engine root: $script:CocoEngineRoot
+Selected/instance root: $selectedRoot
+NetworkOnly / Silent / ShowOnUpdate: $NetworkOnly / $Silent / $ShowOnUpdate
+
+ERROR ORIGINAL
+--------------
 $($Record.Exception.ToString())
 
 ErrorRecord:
@@ -76,17 +170,73 @@ $($Record|Format-List * -Force|Out-String)
 Script stack trace:
 $($Record.ScriptStackTrace)
 
-Updater log:
+Invocation:
+$($Record.InvocationInfo.PositionMessage)
+
+TIMELINE DE ETAPAS (JSONL, orden cronologico)
+------------------------------------------------
+$timeline
+
+TIMELINE DEL BOOTSTRAP (mismo Run ID)
+------------------------------------
+$bootstrapTimeline
+
+LOG DEL ENGINE
+--------------
 $updaterLog
 
-ZeroTier service:
-$serviceState
+LOGS PORTABLEMC/MINECRAFT RECIENTES
+----------------------------------
+$recentLauncherLogs
 
+ULTIMO latest.log DE LA INSTANCIA
+---------------------------------
+$minecraftLog
+
+ESTADO DE INSTALACION ADMINISTRADA
+---------------------------------
+$managedState
+
+IDENTIDAD COCO (sin tokens ni contrasenas)
+-----------------------------------------
+$identity
+
+RED ZEROTIER
+------------
+Service:
+$serviceState
+Adapters:
+$networkAdapters
+Connections/listeners 25564/25565:
+$ports
 Last network state:
 $networkState
+
+PROCESOS RELEVANTES
+-------------------
+Java/Minecraft:
+$javaProcesses
+Coco/PortableMC:
+$cocoProcesses
+
+EQUIPO Y CAPACIDAD
+------------------
+Windows: $([Environment]::OSVersion.VersionString)
+PowerShell: $($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition))
+Language mode: $($ExecutionContext.SessionState.LanguageMode)
+64-bit OS/process: $([Environment]::Is64BitOperatingSystem) / $([Environment]::Is64BitProcess)
+$computer
+$disk
+Cache:
+$cacheSummary
+
+PRIVACIDAD
+----------
+Este informe no copia accessToken, contrasenas, cookies ni la base Microsoft de PortableMC.
+Puede contener nombre/UUID de Minecraft, rutas locales, IP ZeroTier y lineas de comando necesarias para diagnosticar.
 "@
         [IO.File]::WriteAllText($diagnosticPath,$report,(New-Object Text.UTF8Encoding($true)))
-        $desktop=[Environment]::GetFolderPath('Desktop')
+        $desktop=if($script:CocoDiagnosticDesktopOverride){[string]$script:CocoDiagnosticDesktopOverride}else{[Environment]::GetFolderPath('Desktop')}
         if($desktop-and(Test-Path -LiteralPath $desktop)){
             $desktopPath=Join-Path $desktop "CocoUpdater-error-$stamp.txt"
             [IO.File]::WriteAllText($desktopPath,$report,(New-Object Text.UTF8Encoding($true)))
@@ -95,7 +245,10 @@ $networkState
         Get-ChildItem -LiteralPath $script:CocoLogDirectory -File -Filter 'engine-*-error.txt' -ErrorAction SilentlyContinue|
             Sort-Object LastWriteTime -Descending|Select-Object -Skip 20|Remove-Item -Force -ErrorAction SilentlyContinue
         return $diagnosticPath
-    }catch{return $null}
+    }catch{
+        try{Write-CocoLog "No se pudo construir el diagnostico completo: $($_.Exception.Message)"}catch{}
+        return $null
+    }
 }
 Write-CocoLog "Inicio. EnginePid=$PID GameDir='$GameDir' MinecraftPid=$MinecraftPid RunningPackVersion='$RunningPackVersion' Silent=$Silent ShowOnUpdate=$ShowOnUpdate"
 if($global:CocoSharedUi){
@@ -112,6 +265,7 @@ if($global:CocoSharedUi){
 function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]$Visible = $true, [string]$Action = '') {
     $Progress = [Math]::Max(0, [Math]::Min(100, $Progress))
     $script:CocoCurrentProgress = $Progress
+    Write-CocoTimelineEvent $Message $Detail $Progress $Action
     if ($SessionStatePath) {
         New-Item -ItemType Directory -Path (Split-Path $SessionStatePath -Parent) -Force | Out-Null
         $tmp = "$SessionStatePath.tmp"
@@ -120,8 +274,24 @@ function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]
         Move-Item -LiteralPath $tmp -Destination $SessionStatePath -Force
     }
     if ($script:CocoForm) {
+        if($Action-eq'failure'-and('System.Drawing.Color'-as[type])){
+            $failureColor=[Drawing.Color]::FromArgb(255,92,112)
+            if($script:CocoAccent){$script:CocoAccent.BackColor=$failureColor}
+            if($script:CocoProgress){$script:CocoProgress.BackColor=$failureColor}
+            if($script:CocoTitle){$script:CocoTitle.ForeColor=$failureColor}
+        }elseif($Action-ne'failure'-and('System.Drawing.Color'-as[type])){
+            $normalColor=[Drawing.Color]::FromArgb(177,92,255)
+            if($script:CocoAccent){$script:CocoAccent.BackColor=$normalColor}
+            if($script:CocoProgress){$script:CocoProgress.BackColor=$normalColor}
+            if($script:CocoTitle){$script:CocoTitle.ForeColor=[Drawing.Color]::FromArgb(224,190,255)}
+        }
         $uiProgress=$Progress
         if($global:CocoSharedUi){$uiProgress=[Math]::Min(100,[int]($global:CocoSharedUi.BaseProgress+(100-$global:CocoSharedUi.BaseProgress)*$Progress/100))}
+        if ($Message.Length -gt 35) {
+            $script:CocoTitle.Font = New-Object Drawing.Font('Segoe UI Semibold', 15)
+        } else {
+            $script:CocoTitle.Font = New-Object Drawing.Font('Segoe UI Semibold', 22)
+        }
         $script:CocoTitle.Text=$Message; $script:CocoDetail.Text=$Detail
         $trackWidth=if($script:CocoTrack){$script:CocoTrack.ClientSize.Width}else{570}
         $script:CocoProgress.Width=[Math]::Max(4,[int]($trackWidth*$uiProgress/100))
@@ -143,26 +313,31 @@ function Show-CocoWindow {
     $f.BackColor=$key; $f.TransparencyKey=$key; $f.ForeColor=[Drawing.Color]::White
     $iconPath=Join-Path $script:CocoEngineRoot 'assets\reynaico.ico'
     if(Test-Path $iconPath){$f.Icon=New-Object Drawing.Icon($iconPath)}
-    $panel=New-Object Windows.Forms.Panel; $panel.Location=New-Object Drawing.Point(25,190); $panel.Size=New-Object Drawing.Size(780,350)
+    $panel=New-Object Windows.Forms.Panel; $panel.Location=New-Object Drawing.Point(25,190); $panel.Size=New-Object Drawing.Size(640,460)
     $panel.BackColor=[Drawing.Color]::FromArgb(22,13,37)
-    $accent=New-Object Windows.Forms.Panel; $accent.Location=New-Object Drawing.Point(0,0); $accent.Size=New-Object Drawing.Size(9,350)
+    $accent=New-Object Windows.Forms.Panel; $accent.Location=New-Object Drawing.Point(0,0); $accent.Size=New-Object Drawing.Size(9,460)
     $accent.BackColor=[Drawing.Color]::FromArgb(177,92,255); $panel.Controls.Add($accent)
-    $t=New-Object Windows.Forms.Label; $t.Location=New-Object Drawing.Point(43,42); $t.Size=New-Object Drawing.Size(590,52)
-    $t.Font=New-Object Drawing.Font('Segoe UI Semibold',22); $t.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
-    $d=New-Object Windows.Forms.Label; $d.Location=New-Object Drawing.Point(46,108); $d.Size=New-Object Drawing.Size(570,46)
+    $t=New-Object Windows.Forms.Label; $t.Location=New-Object Drawing.Point(43,36); $t.Size=New-Object Drawing.Size(570,64)
+    $t.Font=New-Object Drawing.Font('Segoe UI Semibold',18); $t.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
+    $d=New-Object Windows.Forms.Label; $d.Location=New-Object Drawing.Point(46,108); $d.Size=New-Object Drawing.Size(570,64)
     $d.Font=New-Object Drawing.Font('Segoe UI',12); $d.ForeColor=[Drawing.Color]::FromArgb(218,210,229)
-    $track=New-Object Windows.Forms.Panel; $track.Location=New-Object Drawing.Point(46,180); $track.Size=New-Object Drawing.Size(570,30)
+    $track=New-Object Windows.Forms.Panel; $track.Location=New-Object Drawing.Point(46,190); $track.Size=New-Object Drawing.Size(570,30)
     $track.BackColor=[Drawing.Color]::FromArgb(58,36,81)
     $p=New-Object Windows.Forms.Panel; $p.Location=New-Object Drawing.Point(0,0); $p.Size=New-Object Drawing.Size(4,30)
     $p.BackColor=[Drawing.Color]::FromArgb(177,92,255); $track.Controls.Add($p)
     $sparkle=[char]0x2726
-    $b=New-Object Windows.Forms.Label; $b.Text="$sparkle  COCO PACK  |  FABRIC 26.1.2"; $b.Location=New-Object Drawing.Point(46,244)
-    $b.Size=New-Object Drawing.Size(620,25); $b.Font=New-Object Drawing.Font('Segoe UI Semibold',10); $b.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
+    $b=New-Object Windows.Forms.Label; $b.Text="$sparkle  COCO PACK  |  FABRIC 26.1.2"; $b.Location=New-Object Drawing.Point(46,240)
+    $b.Size=New-Object Drawing.Size(570,25); $b.Font=New-Object Drawing.Font('Segoe UI Semibold',10); $b.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
     $panel.Controls.AddRange(@($t,$d,$track,$b))
     $artPath=Join-Path $script:CocoEngineRoot 'assets\fullbody.png'
     $art=New-Object Windows.Forms.PictureBox; $art.Location=New-Object Drawing.Point(675,5); $art.Size=New-Object Drawing.Size(380,720)
     $art.SizeMode='Zoom'; $art.BackColor=[Drawing.Color]::Transparent
-    if(Test-Path $artPath){$art.Image=[Drawing.Image]::FromFile($artPath)}
+    if(Test-Path $artPath){
+        try{
+            $bytes=[IO.File]::ReadAllBytes($artPath); $ms=[IO.MemoryStream]::new($bytes)
+            $art.Image=[Drawing.Image]::FromStream($ms)
+        }catch{$art.Image=$null}
+    }
     $f.Controls.Add($panel); $f.Controls.Add($art); $art.BringToFront()
     $work=[Windows.Forms.Screen]::PrimaryScreen.WorkingArea
     $scale=[Math]::Min(1.0,[Math]::Min($work.Width/1080.0,$work.Height/740.0))
@@ -471,7 +646,17 @@ function Disable-TLauncherSkinCape([string]$Root,$Manifest){
     return $repaired
 }
 
-function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$ExpectedHash, [int64]$CompletedBytes = 0, [int64]$AllBytes = 0) {
+function Download-VerifiedFile(
+    [string]$Url,
+    [string]$Destination,
+    [string]$ExpectedHash,
+    [int64]$CompletedBytes = 0,
+    [int64]$AllBytes = 0,
+    [string]$ActivityTitle='Descargando archivos',
+    [string]$DetailPrefix='',
+    [ValidateRange(0,100)][int]$ProgressStart=5,
+    [ValidateRange(0,100)][int]$ProgressEnd=75
+) {
     $partial = "$Destination.partial"
     for ($attempt=1; $attempt -le 4; $attempt++) {
         Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
@@ -485,11 +670,14 @@ function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$Expe
             try {
                 while (($read=$input.Read($buffer,0,$buffer.Length)) -gt 0) {
                     $output.Write($buffer,0,$read); $received += $read
-                    $percent=if($AllBytes -gt 0){5+[int](70*($CompletedBytes+$received)/$AllBytes)}elseif($total -gt 0){5+[int](70*$received/$total)}else{25}
+                    $span=[Math]::Max(0,$ProgressEnd-$ProgressStart)
+                    $percent=if($AllBytes -gt 0){$ProgressStart+[int]($span*($CompletedBytes+$received)/$AllBytes)}elseif($total -gt 0){$ProgressStart+[int]($span*$received/$total)}else{$ProgressStart+[int]($span/2)}
+                    $percent=[Math]::Max($ProgressStart,[Math]::Min($ProgressEnd,$percent))
                     $speed=if($watch.Elapsed.TotalSeconds -gt 0){$received/$watch.Elapsed.TotalSeconds}else{0}
                     $eta=if($speed -gt 0 -and $total -gt 0){[TimeSpan]::FromSeconds(($total-$received)/$speed)}else{[TimeSpan]::Zero}
-                    $detail='{0:N1} / {1:N1} MB  |  {2:N1} MB/s  |  faltan ~{3:mm\:ss}' -f ($received/1MB),($total/1MB),($speed/1MB),$eta
-                    Set-CocoState 'Descargando mods' $detail $percent
+                    $transfer='{0:N1} / {1:N1} MB  |  {2:N1} MB/s  |  faltan ~{3:mm\:ss}' -f ($received/1MB),($total/1MB),($speed/1MB),$eta
+                    $detail=if($DetailPrefix){"$DetailPrefix`r`n$transfer"}else{$transfer}
+                    Set-CocoState $ActivityTitle $detail $percent
                 }
             } finally { if($output){$output.Dispose()}; if($input){$input.Dispose()}; if($response){$response.Dispose()} }
             if ((Get-Sha256 $partial) -ne $ExpectedHash.ToLowerInvariant()) { throw 'La descarga no coincide con el SHA-256 publicado.' }
@@ -499,7 +687,8 @@ function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$Expe
             Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
             if($attempt -eq 4){throw}
             Write-CocoLog "Descarga fallida (intento $attempt): $($_.Exception.Message)"
-            Set-CocoState 'Reintentando descarga' "Intento $($attempt + 1) de 4..." ([Math]::Max(5,$script:CocoCurrentProgress))
+            $retryPrefix=if($DetailPrefix){$DetailPrefix+' | '}else{''}
+            Set-CocoState 'Reintentando descarga' ("{0}Intento {1} de 4; se conserva todo archivo ya verificado."-f$retryPrefix,($attempt+1)) ([Math]::Max($ProgressStart,$script:CocoCurrentProgress))
             Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))
         }
     }
@@ -897,6 +1086,13 @@ function Show-CocoPreview {
     Start-Sleep -Seconds 5
 }
 
+$launcherLibrary=Join-Path $script:CocoEngineRoot 'CocoLauncher.ps1'
+if(Test-Path -LiteralPath $launcherLibrary){
+    $launcherSource=[IO.File]::ReadAllText($launcherLibrary,[Text.Encoding]::UTF8)
+    $launcherBlock=[ScriptBlock]::Create($launcherSource)
+    . $launcherBlock
+}
+
 $networkLibrary=Join-Path $script:CocoEngineRoot 'CocoNetwork.ps1'
 if(Test-Path -LiteralPath $networkLibrary){
     # El bootstrapper ejecuta el engine desde memoria para funcionar incluso
@@ -940,7 +1136,30 @@ try {
     $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
     if (-not $manifest.packId -or -not $manifest.version -or -not $manifest.detector) { throw 'Manifiesto incompleto.' }
     Ensure-BootstrapUpdate $manifest
+    if(-not$TestSuppressUi-and(Get-Command Initialize-CocoLauncherMigration -ErrorAction SilentlyContinue)){
+        $canonical=$env:COCO_BOOTSTRAPPER_EXE
+        if($canonical){Initialize-CocoLauncherMigration $canonical (-not$NetworkOnly)}
+    }
     if($Preview){Show-CocoPreview;exit 0}
+
+    # Una ejecucion manual del mismo EXE canónico ya es Coco Launcher. Los
+    # modos invocados por Bridge, Publisher, pruebas o recuperación conservan
+    # exactamente el engine updater anterior.
+    $manualOriginalRunning=$false
+    if(-not$Silent-and-not$TestSuppressUi-and-not$DetectOnly-and-not$NetworkOnly-and[string]::IsNullOrWhiteSpace($GameDir)-and$MinecraftPid-le0){
+        $manualOriginalRunning=@(Get-RunningMinecraftInstances $manifest|Where-Object Compatible).Count-gt0
+    }
+    $manualLauncher=-not$Silent-and-not$TestSuppressUi-and-not$DetectOnly-and-not$NetworkOnly-and-not$manualOriginalRunning-and
+        [string]::IsNullOrWhiteSpace($GameDir)-and$MinecraftPid-le0-and
+        [string]::IsNullOrWhiteSpace($SessionStatePath)-and-not$automaticFullCheck
+    $catalogPath=Join-Path $script:CocoEngineRoot 'launcher\catalog.json'
+    if($manualLauncher-and(Test-Path -LiteralPath $catalogPath -PathType Leaf)-and(Get-Command Start-CocoLauncherUi -ErrorAction SilentlyContinue)){
+        $launcherCandidates=@(Get-CandidateRoots|ForEach-Object{Get-CandidateScore $_ $manifest @()}|Sort-Object @{Expression='Score';Descending=$true},@{Expression='Root';Descending=$false})
+        $legacyRoot=if($launcherCandidates.Count){[string]$launcherCandidates[0].Root}else{Join-Path $env:APPDATA '.minecraft'}
+        Write-CocoLog "Modo Coco Launcher para experiencias administradas. LegacyRoot de deteccion de identidad='$legacyRoot'"
+        Start-CocoLauncherUi $manifest $legacyRoot $LauncherTestRoot
+        exit 0
+    }
 
     if (-not $Silent) { Show-CocoWindow }
     Set-CocoState 'Buscando Minecraft' 'Identificando automaticamente la instalacion correcta...' 6
@@ -1000,7 +1219,7 @@ try {
     $runningClientOutdated=$role-eq'client'-and($explicitRunningVersionOutdated-or$runningPredatesInstalledPack)
     $clientUpdateRequired=-not$NetworkOnly-and$role-eq'client'-and(-not$diskCurrent-or$runningClientOutdated)
     if($clientUpdateRequired){
-        if(-not$script:CocoForm){Show-CocoWindow}
+        if(-not$script:CocoForm-and(-not$Silent-or$ShowOnUpdate-or$automaticFullCheck)){Show-CocoWindow}
         Set-CocoState 'Actualizacion encontrada' 'Intentando cerrar Minecraft automaticamente...' 2 $true 'closeMinecraft'
         Write-CocoLog "Cierre de Minecraft previo a red. DiskCurrent=$diskCurrent RunningClientOutdated=$runningClientOutdated"
         if(Test-MinecraftRunning $selected.Root){[void](Request-ClientMinecraftClose $selected.Root)}
@@ -1080,7 +1299,8 @@ try {
     elseif($friendly -match '(?i)conectar|connection|nombre remoto|timed out'){$friendly='No pudimos completar la descarga. Revisa internet y vuelve a intentarlo.'}
     elseif($friendly.Length-gt150){$friendly=$friendly.Substring(0,147)+'...'}
     if($diagnosticPath){$friendly+="`nEnvia por Discord: $([IO.Path]::GetFileName($diagnosticPath))"}
-    Set-CocoState 'No se pudo actualizar' $friendly 0
+    if(Get-Command Get-CocoFailureClassification -ErrorAction SilentlyContinue){$kind=Get-CocoFailureClassification ([string]$_.Exception.Message);$friendly+="`nCodigo: $($kind.Code) | $($kind.Action)"}
+    Set-CocoState 'NO SE PUDO COMPLETAR COCO' $friendly 0 $true 'failure'
     Start-Sleep -Seconds 10
     exit 1
 } finally {

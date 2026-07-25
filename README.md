@@ -2,6 +2,8 @@
 
 Coco Minecraft Updater distribuye y mantiene un pack Fabric para Minecraft Java en Windows. Sincroniza JARs de forma transaccional, prepara una LAN virtual privada mediante ZeroTier y mantiene un endpoint estable para un mundo alojado con **Abrir en LAN**, sin port forwarding.
 
+> **Rama de desarrollo:** el mismo EXE incorpora Coco Launcher para experiencias multi-instancia, pero todavía no está publicado. Con una partida administrada activa prepara y abre ese juego; sin ella ejecuta el updater clásico de Coco original. Coco original continúa abriéndose mediante el launcher oficial/TLauncher. Descarga fría, roles host/cliente, autoingreso, servicio local y recuperación `servers.dat` ya están comprobados; mundo/LAN multiusuario, identidades reales y migración visible desde 0.5.47 siguen siendo puertas de publicación. El diseño, auditoría etapa por etapa y estado exacto viven en [`docs/CocoLauncherImplementation.md`](docs/CocoLauncherImplementation.md). Las instrucciones operativas siguientes continúan describiendo producción 0.5.47.
+
 ## Capacidades
 
 - Detección automática de la instancia mediante `--gameDir`.
@@ -68,4 +70,4 @@ El Publisher exige partir de `origin/main` sincronizado y usar exactamente la ve
 - [Operación, publicación y soporte](docs/OPERACION.md)
 - [Canal estable y arquitectura de GitHub](docs/GITHUB_SETUP.md)
 
-Los diagnósticos se almacenan en `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`. Tanto los fallos tempranos del bootstrap como los errores posteriores del engine dejan además `CocoUpdater-error-*.txt` en el Escritorio para enviarlo por soporte.
+Los diagnósticos se almacenan en `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`. Bootstrap y engine comparten un Run ID y registran una cronología de etapas; los errores dejan además `CocoUpdater-error-*.txt` en el Escritorio con clasificación, contexto del pack, logs, red/procesos/capacidad y una acción recomendada, sin copiar tokens o contraseñas. Las experiencias nuevas deben pasar [`docs/ModpackCompatibilityChecklist.md`](docs/ModpackCompatibilityChecklist.md).

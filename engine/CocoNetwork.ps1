@@ -169,23 +169,30 @@ function Test-CocoZeroTierInstall([string]$MinimumVersion){
     }catch{return $false}
 }
 
-function Test-CocoHostFirewall($NetworkConfig){
+function Test-CocoInboundFirewallRule([string]$Name,[int]$ExpectedPort,[string]$Subnet){
     try{
-        $rule=Get-NetFirewallRule -DisplayName ([string]$NetworkConfig.firewallRuleName) -ErrorAction Stop
+        $rule=Get-NetFirewallRule -DisplayName $Name -ErrorAction Stop
         $port=$rule|Get-NetFirewallPortFilter
         $address=$rule|Get-NetFirewallAddressFilter
         $interface=$rule|Get-NetFirewallInterfaceFilter
         $remote=@($address.RemoteAddress)
-        $subnetOkay=$remote-contains([string]$NetworkConfig.subnet)-or
-            ([string]$NetworkConfig.subnet-eq'10.77.37.0/24'-and$remote-contains'10.77.37.0/255.255.255.0')
+        $subnetOkay=$remote-contains$Subnet-or($Subnet-eq'10.77.37.0/24'-and$remote-contains'10.77.37.0/255.255.255.0')
         return [bool]($rule.Enabled-eq'True'-and$rule.Direction-eq'Inbound'-and$rule.Action-eq'Allow'-and
-            $rule.Profile.ToString()-match'Private'-and$port.Protocol-eq'TCP'-and[int]$port.LocalPort-eq[int]$NetworkConfig.minecraftPort-and
+            $rule.Profile.ToString()-match'Private'-and$port.Protocol-eq'TCP'-and[int]$port.LocalPort-eq$ExpectedPort-and
             $subnetOkay-and$interface.InterfaceAlias-match'ZeroTier')
     }catch{return $false}
 }
 
+function Test-CocoHostFirewall($NetworkConfig){
+    if(-not(Test-CocoInboundFirewallRule ([string]$NetworkConfig.firewallRuleName) ([int]$NetworkConfig.minecraftPort) ([string]$NetworkConfig.subnet))){return $false}
+    if($NetworkConfig.sessionPort){return Test-CocoInboundFirewallRule ([string]$NetworkConfig.sessionFirewallRuleName) ([int]$NetworkConfig.sessionPort) ([string]$NetworkConfig.subnet)}
+    return $true
+}
+
 function Test-CocoClientFirewallClean($NetworkConfig){
-    return -not[bool](Get-NetFirewallRule -DisplayName ([string]$NetworkConfig.firewallRuleName) -ErrorAction SilentlyContinue)
+    if(Get-NetFirewallRule -DisplayName ([string]$NetworkConfig.firewallRuleName) -ErrorAction SilentlyContinue){return $false}
+    if($NetworkConfig.sessionFirewallRuleName-and(Get-NetFirewallRule -DisplayName ([string]$NetworkConfig.sessionFirewallRuleName) -ErrorAction SilentlyContinue)){return $false}
+    return $true
 }
 
 function Get-CocoPeerMode($NetworkConfig,[string]$Role){
@@ -229,6 +236,8 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
         leaveNetworkIds=@($NetworkConfig.leaveNetworkIds)
         firewallRuleName=[string]$NetworkConfig.firewallRuleName
         minecraftPort=[int]$NetworkConfig.minecraftPort;subnet=[string]$NetworkConfig.subnet
+        sessionPort=if($NetworkConfig.sessionPort){[int]$NetworkConfig.sessionPort}else{0}
+        sessionFirewallRuleName=[string]$NetworkConfig.sessionFirewallRuleName
         authorizationTimeoutSeconds=if($NetworkConfig.authorizationTimeoutSeconds){[int]$NetworkConfig.authorizationTimeoutSeconds}else{120}
     }
     $payload|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $configPath -Encoding UTF8
@@ -318,6 +327,7 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
     if($config.networkId-ne'58997fc5f3c0c001'){throw 'El manifiesto contiene un Network ID Coco inesperado.'}
     if($config.hostAddress-notmatch'^10\.77\.37\.1$'-or$config.subnet-ne'10.77.37.0/24'){throw 'El manifiesto contiene una red Coco inesperada.'}
     if([int]$config.minecraftPort-ne25565){throw 'El manifiesto contiene un puerto Coco inesperado.'}
+    if(($config.sessionPort-or$config.sessionFirewallRuleName)-and([int]$config.sessionPort-ne25564-or$config.sessionFirewallRuleName-ne'Coco Launcher - ZeroTier TCP 25564')){throw 'El manifiesto contiene un puerto de sesion Coco inesperado.'}
     if($config.installer.version-ne'1.16.2'-or
         $config.installer.url-ne'https://download.zerotier.com/RELEASES/1.16.2/dist/ZeroTier%20One.msi'-or
         ([string]$config.installer.sha256).ToLowerInvariant()-ne'42514072b0fe44b8f66e0395bcd23a0b1d1642c28ed00831f1527b2f41b14670'){

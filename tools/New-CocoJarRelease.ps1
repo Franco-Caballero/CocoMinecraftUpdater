@@ -104,6 +104,7 @@ $manifest=[ordered]@{
         ipPoolStart='10.77.37.2';ipPoolEnd='10.77.37.254'
         minecraftPort=25565;authorizationTimeoutSeconds=120
         firewallRuleName='Coco Minecraft - ZeroTier TCP 25565'
+        sessionPort=25564;sessionFirewallRuleName='Coco Launcher - ZeroTier TCP 25564'
         leaveNetworkIds=@('154a350c866b8062')
         installer=[ordered]@{
             version='1.16.2'

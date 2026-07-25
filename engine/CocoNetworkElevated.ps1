@@ -60,6 +60,9 @@ try{
     if([int]$config.minecraftPort-ne25565-or$config.subnet-ne'10.77.37.0/24'-or$config.firewallRuleName-ne'Coco Minecraft - ZeroTier TCP 25565'){
         throw 'La configuracion elevada contiene una regla de red inesperada.'
     }
+    if(($config.sessionPort-or$config.sessionFirewallRuleName)-and([int]$config.sessionPort-ne25564-or$config.sessionFirewallRuleName-ne'Coco Launcher - ZeroTier TCP 25564')){
+        throw 'La configuracion elevada contiene una regla de sesion inesperada.'
+    }
     if($config.minimumVersion-ne'1.16.2'-or([string]$config.installerSha256).ToLowerInvariant()-ne'42514072b0fe44b8f66e0395bcd23a0b1d1642c28ed00831f1527b2f41b14670'){
         throw 'La configuracion elevada contiene un instalador ZeroTier inesperado.'
     }
@@ -161,8 +164,15 @@ try{
         New-NetFirewallRule -DisplayName $config.firewallRuleName -Direction Inbound -Action Allow -Protocol TCP `
             -LocalPort ([int]$config.minecraftPort) -RemoteAddress $config.subnet -Profile Private `
             -InterfaceAlias $adapter.Name -ErrorAction Stop|Out-Null
+        if($config.sessionPort){
+            Remove-NetFirewallRule -DisplayName $config.sessionFirewallRuleName -ErrorAction SilentlyContinue
+            New-NetFirewallRule -DisplayName $config.sessionFirewallRuleName -Direction Inbound -Action Allow -Protocol TCP `
+                -LocalPort ([int]$config.sessionPort) -RemoteAddress $config.subnet -Profile Private `
+                -InterfaceAlias $adapter.Name -ErrorAction Stop|Out-Null
+        }
     }else{
         Remove-NetFirewallRule -DisplayName $config.firewallRuleName -ErrorAction SilentlyContinue
+        if($config.sessionFirewallRuleName){Remove-NetFirewallRule -DisplayName $config.sessionFirewallRuleName -ErrorAction SilentlyContinue}
     }
 
     if($config.mode-eq'client'){
@@ -187,7 +197,7 @@ try{
         try{
             $peers=@(Invoke-CliJson $cli @('-j','listpeers'))
             $controller=$config.networkId.Substring(0,10)
-            $peer=@($peers|Where-Object address -eq$controller|Select-Object -First 1)[0]
+            $peer=@($peers|Where-Object address -eq $controller|Select-Object -First 1)[0]
             if($peer){$peerMode=if($peer.tunneled-or-not@($peer.paths|Where-Object active).Count){'RELAY'}else{'DIRECT'}}
         }catch{}
     }

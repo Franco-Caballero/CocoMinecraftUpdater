@@ -39,6 +39,11 @@ try{
     }
     $engineSource=Join-Path $sourceRoot 'engine-content';New-Item -ItemType Directory -Path $engineSource|Out-Null
     'param()'|Set-Content (Join-Path $engineSource 'CocoUpdater.ps1') -Encoding UTF8
+    'param()'|Set-Content (Join-Path $engineSource 'CocoLauncher.ps1') -Encoding UTF8
+    'param()'|Set-Content (Join-Path $engineSource 'CocoSessionService.ps1') -Encoding UTF8
+    New-Item -ItemType Directory -Path (Join-Path $engineSource 'launcher\experiences') -Force|Out-Null
+    [ordered]@{experiences=@([ordered]@{id='test-pack';managementMode='managed';pack=[ordered]@{lockPath='launcher/experiences/iron-lung.lock.json'}})}|ConvertTo-Json -Depth 6|Set-Content (Join-Path $engineSource 'launcher\catalog.json') -Encoding UTF8
+    '{}'|Set-Content (Join-Path $engineSource 'launcher\experiences\iron-lung.lock.json') -Encoding UTF8
     $engineZip=Join-Path $sourceRoot 'coco-engine-9.9.9.zip';Compress-Archive -Path (Join-Path $engineSource '*') -DestinationPath $engineZip
     $engineHash=(Get-FileHash -LiteralPath $engineZip -Algorithm SHA256).Hash.ToLowerInvariant()
     $manifestPath=Join-Path $sourceRoot 'latest.json'

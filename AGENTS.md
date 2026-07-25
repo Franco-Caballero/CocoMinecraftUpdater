@@ -1,6 +1,6 @@
 # AGENTS.md — contexto canónico de CocoMinecraftUpdater
 
-Última revisión: 2026-07-19 (America/Santiago).
+Última revisión: 2026-07-22 (America/Santiago).
 
 Este archivo contiene el estado operativo necesario para trabajar en `C:\Users\smol\Desktop\random\CocoMinecraftUpdater`. Antes de intervenir, verificar archivos, procesos y logs: los valores observados pueden cambiar durante una sesión. Si cambia la red, el updater, la versión publicada o una decisión operativa, actualizar también `README.md`, `docs\OPERACION.md` y `docs\GITHUB_SETUP.md` cuando corresponda.
 
@@ -86,14 +86,16 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 ## CocoMinecraftUpdater
 
-Estado publicado:
+Estado publicado verificado el 2026-07-22:
 
-- Release estable: **0.5.44**
-- Host: 0.5.44, rol `host`
-- Bridge: `coco-session-bridge-0.5.44.jar`
-- EXE canónico: 0.5.44.0, con hash idéntico al manifiesto y sin helpers pendientes tras la verificación posterior.
-- Manifiesto: 132 mods de cliente y 136 de host
+- Release estable: **0.5.47**
+- Host: 0.5.47, rol `host`
+- Bridge: `coco-session-bridge-0.5.47.jar`
+- EXE canónico: 0.5.47.0, con hash idéntico al manifiesto y sin helpers pendientes.
+- Manifiesto: 134 mods de cliente y 138 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
+
+Proyecto en desarrollo, todavía no publicado: el EXE canónico incorpora un launcher para experiencias Fabric/Forge aisladas. En clientes, una sesión administrada activa prepara y abre automáticamente ese juego; sin sesión ejecuta el updater clásico de Coco original. El mundo original nunca se lanza mediante PortableMC: continúa abriéndose con el launcher oficial/TLauncher y Bridge conserva el chequeo dentro del juego. La fuente canónica de alcance, decisiones, fases, riesgos y avance es `docs\CocoLauncherImplementation.md`; toda experiencia nueva debe pasar `docs\ModpackCompatibilityChecklist.md`. Iron Lung pasó instalación fría/reanudable, autorreparación, arranques, autoingreso hasta el endpoint, lectura real de `servers.dat`, creación de mundo y LAN local 25565; sin embargo, **sólo su runtime está parcialmente aprobado**. El ZIP no incluye mundo/quests y el mapa externo del submarino disponible es 1.21.8–1.21.11, no 1.20.1; la experiencia jugable queda bloqueada y el log de Organisorium requiere auditoría. Essential está excluido porque sus prompts/update/TOS bloqueaban el arranque y ningún mod lo requiere; mantener esa exclusión declarativa y no hardcodear packs en el engine. UI launcher usa etapas, bytes/archivos y heartbeat de runtime; cada ejecución genera Run ID/timeline y los fallos crean un TXT del Escritorio clasificado sin copiar tokens. El lifecycle host con 25564/25565 y el cliente supervisor pasan pruebas controladas; Coco permanece oculto hasta que Minecraft cierre, serializa ZeroTier y verifica que el servicio de sesión escuche. Faltan escenario definitivo/LAN multiusuario, migración visible desde 0.5.47 e identidades reales. No usar VM por decisión del host. `launcher\catalog.template.json` debe permanecer en `releaseStatus=development` hasta completar esas puertas; el Publisher bloquea cualquier publicación mientras no sea `approved`. No mover la instalación viva ni el mundo `coco`.
 
 Incidente resuelto el 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. 0.5.36 publicó el helper correcto y convirtió la carpeta `mods` en autoritativa, retirando `inventorysorter`; la verificación posterior descubrió que el Publisher intentaba descargar el bootstrap desde el release aún borrador y recibía 404. 0.5.37 instala el EXE compilado localmente antes de actualizar el host. Se verificaron release público, host, Bridge, Publisher, EXE canónico/hash, manifiesto, Git y ausencia de Minecraft abierto.
 

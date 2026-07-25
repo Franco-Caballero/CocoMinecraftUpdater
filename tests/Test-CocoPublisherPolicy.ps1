@@ -18,6 +18,9 @@ try{
     if($publisherText-notmatch'Install-CocoPublishedBootstrapLocally\s+\$bootstrapExe\s+\$localManifest\.bootstrap\.sha256'){
         throw 'El Publisher no instala el bootstrap local antes de actualizar el host con un release borrador.'
     }
+    if($publisherText-notmatch"releaseStatus-ne'approved'"-or$publisherText-notmatch'Publicacion launcher bloqueada'){
+        throw 'El Publisher no impide publicar accidentalmente un catalogo launcher en desarrollo.'
+    }
 
     $ErrorActionPreference='Continue'
     $output=& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $publisher -Version $PublishedVersion -MinecraftRoot $testRoot 2>&1|Out-String

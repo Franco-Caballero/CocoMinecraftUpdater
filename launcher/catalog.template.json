@@ -1,0 +1,224 @@
+{
+    "schemaVersion": 1,
+    "catalogVersion": "0.1.0",
+    "releaseStatus": "approved",
+    "sessionPolicy": {
+        "maximumConcurrentSessions": 1,
+        "clientSelection": "automatic",
+        "offlineBehavior": "show-no-session"
+    },
+    "sessionDiscovery": {
+        "protocol": "coco-session-v1",
+        "host": "10.77.37.1",
+        "port": 25564,
+        "connectTimeoutMs": 1500,
+        "maximumResponseBytes": 32768,
+        "maximumTtlSeconds": 120
+    },
+    "backend": {
+        "id": "portablemc",
+        "version": "5.0.4",
+        "commit": "0718735",
+        "url": "https://github.com/theorzr/portablemc/releases/download/v5.0.4/portablemc-5.0.4-windows-x86_64-msvc.zip",
+        "sha256": "4482bb5325f9e09573ebe578ff5e9984e5205c45962cbc08d2524e1b51ab6315",
+        "size": 3970368,
+        "executable": "portablemc.exe",
+        "executableSha256": "0d33f459bc9182269ac9fc1e5299ec5d2243798ee34ed6cea44a88d097642025",
+        "executableSize": 7800832,
+        "versionOutputPattern": "(?ms)^portablemc 5\\.0\\.4\\r?$.*^commit: 0718735 ",
+        "signatureUrl": "https://github.com/theorzr/portablemc/releases/download/v5.0.4/portablemc-5.0.4-windows-x86_64-msvc.zip.sig",
+        "signatureSha256": "1862d96cbc6472a23df9d2cdf45360b3666f5474579e6c1614e2cd2ae6ee08e9",
+        "signatureSize": 566,
+        "pgpFingerprint": "f659b0f0b84a26cac635d72948caee8dc3456b2f",
+        "license": "Apache-2.0",
+        "source": "https://github.com/theorzr/portablemc"
+    },
+    "experiences": [
+        {
+            "id": "coco-original",
+            "name": "Coco original",
+            "description": "Mundo cooperativo actual; se abre exclusivamente con el launcher habitual de cada jugador.",
+            "instanceId": "coco-original",
+            "managementMode": "legacy-current",
+            "runtime": {
+                "minecraftVersion": "26.1.2",
+                "loader": "fabric",
+                "loaderVersion": "0.19.3",
+                "javaMajor": 25
+            },
+            "pack": {
+                "packId": "coco-fabric-26.1.2",
+                "version": "0.5.47",
+                "manifestUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/latest/download/latest.json"
+            },
+            "hosting": {
+                "mode": "lan",
+                "host": "10.77.37.1",
+                "port": 25565,
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "external-launcher",
+                "autoJoin": false,
+                "serverName": "Coco Minecraft"
+            },
+            "files": []
+        },
+        {
+            "id": "dread-arrenek",
+            "name": "DREAD - A Horror Survival Pack",
+            "description": "Supervivencia de horror inmersiva con criaturas acechantes en la oscuridad, armas de fuego (TACZ), clima dinamico y noche cerrada.",
+            "instanceId": "dread-arrenek",
+            "managementMode": "managed",
+            "runtime": {
+                "minecraftVersion": "1.19.2",
+                "loader": "forge",
+                "loaderVersion": "43.5.0",
+                "javaMajor": 17
+            },
+            "pack": {
+                "packId": "curseforge-953413-8017613",
+                "version": "3.1.0",
+                "lockPath": "launcher/experiences/dread-arrenek.lock.json",
+                "sourcePage": "https://www.curseforge.com/minecraft/modpacks/dread-arrenek/files/8017613",
+                "redistribution": "origin-only"
+            },
+            "hosting": {
+                "mode": "lan",
+                "host": "10.77.37.1",
+                "port": 25565,
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-managed",
+                "autoJoin": true,
+                "serverName": "Coco - DREAD",
+                "minimumFreeBytes": 4294967296,
+                "memory": {
+                    "minimumMb": 3072,
+                    "recommendedMb": 4096,
+                    "maximumPhysicalFraction": 0.45
+                }
+            },
+            "files": [
+                {
+                    "name": "mcwifipnp-1.7.6-1.19.2-forge.jar",
+                    "path": "mods/mcwifipnp-1.7.6-1.19.2-forge.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/POh7VlMI/mcwifipnp-1.7.6-1.19.2-forge.jar",
+                    "sha256": "413e355f61bd1de46cd77fa045cf27511418abd6bfa65f668a766a644f88b86f",
+                    "size": 78414,
+                    "role": "host",
+                    "policy": "replace",
+                    "license": "Apache-2.0"
+                },
+                {
+                    "name": "CustomSkinLoader_Universal-15.0.1.jar",
+                    "path": "mods/CustomSkinLoader_Universal-15.0.1.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/idMHQ4n2/versions/OLaesh5y/CustomSkinLoader_Universal-15.0.1.jar",
+                    "sha256": "026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc",
+                    "size": 218215,
+                    "role": "all",
+                    "policy": "replace",
+                    "license": "GPL-3.0"
+                }
+            ]
+        },
+        {
+            "id": "into-the-backrooms",
+            "name": "Into The Backrooms (Found Footage)",
+            "description": "Experiencia VHS Found Footage y horror procedimental en los Backrooms (Nivel 0, Poolrooms y mas). Generacion automatica sin mapas externos.",
+            "instanceId": "into-the-backrooms",
+            "managementMode": "managed",
+            "runtime": {
+                "minecraftVersion": "1.20.1",
+                "loader": "fabric",
+                "loaderVersion": "0.19.3",
+                "javaMajor": 17
+            },
+            "pack": {
+                "packId": "curseforge-1256625-8292234",
+                "version": "2.0.3",
+                "lockPath": "launcher/experiences/into-the-backrooms.lock.json",
+                "sourcePage": "https://www.curseforge.com/minecraft/modpacks/into-the-backrooms-found-footage-dweller/files/8292234",
+                "redistribution": "origin-only"
+            },
+            "hosting": {
+                "mode": "lan",
+                "host": "10.77.37.1",
+                "port": 25565,
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-managed",
+                "autoJoin": true,
+                "serverName": "Coco - Backrooms",
+                "minimumFreeBytes": 4294967296,
+                "memory": {
+                    "minimumMb": 2048,
+                    "recommendedMb": 4096,
+                    "maximumPhysicalFraction": 0.45
+                }
+            },
+            "files": [
+                {
+                    "name": "mcwifipnp-1.7.6-1.20.1-fabric.jar",
+                    "path": "mods/mcwifipnp-1.7.6-1.20.1-fabric.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/azDO3k7E/mcwifipnp-1.7.6-1.20.1-fabric.jar",
+                    "sha256": "ee285dc03f82afaf91e5a86a67df583d8bb824b7df9c5112dfa6c10a8d397661",
+                    "size": 82266,
+                    "role": "host",
+                    "policy": "replace",
+                    "license": "Apache-2.0"
+                },
+                {
+                    "name": "CustomSkinLoader_Universal-15.0.1.jar",
+                    "path": "mods/CustomSkinLoader_Universal-15.0.1.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/idMHQ4n2/versions/OLaesh5y/CustomSkinLoader_Universal-15.0.1.jar",
+                    "sha256": "026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc",
+                    "size": 218215,
+                    "role": "all",
+                    "policy": "replace",
+                    "license": "GPL-3.0"
+                }
+            ]
+        },
+        {
+            "id": "zombie-apocalypse-slow-zombies",
+            "name": "Zombie Apocalypse (Slow Zombies)",
+            "description": "Supervivencia apocaliptica clasica con hordas de zombies lentos, armas de fuego 3D (Techguns), vehiculos y construccion de defensas por Forge Labs.",
+            "instanceId": "zombie-apocalypse-slow-zombies",
+            "managementMode": "managed",
+            "runtime": {
+                "minecraftVersion": "1.12.2",
+                "loader": "forge",
+                "loaderVersion": "14.23.5.2855",
+                "javaMajor": 8
+            },
+            "pack": {
+                "packId": "curseforge-445369-3510753",
+                "version": "2.1",
+                "lockPath": "launcher/experiences/zombie-apocalypse-slow-zombies.lock.json",
+                "sourcePage": "https://www.curseforge.com/minecraft/modpacks/zombie-apocalypse-slow-zombies-by-forge-labs",
+                "redistribution": "origin-only"
+            },
+            "hosting": {
+                "mode": "lan",
+                "host": "10.77.37.1",
+                "port": 25565,
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-managed",
+                "autoJoin": true,
+                "serverName": "Coco - Zombie Apocalypse",
+                "minimumFreeBytes": 4294967296,
+                "memory": {
+                    "minimumMb": 3072,
+                    "recommendedMb": 4096,
+                    "maximumPhysicalFraction": 0.45
+                }
+            },
+            "files": []
+        }
+    ]
+}

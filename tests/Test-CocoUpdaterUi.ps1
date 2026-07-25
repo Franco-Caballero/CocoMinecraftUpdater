@@ -8,6 +8,11 @@ $bootstrap=[IO.File]::ReadAllText((Join-Path $root 'bootstrap\CocoBootstrapper.p
 $network=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoNetwork.ps1'))
 $elevated=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoNetworkElevated.ps1'))
 
+$clientUpdateBlock=[regex]::Match($engine,'(?s)\$clientUpdateRequired=.*?if\(\$manifest\.network\)').Value
+if($clientUpdateBlock-notmatch '\-not\$Silent\-or\$ShowOnUpdate\-or\$automaticFullCheck'){
+    throw '-Silent podria volver a abrir la UI al sincronizar un cliente.'
+}
+
 if($engine-notmatch'function Show-CocoSuccessAndWait'-or
    $engine-notmatch"\.Text='ACEPTAR'"-or$engine-notmatch'0x2714'-or
    $engine-notmatch'FromArgb\(78,214,132\)'-or$engine-notmatch'TODO LISTO'){
@@ -55,6 +60,13 @@ if($engine-notmatch'function Write-CocoEngineDiagnostic'-or
    $engine-notmatch'CocoUpdater-error-\$stamp\.txt'-or
    $engine-notmatch'Envia por Discord'){
     throw 'Los errores del engine no generan un diagnostico visible en el Escritorio.'
+}
+if($engine-notmatch'Failure ID:'-or$engine-notmatch'TIMELINE DE ETAPAS'-or
+   $engine-notmatch'Get-CocoFailureClassification'-or$engine-notmatch'Este informe no copia accessToken'){
+    throw 'El TXT del Escritorio no conserva correlacion, timeline, clasificacion y garantia de privacidad.'
+}
+if($bootstrap-notmatch'Run ID:'-or$bootstrap-notmatch'bootstrap-run-\$\(\$script:CocoRunId\)\.log'){
+    throw 'El bootstrap no comparte el Run ID ni su propia cronologia con el diagnostico.'
 }
 
 'PASS: final persistente, cuenta regresiva elevada y diagnostico del engine validados.'

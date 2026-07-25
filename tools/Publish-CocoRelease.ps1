@@ -43,6 +43,14 @@ $requestedVersion=[version]$Version
 $expectedVersion=[version]::new($publishedVersion.Major,$publishedVersion.Minor,$publishedVersion.Build+1)
 if($requestedVersion-ne$expectedVersion){throw "Version invalida: el canal publico esta en $publishedVersion y la unica siguiente version permitida es $expectedVersion."}
 
+$launcherCatalogPath=Join-Path $root 'launcher\catalog.template.json'
+if(Test-Path -LiteralPath $launcherCatalogPath){
+    $launcherCatalog=Get-Content -LiteralPath $launcherCatalogPath -Raw|ConvertFrom-Json
+    if(@($launcherCatalog.experiences|Where-Object managementMode -eq 'managed').Count-and[string]$launcherCatalog.releaseStatus-ne'approved'){
+        throw "Publicacion launcher bloqueada: releaseStatus='$($launcherCatalog.releaseStatus)'. Completa las puertas fisicas de docs\CocoLauncherImplementation.md y cambia explicitamente a approved."
+    }
+}
+
 git fetch origin main --quiet
 if($LASTEXITCODE){throw 'No se pudo actualizar origin/main antes de publicar.'}
 $startingHead=(git rev-parse HEAD).Trim()
@@ -108,7 +116,20 @@ function Install-CocoPublishedEngineCacheLocally([string]$ManifestPath,[string]$
     New-Item -ItemType Directory -Path $staging -Force|Out-Null
     try{
         Expand-Archive -LiteralPath $EngineZip -DestinationPath $staging -Force
-        if(-not(Test-Path -LiteralPath (Join-Path $staging 'CocoUpdater.ps1'))){throw 'El engine candidato no contiene CocoUpdater.ps1.'}
+        if(-not(Test-Path -LiteralPath (Join-Path $staging 'CocoUpdater.ps1'))-or
+           -not(Test-Path -LiteralPath (Join-Path $staging 'CocoLauncher.ps1'))-or
+           -not(Test-Path -LiteralPath (Join-Path $staging 'CocoSessionService.ps1'))-or
+           -not(Test-Path -LiteralPath (Join-Path $staging 'launcher\catalog.json'))){throw 'El engine candidato no contiene el runtime y catalogo completos de Coco Launcher.'}
+        $catalog=Get-Content -LiteralPath (Join-Path $staging 'launcher\catalog.json') -Raw|ConvertFrom-Json
+        $managed=@($catalog.experiences|Where-Object managementMode -eq 'managed')
+        if(-not$managed.Count){throw 'El engine candidato no contiene experiencias administradas.'}
+        foreach($experience in $managed){
+            $relative=([string]$experience.pack.lockPath)-replace'\\','/'
+            if($relative-notmatch'^launcher/experiences/[a-z0-9][a-z0-9.-]{1,95}\.lock\.json$'-or
+               -not(Test-Path -LiteralPath (Join-Path $staging ($relative-replace'/','\')) -PathType Leaf)){
+                throw "El engine candidato no contiene un lock valido para '$($experience.id)'."
+            }
+        }
         if(Test-Path -LiteralPath $engineRoot){Remove-Item -LiteralPath $engineRoot -Recurse -Force}
         Move-Item -LiteralPath $staging -Destination $engineRoot -Force
     }finally{Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue}
@@ -233,6 +254,7 @@ if($removedModIds.Count){
 .\tests\Test-CocoBootstrapReplacement.ps1
 .\tests\Test-CocoPublisherBootstrap.ps1
 .\tests\Test-CocoUpdaterUi.ps1
+.\tests\Test-CocoDiagnostics.ps1
 .\tests\Test-CocoDetection.ps1
 .\tests\Test-CocoExecutionPolicy.ps1
 .\tests\Test-CocoClientNetwork.ps1
@@ -240,6 +262,21 @@ if($removedModIds.Count){
 .\tests\Test-CocoZeroTier.ps1
 .\tests\Test-CocoNetworkEngine.ps1 -MinecraftRoot $MinecraftRoot
 .\tests\Test-CocoPublisherPolicy.ps1 -PublishedVersion $publishedVersion.ToString()
+.\tests\Test-CocoLauncherCatalog.ps1
+.\tests\Test-CocoLauncherMigration.ps1
+.\tests\Test-CocoLauncherBackend.ps1
+.\tests\Test-CocoLauncherIdentity.ps1
+.\tests\Test-CocoLauncherLaunch.ps1
+.\tests\Test-CocoLauncherProcessLog.ps1
+.\tests\Test-CocoLauncherPreparationRetry.ps1
+.\tests\Test-CocoLauncherNetworkSerialization.ps1
+.\tests\Test-CocoLauncherSession.ps1
+.\tests\Test-CocoLauncherHostLifecycle.ps1
+.\tests\Test-CocoLauncherClientLifecycle.ps1
+.\tests\Test-CocoLauncherInstance.ps1
+.\tests\Test-CocoLauncherIntegration.ps1
+.\tests\Test-CocoLauncherObservability.ps1
+.\tests\Test-CocoIronLungLock.ps1
 
 git fetch origin main --quiet
 if($LASTEXITCODE){throw 'No se pudo volver a comprobar origin/main antes del commit.'}

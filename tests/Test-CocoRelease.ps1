@@ -22,7 +22,8 @@ if((Get-FileHash $engine -Algorithm SHA256).Hash.ToLowerInvariant()-ne$manifest.
 $network=$manifest.network
 if(-not$network-or$network.provider-ne'zerotier'){throw 'Falta la configuracion ZeroTier.'}
 if($network.networkId-notmatch'^[0-9a-f]{16}$'-or$network.networkId-ne'58997fc5f3c0c001'){throw 'Network ID Coco inesperado.'}
-if($network.hostAddress-ne'10.77.37.1'-or$network.subnet-ne'10.77.37.0/24'-or[int]$network.minecraftPort-ne25565){throw 'Endpoint Coco inesperado.'}
+if($network.hostAddress-ne'10.77.37.1'-or$network.subnet-ne'10.77.37.0/24'-or[int]$network.minecraftPort-ne25565-or[int]$network.sessionPort-ne25564){throw 'Endpoint Coco inesperado.'}
+if($network.sessionFirewallRuleName-ne'Coco Launcher - ZeroTier TCP 25564'){throw 'Regla de sesion Coco inesperada.'}
 if($network.installer.url-notmatch'^https://download\.zerotier\.com/RELEASES/1\.16\.2/'){throw 'El MSI no usa la fuente oficial versionada.'}
 if($network.installer.sha256-notmatch'^[0-9a-f]{64}$'){throw 'SHA-256 de ZeroTier invalido.'}
 if(-not$network.installer.signerSubjectPattern){throw 'Falta validar el firmante Authenticode de ZeroTier.'}
@@ -55,8 +56,17 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $engineArchive=[IO.Compression.ZipFile]::OpenRead((Resolve-Path $engine))
 try{
     $entryNames=@($engineArchive.Entries|ForEach-Object{$_.FullName-replace'\\','/'})
-    foreach($required in 'CocoUpdater.ps1','CocoNetwork.ps1','CocoNetworkElevated.ps1','CocoNetworkAuthorizer.ps1','assets/fullbody.png','assets/reynaico.ico'){
+    foreach($required in 'CocoUpdater.ps1','CocoLauncher.ps1','CocoSessionService.ps1','CocoNetwork.ps1','CocoNetworkElevated.ps1','CocoNetworkAuthorizer.ps1','launcher/catalog.json','assets/fullbody.png','assets/reynaico.ico'){
         if($entryNames-notcontains$required){throw "Falta $required en el engine."}
+    }
+    $launcherCatalog=Get-Content -LiteralPath 'launcher\catalog.template.json' -Raw|ConvertFrom-Json
+    foreach($experience in @($launcherCatalog.experiences|Where-Object managementMode -eq 'managed')){
+        $lockPaths=@([string]$experience.pack.lockPath)
+        if($experience.worldTemplate){$lockPaths+=([string]$experience.worldTemplate.lockPath)}
+        foreach($declaredPath in $lockPaths){
+            $lockPath=$declaredPath-replace'\\','/'
+            if($lockPath-notmatch'^launcher/experiences/[a-z0-9][a-z0-9.-]{1,95}\.lock\.json$'-or$entryNames-notcontains$lockPath){throw "Falta el lock de '$($experience.id)' en el engine."}
+        }
     }
 }finally{$engineArchive.Dispose()}
 
@@ -83,6 +93,6 @@ $hostMods=@($manifest.packages|Where-Object role -eq host).mods.name
 if($client-match'(?i)^(e4mc|mcwifipnp|serversidehorror-|deimos-)'){throw 'El paquete cliente contiene mods exclusivos del host.'}
 if(-not($hostMods-match'(?i)^e4mc')-or-not($hostMods-match'(?i)^mcwifipnp')-or-not($hostMods-match'(?i)^serversidehorror-')-or-not($hostMods-match'(?i)^deimos-')){throw 'El paquete host no contiene todos los mods exclusivos requeridos.'}
 
-$scripts=@('bootstrap\CocoBootstrapper.ps1','engine\CocoUpdater.ps1','engine\CocoNetwork.ps1','engine\CocoNetworkElevated.ps1','engine\CocoNetworkAuthorizer.ps1','publisher\CocoPublisher.ps1','tools\New-CocoJarRelease.ps1','tools\Publish-CocoRelease.ps1')
+$scripts=@('bootstrap\CocoBootstrapper.ps1','engine\CocoUpdater.ps1','engine\CocoLauncher.ps1','engine\CocoSessionService.ps1','engine\CocoNetwork.ps1','engine\CocoNetworkElevated.ps1','engine\CocoNetworkAuthorizer.ps1','publisher\CocoPublisher.ps1','tools\Import-CocoCurseForgePack.ps1','tools\New-CocoJarRelease.ps1','tools\Publish-CocoRelease.ps1')
 foreach($script in $scripts){[void][scriptblock]::Create([IO.File]::ReadAllText((Resolve-Path $script)))}
 'PASS: manifiesto, hashes, assets, roles y sintaxis validados.'

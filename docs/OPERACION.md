@@ -1,5 +1,7 @@
 # Operación
 
+> Producción continúa en 0.5.47. Coco Launcher multi-instancia está implementado pero no publicado; su operación, auditoría y puertas físicas pendientes están en [`CocoLauncherImplementation.md`](CocoLauncherImplementation.md). No usar las instancias desechables como mundo de producción.
+
 ## Roles y ubicaciones
 
 - Host: instalación que contiene `config\coco-host.json`; recibe los componentes exclusivos de servidor LAN.
@@ -64,6 +66,7 @@ El Publisher:
 - rechaza en la fuente viva y en el manifiesto cualquier ID de `policy\blocked-mod-ids.txt`; `tsa-decorations` e `inventoryextended` están retirados;
 - verifica tamaños, SHA-256 y assets;
 - prueba recuperación transaccional;
+- para releases launcher valida catálogo y locks, backend fijado, reintentos, drenaje de pipes, serialización ZeroTier y lifecycles host/cliente;
 - instala el bootstrap compilado directamente en el host antes de ejecutar el engine, porque los assets de un release borrador todavía no son descargables de forma anónima;
 - hidrata en `%LOCALAPPDATA%\CocoMinecraftUpdater` el manifiesto, ZIP y engine extraído verificados del mismo release para que el siguiente `NetworkOnly` no use una versión anterior;
 - archiva helpers y respaldos bootstrap obsoletos bajo `backups\publisher-stale-artifacts-<versión>` después de verificar el EXE canónico;

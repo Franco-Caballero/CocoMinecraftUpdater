@@ -15,8 +15,18 @@ $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $script:Splash = $null
 $script:EmbeddedFullbodyBase64 = '__FULLBODY_BASE64__'
+$script:CocoRunId=if($env:COCO_RUN_ID-match'^[a-fA-F0-9]{12,32}$'){$env:COCO_RUN_ID.ToLowerInvariant()}else{[guid]::NewGuid().ToString('N')}
+$env:COCO_RUN_ID=$script:CocoRunId
+$script:CocoBootstrapStarted=[Diagnostics.Stopwatch]::StartNew()
+$script:CocoBootstrapLogRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\logs'
+New-Item -ItemType Directory -Path $script:CocoBootstrapLogRoot -Force -ErrorAction SilentlyContinue|Out-Null
+$script:CocoBootstrapLogPath=Join-Path $script:CocoBootstrapLogRoot "bootstrap-run-$($script:CocoRunId).log"
+function Write-CocoBootstrapEvent([string]$Status,[int]$Progress,[string]$Kind='STATE'){
+    try{Add-Content -LiteralPath $script:CocoBootstrapLogPath -Value ("{0:o} {1} {2}% elapsedMs={3} {4}"-f(Get-Date),$Kind,$Progress,$script:CocoBootstrapStarted.ElapsedMilliseconds,$Status) -Encoding UTF8}catch{}
+}
 
 function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
+    Write-CocoBootstrapEvent $Status 1
     if($Silent -and -not$Preview-and$env:COCO_SHOW_ON_UPDATE-ne'1'){return}
     Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
     [Windows.Forms.Application]::EnableVisualStyles()
@@ -31,12 +41,12 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     $accent=New-Object Windows.Forms.Panel;$accent.Location=New-Object Drawing.Point(0,0);$accent.Size=New-Object Drawing.Size(9,350)
     $accent.BackColor=[Drawing.Color]::FromArgb(177,92,255);$panel.Controls.Add($accent)
     $sparkle=[char]0x2726
-    $title=New-Object Windows.Forms.Label;$title.Text='Preparando Coco Updater';$title.Location=New-Object Drawing.Point(43,42)
+    $title=New-Object Windows.Forms.Label;$title.Text='ETAPA 1/10 · INICIANDO COCO';$title.Location=New-Object Drawing.Point(43,42)
     $title.Size=New-Object Drawing.Size(590,52);$title.Font=New-Object Drawing.Font('Segoe UI Semibold',22)
     $title.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
     $detail=New-Object Windows.Forms.Label;$detail.Text=$Status;$detail.Location=New-Object Drawing.Point(46,108)
-    $detail.Size=New-Object Drawing.Size(570,46);$detail.Font=New-Object Drawing.Font('Segoe UI',12);$detail.ForeColor=[Drawing.Color]::FromArgb(218,210,229)
-    $track=New-Object Windows.Forms.Panel;$track.Location=New-Object Drawing.Point(46,180);$track.Size=New-Object Drawing.Size(570,30)
+    $detail.Size=New-Object Drawing.Size(570,64);$detail.Font=New-Object Drawing.Font('Segoe UI',12);$detail.ForeColor=[Drawing.Color]::FromArgb(218,210,229)
+    $track=New-Object Windows.Forms.Panel;$track.Location=New-Object Drawing.Point(46,190);$track.Size=New-Object Drawing.Size(570,30)
     $track.BackColor=[Drawing.Color]::FromArgb(58,36,81)
     $fill=New-Object Windows.Forms.Panel;$fill.Size=New-Object Drawing.Size(12,30);$fill.BackColor=[Drawing.Color]::FromArgb(177,92,255)
     $brand=New-Object Windows.Forms.Label;$brand.Text="$sparkle  COCO PACK  |  FABRIC 26.1.2";$brand.Location=New-Object Drawing.Point(46,244)
@@ -60,7 +70,11 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     $global:CocoSharedUi=@{Form=$form;Panel=$panel;Accent=$accent;Title=$title;Detail=$detail;Progress=$fill;Track=$track;Brand=$brand;Started=[Diagnostics.Stopwatch]::StartNew();BaseProgress=12}
 }
 function Set-CocoSplash([string]$Status,[int]$Progress){
-    if(-not$script:Splash){return};$script:SplashTitle.Text='Preparando Coco Updater';$script:SplashDetail.Text=$Status;$script:SplashFill.Width=[Math]::Max(4,[int]($script:SplashTrack.ClientSize.Width*$Progress/100))
+    Write-CocoBootstrapEvent $Status $Progress
+    if(-not$script:Splash){return}
+    $stage=if($Progress-lt7){'ETAPA 1/10 · BUSCANDO ACTUALIZACIONES'}elseif($Progress-lt12){'ETAPA 2/10 · ACTUALIZANDO COMPONENTES'}else{'ETAPA 2/10 · ABRIENDO EL MOTOR'}
+    $script:SplashTitle.Text=$stage;$script:SplashDetail.Text="$Status`r`nEjecucion: $($script:CocoRunId.Substring(0,8))"
+    $script:SplashFill.Width=[Math]::Max(4,[int]($script:SplashTrack.ClientSize.Width*$Progress/100))
     $script:Splash.Refresh();[Windows.Forms.Application]::DoEvents()
 }
 function Close-CocoSplash {if($script:Splash){$script:CocoAllowClose=$true;$script:Splash.Close();$script:Splash.Dispose();$script:Splash=$null}}
@@ -75,11 +89,19 @@ function Write-CocoBootstrapDiagnostic([Management.Automation.ErrorRecord]$Recor
         $engineFiles=try{if($engineRoot-and(Test-Path $engineRoot)){Get-ChildItem $engineRoot -Recurse -Force|Select-Object FullName,Length,LastWriteTime|Format-Table -AutoSize|Out-String}else{'Engine root not created.'}}catch{"Unavailable: $($_.Exception.Message)"}
         $processPath=try{[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName}catch{'Unknown'}
         $manifestVersion=try{$manifest.version}catch{'Unknown'}
+        $bootstrapLog=try{if(Test-Path -LiteralPath $script:CocoBootstrapLogPath){(Get-Content -LiteralPath $script:CocoBootstrapLogPath -Tail 250)-join"`r`n"}else{'Bootstrap log not created.'}}catch{"Unavailable: $($_.Exception.Message)"}
+        $disk=try{$drive=[IO.DriveInfo]::new([IO.Path]::GetPathRoot([IO.Path]::GetFullPath($env:LOCALAPPDATA)));$drive|Select-Object Name,@{n='FreeGB';e={[math]::Round($_.AvailableFreeSpace/1GB,2)}},@{n='TotalGB';e={[math]::Round($_.TotalSize/1GB,2)}}|Format-List|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
+        $serviceState=try{Get-Service -Name 'ZeroTierOneService' -ErrorAction Stop|Select-Object Name,Status,StartType|Format-List|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
+        $relevantProcesses=try{Get-CimInstance Win32_Process -ErrorAction Stop|Where-Object{$_.Name-match'(?i)coco|portablemc|java|powershell'}|Select-Object ProcessId,ParentProcessId,Name,CreationDate,CommandLine|Format-List|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
         $report=@"
-Coco Updater diagnostic
+COCO UPDATER - BOOTSTRAP DIAGNOSTIC
+===================================
+Run ID: $($script:CocoRunId)
 Timestamp: $((Get-Date).ToString('o'))
+Elapsed: $($script:CocoBootstrapStarted.Elapsed)
 Bootstrap process: $processPath
 PID: $PID
+Channel path: $ChannelPath
 Manifest version: $manifestVersion
 Engine root: $engineRoot
 Extraction method: $script:CocoExtractionMethod
@@ -103,8 +125,22 @@ $($Record.ScriptStackTrace)
 Invocation:
 $($Record.InvocationInfo.PositionMessage)
 
+Bootstrap timeline/log:
+$bootstrapLog
+
+Disk:
+$disk
+
+ZeroTier service:
+$serviceState
+
+Relevant processes:
+$relevantProcesses
+
 Engine files:
 $engineFiles
+
+Privacy: this report does not copy Microsoft tokens, passwords, cookies or PortableMC account database contents.
 "@
         [IO.File]::WriteAllText($logPath,$report,(New-Object Text.UTF8Encoding($true)))
         $desktop=[Environment]::GetFolderPath('Desktop')
@@ -129,6 +165,8 @@ trap {
     if(-not $script:Splash){Show-CocoSplash}
     if($script:Splash){
         $script:SplashTitle.Text='No se pudo iniciar Coco Updater'
+        $failureColor=[Drawing.Color]::FromArgb(255,92,112)
+        $script:SplashTitle.ForeColor=$failureColor;$script:SplashFill.BackColor=$failureColor
         $diagnosticName=if($diagnosticPath){[IO.Path]::GetFileName($diagnosticPath)}else{'No disponible'}
         $script:SplashDetail.Text="$friendly`nEnvia por Discord: $diagnosticName"
         $script:SplashFill.Width=12
@@ -141,12 +179,25 @@ function Get-Sha256([string]$Path) {
     (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-function Download-VerifiedFile([string]$Url, [string]$Destination, [string]$ExpectedHash) {
+function Download-VerifiedFile([string]$Url,[string]$Destination,[string]$ExpectedHash,[string]$Label='componente Coco',[int]$ProgressStart=8,[int]$ProgressEnd=11) {
     $partial = "$Destination.partial"
     for($attempt=1;$attempt -le 4;$attempt++){
         Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
         try{
-            Invoke-WebRequest -Uri $Url -OutFile $partial -UseBasicParsing -TimeoutSec 30
+            $request=$null;$response=$null;$input=$null;$output=$null
+            $request=[Net.HttpWebRequest]::Create($Url);$request.UserAgent='CocoMinecraftUpdater/Bootstrap';$request.Timeout=30000;$request.ReadWriteTimeout=30000
+            $response=$request.GetResponse();$total=[int64]$response.ContentLength;$input=$response.GetResponseStream();$output=[IO.File]::Create($partial)
+            $received=[int64]0;$watch=[Diagnostics.Stopwatch]::StartNew();$lastUpdate=[DateTime]::MinValue;$buffer=New-Object byte[] (256KB)
+            try{
+                while(($read=$input.Read($buffer,0,$buffer.Length))-gt0){
+                    $output.Write($buffer,0,$read);$received+=$read
+                    if(((Get-Date)-$lastUpdate).TotalMilliseconds-ge250){
+                        $lastUpdate=Get-Date;$speed=if($watch.Elapsed.TotalSeconds-gt0){$received/$watch.Elapsed.TotalSeconds}else{0}
+                        $percent=if($total-gt0){$ProgressStart+[int](($ProgressEnd-$ProgressStart)*$received/$total)}else{$ProgressStart}
+                        Set-CocoSplash ("{0}: {1:N1}/{2:N1} MB | {3:N1} MB/s"-f$Label,($received/1MB),($total/1MB),($speed/1MB)) ([Math]::Min($ProgressEnd,$percent))
+                    }
+                }
+            }finally{if($output){$output.Dispose()};if($input){$input.Dispose()};if($response){$response.Dispose()}}
             if ((Get-Sha256 $partial) -ne $ExpectedHash.ToLowerInvariant()) { throw 'La descarga no coincide con el hash SHA-256 publicado.' }
             Move-Item -LiteralPath $partial -Destination $Destination -Force
             return
@@ -219,12 +270,31 @@ exit 1
 }
 
 function Test-CocoEngineExtraction([string]$Destination){
-    return (Test-Path -LiteralPath (Join-Path $Destination 'CocoUpdater.ps1')) -and
+    $baseComplete=(Test-Path -LiteralPath (Join-Path $Destination 'CocoUpdater.ps1')) -and
+        (Test-Path -LiteralPath (Join-Path $Destination 'CocoLauncher.ps1')) -and
+        (Test-Path -LiteralPath (Join-Path $Destination 'CocoSessionService.ps1')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'CocoNetwork.ps1')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'CocoNetworkElevated.ps1')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'CocoNetworkAuthorizer.ps1')) -and
+        (Test-Path -LiteralPath (Join-Path $Destination 'launcher\catalog.json')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'assets\fullbody.png')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'assets\reynaico.ico'))
+    if(-not$baseComplete){return $false}
+    try{
+        $catalog=Get-Content -LiteralPath (Join-Path $Destination 'launcher\catalog.json') -Raw|ConvertFrom-Json
+        $managed=@($catalog.experiences|Where-Object managementMode -eq 'managed')
+        if(-not$managed.Count){return $false}
+        foreach($experience in $managed){
+            $lockPaths=@([string]$experience.pack.lockPath)
+            if($experience.worldTemplate){$lockPaths+=([string]$experience.worldTemplate.lockPath)}
+            foreach($declaredPath in $lockPaths){
+                $relative=$declaredPath-replace'\\','/'
+                if($relative-notmatch'^launcher/experiences/[a-z0-9][a-z0-9.-]{1,95}\.lock\.json$'){return $false}
+                if(-not(Test-Path -LiteralPath (Join-Path $Destination ($relative-replace'/','\')) -PathType Leaf)){return $false}
+            }
+        }
+        return $true
+    }catch{return $false}
 }
 
 function Reset-CocoExtractionDirectory([string]$Destination){
@@ -321,6 +391,7 @@ if($Silent-and$NetworkOnly-and(Test-Path -LiteralPath $manifestCache)){
 }
 if(-not$manifest){
     Download-TextFile $channel.manifestUrl $manifestCache
+    Set-CocoSplash 'Manifiesto descargado; validando el canal y la version...' 7
     $manifest = Get-Content -LiteralPath $manifestCache -Raw | ConvertFrom-Json
 }
 
@@ -330,13 +401,15 @@ if (-not $manifest.engine -or -not $manifest.engine.version -or -not $manifest.e
 
 $engineRoot = Join-Path $cacheRoot (Join-Path 'engine' $manifest.engine.version)
 $entryPoint = Join-Path $engineRoot 'CocoUpdater.ps1'
+Set-CocoSplash ("Engine {0}: comprobando cache local verificado..."-f$manifest.engine.version) 8
 if (-not (Test-Path -LiteralPath $entryPoint)) {
     $engineZip = Join-Path $cacheRoot "engine-$($manifest.engine.version).zip"
-    Set-CocoSplash 'Preparando la interfaz visual...' 9
-    Download-VerifiedFile $manifest.engine.url $engineZip $manifest.engine.sha256
+    Set-CocoSplash ("Descargando engine {0} y comprobando SHA-256..."-f$manifest.engine.version) 9
+    Download-VerifiedFile $manifest.engine.url $engineZip $manifest.engine.sha256 "Descargando engine $($manifest.engine.version)" 9 10
     $temporaryRoot = "$engineRoot.new"
     Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $temporaryRoot -Force | Out-Null
+    Set-CocoSplash 'Extrayendo el engine en una carpeta temporal segura...' 10
     Expand-CocoEngineArchive $engineZip $temporaryRoot
     New-Item -ItemType Directory -Path (Split-Path $engineRoot -Parent) -Force | Out-Null
     Move-Item -LiteralPath $temporaryRoot -Destination $engineRoot -Force
@@ -356,9 +429,9 @@ if ([IO.Path]::GetExtension($processPath) -ieq '.exe') {
     if($manifest.bootstrap -and $manifest.bootstrap.url -and $manifest.bootstrap.sha256){
         $canonicalMatches=(Test-Path -LiteralPath $canonicalExe) -and ((Get-Sha256 $canonicalExe) -eq $manifest.bootstrap.sha256.ToLowerInvariant())
         if(-not$canonicalMatches){
-            Set-CocoSplash 'Actualizando Coco Updater...' 11
+            Set-CocoSplash 'Actualizando el EXE canonico sin bloquear esta ejecucion...' 11
             $newExe=Join-Path $cacheRoot "CocoUpdater.$PID.new.exe"
-            Download-VerifiedFile $manifest.bootstrap.url $newExe $manifest.bootstrap.sha256
+            Download-VerifiedFile $manifest.bootstrap.url $newExe $manifest.bootstrap.sha256 'Actualizando CocoUpdater.exe' 11 12
             Start-CocoBootstrapReplacement $newExe $canonicalExe $manifest.bootstrap.sha256.ToLowerInvariant()
         }
     }
@@ -373,7 +446,7 @@ if ($Preview) { $engineParameters.Preview=$true }
 if ($NetworkOnly) { $engineParameters.NetworkOnly=$true }
 if ($ShowOnUpdate) { $engineParameters.ShowOnUpdate=$true }
 if ($Silent) { $engineParameters.Silent=$true }
-Set-CocoSplash 'Analizando la instalacion de Minecraft...' 12
+Set-CocoSplash 'Engine verificado; transfiriendo la ejecucion al launcher...' 12
 $env:COCO_ENGINE_ROOT=$engineRoot
 $engineSource=[IO.File]::ReadAllText($entryPoint,[Text.Encoding]::UTF8)
 $engineBlock=[ScriptBlock]::Create($engineSource)
