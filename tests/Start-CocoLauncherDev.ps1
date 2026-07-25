@@ -19,7 +19,8 @@ if($freeGb-lt$RequiredFreeMemoryGb){throw "Memoria insuficiente para la prueba j
 
 $devRoot=Join-Path $audit 'dev-launcher';$engineOutput=Join-Path $devRoot 'build';$engineRoot=Join-Path $devRoot 'engine'
 New-Item -ItemType Directory -Path $engineOutput -Force|Out-Null
-$engineResult=& (Join-Path $repoRoot 'tools\New-CocoEngine.ps1') -Version '0.5.48' -OutputDirectory $engineOutput|ConvertFrom-Json
+$manifestForVersion = Get-Content -LiteralPath (Join-Path $repoRoot 'release\latest.json') -Raw | ConvertFrom-Json
+$engineResult = & (Join-Path $repoRoot 'tools\New-CocoEngine.ps1') -Version $manifestForVersion.version -OutputDirectory $engineOutput | ConvertFrom-Json
 if(Test-Path -LiteralPath $engineRoot){
     try{Remove-Item -LiteralPath $engineRoot -Recurse -Force -ErrorAction Stop}
     catch{$engineRoot=Join-Path $devRoot "engine-$([guid]::NewGuid().ToString('N').Substring(0,8))"}
