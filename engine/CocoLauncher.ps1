@@ -1609,15 +1609,6 @@ function Select-CocoMicrosoftSessionDialog([object[]]$Sessions){
 }
 
 function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$Paths){
-    $resolution=Resolve-CocoLauncherIdentity $Paths.IdentityPath $LegacyMinecraftRoot
-    if($resolution.RequiresChoice){
-        $mode=Show-CocoIdentityModeDialog $resolution.Hint
-        if($mode-eq'offline'){
-            $suggested=if($resolution.Hint-and(Test-CocoMinecraftUsername ([string]$resolution.Hint.Username))){[string]$resolution.Hint.Username}else{''}
-            return Save-CocoLauncherIdentityState $Paths.IdentityPath offline (Show-CocoUsernameDialog $suggested) '' 'user-choice'
-        }
-        [void](Save-CocoLauncherIdentityState $Paths.IdentityPath microsoft '' '' 'user-choice')
-    }
     $state=Read-CocoLauncherIdentityState $Paths.IdentityPath
     if($state.mode-eq'offline'){return $state}
     Set-CocoState 'Verificando cuenta Microsoft' 'Buscando una sesion Coco ya autorizada...' 20
@@ -1640,11 +1631,11 @@ function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$P
             [Windows.Forms.Application]::DoEvents()
             if(-not$browserOpened -and (Test-Path -LiteralPath $authLog)){
                 $logText=Get-Content -LiteralPath $authLog -Raw -ErrorAction SilentlyContinue
-                if($logText -match 'https?://[^\s'"]+'){
-                    $url=$matches[0]
+                if($logText -and $logText -match 'https?://\S+'){
+                    $url=$matches[0].TrimEnd('.', ',', ')', '"', "'")
                     try{Start-Process $url; $browserOpened=$true}catch{}
                 }
-                if($logText -match 'code\s+([A-Z0-9]{6,12})'){
+                if($logText -and $logText -match 'code\s+([A-Z0-9]{6,12})'){
                     $code=$matches[1]
                     Set-CocoState 'Inicia sesion con Microsoft' ("Ingresa el codigo {0} en tu navegador ({1})" -f $code, $url) 24
                 }
