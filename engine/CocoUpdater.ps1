@@ -295,7 +295,10 @@ function Set-CocoFittedLabelText(
     $old=$Label.Font
     $Label.Font=New-Object Drawing.Font($Family,[single]$chosen,$Style)
     $Label.Text=$Text
-    if($old){$old.Dispose()}
+    # No destruir la fuente anterior aquí. Refresh/DoEvents puede reingresar al
+    # pintado del Label mientras GDI+ todavía referencia ese objeto y termina en
+    # Graphics.DrawString: "El parámetro no es válido". La ventana es corta y
+    # Control.Dispose liberará las fuentes asociadas al cerrar.
 }
 
 function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]$Visible = $true, [string]$Action = '') {
@@ -366,8 +369,16 @@ function Show-CocoWindow {
     $art.SizeMode='Zoom'; $art.BackColor=[Drawing.Color]::Transparent
     if(Test-Path $artPath){
         try{
-            $bytes=[IO.File]::ReadAllBytes($artPath); $ms=[IO.MemoryStream]::new($bytes)
-            $art.Image=[Drawing.Image]::FromStream($ms)
+            $bytes=[IO.File]::ReadAllBytes($artPath);$ms=[IO.MemoryStream]::new($bytes,$false);$sourceImage=$null
+            try{
+                $sourceImage=[Drawing.Image]::FromStream($ms,$true,$true)
+                # Image.FromStream exige que el stream siga vivo. Clonar a un
+                # Bitmap independiente evita la X roja cuando el GC lo recoge.
+                $art.Image=[Drawing.Bitmap]::new($sourceImage)
+            }finally{
+                if($sourceImage){$sourceImage.Dispose()}
+                $ms.Dispose()
+            }
         }catch{$art.Image=$null}
     }
     $f.Controls.Add($panel); $f.Controls.Add($art); $art.BringToFront()

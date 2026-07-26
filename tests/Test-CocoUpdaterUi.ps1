@@ -32,6 +32,15 @@ if($engine-notmatch'Drawing\.Size\(640,460\)'-or
    $engine-match'La actualizacion termino correctamente\. Ya puedes volver a abrir Minecraft'){
     throw 'Bootstrap/engine no comparten el layout amplio y el ajuste de texto.'
 }
+$engineFontBlock=[regex]::Match($engine,'(?s)function Set-CocoFittedLabelText\(.*?^}',[Text.RegularExpressions.RegexOptions]::Multiline).Value
+$bootstrapFontBlock=[regex]::Match($bootstrap,'(?s)function Set-CocoBootstrapLabelText\(.*?^}',[Text.RegularExpressions.RegexOptions]::Multiline).Value
+if($engineFontBlock-match'\$old\.Dispose\(\)'-or$bootstrapFontBlock-match'\$old\.Dispose\(\)'){
+    throw 'El ajuste de texto todavia destruye una fuente que WinForms puede estar pintando.'
+}
+if($engine-notmatch'\$art\.Image=\[Drawing\.Bitmap\]::new\(\$sourceImage\)'-or
+   $bootstrap-notmatch'\$art\.Image=\[Drawing\.Bitmap\]::new\(\$sourceImage\)'){
+    throw 'La imagen de la reina aun depende de un stream temporal y puede mostrar una X roja.'
+}
 if($engine-notmatch'\$automaticFullCheck=\$MinecraftPid-gt0-and-not\$NetworkOnly'-or
    ([regex]::Matches($engine,'\$ShowOnUpdate-or\$automaticFullCheck')).Count-lt2){
     throw 'Un Bridge antiguo todavia podria cerrar Minecraft sin mostrar la confirmacion visual.'

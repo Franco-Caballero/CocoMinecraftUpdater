@@ -49,6 +49,8 @@ Inicialmente se hizo una copia verificada del mundo para protegerlo durante la a
 
 CustomSkinLoader 15.0.1 quedó comprobado en el log de la sesión Backrooms: inicializó su bootstrap Fabric y aplicó sus transformadores. La skin inicial `smolbird` se distribuye desde el engine con SHA-256 `fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb`. El launcher añade además selección visual por clic/arrastre, validación PNG, vista previa, registro privado sincronizado y réplica a la ruta LocalSkin del mundo original y las experiencias.
 
+Durante la publicación 0.5.58, la actualización visible del host reprodujo una excepción GDI+ `Graphics.DrawString: El parámetro no es válido` y una X roja en la imagen. La causa fue doble: el reajuste de texto destruía la fuente anterior antes de que terminara un pintado reentrante de WinForms, y `Image.FromStream` dejaba al `PictureBox` dependiendo de un stream temporal. La corrección conserva las fuentes hasta cerrar el control y clona la imagen a un `Bitmap` independiente tanto en bootstrap como en engine.
+
 La política obligatoria no convierte a CustomSkinLoader en universal por inferencia. El catálogo contiene una variante 15.0.1 validada para Minecraft 1.19.2 y 1.20.1. Una experiencia futura en otra versión queda rechazada hasta declarar y probar otra variante compatible; una vez declarada, la preparación sí es automática.
 
 Backrooms sí tiene una canalización visual propia: el JAR de SP-Backrooms Revamped empaqueta Veil y programas internos para VHS, fog, motion blur, luces, agua, cielo y distorsiones. Eso es distinto de un ZIP seleccionable en `shaderpacks`. Coco no elimina ni desactiva esa canalización; simplemente dejó de atribuirle MakeUp Ultra Fast sin evidencia.

@@ -31,12 +31,12 @@ function Set-CocoBootstrapLabelText($Label,[string]$Text,[single]$MaximumSize,[s
         $font=New-Object Drawing.Font($Label.Font.FontFamily,$candidate,$Label.Font.Style)
         $measured=[Windows.Forms.TextRenderer]::MeasureText($Text,$font,$Label.ClientSize,[Windows.Forms.TextFormatFlags]::WordBreak)
         if($measured.Height-le$Label.ClientSize.Height-and$measured.Width-le$Label.ClientSize.Width){
-            $old=$Label.Font;$Label.Font=$font;$old.Dispose()
+            $Label.Font=$font
             return
         }
         $font.Dispose();$candidate-=0.5
     }
-    $old=$Label.Font;$Label.Font=New-Object Drawing.Font($Label.Font.FontFamily,$MinimumSize,$Label.Font.Style);$old.Dispose()
+    $Label.Font=New-Object Drawing.Font($Label.Font.FontFamily,$MinimumSize,$Label.Font.Style)
 }
 
 function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
@@ -71,8 +71,13 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     try{
         if($script:EmbeddedFullbodyBase64.Length -gt 1000){
             $bytes=[Convert]::FromBase64String($script:EmbeddedFullbodyBase64);$memory=New-Object IO.MemoryStream(,$bytes)
-            $art.Image=[Drawing.Image]::FromStream($memory);$script:EmbeddedImageStream=$memory
-        }elseif(Test-Path (Join-Path $PSScriptRoot '..\fullbody.png')){$art.Image=[Drawing.Image]::FromFile((Join-Path $PSScriptRoot '..\fullbody.png'))}
+            $sourceImage=$null
+            try{$sourceImage=[Drawing.Image]::FromStream($memory,$true,$true);$art.Image=[Drawing.Bitmap]::new($sourceImage)}
+            finally{if($sourceImage){$sourceImage.Dispose()};$memory.Dispose()}
+        }elseif(Test-Path (Join-Path $PSScriptRoot '..\fullbody.png')){
+            $sourceImage=[Drawing.Image]::FromFile((Join-Path $PSScriptRoot '..\fullbody.png'))
+            try{$art.Image=[Drawing.Bitmap]::new($sourceImage)}finally{$sourceImage.Dispose()}
+        }
     }catch{}
     $form.Controls.Add($panel);$form.Controls.Add($art);$art.BringToFront()
     $work=[Windows.Forms.Screen]::PrimaryScreen.WorkingArea
