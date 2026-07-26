@@ -2,7 +2,7 @@
 
 ## Decisión
 
-COBBLEVERSE queda incluida y visible en el catálogo candidato. Coco Launcher ya no usa estados para ocultar o bloquear experiencias: la auditoría registra lo probado y lo pendiente sin cambiar disponibilidad. El engine público 0.5.60 aún no la contiene.
+COBBLEVERSE está incluida y visible en el catálogo público 0.5.61. Coco Launcher ya no usa estados para ocultar o bloquear experiencias: la auditoría registra lo probado y lo pendiente sin cambiar disponibilidad.
 
 ## Fuente y runtime
 

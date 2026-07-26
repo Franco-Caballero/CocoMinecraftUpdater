@@ -1,8 +1,8 @@
 # Operación
 
-> Estado observado el 2026-07-26: host, caché, EXE y manifiesto publicados 0.5.60. El candidato siguiente hace visibles todas las experiencias administradas presentes en su catálogo: DREAD, Backrooms, Zombie 1.12.2 y COBBLEVERSE 1.7.42-CF. Ya no existen estados de bloqueo/experimento que filtren el selector. Cobbleverse completó instalación y arranque físico hasta el menú con DH+Iris; aún faltan mundo, LAN y clientes. Evidencia: [`CocoLauncherImplementation.md`](CocoLauncherImplementation.md) y auditorías bajo `docs`.
+> Estado observado el 2026-07-26: release público, host, caché, EXE y manifiesto 0.5.61. Todas las experiencias administradas presentes en el catálogo son visibles: DREAD, Backrooms, Zombie 1.12.2 y COBBLEVERSE 1.7.42-CF. Ya no existen estados de bloqueo/experimento que filtren el selector. Cobbleverse completó instalación y arranque físico hasta el menú con DH+Iris; aún faltan mundo, LAN y clientes. Evidencia: [`CocoLauncherImplementation.md`](CocoLauncherImplementation.md) y auditorías bajo `docs`.
 
-Después de publicar e instalar el candidato Zombie, abrir el mundo, elegir **Abrir en LAN**, conservar el puerto `25565` y cambiar **Online Mode** a **OFF** antes de iniciar. El JAR `lanserverproperties-1.0.jar` se instala únicamente en el rol host y Coco no mezcla con esta experiencia la configuración de MCWiFiPnP de versiones modernas.
+En Zombie, abrir el mundo, elegir **Abrir en LAN**, conservar el puerto `25565` y cambiar **Online Mode** a **OFF** antes de iniciar. El JAR `lanserverproperties-1.0.jar` se instala únicamente en el rol host y Coco no mezcla con esta experiencia la configuración de MCWiFiPnP de versiones modernas.
 
 Para DREAD, los amigos conectan por **Conexión directa** a `10.77.37.1:25565`; no se usa la IP pública. La IP ZeroTier por sí sola no significa que exista una partida: el host debe entrar al mundo, pulsar **Abrir en LAN**, esperar `PARTIDA ONLINE` y comprobar que TCP 25565 esté escuchando. El 2026-07-26 se observó ZeroTier sano en `10.77.37.1`, pero sin Java/Minecraft ni listener 25565 durante la consulta; no se registró ese instante como fallo del pack.
 
