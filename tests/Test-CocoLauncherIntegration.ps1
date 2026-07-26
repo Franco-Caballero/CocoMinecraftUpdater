@@ -25,26 +25,28 @@ try{
     $instance=Join-Path $testRoot 'experiences\into-the-backrooms';$world=Join-Path $instance 'saves\audit-world'
     New-Item -ItemType Directory -Path $world -Force|Out-Null
     [IO.File]::WriteAllBytes((Join-Path $world 'level.dat'),[byte[]](1,2,3))
-    '{"port":12345,"online-mode":true,"enable-upnp":true,"enable-uuid-fixer":false}'|Set-Content -LiteralPath (Join-Path $world 'mcwifipnp.json') -Encoding UTF8
+    '{"port":12345,"online-mode":false,"enable-upnp":false,"enable-uuid-fixer":true}'|Set-Content -LiteralPath (Join-Path $world 'mcwifipnp.json') -Encoding UTF8
+    if(Test-CocoManagedLanWorldConfigurations $instance $iron){throw 'El validador acepto los nombres kebab-case que MCWiFiPnP ignora.'}
     if((Set-CocoManagedLanWorldConfigurations $instance $iron)-ne1){throw 'No se reparo la configuracion LAN del mundo administrado.'}
     $lan=Get-Content -LiteralPath (Join-Path $world 'mcwifipnp.json') -Raw|ConvertFrom-Json
-    if([int]$lan.port-ne25565-or[bool]$lan.'online-mode'-or[bool]$lan.'enable-upnp'-or-not[bool]$lan.'enable-uuid-fixer'){
+    if([int]$lan.port-ne25565-or[bool]$lan.OnlineMode-or[bool]$lan.UseUPnP-or-not[bool]$lan.EnableUUIDFixer){
         throw 'La configuracion LAN administrada no fija puerto/offline/UUID Fixer/UPnP.'
     }
+    if(-not(Test-CocoManagedLanWorldConfigurations $instance $iron)){throw 'La configuracion oficial de MCWiFiPnP no fue reconocida.'}
     if((Set-CocoManagedLanWorldConfigurations $instance $iron)-ne0){throw 'Una configuracion LAN ya correcta fue reescrita sin necesidad.'}
-    $essential=Join-Path $instance 'essential\essential-loader.properties'
-    New-Item -ItemType Directory -Path (Split-Path $essential -Parent) -Force|Out-Null
-    "autoUpdate=with-prompt`npendingUpdateVersion=1.4.1`npendingUpdateResolution=true"|Set-Content -LiteralPath $essential -Encoding UTF8
-    if(-not(Set-CocoManagedRuntimePolicies $iron $instance)){throw 'No se aplico la politica sin prompts de Essential.'}
-    $essentialText=Get-Content -LiteralPath $essential -Raw
-    if($essentialText-notmatch'(?m)^autoUpdate=false\r?$'-or$essentialText-match'pendingUpdate'){throw 'Essential conserva un prompt/actualizacion pendiente.'}
-    if(Set-CocoManagedRuntimePolicies $iron $instance){throw 'La politica Essential ya correcta se reescribio.'}
-    $stage2=Join-Path $instance 'essential\loader\stage1\modlauncher9\stage2.forge.properties'
-    New-Item -ItemType Directory -Path (Split-Path $stage2 -Parent) -Force|Out-Null
-    "autoUpdate=with-prompt`npendingUpdateVersion=1.7.4"|Set-Content -LiteralPath $stage2 -Encoding UTF8
-    if(-not(Set-CocoManagedRuntimePolicies $iron $instance)){throw 'No se retiro el prompt interno stage2 de Essential.'}
-    $stage2Text=Get-Content -LiteralPath $stage2 -Raw
-    if($stage2Text-notmatch'(?m)^autoUpdate=false\r?$'-or$stage2Text-match'pendingUpdate'){throw 'Essential stage2 conserva un prompt pendiente.'}
+    "key_key.sprint:key.keyboard.r`nkey_key.sneak:key.keyboard.c`nfov:0.0`nresourcePacks:[]" |
+        Set-Content -LiteralPath (Join-Path $instance 'options.txt') -Encoding UTF8
+    Set-CocoManagedInstancePreferences $iron $instance
+    $options=Get-Content -LiteralPath (Join-Path $instance 'options.txt') -Raw
+    if($options-notmatch'key_key\.sprint:key\.keyboard\.left\.control'-or$options-notmatch'key_key\.sneak:key\.keyboard\.left\.shift'-or$options-notmatch'(?m)^fov:0\.625$'){
+        throw 'Las preferencias declarativas de Backrooms no se aplicaron.'
+    }
+    if($options-match'Tissous'-or(Test-Path (Join-Path $instance 'optionsof.txt'))-or(Test-Path (Join-Path $instance 'CustomSkinLoader\skins\smolbird.png'))){
+        throw 'Backrooms recibio preferencias privadas o pertenecientes a otro pack.'
+    }
+    if(Test-Path (Join-Path $instance 'optionsshaders.txt')){
+        throw 'Coco genero optionsshaders.txt en una instalacion limpia aunque Backrooms no declara un shaderpack externo.'
+    }
     if(-not(Write-CocoManagedServerList $instance $iron)){throw 'No se creo la recuperacion servers.dat inicial.'}
     $serverBytes=[IO.File]::ReadAllBytes((Join-Path $instance 'servers.dat'))
     $input=[IO.MemoryStream]::new($serverBytes);$reader=[IO.BinaryReader]::new($input,(New-Object Text.UTF8Encoding($false)),$true)
@@ -71,21 +73,57 @@ try{
     $packaged=Read-CocoLauncherCatalog (Join-Path $expanded 'launcher\catalog.json')
     $packagedOriginal=@($packaged.experiences|Where-Object id -eq 'coco-original'|Select-Object -First 1)[0]
     if($packagedOriginal.pack.version-ne'9.8.7'){throw 'El engine no vinculo catalogo y version publicada.'}
-    foreach($required in 'CocoLauncher.ps1','CocoSessionService.ps1','launcher\experiences\into-the-backrooms.lock.json'){
+    foreach($required in 'CocoLauncher.ps1','CocoSessionService.ps1','launcher\experiences\into-the-backrooms.lock.json','assets\skins\smolbird.png'){
         if(-not(Test-Path -LiteralPath (Join-Path $expanded $required) -PathType Leaf)){throw "Falta en engine: $required"}
+    }
+    $embeddedSkin=Join-Path $expanded 'assets\skins\smolbird.png'
+    if((Get-FileHash $embeddedSkin -Algorithm SHA256).Hash.ToLowerInvariant()-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){
+        throw 'El engine no contiene la skin exacta de smolbird.'
+    }
+    $fakeCsl=Join-Path $instance 'mods\CustomSkinLoader_Test.jar';New-Item -ItemType Directory -Path (Split-Path $fakeCsl -Parent) -Force|Out-Null
+    [IO.File]::WriteAllBytes($fakeCsl,[byte[]](9,8,7,6))
+    [IO.File]::WriteAllBytes((Join-Path $instance 'mods\CustomSkinLoader_Old.jar'),[byte[]](1,2,3))
+    $fakeHash=(Get-FileHash $fakeCsl -Algorithm SHA256).Hash.ToLowerInvariant()
+    $global=[pscustomobject]@{customSkinLoader=[pscustomobject]@{mode='required';variants=@([pscustomobject]@{minecraftVersions=@('1.20.1');path='mods/CustomSkinLoader_Test.jar';sha256=$fakeHash});localSkins=@([pscustomobject]@{username='smolbird';embeddedPath='assets/skins/smolbird.png';sha256='fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'})}}
+    Set-CocoGlobalSkinAssets $global $iron $instance $expanded
+    $installedSkin=Join-Path $instance 'CustomSkinLoader\LocalSkin\skins\smolbird.png'
+    if(-not(Test-Path $installedSkin)-or(Get-FileHash $installedSkin -Algorithm SHA256).Hash.ToLowerInvariant()-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){
+        throw 'La skin global de smolbird no se instalo en la ruta oficial LocalSkin.'
+    }
+    if(Test-Path (Join-Path $instance 'mods\CustomSkinLoader_Old.jar')){throw 'Una version vieja de CustomSkinLoader siguio junto a la variante compatible.'}
+    New-Item -ItemType Directory -Path (Join-Path $instance 'essential') -Force|Out-Null
+    [IO.File]::WriteAllBytes((Join-Path $instance 'mods\essential-test.jar'),[byte[]](1))
+    if((Remove-CocoEssentialArtifacts $instance)-lt2-or(Test-Path (Join-Path $instance 'essential'))-or(Test-Path (Join-Path $instance 'mods\essential-test.jar'))){
+        throw 'Essential no se elimino globalmente de la experiencia.'
     }
 
     $updater=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoUpdater.ps1'))
     foreach($requiredPattern in 'manualLauncher','manualOriginalRunning','-not\$manualOriginalRunning','Start-CocoLauncherUi','-not\$Silent','-not\$NetworkOnly','-not\$DetectOnly'){
         if($updater-notmatch$requiredPattern){throw "La activacion launcher no contiene: $requiredPattern"}
     }
-    foreach($requiredFunction in 'Start-CocoLauncherUi','Sync-CocoLegacyInstanceForLauncher','Invoke-CocoLauncherClientSession','Invoke-CocoLauncherHostSession','Resolve-CocoLauncherIdentityUi','Wait-CocoPortableMcGame','Invoke-CocoLauncherNetworkSerialized','Get-CocoLauncherFailureDetail'){
+    foreach($requiredFunction in 'Start-CocoLauncherUi','Sync-CocoLegacyInstanceForLauncher','Invoke-CocoLauncherClientSession','Invoke-CocoLauncherHostSession','Resolve-CocoLauncherIdentityUi','Wait-CocoPortableMcGame','Invoke-CocoLauncherNetworkSerialized','Get-CocoLauncherFailureDetail','Import-CocoUserSkin','Sync-CocoSkinRegistry','Sync-CocoOriginalSkinRegistry','Test-CocoSkinServiceEndpoint'){
         if($launcherText-notmatch("function\s+"+[regex]::Escape($requiredFunction))){throw "Falta el flujo UI: $requiredFunction"}
     }
     $clientFlow=[regex]::Match($launcherText,'(?s)function Invoke-CocoLauncherClientSession.*?function Invoke-CocoLauncherHostSession').Value
     if(@([regex]::Matches($clientFlow,'Get-CocoSessionAnnouncement')).Count-lt2-or@([regex]::Matches($clientFlow,'Announcement\.sessionId-ne\$sessionId')).Count-lt2){
         throw 'El cliente no revalida la misma sesion despues de preparar/login.'
     }
+    if($clientFlow.IndexOf('$identity=Resolve-CocoLauncherIdentityUi')-lt$clientFlow.LastIndexOf('Invoke-CocoManagedExperienceLaunch $Catalog $action.Experience.id $dummy')-or
+       $clientFlow.IndexOf('$identity=Resolve-CocoLauncherIdentityUi')-gt$clientFlow.IndexOf('Start-CocoLauncherExperience')){
+        throw 'La identidad no se resuelve entre la preparacion independiente del pack y la apertura de Minecraft.'
+    }
+    if($launcherText-match'Se usa en todas las experiencias y conserva inventario'){
+        throw 'El selector de nombre conserva el texto explicativo retirado por UX.'
+    }
+    if($launcherText-notmatch'AllowDrop=\$true'-or$launcherText-notmatch'Windows\.Forms\.OpenFileDialog'-or$launcherText-notmatch'CLIC O ARRASTRA UN PNG'){
+        throw 'La UI no ofrece un selector de skin reconocible por clic y arrastre.'
+    }
+    if($updater-notmatch'Sync-CocoOriginalSkinRegistry'){
+        throw 'NetworkOnly no sincroniza skins para el mundo original.'
+    }
+    $unknownExperience=[pscustomobject]@{runtime=[pscustomobject]@{minecraftVersion='9.9.9'}}
+    $unknownRejected=$false;try{[void](Get-CocoCustomSkinLoaderVariant $catalog.globalPolicies $unknownExperience)}catch{$unknownRejected=$_.Exception.Message-match'9\.9\.9'}
+    if(-not$unknownRejected){throw 'Una version futura sin variante probada de CustomSkinLoader fue aceptada por inferencia.'}
     $uiFlow=[regex]::Match($launcherText,'(?s)function Start-CocoLauncherUi.*$').Value
     if($uiFlow-notmatch"managementMode-eq'managed'"-or$uiFlow-notmatch"if\(\`$session\.State-eq'offline'\)"-or$uiFlow-notmatch'Sync-CocoLegacyInstanceForLauncher'){
         throw 'La UI no separo el selector administrado del fallback updater de Coco original.'
@@ -96,11 +134,11 @@ try{
     if($uiFlow-notmatch'Invoke-CocoLauncherNetworkSerialized'){
         throw 'Coco Launcher no serializa su reparacion ZeroTier con Bridge y engines anteriores.'
     }
-    if($uiFlow-notmatch'AutoScroll=\$true'-or$uiFlow-notmatch'CocoPanel\.Controls\.Add\(\$identityButton\)'){
-        throw 'El selector no soporta multiples experiencias sin superponer identidad/cierre.'
+    if($uiFlow-notmatch'AutoScroll=\$true'-or$uiFlow-notmatch'CocoPanel\.Controls\.Add\(\$identityCard\)'-or$uiFlow-notmatch'TU IDENTIDAD COCO'){
+        throw 'El selector no soporta multiples experiencias o no contiene la tarjeta unificada de identidad.'
     }
-    if($uiFlow-notmatch'identityButton\.Enabled=\$false;\$close\.Enabled=\$false'-or$uiFlow-notmatch'Get-CocoLauncherFailureDetail'){
-        throw 'La UI no bloquea cierre durante cambios transaccionales o no genera diagnosticos del launcher.'
+    if($uiFlow-notmatch'\$close\.Enabled=\$false'-or$uiFlow-notmatch'finally\{\$identityText\.Enabled=\$true;\$skinTile\.Enabled=\$true;\$close\.Enabled=\$true\}'-or$uiFlow-notmatch'Get-CocoLauncherFailureDetail'){
+        throw 'La UI no conserva identidad/skin durante la preparacion, no bloquea el cierre transaccional o no genera diagnosticos.'
     }
     if((Get-Command Test-CocoTcpEndpoint).Parameters.ContainsKey('Host')){
         throw 'Test-CocoTcpEndpoint usa el nombre reservado $Host y fallara al enlazar parametros.'

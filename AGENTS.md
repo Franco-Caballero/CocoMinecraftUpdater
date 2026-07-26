@@ -7,7 +7,7 @@ Este archivo contiene el estado operativo necesario para trabajar en `C:\Users\s
 ## Objetivos y reglas
 
 1. Mantener jugable el mundo cooperativo `coco`, alojado desde el cliente mediante **Abrir en LAN**.
-2. Admitir perfiles premium y offline/no-premium sin port forwarding.
+2. Admitir una identidad local/offline estable para todos los jugadores, sin port forwarding.
 3. Mantener baja latencia y automatizar red y mods con la mínima interacción.
 4. Preservar mecánicas, mundo, identidades y configuración de Distant Horizons (DH).
 5. Medir antes de atribuir lag o modificar límites.
@@ -45,6 +45,7 @@ ZeroTier es la ruta de producción. Minecraft usa TCP normal hacia una IP virtua
 - Servicio y adaptador se instalan y reparan mediante CocoUpdater.
 - El controlador local autoriza nodos pendientes mientras Minecraft del host está abierto; no se usa ZeroTier Central ni se distribuyen tokens administrativos.
 - Firewall host: entrada TCP 25565, perfil Private, interfaz ZeroTier, origen `10.77.37.0/24`.
+- Voz administrada: entrada UDP 24454 (`Coco Voice - ZeroTier UDP 24454`), perfil Private y origen `10.77.37.0/24`.
 - Clientes: perfil ZeroTier Public, sin regla de entrada Coco.
 - `servers.dat` recibe la entrada `Coco Minecraft` automáticamente.
 
@@ -88,14 +89,16 @@ La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655
 
 Estado publicado verificado el 2026-07-22:
 
-- Release estable: **0.5.47**
-- Host: 0.5.47, rol `host`
-- Bridge: `coco-session-bridge-0.5.47.jar`
-- EXE canónico: 0.5.47.0, con hash idéntico al manifiesto y sin helpers pendientes.
+- Release público: **0.5.57**
+- Antes de afirmar la versión instalada del host, comprobar manifiesto, EXE, Bridge y caché local: pueden no coincidir con el release público.
 - Manifiesto: 134 mods de cliente y 138 de host
 - Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
 
-Proyecto en desarrollo, todavía no publicado: el EXE canónico incorpora un launcher para experiencias Fabric/Forge aisladas. En clientes, una sesión administrada activa prepara y abre automáticamente ese juego; sin sesión ejecuta el updater clásico de Coco original. El mundo original nunca se lanza mediante PortableMC: continúa abriéndose con el launcher oficial/TLauncher y Bridge conserva el chequeo dentro del juego. La fuente canónica de alcance, decisiones, fases, riesgos y avance es `docs\CocoLauncherImplementation.md`; toda experiencia nueva debe pasar `docs\ModpackCompatibilityChecklist.md`. Iron Lung pasó instalación fría/reanudable, autorreparación, arranques, autoingreso hasta el endpoint, lectura real de `servers.dat`, creación de mundo y LAN local 25565; sin embargo, **sólo su runtime está parcialmente aprobado**. El ZIP no incluye mundo/quests y el mapa externo del submarino disponible es 1.21.8–1.21.11, no 1.20.1; la experiencia jugable queda bloqueada y el log de Organisorium requiere auditoría. Essential está excluido porque sus prompts/update/TOS bloqueaban el arranque y ningún mod lo requiere; mantener esa exclusión declarativa y no hardcodear packs en el engine. UI launcher usa etapas, bytes/archivos y heartbeat de runtime; cada ejecución genera Run ID/timeline y los fallos crean un TXT del Escritorio clasificado sin copiar tokens. El lifecycle host con 25564/25565 y el cliente supervisor pasan pruebas controladas; Coco permanece oculto hasta que Minecraft cierre, serializa ZeroTier y verifica que el servicio de sesión escuche. Faltan escenario definitivo/LAN multiusuario, migración visible desde 0.5.47 e identidades reales. No usar VM por decisión del host. `launcher\catalog.template.json` debe permanecer en `releaseStatus=development` hasta completar esas puertas; el Publisher bloquea cualquier publicación mientras no sea `approved`. No mover la instalación viva ni el mundo `coco`.
+El EXE incorpora Coco Launcher para experiencias Fabric/Forge aisladas. En clientes, una sesión administrada activa prepara y abre automáticamente ese juego; sin sesión ejecuta el updater clásico de Coco original. El mundo original nunca se lanza mediante PortableMC: continúa abriéndose con el launcher oficial/TLauncher y Bridge conserva el chequeo dentro del juego. La fuente canónica es `docs\CocoLauncherImplementation.md`, la auditoría vigente es `docs\CocoLauncherAudit-2026-07-25.md` y toda experiencia nueva debe pasar `docs\ModpackCompatibilityChecklist.md`.
+
+Estado por experiencia: Into The Backrooms está validado por un primer test real con host y dos amigos; DREAD permanece experimental; Zombie Apocalypse 1.12.2 está bloqueado porque todavía no existe un adaptador LAN validado para puerto fijo, modo offline y UUID estable. Iron Lung fue retirado. Todos los jugadores usan identidad local/offline: estados Microsoft anteriores se migran conservando el nombre y no existe login premium nuevo. La identidad nunca bloquea red, descarga o instalación: puede cambiarse durante la preparación y sólo se exige, si aún falta, justo antes de crear el proceso de Minecraft.
+
+MCWiFiPnP exige exactamente `OnlineMode`, `EnableUUIDFixer` y `UseUPnP`; sus equivalentes kebab-case son ignorados. No anunciar `ready` si Coco no observó la configuración válida antes de abrir 25565. Las preferencias propias de DREAD/Backrooms/Zombies deben ser declarativas en el catálogo. Essential se excluye globalmente. CustomSkinLoader es obligatorio mediante una variante compatible por versión; una versión desconocida queda bloqueada hasta declarar y probar una variante. Nombre y skin comparten una tarjeta permanente. La skin inicial de `smolbird` viaja en el engine; cada jugador puede elegir por clic o arrastre un PNG 64x64/64x32. Elegir una skin propia es opcional: su ausencia conserva la apariencia predeterminada de Minecraft y nunca bloquea el lanzamiento. El registro vive en `%LOCALAPPDATA%\CocoMinecraftUpdater\launcher\skins`, se sincroniza por `COCO-SKINS 1` en `10.77.37.1:25564` y se replica a `CustomSkinLoader\LocalSkin\skins`. Una caída nunca bloquea juego/red. Simple Voice Chat se detecta por ID interno, no nombre de JAR, y se fuerza en la ruta oficial a onboarding terminado, dispositivos default, VOICE, AGC/denoiser/nativos activos y sin mute. El host usa `Coco Voice - ZeroTier UDP 24454`, Private y limitada a `10.77.37.0/24`; no inventar configuraciones para otros mods de voz. La única instancia Backrooms viva está en `%APPDATA%\CocoMinecraft\experiences\into-the-backrooms`; no mantener copias temporales o backups de esa experiencia. No usar VM por decisión del host. No mover la instalación viva ni el mundo `coco`.
 
 Incidente resuelto el 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. 0.5.36 publicó el helper correcto y convirtió la carpeta `mods` en autoritativa, retirando `inventorysorter`; la verificación posterior descubrió que el Publisher intentaba descargar el bootstrap desde el release aún borrador y recibía 404. 0.5.37 instala el EXE compilado localmente antes de actualizar el host. Se verificaron release público, host, Bridge, Publisher, EXE canónico/hash, manifiesto, Git y ausencia de Minecraft abierto.
 
@@ -150,6 +153,8 @@ Pruebas mínimas al modificar el updater:
 - Parseo de sintaxis PowerShell.
 - `tests\Test-CocoRelease.ps1` para un release nuevo.
 - `tests\Test-CocoEngineRecovery.ps1`.
+- `tests\Test-CocoSkinSync.ps1`.
+- `tests\Test-CocoVoiceChatDefaults.ps1`.
 - Pruebas específicas de Bridge/ZeroTier afectadas por el cambio.
 - Confirmar que `-Silent` no abre UI.
 

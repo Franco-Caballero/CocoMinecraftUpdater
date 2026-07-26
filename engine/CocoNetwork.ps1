@@ -169,7 +169,7 @@ function Test-CocoZeroTierInstall([string]$MinimumVersion){
     }catch{return $false}
 }
 
-function Test-CocoInboundFirewallRule([string]$Name,[int]$ExpectedPort,[string]$Subnet){
+function Test-CocoInboundFirewallRule([string]$Name,[int]$ExpectedPort,[string]$Subnet,[string]$ExpectedProtocol='TCP'){
     try{
         $rule=Get-NetFirewallRule -DisplayName $Name -ErrorAction SilentlyContinue
         if(-not$rule){return $false}
@@ -178,20 +178,22 @@ function Test-CocoInboundFirewallRule([string]$Name,[int]$ExpectedPort,[string]$
         $remote=@($address.RemoteAddress)
         $subnetOkay=$remote-contains$Subnet-or($Subnet-eq'10.77.37.0/24'-and$remote-contains'10.77.37.0/255.255.255.0')
         return [bool]($rule.Enabled-eq'True'-and$rule.Direction-eq'Inbound'-and$rule.Action-eq'Allow'-and
-            $rule.Profile.ToString()-match'Private'-and$port.Protocol-eq'TCP'-and[int]$port.LocalPort-eq$ExpectedPort-and
+            $rule.Profile.ToString()-match'Private'-and$port.Protocol-eq$ExpectedProtocol-and[int]$port.LocalPort-eq$ExpectedPort-and
             $subnetOkay)
     }catch{return $false}
 }
 
 function Test-CocoHostFirewall($NetworkConfig){
     if(-not(Test-CocoInboundFirewallRule ([string]$NetworkConfig.firewallRuleName) ([int]$NetworkConfig.minecraftPort) ([string]$NetworkConfig.subnet))){return $false}
-    if($NetworkConfig.sessionPort){return Test-CocoInboundFirewallRule ([string]$NetworkConfig.sessionFirewallRuleName) ([int]$NetworkConfig.sessionPort) ([string]$NetworkConfig.subnet)}
+    if($NetworkConfig.sessionPort-and-not(Test-CocoInboundFirewallRule ([string]$NetworkConfig.sessionFirewallRuleName) ([int]$NetworkConfig.sessionPort) ([string]$NetworkConfig.subnet))){return $false}
+    if($NetworkConfig.voicePort-and-not(Test-CocoInboundFirewallRule ([string]$NetworkConfig.voiceFirewallRuleName) ([int]$NetworkConfig.voicePort) ([string]$NetworkConfig.subnet) 'UDP')){return $false}
     return $true
 }
 
 function Test-CocoClientFirewallClean($NetworkConfig){
     if(Get-NetFirewallRule -DisplayName ([string]$NetworkConfig.firewallRuleName) -ErrorAction SilentlyContinue){return $false}
     if($NetworkConfig.sessionFirewallRuleName-and(Get-NetFirewallRule -DisplayName ([string]$NetworkConfig.sessionFirewallRuleName) -ErrorAction SilentlyContinue)){return $false}
+    if($NetworkConfig.voiceFirewallRuleName-and(Get-NetFirewallRule -DisplayName ([string]$NetworkConfig.voiceFirewallRuleName) -ErrorAction SilentlyContinue)){return $false}
     return $true
 }
 
@@ -238,6 +240,8 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
         minecraftPort=[int]$NetworkConfig.minecraftPort;subnet=[string]$NetworkConfig.subnet
         sessionPort=if($NetworkConfig.sessionPort){[int]$NetworkConfig.sessionPort}else{0}
         sessionFirewallRuleName=[string]$NetworkConfig.sessionFirewallRuleName
+        voicePort=if($NetworkConfig.voicePort){[int]$NetworkConfig.voicePort}else{0}
+        voiceFirewallRuleName=[string]$NetworkConfig.voiceFirewallRuleName
         authorizationTimeoutSeconds=if($NetworkConfig.authorizationTimeoutSeconds){[int]$NetworkConfig.authorizationTimeoutSeconds}else{120}
     }
     $payload|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $configPath -Encoding UTF8
@@ -328,6 +332,7 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
     if($config.hostAddress-notmatch'^10\.77\.37\.1$'-or$config.subnet-ne'10.77.37.0/24'){throw 'El manifiesto contiene una red Coco inesperada.'}
     if([int]$config.minecraftPort-ne25565){throw 'El manifiesto contiene un puerto Coco inesperado.'}
     if(($config.sessionPort-or$config.sessionFirewallRuleName)-and([int]$config.sessionPort-ne25564-or$config.sessionFirewallRuleName-ne'Coco Launcher - ZeroTier TCP 25564')){throw 'El manifiesto contiene un puerto de sesion Coco inesperado.'}
+    if(($config.voicePort-or$config.voiceFirewallRuleName)-and([int]$config.voicePort-ne24454-or$config.voiceFirewallRuleName-ne'Coco Voice - ZeroTier UDP 24454')){throw 'El manifiesto contiene un puerto de voz Coco inesperado.'}
     if($config.installer.version-ne'1.16.2'-or
         $config.installer.url-ne'https://download.zerotier.com/RELEASES/1.16.2/dist/ZeroTier%20One.msi'-or
         ([string]$config.installer.sha256).ToLowerInvariant()-ne'42514072b0fe44b8f66e0395bcd23a0b1d1642c28ed00831f1527b2f41b14670'){

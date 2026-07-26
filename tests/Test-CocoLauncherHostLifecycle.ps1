@@ -18,12 +18,13 @@ try{
     $listenerScript=Join-Path $testRoot 'fake-game.ps1'
     [IO.File]::WriteAllText($listenerScript,@'
 $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Parse('10.77.37.1'),25565)
-try{$listener.Start(8);Start-Sleep -Milliseconds 2200}finally{$listener.Stop()}
+Start-Sleep -Milliseconds 600
+try{$listener.Start(8);Start-Sleep -Milliseconds 9500}finally{$listener.Stop()}
 '@,(New-Object Text.UTF8Encoding($true)))
     $watcherScript=Join-Path $testRoot 'watch-ready.ps1'
     [IO.File]::WriteAllText($watcherScript,@'
 param([string]$StatePath,[string]$Marker)
-$deadline=(Get-Date).AddSeconds(10)
+$deadline=(Get-Date).AddSeconds(12)
 while((Get-Date)-lt$deadline){
     if(Test-Path -LiteralPath $StatePath){
         try{if((Get-Content -LiteralPath $StatePath -Raw|ConvertFrom-Json).state-eq'ready'){[IO.File]::WriteAllText($Marker,'ready');exit 0}}catch{}
@@ -36,13 +37,18 @@ exit 3
 
     function Set-CocoState{param($Title,$Detail,$Progress)}
     function Resolve-CocoLauncherIdentityUi{[pscustomobject]@{mode='offline';username='HostAudit';uuid=''}}
+    function Invoke-CocoManagedExperienceLaunch{[pscustomobject]@{Status='prepared'}}
     function Start-CocoLauncherExperience{
+        $instanceRoot=Join-Path $testRoot 'instance'
+        $world=Join-Path $instanceRoot 'saves\host-audit'
+        New-Item -ItemType Directory -Path $world -Force|Out-Null
+        [IO.File]::WriteAllBytes((Join-Path $world 'level.dat'),[byte[]](1,2,3))
         $script:fakeGame=Start-Process powershell.exe -WindowStyle Hidden -PassThru -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+$listenerScript+'"'))
-        [pscustomobject]@{Status='launched';Installation=[pscustomobject]@{InstanceRoot=(Join-Path $testRoot 'instance')};Process=$script:fakeGame;LogPath=(Join-Path $testRoot 'fake.log')}
+        [pscustomobject]@{Status='launched';Installation=[pscustomobject]@{InstanceRoot=$instanceRoot};Process=$script:fakeGame;LogPath=(Join-Path $testRoot 'fake.log')}
     }
 
     $catalog=Read-CocoLauncherCatalog (Join-Path $root 'launcher\catalog.template.json')
-    $experience=@($catalog.experiences|Where-Object{$_.managementMode-eq'managed'-and$_.launch.workflow-ne'external-launcher'}|Select-Object -First 1)[0]
+    $experience=@($catalog.experiences|Where-Object{$_.id-eq'into-the-backrooms'}|Select-Object -First 1)[0]
     $paths=[pscustomobject]@{
         SessionStatePath=$statePath
         SessionLogPath=(Join-Path $testRoot 'session.log')
@@ -50,6 +56,8 @@ exit 3
         CacheRoot=(Join-Path $testRoot 'cache')
         ExperiencesRoot=(Join-Path $testRoot 'experiences')
         IdentityPath=(Join-Path $testRoot 'identity.json')
+        SkinRoot=(Join-Path $testRoot 'skins\profiles')
+        SkinStatePath=(Join-Path $testRoot 'skins\selection.json')
         MainDir=(Join-Path $testRoot 'shared')
         AccountDb=(Join-Path $testRoot 'accounts.json')
     }

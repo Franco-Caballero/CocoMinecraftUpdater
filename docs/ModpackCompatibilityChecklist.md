@@ -1,8 +1,8 @@
 # Checklist de compatibilidad para nuevas experiencias Coco
 
-Última revisión: 2026-07-22 (America/Santiago).
+Última revisión: 2026-07-25 (America/Santiago).
 
-Este documento convierte lo aprendido con Iron Lung en una puerta repetible. Agregar un pack al catálogo no significa que esté aprobado: cada experiencia debe conservar su propio lock, evidencia y resultados. La política común vive en el engine; las excepciones justificadas viven en la entrada del pack, nunca como parches invisibles con su nombre hardcodeado.
+Agregar un pack al catálogo no significa que esté aprobado: cada experiencia debe conservar su propio lock, evidencia y resultados. La política común vive en el engine; las excepciones justificadas viven en la entrada del pack, nunca como parches invisibles con su nombre hardcodeado.
 
 ## 1. Origen, licencia y reproducibilidad
 
@@ -33,7 +33,7 @@ Buscar antes del primer juego real:
 - mods sociales que dupliquen la red/hosting de Coco;
 - ventanas externas que bloqueen el arranque sin aparecer en el log principal.
 
-Un archivo sólo se excluye después de probar que ninguna dependencia declarada lo exige. La exclusión se registra en `excludedPaths` con motivo y evidencia. Iron Lung estableció el patrón: Essential era opcional, abría actualización/onboarding y Coco ya cubría su función de red; por eso se excluyó en el catálogo, no mediante una condición `if Iron Lung`.
+Un archivo sólo se excluye después de probar que ninguna dependencia declarada lo exige. Las excepciones de un pack se registran en `excludedPaths`, no mediante un `if` con su nombre. Essential es la excepción global decidida por el producto: todo pack debe instalarse sin sus JAR, overrides ni runtime generado.
 
 ## 4. Instalación y datos persistentes
 
@@ -42,6 +42,7 @@ Un archivo sólo se excluye después de probar que ninguna dependencia declarada
 - Verificar en juego el punto de aparición, modo, inventario, estructuras iniciales y reglas que constituyen la experiencia. Llegar al menú o generar un mundo vanilla sólo aprueba el runtime, no el diseño jugable.
 - `saves`, `playerdata`, estadísticas, avances y Distant Horizons nunca pertenecen al conjunto administrado.
 - Decidir explícitamente qué archivos se preservan (por ejemplo `options.txt`) y cuáles se reemplazan.
+- Preservar los shaders, efectos internos y configuraciones visuales que entregue el pack. No añadir, seleccionar, desactivar ni retirar un shader por una regla genérica: cualquier intervención visual adicional debe pertenecer explícitamente a esa experiencia y tener evidencia y prueba física.
 - Probar actualización y retiro de mods con backup y rollback provocado.
 - Abrir con Minecraft real y confirmar que `servers.dat` se lee; no basta con que un escritor NBT propio acepte su salida.
 
@@ -55,14 +56,24 @@ Un archivo sólo se excluye después de probar que ninguna dependencia declarada
 
 ## 6. Identidad y red
 
-- Probar identidad local estable y Microsoft real por separado.
-- Probar la detección con un perfil TLauncher real si se pretende cubrirlo.
+- Probar una identidad local estable y confirmar que el mismo nombre conserva UUID, inventario y avances.
+- Declarar exactamente una variante oficial de CustomSkinLoader compatible con la versión de Minecraft; una versión desconocida debe quedar bloqueada, no inferirse.
+- Probar clic y arrastre con PNG 64x64 y 64x32, rechazo de dimensiones inválidas, vista previa de cabeza y copia a `CustomSkinLoader/LocalSkin/skins`.
+- Probar también un jugador que no seleccione skin: debe conservar la apariencia predeterminada y abrir Minecraft únicamente con un nombre válido.
+- Con dos clientes reales, cambiar una skin, reiniciar/reingresar y comprobar que ambos reciben el mismo SHA-256. Repetir una vez con Coco original para cubrir `NetworkOnly`.
+- Si existe `voicechat`, comprobar la metadata interna aunque el JAR tenga nombre `asset_*`, ausencia de onboarding, dispositivos default, `VOICE`, AGC, denoiser, `muted=false` y conexión UDP 24454 entre dos equipos.
+- No generar configuraciones para Plasmo Voice u otro producto sin un adaptador y claves oficiales comprobadas.
+- Probar la detección con un perfil TLauncher real si se pretende reutilizar automáticamente su nombre.
+- Confirmar que ningún estado, log o diagnóstico copia tokens de launchers.
+- Verificar el archivo real de MCWiFiPnP: `OnlineMode=false`, `EnableUUIDFixer=true`, `UseUPnP=false` y puerto 25565. Los nombres kebab-case no son válidos.
+- Para versiones sin MCWiFiPnP compatible, mantener el pack bloqueado hasta contar con otro adaptador físicamente probado.
 - Confirmar que un segundo nodo ZeroTier obtiene autorización, ruta e ingreso; una prueba loopback del host no reemplaza esto.
 - Verificar que no se abre e4mc ni otro túnel secundario salvo contingencia deliberada.
 
 ## 7. UX, diagnóstico y publicación
 
 - Todas las tareas largas deben usar las etapas visibles de Coco; el pack no puede abrir un descargador oculto.
+- Ejecutar `Probar-CocoLauncher-Amigo-SinIdentidad.cmd` y `Probar-CocoLauncher-Amigo-ConIdentidad.cmd` para revisar el cliente exacto: tarjeta unificada siempre visible, progreso automático, pausa final sólo si el nombre no fue confirmado y skin completamente opcional.
 - Descargas: archivo N/total, nombre, caché/descarga, MB, velocidad, ETA y verificación.
 - Instalación: archivo N/total y resultado (`preservado`, `ya verificado`, `instalado` o retiro).
 - Runtime: heartbeat con intento y tiempo transcurrido aunque Forge/Mojang no entregue porcentaje.
@@ -84,7 +95,7 @@ La documentación de cada pack debe incluir:
 | Arranque y prompts externos | Pendiente/aprobado |
 | Mundo y progresión | Pendiente/aprobado |
 | LAN, autoingreso y reconexión | Pendiente/aprobado |
-| Identidad local/Microsoft | Pendiente/aprobado |
+| Identidad local, UUID y migración | Pendiente/aprobado |
 | Segundo equipo ZeroTier | Pendiente/aprobado |
 | Diagnóstico provocado | Pendiente/aprobado y Failure ID |
 | Decisión de publicación | development/approved y responsable |

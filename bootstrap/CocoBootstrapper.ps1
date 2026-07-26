@@ -24,6 +24,20 @@ $script:CocoBootstrapLogPath=Join-Path $script:CocoBootstrapLogRoot "bootstrap-r
 function Write-CocoBootstrapEvent([string]$Status,[int]$Progress,[string]$Kind='STATE'){
     try{Add-Content -LiteralPath $script:CocoBootstrapLogPath -Value ("{0:o} {1} {2}% elapsedMs={3} {4}"-f(Get-Date),$Kind,$Progress,$script:CocoBootstrapStarted.ElapsedMilliseconds,$Status) -Encoding UTF8}catch{}
 }
+function Set-CocoBootstrapLabelText($Label,[string]$Text,[single]$MaximumSize,[single]$MinimumSize){
+    $Label.Text=$Text
+    $candidate=$MaximumSize
+    while($candidate-gt$MinimumSize){
+        $font=New-Object Drawing.Font($Label.Font.FontFamily,$candidate,$Label.Font.Style)
+        $measured=[Windows.Forms.TextRenderer]::MeasureText($Text,$font,$Label.ClientSize,[Windows.Forms.TextFormatFlags]::WordBreak)
+        if($measured.Height-le$Label.ClientSize.Height-and$measured.Width-le$Label.ClientSize.Width){
+            $old=$Label.Font;$Label.Font=$font;$old.Dispose()
+            return
+        }
+        $font.Dispose();$candidate-=0.5
+    }
+    $old=$Label.Font;$Label.Font=New-Object Drawing.Font($Label.Font.FontFamily,$MinimumSize,$Label.Font.Style);$old.Dispose()
+}
 
 function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     Write-CocoBootstrapEvent $Status 1
@@ -36,21 +50,21 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     $form.AutoScaleMode='None';$form.ForeColor=[Drawing.Color]::White;$form.TopMost=$true
     $form.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
     try{$embeddedIcon=[Drawing.Icon]::ExtractAssociatedIcon([Diagnostics.Process]::GetCurrentProcess().MainModule.FileName);if($embeddedIcon){$form.Icon=$embeddedIcon}}catch{}
-    $panel=New-Object Windows.Forms.Panel;$panel.Location=New-Object Drawing.Point(25,190);$panel.Size=New-Object Drawing.Size(780,350)
+    $panel=New-Object Windows.Forms.Panel;$panel.Location=New-Object Drawing.Point(25,190);$panel.Size=New-Object Drawing.Size(640,460)
     $panel.BackColor=[Drawing.Color]::FromArgb(22,13,37)
-    $accent=New-Object Windows.Forms.Panel;$accent.Location=New-Object Drawing.Point(0,0);$accent.Size=New-Object Drawing.Size(9,350)
+    $accent=New-Object Windows.Forms.Panel;$accent.Location=New-Object Drawing.Point(0,0);$accent.Size=New-Object Drawing.Size(9,460)
     $accent.BackColor=[Drawing.Color]::FromArgb(177,92,255);$panel.Controls.Add($accent)
     $sparkle=[char]0x2726
     $title=New-Object Windows.Forms.Label;$title.Text='ETAPA 1/10 · INICIANDO COCO';$title.Location=New-Object Drawing.Point(43,42)
-    $title.Size=New-Object Drawing.Size(590,52);$title.Font=New-Object Drawing.Font('Segoe UI Semibold',22)
+    $title.Location=New-Object Drawing.Point(43,30);$title.Size=New-Object Drawing.Size(570,72);$title.Font=New-Object Drawing.Font('Segoe UI Semibold',22)
     $title.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
-    $detail=New-Object Windows.Forms.Label;$detail.Text=$Status;$detail.Location=New-Object Drawing.Point(46,108)
-    $detail.Size=New-Object Drawing.Size(570,64);$detail.Font=New-Object Drawing.Font('Segoe UI',12);$detail.ForeColor=[Drawing.Color]::FromArgb(218,210,229)
+    $detail=New-Object Windows.Forms.Label;$detail.Text=$Status;$detail.Location=New-Object Drawing.Point(46,106)
+    $detail.Size=New-Object Drawing.Size(570,76);$detail.Font=New-Object Drawing.Font('Segoe UI',12);$detail.ForeColor=[Drawing.Color]::FromArgb(218,210,229)
     $track=New-Object Windows.Forms.Panel;$track.Location=New-Object Drawing.Point(46,190);$track.Size=New-Object Drawing.Size(570,30)
     $track.BackColor=[Drawing.Color]::FromArgb(58,36,81)
     $fill=New-Object Windows.Forms.Panel;$fill.Size=New-Object Drawing.Size(12,30);$fill.BackColor=[Drawing.Color]::FromArgb(177,92,255)
     $brand=New-Object Windows.Forms.Label;$brand.Text="$sparkle  COCO PACK  |  FABRIC 26.1.2";$brand.Location=New-Object Drawing.Point(46,244)
-    $brand.Size=New-Object Drawing.Size(620,25);$brand.Font=New-Object Drawing.Font('Segoe UI Semibold',10);$brand.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
+    $brand.Size=New-Object Drawing.Size(570,25);$brand.Font=New-Object Drawing.Font('Segoe UI Semibold',10);$brand.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
     $track.Controls.Add($fill);$panel.Controls.AddRange(@($title,$detail,$track,$brand))
     $art=New-Object Windows.Forms.PictureBox;$art.Location=New-Object Drawing.Point(675,5);$art.Size=New-Object Drawing.Size(380,720)
     $art.SizeMode='Zoom';$art.BackColor=[Drawing.Color]::Transparent
@@ -67,13 +81,16 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     $form.Show();$form.BringToFront();$form.Activate();[Windows.Forms.Application]::DoEvents()
     $script:Splash=$form;$script:SplashDetail=$detail;$script:SplashFill=$fill;$script:SplashTrack=$track
     $script:SplashTitle=$title
+    Set-CocoBootstrapLabelText $title $title.Text 22 13
+    Set-CocoBootstrapLabelText $detail $detail.Text 12 9
     $global:CocoSharedUi=@{Form=$form;Panel=$panel;Accent=$accent;Title=$title;Detail=$detail;Progress=$fill;Track=$track;Brand=$brand;Started=[Diagnostics.Stopwatch]::StartNew();BaseProgress=12}
 }
 function Set-CocoSplash([string]$Status,[int]$Progress){
     Write-CocoBootstrapEvent $Status $Progress
     if(-not$script:Splash){return}
     $stage=if($Progress-lt7){'ETAPA 1/10 · BUSCANDO ACTUALIZACIONES'}elseif($Progress-lt12){'ETAPA 2/10 · ACTUALIZANDO COMPONENTES'}else{'ETAPA 2/10 · ABRIENDO EL MOTOR'}
-    $script:SplashTitle.Text=$stage;$script:SplashDetail.Text="$Status`r`nEjecucion: $($script:CocoRunId.Substring(0,8))"
+    Set-CocoBootstrapLabelText $script:SplashTitle $stage 22 13
+    Set-CocoBootstrapLabelText $script:SplashDetail "$Status`r`nEjecucion: $($script:CocoRunId.Substring(0,8))" 12 9
     $script:SplashFill.Width=[Math]::Max(4,[int]($script:SplashTrack.ClientSize.Width*$Progress/100))
     $script:Splash.Refresh();[Windows.Forms.Application]::DoEvents()
 }

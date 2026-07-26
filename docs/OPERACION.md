@@ -1,6 +1,6 @@
 # Operación
 
-> Producción continúa en 0.5.47. Coco Launcher multi-instancia está implementado pero no publicado; su operación, auditoría y puertas físicas pendientes están en [`CocoLauncherImplementation.md`](CocoLauncherImplementation.md). No usar las instancias desechables como mundo de producción.
+> El release público actual es 0.5.57. Coco Launcher multi-instancia ya completó un primer test de Into The Backrooms con host y dos clientes; todavía debe pasar el protocolo del segundo test antes de ampliar el grupo. DREAD es experimental y Zombie 1.12.2 está bloqueado. Estado y puertas: [`CocoLauncherImplementation.md`](CocoLauncherImplementation.md); auditoría: [`CocoLauncherAudit-2026-07-25.md`](CocoLauncherAudit-2026-07-25.md).
 
 ## Roles y ubicaciones
 
@@ -9,6 +9,9 @@
 - EXE canónico: `%LOCALAPPDATA%\CocoMinecraftUpdater\CocoUpdater.exe`.
 - Estado: `%APPDATA%\.minecraft\config\coco-updater-state.json`.
 - Destino detectado: `%LOCALAPPDATA%\CocoMinecraftUpdater\target.json`.
+- Instancias administradas: `%APPDATA%\CocoMinecraft\experiences\<instanceId>`.
+
+Into The Backrooms usa la instancia persistente `%APPDATA%\CocoMinecraft\experiences\into-the-backrooms`, que contiene el mundo del primer test. No crear una copia paralela bajo `%TEMP%`.
 
 `config\coco-host.json` nunca se distribuye.
 
@@ -42,6 +45,10 @@ Cliente:
 Bridge ejecuta `-NetworkOnly` al arrancar y consulta dentro de Minecraft únicamente el número de versión pública al iniciar login. El proceso Java conserva la entrada del EXE como pipe y cierra inmediatamente el extremo de escritura del padre: `ps2exe` recibe EOF y comienza el script sin esperar que Minecraft termine. No se debe usar `ProcessBuilder.Redirect.DISCARD` como entrada, porque es un destino de escritura y Java 25 lo rechaza. Si la versión coincide, no lanza el updater completo; si difiere o la consulta falla, inicia el flujo visual y reintentable. Red y actualización usan archivos de sesión y mutex distintos: una comprobación silenciosa de red ya iniciada no puede bloquear la reina ni el cierre del cliente. El flujo completo comprueba primero los archivos locales; ante cualquier pack cliente atrasado muestra la reina, pide el cierre normal y fuerza únicamente ese PID tras ocho segundos si no responde. Después espera de forma visible cualquier operación de red anterior —incluidos engines hasta 0.5.39 que usaban el mutex único— y continúa con ZeroTier, descargas e instalación. Un autorizador persistente sano y ligado al mismo PID se reutiliza en vez de borrar su heartbeat o competir por el mutex. El chequeo completo informa además la versión cargada en la JVM; al abrir el EXE manualmente, el engine compara el inicio del proceso con `installedAt`. Si el disco ya contiene el release nuevo pero Minecraft sigue ejecutando el Bridge anterior, cierra solo ese cliente y pide reabrir sin reinstalar. El engine considera visible cualquier chequeo completo asociado a un PID de Minecraft, aunque el Bridge antiguo no envíe `ShowOnUpdate`. El chequeo se reintenta hasta tres veces si el proceso no llega a producir estado. Una instalación realmente actualizada no abre el updater de mods ni mantiene un monitor periódico. Cuando hubo trabajo visible, el final correcto se reconoce por `TODO LISTO`, color verde y el botón `ACEPTAR`; la ventana no se cierra por tiempo, Enter equivale a pulsar el botón y no aparece texto superpuesto ni un cuadro booleano posterior.
 
 En ejecución manual sin `-GameDir`, solo un proceso Minecraft que anuncie Fabric y la versión publicada recibe prioridad. Ese proceso compatible vence al destino persistido aunque una instalación anterior ya tenga marcador Coco. Si está abierta una versión distinta, el updater se detiene con instrucciones para abrir Fabric 26.1.2; si hay dos instancias compatibles, solicita dejar solo una abierta. En carpetas TLauncher Fabric 26.1.2, pone en `false` los campos `skinVersion` y `activateSkinCapeForUserVersion` presentes en `TLauncherAdditional.json` o en el JSON de versión, porque TLSkinCape es incompatible con EntityCulling/TRenderer/Transition. No retirar EntityCulling como solución.
+
+`NetworkOnly` también sincroniza el registro de skins sin alterar mods ni bloquear la red si el servicio no está disponible. En el host de Coco original inicia `CocoSessionService.ps1` ligado al PID de Minecraft; en clientes sube la selección pendiente y descarga hashes nuevos. El registro vive en `%LOCALAPPDATA%\CocoMinecraftUpdater\launcher\skins\profiles` y se copia a `<gameDir>\CustomSkinLoader\LocalSkin\skins`. Revisar `logs\launcher-session-service.log` y el log `updater-*` para diagnosticar rechazos `OWNER`, PNG o conexión.
+
+En toda experiencia administrada, Coco inspecciona la metadata interna de los JAR. Si encuentra `voicechat`, repara antes del arranque `config\voicechat\voicechat-client.properties`: onboarding terminado, entrada/salida default, VOICE, AGC, denoiser, nativos activos y micrófono sin mute. El host debe tener `Coco Voice - ZeroTier UDP 24454`, restringida a Private y `10.77.37.0/24`; `Ensure-CocoNetwork` eleva y la repara junto con las reglas TCP. Verificar `Get-NetFirewallRule`/`Get-NetFirewallPortFilter` y probar voz real desde dos equipos.
 
 Las migraciones de preferencias declaradas por un release se ejecutan solo durante esa actualización, con Minecraft cerrado, y sus IDs quedan registrados en `coco-updater-state.json`. `pingwheel-location-z-v1` reemplaza Mouse 5 por Z solo si sigue en el valor predeterminado, o agrega Z si la entrada aún no existe. Si el jugador ya eligió otra tecla, se conserva; una vez registrada, publicaciones posteriores tampoco vuelven a tocarla.
 

@@ -63,6 +63,9 @@ try{
     if(($config.sessionPort-or$config.sessionFirewallRuleName)-and([int]$config.sessionPort-ne25564-or$config.sessionFirewallRuleName-ne'Coco Launcher - ZeroTier TCP 25564')){
         throw 'La configuracion elevada contiene una regla de sesion inesperada.'
     }
+    if(($config.voicePort-or$config.voiceFirewallRuleName)-and([int]$config.voicePort-ne24454-or$config.voiceFirewallRuleName-ne'Coco Voice - ZeroTier UDP 24454')){
+        throw 'La configuracion elevada contiene una regla de voz inesperada.'
+    }
     if($config.minimumVersion-ne'1.16.2'-or([string]$config.installerSha256).ToLowerInvariant()-ne'42514072b0fe44b8f66e0395bcd23a0b1d1642c28ed00831f1527b2f41b14670'){
         throw 'La configuracion elevada contiene un instalador ZeroTier inesperado.'
     }
@@ -170,9 +173,16 @@ try{
                 -LocalPort ([int]$config.sessionPort) -RemoteAddress $config.subnet -Profile Private `
                 -ErrorAction Stop|Out-Null
         }
+        if($config.voicePort){
+            Remove-NetFirewallRule -DisplayName $config.voiceFirewallRuleName -ErrorAction SilentlyContinue
+            New-NetFirewallRule -DisplayName $config.voiceFirewallRuleName -Direction Inbound -Action Allow -Protocol UDP `
+                -LocalPort ([int]$config.voicePort) -RemoteAddress $config.subnet -Profile Private `
+                -ErrorAction Stop|Out-Null
+        }
     }else{
         Remove-NetFirewallRule -DisplayName $config.firewallRuleName -ErrorAction SilentlyContinue
         if($config.sessionFirewallRuleName){Remove-NetFirewallRule -DisplayName $config.sessionFirewallRuleName -ErrorAction SilentlyContinue}
+        if($config.voiceFirewallRuleName){Remove-NetFirewallRule -DisplayName $config.voiceFirewallRuleName -ErrorAction SilentlyContinue}
     }
 
     if($config.mode-eq'client'){

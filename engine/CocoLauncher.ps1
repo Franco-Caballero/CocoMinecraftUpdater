@@ -50,6 +50,8 @@ function Get-CocoLauncherIdentityHint([string]$MinecraftRoot){
             $profile=Get-Content -LiteralPath $tlauncherProfiles -Raw|ConvertFrom-Json
             $accounts=if($profile.accounts){@($profile.accounts.PSObject.Properties)}else{@()}
             $selected=[string]$profile.selectedAccount
+            if([string]::IsNullOrWhiteSpace($selected)){$selected=[string]$profile.selectedAccountUUID}
+            if([string]::IsNullOrWhiteSpace($selected)){$selected=[string]$profile.freeAccountUUID}
             $property=$null
             if(-not[string]::IsNullOrWhiteSpace($selected)){$property=$profile.accounts.PSObject.Properties[$selected]}
             if(-not$property-and$accounts.Count-eq1){$property=$accounts[0]}
@@ -59,16 +61,13 @@ function Get-CocoLauncherIdentityHint([string]$MinecraftRoot){
                 $username=([string]$account.displayName).Trim()
                 if([string]::IsNullOrWhiteSpace($username)){$username=([string]$account.username).Trim()}
                 if([string]::IsNullOrWhiteSpace($username)){$username=([string]$account.userID).Trim()}
-                if($type-in@('free','tlauncher')){
-                    return [pscustomobject]@{Mode='offline';Confidence='high';Username=$username;Source='tlauncher-profile';Reason="TLauncher declara una cuenta local de tipo '$type'."}
+                if(Test-CocoMinecraftUsername $username){
+                    return [pscustomobject]@{
+                        Mode='offline';Confidence='high';Username=$username;Source='tlauncher-profile'
+                        Reason="Coco reutilizara el nombre seleccionado en TLauncher sin abrirlo ni copiar sus credenciales."
+                    }
                 }
-                if($type-match'^(msa|microsoft|mojang|microsoft_account|mojang_account)$'){
-                    return [pscustomobject]@{Mode='microsoft';Confidence='high';Username=$username;Source='tlauncher-profile';Reason="TLauncher declara una cuenta autenticada de tipo '$type'."}
-                }
-                if($null-ne$account.premiumAccount-and-not[bool]$account.premiumAccount-and-not[string]::IsNullOrWhiteSpace($username)){
-                    return [pscustomobject]@{Mode='offline';Confidence='medium';Username=$username;Source='tlauncher-profile';Reason='TLauncher declara premiumAccount=false, pero usa un tipo de cuenta desconocido.'}
-                }
-                return [pscustomobject]@{Mode='unknown';Confidence='none';Username=$username;Source='tlauncher-profile';Reason="TLauncher usa un tipo de cuenta no reconocido: '$type'."}
+                return [pscustomobject]@{Mode='unknown';Confidence='none';Username='';Source='tlauncher-profile';Reason="TLauncher no expone un nombre Minecraft valido para reutilizar."}
             }
             if($accounts.Count-gt1){return [pscustomobject]@{Mode='unknown';Confidence='none';Username='';Source='tlauncher-profile';Reason='TLauncher contiene varias cuentas y ninguna seleccion inequivoca.'}}
         }catch{
@@ -76,9 +75,48 @@ function Get-CocoLauncherIdentityHint([string]$MinecraftRoot){
         }
     }
 
+    $officialAccounts=Join-Path $MinecraftRoot 'launcher_accounts.json'
+    if(Test-Path -LiteralPath $officialAccounts -PathType Leaf){
+        try{
+            $profile=Get-Content -LiteralPath $officialAccounts -Raw|ConvertFrom-Json
+            $accounts=if($profile.accounts){@($profile.accounts.PSObject.Properties)}else{@()}
+            $active=[string]$profile.activeAccountLocalId
+            $property=if($active){$profile.accounts.PSObject.Properties[$active]}else{$null}
+            if(-not$property-and$accounts.Count-eq1){$property=$accounts[0]}
+            if($property){
+                $username=[string]$property.Value.minecraftProfile.name
+                if(Test-CocoMinecraftUsername $username){
+                    return [pscustomobject]@{
+                        Mode='offline';Confidence='high';Username=$username;Source='official-launcher-account'
+                        Reason='Coco reutilizara el nombre visible del Launcher oficial como identidad local.'
+                    }
+                }
+            }
+        }catch{}
+    }
+
+    $legacyProfiles=Join-Path $MinecraftRoot 'launcher_profiles.json'
+    if(Test-Path -LiteralPath $legacyProfiles -PathType Leaf){
+        try{
+            $profile=Get-Content -LiteralPath $legacyProfiles -Raw|ConvertFrom-Json
+            $names=@($profile.authenticationDatabase.PSObject.Properties|ForEach-Object{
+                [string]$_.Value.profiles.PSObject.Properties.Value.displayName
+            }|Where-Object{Test-CocoMinecraftUsername $_}|Select-Object -Unique)
+            if($names.Count-eq1){
+                return [pscustomobject]@{
+                    Mode='offline';Confidence='medium';Username=$names[0];Source='official-launcher-profile'
+                    Reason='Coco encontro un unico nombre historico valido del Launcher oficial.'
+                }
+            }
+        }catch{}
+    }
+
     foreach($officialProfile in 'launcher_profiles_microsoft_store.json','launcher_profiles.json'){
         if(Test-Path -LiteralPath (Join-Path $MinecraftRoot $officialProfile) -PathType Leaf){
-            return [pscustomobject]@{Mode='microsoft';Confidence='likely';Username='';Source='official-launcher-profile';Reason='Existe una instalacion del Launcher oficial; la propiedad se confirmara durante Microsoft login.'}
+            return [pscustomobject]@{
+                Mode='unknown';Confidence='none';Username='';Source='official-launcher-present'
+                Reason='El Launcher oficial esta instalado, pero no expone de forma segura el nombre del jugador.'
+            }
         }
     }
     return $unknown
@@ -94,6 +132,8 @@ function Read-CocoLauncherIdentityState([string]$Path){
     if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){return $null}
     try{$state=Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json}catch{throw "El estado de identidad Coco no es JSON valido: $($_.Exception.Message)"}
     if([int]$state.schemaVersion-ne1){throw 'El estado de identidad Coco usa un schemaVersion no soportado.'}
+    # "microsoft" sólo se acepta para migrar estados creados por 0.5.50-0.5.57.
+    # Los lanzamientos nuevos usan exclusivamente identidad local/offline.
     if($state.mode-notin@('microsoft','offline')){throw 'El estado de identidad Coco tiene un modo invalido.'}
     if($state.mode-eq'offline'-and -not(Test-CocoMinecraftUsername ([string]$state.username))){throw 'La identidad local guardada no tiene un nombre Minecraft valido.'}
     if(-not[string]::IsNullOrWhiteSpace([string]$state.uuid)-and[string]$state.uuid-notmatch'^[a-fA-F0-9-]{32,36}$'){throw 'La identidad Microsoft guardada tiene un UUID invalido.'}
@@ -109,13 +149,13 @@ function Read-CocoLauncherIdentityState([string]$Path){
 
 function Save-CocoLauncherIdentityState(
     [string]$Path,
-    [ValidateSet('microsoft','offline')][string]$Mode,
+    [ValidateSet('offline')][string]$Mode,
     [string]$Username='',
     [string]$Uuid='',
     [string]$DecisionSource='user'
 ){
-    if($Mode-eq'offline'-and -not(Test-CocoMinecraftUsername $Username)){throw 'El nombre local debe tener entre 3 y 16 caracteres y usar solo letras, numeros o guion bajo.'}
-    if(-not[string]::IsNullOrWhiteSpace($Uuid)-and$Uuid-notmatch'^[a-fA-F0-9-]{32,36}$'){throw 'El UUID Microsoft no es valido.'}
+    if(-not(Test-CocoMinecraftUsername $Username)){throw 'El nombre local debe tener entre 3 y 16 caracteres y usar solo letras, numeros o guion bajo.'}
+    if(-not[string]::IsNullOrWhiteSpace($Uuid)){throw 'La identidad local de Coco no acepta un UUID externo.'}
     $parent=Split-Path $Path -Parent
     if([string]::IsNullOrWhiteSpace($parent)){throw 'El estado de identidad requiere una ruta con directorio.'}
     New-Item -ItemType Directory -Path $parent -Force|Out-Null
@@ -137,19 +177,114 @@ function Save-CocoLauncherIdentityState(
 
 function Resolve-CocoLauncherIdentity([string]$StatePath,[string]$MinecraftRoot){
     $saved=Read-CocoLauncherIdentityState $StatePath
-    if($saved){
+    if($saved-and$saved.mode-eq'offline'){
         return [pscustomobject]@{Status='configured';RequiresChoice=$false;WasAutomatic=$false;Identity=$saved;Hint=$null}
     }
+    if($saved-and$saved.mode-eq'microsoft'-and(Test-CocoMinecraftUsername ([string]$saved.username))){
+        $identity=Save-CocoLauncherIdentityState $StatePath offline ([string]$saved.username) '' 'migrated-from-microsoft'
+        return [pscustomobject]@{Status='configured';RequiresChoice=$false;WasAutomatic=$true;Identity=$identity;Hint=$null}
+    }
     $hint=Get-CocoLauncherIdentityHint $MinecraftRoot
-    if($hint.Mode-eq'offline'-and$hint.Confidence-in@('high','medium')-and(Test-CocoMinecraftUsername ([string]$hint.Username))){
+    if($hint.Confidence-in@('high','medium')-and(Test-CocoMinecraftUsername ([string]$hint.Username))){
         $identity=Save-CocoLauncherIdentityState $StatePath offline ([string]$hint.Username) '' ([string]$hint.Source)
         return [pscustomobject]@{Status='configured';RequiresChoice=$false;WasAutomatic=$true;Identity=$identity;Hint=$hint}
     }
-    if($hint.Mode-eq'microsoft'-and$hint.Confidence-in@('high','likely')){
-        $identity=Save-CocoLauncherIdentityState $StatePath microsoft ([string]$hint.Username) '' ([string]$hint.Source)
-        return [pscustomobject]@{Status='microsoft-login-required';RequiresChoice=$false;WasAutomatic=$true;Identity=$identity;Hint=$hint}
-    }
     [pscustomobject]@{Status='choice-required';RequiresChoice=$true;WasAutomatic=$false;Identity=$null;Hint=$hint}
+}
+
+function Test-CocoSkinPng([string]$Path){
+    if([string]::IsNullOrWhiteSpace($Path)-or-not(Test-Path -LiteralPath $Path -PathType Leaf)){throw 'Selecciona un archivo PNG.'}
+    $item=Get-Item -LiteralPath $Path
+    if($item.Length-lt67-or$item.Length-gt1048576){throw 'La skin debe ser un PNG de hasta 1 MB.'}
+    $bytes=[IO.File]::ReadAllBytes($Path)
+    $signature=[byte[]](137,80,78,71,13,10,26,10)
+    for($i=0;$i-lt$signature.Length;$i++){if($bytes[$i]-ne$signature[$i]){throw 'El archivo elegido no es un PNG valido.'}}
+    Add-Type -AssemblyName System.Drawing
+    $stream=[IO.MemoryStream]::new($bytes,$false)
+    $image=$null
+    try{
+        $image=[Drawing.Image]::FromStream($stream,$true,$true)
+        if($image.RawFormat.Guid-ne[Drawing.Imaging.ImageFormat]::Png.Guid){throw 'El archivo elegido no es un PNG valido.'}
+        if($image.Width-ne64-or$image.Height-notin@(32,64)){throw 'La skin debe medir exactamente 64x64 o 64x32 pixeles.'}
+        [pscustomobject]@{
+            Path=$item.FullName;Width=$image.Width;Height=$image.Height;Size=[int64]$item.Length
+            Sha256=(Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        }
+    }finally{if($image){$image.Dispose()};$stream.Dispose()}
+}
+
+function Import-CocoUserSkin([string]$SourcePath,[string]$Username,[string]$SkinRoot,[string]$StatePath){
+    if(-not(Test-CocoMinecraftUsername $Username)){throw 'Configura un nombre de jugador valido antes de elegir la skin.'}
+    $validated=Test-CocoSkinPng $SourcePath
+    New-Item -ItemType Directory -Path $SkinRoot,(Split-Path $StatePath -Parent) -Force|Out-Null
+    $destination=Join-Path $SkinRoot "$Username.png"
+    $temporary="$destination.new-$PID"
+    [IO.File]::WriteAllBytes($temporary,[IO.File]::ReadAllBytes($validated.Path))
+    Move-Item -LiteralPath $temporary -Destination $destination -Force
+    $state=[ordered]@{
+        schemaVersion=1;username=$Username;sha256=$validated.Sha256;pendingUpload=$true
+        selectedAtUtc=[DateTime]::UtcNow.ToString('o')
+    }
+    $stateTemporary="$StatePath.new-$PID"
+    [IO.File]::WriteAllText($stateTemporary,($state|ConvertTo-Json -Compress),(New-Object Text.UTF8Encoding($false)))
+    Move-Item -LiteralPath $stateTemporary -Destination $StatePath -Force
+    [pscustomobject]@{Path=$destination;Username=$Username;Sha256=$validated.Sha256;PendingUpload=$true}
+}
+
+function New-CocoSkinHeadPreview([string]$Path,[int]$Size=64){
+    if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){return $null}
+    [void](Test-CocoSkinPng $Path)
+    Add-Type -AssemblyName System.Drawing
+    $bytes=[IO.File]::ReadAllBytes($Path);$stream=[IO.MemoryStream]::new($bytes,$false);$source=$null
+    try{
+        $source=[Drawing.Bitmap]::new($stream)
+        $preview=[Drawing.Bitmap]::new($Size,$Size,[Drawing.Imaging.PixelFormat]::Format32bppArgb)
+        $graphics=[Drawing.Graphics]::FromImage($preview)
+        try{
+            $graphics.Clear([Drawing.Color]::Transparent)
+            $graphics.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
+            $graphics.PixelOffsetMode=[Drawing.Drawing2D.PixelOffsetMode]::Half
+            $destination=[Drawing.Rectangle]::new(0,0,$Size,$Size)
+            $graphics.DrawImage($source,$destination,[Drawing.Rectangle]::new(8,8,8,8),[Drawing.GraphicsUnit]::Pixel)
+            if($source.Height-ge64){$graphics.DrawImage($source,$destination,[Drawing.Rectangle]::new(40,8,8,8),[Drawing.GraphicsUnit]::Pixel)}
+        }finally{$graphics.Dispose()}
+        return $preview
+    }finally{if($source){$source.Dispose()};$stream.Dispose()}
+}
+
+function Install-CocoSkinRegistry([string]$SkinRoot,[string]$InstanceRoot){
+    if(-not(Test-Path -LiteralPath $SkinRoot -PathType Container)){return 0}
+    $destinationRoot=Join-Path $InstanceRoot 'CustomSkinLoader\LocalSkin\skins'
+    New-Item -ItemType Directory -Path $destinationRoot -Force|Out-Null
+    $count=0
+    foreach($skin in Get-ChildItem -LiteralPath $SkinRoot -File -Filter '*.png'){
+        $username=[IO.Path]::GetFileNameWithoutExtension($skin.Name)
+        if(-not(Test-CocoMinecraftUsername $username)){continue}
+        [void](Test-CocoSkinPng $skin.FullName)
+        Copy-Item -LiteralPath $skin.FullName -Destination (Join-Path $destinationRoot $skin.Name) -Force
+        $count++
+    }
+    $count
+}
+
+function Initialize-CocoSkinRegistry($GlobalPolicies,[string]$EngineRoot,[string]$SkinRoot){
+    New-Item -ItemType Directory -Path $SkinRoot -Force|Out-Null
+    foreach($skin in @($GlobalPolicies.customSkinLoader.localSkins)){
+        $username=[string]$skin.username
+        if(-not(Test-CocoMinecraftUsername $username)){throw 'La politica global contiene un nombre de skin invalido.'}
+        $source=Join-Path $EngineRoot (([string]$skin.embeddedPath)-replace'/','\')
+        $bytes=$null
+        if(Test-Path -LiteralPath $source -PathType Leaf){$bytes=[IO.File]::ReadAllBytes($source)}
+        else{
+            $developmentSource=Join-Path (Split-Path $EngineRoot -Parent) "launcher\assets\skins\$username.png.base64"
+            if(Test-Path -LiteralPath $developmentSource -PathType Leaf){$bytes=[Convert]::FromBase64String(([IO.File]::ReadAllText($developmentSource)).Trim())}
+        }
+        if(-not$bytes){throw "Falta la skin global de $username."}
+        $sha=[Security.Cryptography.SHA256]::Create();try{$hash=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
+        if($hash-ne([string]$skin.sha256).ToLowerInvariant()){throw "La skin global de $username no coincide con su hash."}
+        $destination=Join-Path $SkinRoot "$username.png"
+        if(-not(Test-Path -LiteralPath $destination -PathType Leaf)){[IO.File]::WriteAllBytes($destination,$bytes)}
+    }
 }
 
 function Get-CocoPortableMcVersionSpec($Experience){
@@ -186,15 +321,10 @@ function New-CocoPortableMcStartArguments(
     $arguments=[Collections.Generic.List[string]]::new()
     foreach($value in '--main-dir',$MainDir,'--msa-db-file',$MicrosoftDatabase,'--output','machine','start',(Get-CocoPortableMcVersionSpec $Experience),'--mc-dir',$InstanceDir,'--bin-dir',(Join-Path $InstanceDir 'bin'),'--jvm-policy','mojang-then-system'){$arguments.Add([string]$value)}
     if($Dry){$arguments.Add('--dry')}
-    if($Identity.mode-eq'microsoft'){
-        $arguments.Add('--auth')
-        if(-not[string]::IsNullOrWhiteSpace([string]$Identity.uuid)){$arguments.Add('--uuid');$arguments.Add([string]$Identity.uuid)}
-        elseif(Test-CocoMinecraftUsername ([string]$Identity.username)){$arguments.Add('--username');$arguments.Add([string]$Identity.username)}
-        else{throw 'La cuenta Microsoft aun no fue vinculada: falta UUID o nombre confirmado por PortableMC.'}
-    }elseif($Identity.mode-eq'offline'){
+    if($Identity.mode-eq'offline'){
         if(-not(Test-CocoMinecraftUsername ([string]$Identity.username))){throw 'La identidad local no tiene un nombre Minecraft valido.'}
         $arguments.Add('--username');$arguments.Add([string]$Identity.username)
-    }else{throw 'El modo de identidad no es compatible.'}
+    }else{throw 'Coco Launcher usa exclusivamente identidad local para sus partidas privadas.'}
     if($Experience.launch.memory){
         $minimum=[int]$Experience.launch.memory.minimumMb;$recommended=[int]$Experience.launch.memory.recommendedMb
         $fraction=[double]$Experience.launch.memory.maximumPhysicalFraction
@@ -272,7 +402,7 @@ function Invoke-CocoPortableMcCommand(
                 $fraction=if($TimeoutSeconds-gt0){[Math]::Min(.92,$watch.Elapsed.TotalSeconds/$TimeoutSeconds)}else{0}
                 $progress=$ProgressStart+[int](($ProgressEnd-$ProgressStart)*$fraction)
                 if(Get-Command Set-CocoState -ErrorAction SilentlyContinue){
-                    Set-CocoState $ActivityTitle ("{0}`r`n[{1:mm\:ss}] {2}" -f $ActivityDetail, $watch.Elapsed, $lastLine) $progress
+                    Set-CocoState $ActivityTitle ("{0}`r`nTiempo transcurrido {1:mm\:ss} | {2}" -f $ActivityDetail, $watch.Elapsed, $lastLine) $progress
                 }
             }
             if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
@@ -291,43 +421,6 @@ function ConvertFrom-CocoPortableMcMachineValue([string]$Value){
     if($null-eq$Value){return ''}
     # PortableMC define exclusivamente estas dos secuencias de escape en salida machine.
     return $Value.Replace('\t',"`t").Replace('\n',"`n")
-}
-
-function Get-CocoPortableMcAuthSessions(
-    [string]$Executable,
-    [string]$MainDir,
-    [string]$MicrosoftDatabase
-){
-    $result=Invoke-CocoPortableMcCommand $Executable @('--main-dir',$MainDir,'--msa-db-file',$MicrosoftDatabase,'--output','machine','auth','list') 30
-    if($result.ExitCode-ne0){throw "PortableMC no pudo leer las cuentas Microsoft: $($result.Stderr.Trim())"}
-    $headers=$null
-    $sessions=[Collections.Generic.List[object]]::new()
-    foreach($line in ($result.Stdout-split"`r?`n")){
-        if([string]::IsNullOrWhiteSpace($line)){continue}
-        $parts=@($line-split"`t"|ForEach-Object{ConvertFrom-CocoPortableMcMachineValue $_})
-        if($parts[0]-eq'row'-and-not$headers){$headers=@($parts|Select-Object -Skip 1);continue}
-        if($parts[0]-ne'row'-or-not$headers){continue}
-        $values=@($parts|Select-Object -Skip 1)
-        $record=[ordered]@{}
-        for($index=0;$index-lt$headers.Count;$index++){$record[$headers[$index]]=if($index-lt$values.Count){$values[$index]}else{''}}
-        if((Test-CocoMinecraftUsername ([string]$record.username))-and[string]$record.uuid-match'^[a-fA-F0-9-]{32,36}$'){
-            $sessions.Add([pscustomobject]@{Username=[string]$record.username;Uuid=[string]$record.uuid})
-        }
-    }
-    $sessions.ToArray()
-}
-
-function Complete-CocoMicrosoftIdentityFromSessions([string]$StatePath,[object[]]$Sessions){
-    $state=Read-CocoLauncherIdentityState $StatePath
-    if(-not$state-or$state.mode-ne'microsoft'){throw 'Coco no esta configurado para una identidad Microsoft.'}
-    $valid=@($Sessions|Where-Object{(Test-CocoMinecraftUsername ([string]$_.Username))-and([string]$_.Uuid-match'^[a-fA-F0-9-]{32,36}$')})
-    $selected=$null
-    if($state.uuid){$selected=@($valid|Where-Object Uuid -eq $state.uuid|Select-Object -First 1)[0]}
-    if(-not$selected-and$state.username){$selected=@($valid|Where-Object Username -eq $state.username|Select-Object -First 1)[0]}
-    if(-not$selected-and$valid.Count-eq1){$selected=$valid[0]}
-    if(-not$selected){return [pscustomobject]@{Status=if($valid.Count){'account-choice-required'}else{'login-required'};Identity=$state;Sessions=$valid}}
-    $identity=Save-CocoLauncherIdentityState $StatePath microsoft ([string]$selected.Username) ([string]$selected.Uuid) 'portablemc-authenticated'
-    [pscustomobject]@{Status='configured';Identity=$identity;Sessions=$valid}
 }
 
 function Start-CocoPortableMcGame([string]$Executable,[string[]]$Arguments,[string]$LogPath){
@@ -459,6 +552,7 @@ function Publish-CocoSessionAnnouncement(
     $experience=@($Catalog.experiences|Where-Object id -eq $ExperienceId|Select-Object -First 1)[0]
     if(-not$experience){throw "La experiencia '$ExperienceId' no existe en el catalogo."}
     if($experience.managementMode-ne'managed'-or$experience.launch.workflow-ne'coco-managed'){throw "La experiencia '$ExperienceId' usa su launcher externo y no puede anunciarse como sesion Coco Launcher."}
+    if([string]$experience.compatibility.status-eq'blocked'){throw "La experiencia '$ExperienceId' esta bloqueada: $($experience.compatibility.summary)"}
     $maximum=[int]$Catalog.sessionDiscovery.maximumTtlSeconds
     if($TtlSeconds-lt5-or$TtlSeconds-gt$maximum){throw 'El TTL solicitado para la sesion Coco es invalido.'}
     $now=[DateTime]::UtcNow
@@ -540,10 +634,16 @@ function Start-CocoSessionService(
     [string]$ServiceScript,
     [string]$StatePath,
     [string]$LogPath,
-    [int64]$ParentPid=$PID
+    [int64]$ParentPid=$PID,
+    [string]$SkinRoot=''
 ){
     if(-not(Test-Path -LiteralPath $ServiceScript -PathType Leaf)){throw 'Falta CocoSessionService.ps1 en el engine.'}
+    if(Test-CocoSkinServiceEndpoint '10.77.37.1' 25564 500){
+        if(Get-Command Write-CocoLog -ErrorAction SilentlyContinue){Write-CocoLog 'Servicio Coco existente reutilizado en 10.77.37.1:25564.'}
+        return $null
+    }
     $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$ServiceScript,'-BindAddress','10.77.37.1','-Port','25564','-StatePath',$StatePath,'-ParentPid',[string]$ParentPid,'-LogPath',$LogPath)
+    if($SkinRoot){$arguments+=@('-SkinRoot',$SkinRoot)}
     $start=[Diagnostics.ProcessStartInfo]::new()
     $start.FileName=(Get-Command powershell.exe -ErrorAction Stop).Source
     $start.Arguments=(@($arguments|ForEach-Object{ConvertTo-CocoWindowsProcessArgument ([string]$_)})-join' ')
@@ -628,6 +728,28 @@ function Read-CocoLauncherCatalog([string]$Path){
     if([string]$catalog.backend.signatureUrl-notmatch'^https://github\.com/theorzr/portablemc/releases/download/v.+\.sig$'){throw 'La firma separada del backend no usa el release oficial.'}
     if([string]$catalog.backend.signatureSha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$catalog.backend.signatureSize-le0){throw 'La firma separada del backend no esta fijada por hash y tamano.'}
     if([string]$catalog.backend.pgpFingerprint-notmatch'^[a-fA-F0-9]{40}$'){throw 'La huella PGP del backend no es valida.'}
+    if(-not$catalog.globalPolicies-or[string]$catalog.globalPolicies.essential.mode-ne'exclude'){
+        throw 'El catalogo debe excluir Essential globalmente.'
+    }
+    $skinPolicy=$catalog.globalPolicies.customSkinLoader
+    if(-not$skinPolicy-or[string]$skinPolicy.mode-ne'required'){throw 'El catalogo debe exigir CustomSkinLoader globalmente.'}
+    foreach($variant in @($skinPolicy.variants)){
+        if(-not(Test-CocoSafeRelativePath ([string]$variant.path))-or[string]$variant.path-notmatch'(?i)^mods/CustomSkinLoader_.+\.jar$'){
+            throw 'Una variante global de CustomSkinLoader usa una ruta invalida.'
+        }
+        if([string]$variant.sourceUrl-notmatch'^https://'-or[string]$variant.sha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$variant.size-le0){
+            throw 'Una variante global de CustomSkinLoader no esta fijada por origen, hash y tamano.'
+        }
+        if(-not@($variant.minecraftVersions).Count){throw 'Una variante global de CustomSkinLoader no declara versiones de Minecraft.'}
+    }
+    foreach($skin in @($skinPolicy.localSkins)){
+        if(-not(Test-CocoMinecraftUsername ([string]$skin.username))-or
+            -not(Test-CocoSafeRelativePath ([string]$skin.embeddedPath))-or
+            [string]$skin.embeddedPath-notmatch'^assets/skins/.+\.png$'-or
+            [string]$skin.sha256-notmatch'^[a-fA-F0-9]{64}$'){
+            throw 'Una skin local global no declara usuario, ruta o hash validos.'
+        }
+    }
     $experiences=@($catalog.experiences)
     if(-not$experiences.Count){throw 'El catalogo Coco no contiene experiencias.'}
     $ids=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -657,6 +779,14 @@ function Read-CocoLauncherCatalog([string]$Path){
             if($minimum-lt1024-or$recommended-lt$minimum-or$recommended-gt32768-or$fraction-lt0.25-or$fraction-gt0.75){throw "Politica de memoria invalida para '$id'."}
         }
         if($experience.managementMode-eq'managed'){
+            if(-not$experience.compatibility-or[string]$experience.compatibility.status-notin@('validated','experimental','blocked')){
+                throw "La experiencia '$id' no declara un estado de compatibilidad valido."
+            }
+            if([string]::IsNullOrWhiteSpace([string]$experience.compatibility.summary)){throw "La experiencia '$id' no explica su estado de compatibilidad."}
+            $skinVariants=@($skinPolicy.variants|Where-Object{[string]$experience.runtime.minecraftVersion-in@($_.minecraftVersions)})
+            if([string]$experience.compatibility.status-ne'blocked'-and$skinVariants.Count-ne1){
+                throw "La experiencia '$id' necesita exactamente una variante compatible de CustomSkinLoader."
+            }
             if(-not(Test-CocoSafeRelativePath ([string]$experience.pack.lockPath))){throw "lockPath invalido para '$id'."}
             if($experience.pack.redistribution-ne'origin-only'){throw "La experiencia '$id' no declara distribucion desde origen."}
             if($experience.pack.excludedPaths){
@@ -885,12 +1015,172 @@ function Expand-CocoCurseForgeOverrides([string]$Archive,[string]$OverridesRoot,
     }finally{$zip.Dispose()}
 }
 
+function Get-CocoCustomSkinLoaderVariant($GlobalPolicies,$Experience){
+    if(-not$GlobalPolicies-or[string]$GlobalPolicies.customSkinLoader.mode-ne'required'){throw 'Falta la politica global de CustomSkinLoader.'}
+    $matches=@($GlobalPolicies.customSkinLoader.variants|Where-Object{
+        [string]$Experience.runtime.minecraftVersion-in@($_.minecraftVersions)
+    })
+    if($matches.Count-ne1){throw "No existe una variante unica de CustomSkinLoader para Minecraft $($Experience.runtime.minecraftVersion)."}
+    return $matches[0]
+}
+
+function Test-CocoSkinServiceEndpoint([string]$Address='10.77.37.1',[int]$Port=25564,[int]$TimeoutMilliseconds=500){
+    $client=[Net.Sockets.TcpClient]::new()
+    try{
+        $connect=$client.BeginConnect($Address,$Port,$null,$null)
+        if(-not$connect.AsyncWaitHandle.WaitOne($TimeoutMilliseconds)){return $false}
+        $client.EndConnect($connect)
+        $stream=$client.GetStream();$stream.ReadTimeout=$TimeoutMilliseconds;$stream.WriteTimeout=$TimeoutMilliseconds
+        $request=[Text.Encoding]::ASCII.GetBytes("COCO-SKINS 1 MANIFEST`n")
+        $stream.Write($request,0,$request.Length);$stream.Flush()
+        $line=[Text.StringBuilder]::new()
+        while($line.Length-lt128){$value=$stream.ReadByte();if($value-lt0){break};if($value-eq10){break};if($value-ne13){[void]$line.Append([char]$value)}}
+        return $line.ToString()-match'^COCO-SKINS 1 OK [0-9]+$'
+    }catch{return $false}finally{$client.Dispose()}
+}
+
+function Invoke-CocoSkinWireRequest($Catalog,[string]$Command,[byte[]]$Body=[byte[]]@()){
+    $discovery=$Catalog.sessionDiscovery
+    $client=[Net.Sockets.TcpClient]::new()
+    try{
+        $connect=$client.BeginConnect([string]$discovery.host,[int]$discovery.port,$null,$null)
+        if(-not$connect.AsyncWaitHandle.WaitOne([int]$discovery.connectTimeoutMs)){throw 'El registro de skins no respondio.'}
+        $client.EndConnect($connect)
+        $stream=$client.GetStream();$stream.ReadTimeout=5000;$stream.WriteTimeout=5000
+        $header=[Text.Encoding]::ASCII.GetBytes("$Command`n")
+        $stream.Write($header,0,$header.Length)
+        if($Body-and$Body.Length){$stream.Write($Body,0,$Body.Length)}
+        $stream.Flush()
+        $line=[Text.StringBuilder]::new()
+        while($line.Length-lt128){$value=$stream.ReadByte();if($value-lt0){break};if($value-eq10){break};if($value-ne13){[void]$line.Append([char]$value)}}
+        $parts=@($line.ToString()-split' ')
+        if($parts.Count-ne4-or$parts[0]-ne'COCO-SKINS'-or$parts[1]-ne'1'){throw 'Respuesta invalida del registro de skins.'}
+        $length=0;if(-not[int]::TryParse($parts[3],[ref]$length)-or$length-lt0-or$length-gt1048576){throw 'Tamano invalido del registro de skins.'}
+        if($parts[2]-ne'OK'){throw "El registro de skins rechazo la operacion: $($parts[2])."}
+        $response=New-Object byte[] $length;$offset=0
+        while($offset-lt$length){$read=$stream.Read($response,$offset,$length-$offset);if($read-le0){throw 'Respuesta de skin incompleta.'};$offset+=$read}
+        $response
+    }finally{$client.Dispose()}
+}
+
+function Sync-CocoSkinRegistry($Catalog,$Paths,$Identity){
+    $result=[ordered]@{Online=$false;Uploaded=$false;Downloaded=0;Pending=$false;Error=''}
+    try{
+        $selection=try{if(Test-Path -LiteralPath $Paths.SkinStatePath){Get-Content -LiteralPath $Paths.SkinStatePath -Raw|ConvertFrom-Json}else{$null}}catch{$null}
+        if($selection-and[bool]$selection.pendingUpload-and$Identity-and[string]$selection.username-eq[string]$Identity.username){
+            $own=Join-Path $Paths.SkinRoot "$($Identity.username).png"
+            $validated=Test-CocoSkinPng $own
+            $command="COCO-SKINS 1 PUT $($Identity.username) $($validated.Size) $($validated.Sha256)"
+            [void](Invoke-CocoSkinWireRequest $Catalog $command ([IO.File]::ReadAllBytes($own)))
+            $selection.pendingUpload=$false
+            $selection|Add-Member -NotePropertyName syncedAtUtc -NotePropertyValue ([DateTime]::UtcNow.ToString('o')) -Force
+            [IO.File]::WriteAllText($Paths.SkinStatePath,($selection|ConvertTo-Json -Compress),(New-Object Text.UTF8Encoding($false)))
+            $result.Uploaded=$true
+        }
+        $manifestBytes=Invoke-CocoSkinWireRequest $Catalog 'COCO-SKINS 1 MANIFEST'
+        $manifest=[Text.Encoding]::UTF8.GetString($manifestBytes)|ConvertFrom-Json
+        if([int]$manifest.schemaVersion-ne1-or@($manifest.profiles).Count-gt64){throw 'Manifiesto de skins invalido.'}
+        New-Item -ItemType Directory -Path $Paths.SkinRoot -Force|Out-Null
+        foreach($profile in @($manifest.profiles)){
+            $username=[string]$profile.username;$hash=([string]$profile.sha256).ToLowerInvariant();$size=[int64]$profile.size
+            if(-not(Test-CocoMinecraftUsername $username)-or$hash-notmatch'^[a-f0-9]{64}$'-or$size-lt67-or$size-gt1048576){throw 'Entrada de skin remota invalida.'}
+            $destination=Join-Path $Paths.SkinRoot "$username.png"
+            if((Test-Path -LiteralPath $destination -PathType Leaf)-and(Get-Item -LiteralPath $destination).Length-eq$size-and(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$hash){continue}
+            $bytes=Invoke-CocoSkinWireRequest $Catalog "COCO-SKINS 1 GET $username"
+            $temporary="$destination.new-$PID";[IO.File]::WriteAllBytes($temporary,$bytes)
+            $validated=Test-CocoSkinPng $temporary
+            if($validated.Sha256-ne$hash-or$validated.Size-ne$size){Remove-Item -LiteralPath $temporary -Force;throw "La skin remota de $username no coincide con el manifiesto."}
+            Move-Item -LiteralPath $temporary -Destination $destination -Force
+            $result.Downloaded++
+        }
+        $result.Online=$true
+    }catch{
+        $result.Error=$_.Exception.Message
+        $selection=try{if(Test-Path -LiteralPath $Paths.SkinStatePath){Get-Content -LiteralPath $Paths.SkinStatePath -Raw|ConvertFrom-Json}else{$null}}catch{$null}
+        $result.Pending=[bool]($selection-and$selection.pendingUpload)
+        if(Get-Command Write-CocoLog -ErrorAction SilentlyContinue){Write-CocoLog "Sincronizacion de skins pendiente: $($result.Error)"}
+    }
+    [pscustomobject]$result
+}
+
+function Sync-CocoOriginalSkinRegistry($Catalog,$Paths,[string]$LegacyMinecraftRoot,[string]$Role,[int64]$MinecraftProcessId=0){
+    Initialize-CocoSkinRegistry $Catalog.globalPolicies $script:CocoEngineRoot $Paths.SkinRoot
+    $service=$null
+    if($Role-eq'host'-and$MinecraftProcessId-gt0){
+        try{
+            $service=Start-CocoSessionService (Join-Path $script:CocoEngineRoot 'CocoSessionService.ps1') `
+                $Paths.SessionStatePath $Paths.SessionLogPath $MinecraftProcessId $Paths.SkinRoot
+            if($service){$service.Dispose()}
+        }catch{
+            if(Get-Command Write-CocoLog -ErrorAction SilentlyContinue){Write-CocoLog "El registro de skins del mundo original no pudo iniciarse: $($_.Exception.Message)"}
+        }
+    }
+    $identity=try{Read-CocoLauncherIdentityState $Paths.IdentityPath}catch{$null}
+    $sync=Sync-CocoSkinRegistry $Catalog $Paths $identity
+    [void](Install-CocoSkinRegistry $Paths.SkinRoot $LegacyMinecraftRoot)
+    [pscustomobject]@{
+        Online=[bool]$sync.Online
+        Uploaded=[bool]$sync.Uploaded
+        Downloaded=[int]$sync.Downloaded
+        Pending=[bool]$sync.Pending
+        Error=[string]$sync.Error
+    }
+}
+
+function Remove-CocoEssentialArtifacts([string]$InstanceRoot){
+    if([string]::IsNullOrWhiteSpace($InstanceRoot)-or-not[IO.Path]::IsPathRooted($InstanceRoot)){throw 'La raiz de instancia para excluir Essential no es valida.'}
+    $removed=0
+    $mods=Join-Path $InstanceRoot 'mods'
+    foreach($jar in @(Get-ChildItem -LiteralPath $mods -File -ErrorAction SilentlyContinue|Where-Object{$_.Name-match'(?i)essential.*\.jar$'})){
+        if(-not(Test-CocoPathWithin $jar.FullName $InstanceRoot)){throw 'Essential intento escapar de la instancia.'}
+        Remove-Item -LiteralPath $jar.FullName -Force
+        $removed++
+    }
+    $essentialRoot=Join-Path $InstanceRoot 'essential'
+    if(Test-Path -LiteralPath $essentialRoot -PathType Container){
+        if(-not(Test-CocoPathWithin $essentialRoot $InstanceRoot)){throw 'La carpeta Essential escapa de la instancia.'}
+        Remove-Item -LiteralPath $essentialRoot -Recurse -Force
+        $removed++
+    }
+    return $removed
+}
+
+function Set-CocoGlobalSkinAssets($GlobalPolicies,$Experience,[string]$InstanceRoot,[string]$EngineRoot){
+    $variant=Get-CocoCustomSkinLoaderVariant $GlobalPolicies $Experience
+    $selectedJar=Join-Path $InstanceRoot (([string]$variant.path)-replace'/','\')
+    if(-not(Test-Path -LiteralPath $selectedJar -PathType Leaf)-or
+        (Get-FileHash -LiteralPath $selectedJar -Algorithm SHA256).Hash.ToLowerInvariant()-ne[string]$variant.sha256){
+        throw "CustomSkinLoader no quedo instalado correctamente para Minecraft $($Experience.runtime.minecraftVersion)."
+    }
+    foreach($jar in @(Get-ChildItem -LiteralPath (Join-Path $InstanceRoot 'mods') -File -Filter 'CustomSkinLoader_*.jar' -ErrorAction SilentlyContinue)){
+        if(-not[string]::Equals($jar.FullName,$selectedJar,[StringComparison]::OrdinalIgnoreCase)){
+            if(-not(Test-CocoPathWithin $jar.FullName $InstanceRoot)){throw 'CustomSkinLoader intento escapar de la instancia.'}
+            Remove-Item -LiteralPath $jar.FullName -Force
+        }
+    }
+    foreach($skin in @($GlobalPolicies.customSkinLoader.localSkins)){
+        $embedded=Join-Path $EngineRoot (([string]$skin.embeddedPath)-replace'/','\')
+        if(-not(Test-Path -LiteralPath $embedded -PathType Leaf)-or
+            (Get-FileHash -LiteralPath $embedded -Algorithm SHA256).Hash.ToLowerInvariant()-ne[string]$skin.sha256){
+            throw "La skin global de '$($skin.username)' falta o no coincide con el engine."
+        }
+        $destination=Join-Path $InstanceRoot ("CustomSkinLoader\LocalSkin\skins\{0}.png"-f[string]$skin.username)
+        New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force|Out-Null
+        if((Test-Path -LiteralPath $destination -PathType Leaf)-and
+            (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq[string]$skin.sha256){continue}
+        $temporary="$destination.new-$PID"
+        Copy-Item -LiteralPath $embedded -Destination $temporary -Force
+        Move-Item -LiteralPath $temporary -Destination $destination -Force
+    }
+}
+
 function Install-CocoManagedExperience(
     $Experience,
     $Lock,
     [string]$ExperiencesRoot,
     [string]$CacheRoot,
-    [ValidateSet('client','host')][string]$Role='client'
+    [ValidateSet('client','host')][string]$Role='client',
+    $GlobalPolicies
 ){
     if($Experience.managementMode-ne'managed'){throw 'La experiencia no esta marcada como administrada.'}
     $instanceRoot=Join-Path $ExperiencesRoot ([string]$Experience.instanceId)
@@ -914,10 +1204,10 @@ function Install-CocoManagedExperience(
     }
     try{
         # Contrato reutilizable para cualquier experiencia: el lock fija todos
-        # los bytes y el rol decide el subconjunto. excludedPaths neutraliza
-        # launchers/updaters integrados por el autor del pack sin codificar un
-        # caso especial para Iron Lung.
-        $rawRoleAssets=@(@($Lock.assets)+@($Experience.files)|Where-Object{
+        # los bytes y el rol decide el subconjunto. Cualquier exclusion debe
+        # declararse en excludedPaths dentro de la entrada de esa experiencia.
+        $globalAssets=@(Get-CocoCustomSkinLoaderVariant $GlobalPolicies $Experience)
+        $rawRoleAssets=@(@($Lock.assets)+@($Experience.files)+$globalAssets|Where-Object{
             (-not$_.role-or$_.role-in@('all',$Role))-and
             -not$excludedPaths.Contains(([string]$_.path-replace'\\','/'))-and
             ([string]$_.path-notmatch'(?i)^(mods/.*essential.*\.jar|essential/.*)$')
@@ -927,19 +1217,6 @@ function Install-CocoManagedExperience(
         foreach($asset in $rawRoleAssets){
             $normPath=([string]$asset.path)-replace'\\','/'
             if($asset-and$normPath-and$seenRolePaths.Add($normPath)){[void]$roleAssets.Add($asset)}
-        }
-        $hasCsl=$false
-        foreach($a in $roleAssets){if([string]$a.path-match'(?i)CustomSkinLoader'){$hasCsl=$true;break}}
-        if(-not$hasCsl){
-            [void]$roleAssets.Add([pscustomobject]@{
-                name="CustomSkinLoader_Universal-15.0.1.jar"
-                path="mods/CustomSkinLoader_Universal-15.0.1.jar"
-                sourceUrl="https://cdn.modrinth.com/data/idMHQ4n2/versions/OLaesh5y/CustomSkinLoader_Universal-15.0.1.jar"
-                sha256="026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc"
-                size=218215
-                role="all"
-                policy="replace"
-            })
         }
         $downloadAssets=@($Lock.pack.archive)+@($roleAssets)
         $totalBytes=[int64](@($downloadAssets|Measure-Object -Property size -Sum).Sum)
@@ -952,7 +1229,7 @@ function Install-CocoManagedExperience(
         Expand-CocoCurseForgeOverrides $packArchive ([string]$Lock.pack.overridesRoot) $stageFiles
         foreach($file in @(Get-ChildItem -LiteralPath $stageFiles -Recurse -File)){
             $relative=($file.FullName.Substring($stageFiles.Length).TrimStart('\','/'))-replace'\\','/'
-            if($relative-match'(?i)^(mods/.*essential.*\.jar|essential/.*)$'){
+            if($excludedPaths.Contains($relative)-or$relative-match'(?i)^(mods/.*essential.*\.jar|essential/.*)$'){
                 Remove-Item -LiteralPath $file.FullName -Force -ErrorAction SilentlyContinue
                 continue
             }
@@ -1017,6 +1294,10 @@ function Install-CocoManagedExperience(
             $stateParent=Split-Path $statePath -Parent;New-Item -ItemType Directory -Path $stateParent -Force|Out-Null
             $state=[ordered]@{schemaVersion=1;experienceId=[string]$Experience.id;packVersion=[string]$Experience.pack.version;installedAtUtc=[DateTime]::UtcNow.ToString('o');files=@($desired)}
             $temporary="$statePath.new-$PID";[IO.File]::WriteAllText($temporary,($state|ConvertTo-Json -Depth 7),(New-Object Text.UTF8Encoding($false)));Move-Item -LiteralPath $temporary -Destination $statePath -Force
+            # El backup existe sólo durante la transacción para permitir rollback.
+            # Al confirmar el nuevo estado se elimina: las experiencias conservan
+            # una sola instalación y no acumulan copias históricas.
+            if(Test-Path -LiteralPath $backupRoot -PathType Container){Remove-Item -LiteralPath $backupRoot -Recurse -Force}
             Set-CocoLauncherStep 5 'INSTANCIA VERIFICADA' ("{0} archivos administrados | version {1}"-f$desired.Count,$Experience.pack.version) 78
         }catch{
             if(Get-Command Write-CocoTimelineEvent -ErrorAction SilentlyContinue){Write-CocoTimelineEvent 'ROLLBACK DE INSTANCIA' 'Restaurando automaticamente los archivos anteriores.' $script:CocoCurrentProgress 'rollback'}
@@ -1026,7 +1307,7 @@ function Install-CocoManagedExperience(
             }
             throw
         }
-        [pscustomobject]@{InstanceRoot=$instanceRoot;StatePath=$statePath;Files=$desired.Count;BackupRoot=if(Test-Path $backupRoot){$backupRoot}else{''}}
+        [pscustomobject]@{InstanceRoot=$instanceRoot;StatePath=$statePath;Files=$desired.Count;BackupRoot=''}
     }finally{if((Test-Path -LiteralPath $stage)-and(Test-CocoPathWithin $stage $ExperiencesRoot)){Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue}}
 }
 
@@ -1066,7 +1347,10 @@ function Set-CocoManagedRuntimePolicies($Experience,[string]$InstanceRoot){
     return $changed
 }
 
-function Set-CocoManagedInstancePreferences($Experience, [string]$InstanceRoot){
+<#
+Implementación histórica de preferencias anterior al catálogo declarativo.
+Se conserva temporalmente como referencia de migración, pero no se compila.
+function Set-CocoManagedInstancePreferencesLegacy($Experience, [string]$InstanceRoot){
     if([string]::IsNullOrWhiteSpace($InstanceRoot) -or -not (Test-Path -LiteralPath $InstanceRoot)){return}
     
     # 1. Force standard vanilla Minecraft controls (Sprint = Left Control, Sneak/Crouch = Left Shift) and FOV 95 by default
@@ -1168,6 +1452,171 @@ show_wizard=false`r`nwizard_completed=true`r`ncompleted_wizard=true`r`n"
     $ofText = "ofShowGlErrors:false`r`nofEmissiveTextures:true`r`nofRandomEntities:true`r`nofCustomFonts:true`r`nofCustomColors:true`r`nofCustomItems:true`r`nofCustomSky:true`r`nofConnectedTextures:2`r`nofDynamicLights:3`r`nofCustomEntityModels:true`r`nofCustomGuis:true`r`nofFastRender:false`r`n"
     [IO.File]::WriteAllText($ofPath, $ofText, (New-Object Text.UTF8Encoding($false)))
 }
+#>
+
+function Get-CocoManagedInstanceModIds([string]$InstanceRoot){
+    $ids=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $mods=Join-Path $InstanceRoot 'mods'
+    if(-not(Test-Path -LiteralPath $mods -PathType Container)){return @()}
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    foreach($jar in @(Get-ChildItem -LiteralPath $mods -File -Filter '*.jar' -ErrorAction SilentlyContinue)){
+        $archive=$null
+        try{
+            $archive=[IO.Compression.ZipFile]::OpenRead($jar.FullName)
+            foreach($jsonPath in 'fabric.mod.json','quilt.mod.json'){
+                $entry=$archive.GetEntry($jsonPath)
+                if(-not$entry){continue}
+                $reader=[IO.StreamReader]::new($entry.Open())
+                try{$metadata=$reader.ReadToEnd()|ConvertFrom-Json}finally{$reader.Dispose()}
+                $id=if($jsonPath-eq'fabric.mod.json'){[string]$metadata.id}else{[string]$metadata.quilt_loader.id}
+                if($id-match'^[a-zA-Z0-9_.-]{1,128}$'){[void]$ids.Add($id)}
+            }
+            foreach($tomlPath in 'META-INF/mods.toml','META-INF/neoforge.mods.toml'){
+                $entry=$archive.GetEntry($tomlPath)
+                if(-not$entry){continue}
+                $reader=[IO.StreamReader]::new($entry.Open())
+                try{$toml=$reader.ReadToEnd()}finally{$reader.Dispose()}
+                foreach($match in [regex]::Matches($toml,'(?m)^\s*modId\s*=\s*["'']([a-zA-Z0-9_.-]{1,128})["'']')){
+                    [void]$ids.Add([string]$match.Groups[1].Value)
+                }
+            }
+        }catch{
+            if(Get-Command Write-CocoLog -ErrorAction SilentlyContinue){Write-CocoLog "No se pudo leer metadata de '$($jar.Name)': $($_.Exception.Message)"}
+        }finally{if($archive){$archive.Dispose()}}
+    }
+    @($ids|Sort-Object)
+}
+
+function Set-CocoJavaProperties([string]$Path,[Collections.IDictionary]$Values){
+    if(-not$Values-or-not$Values.Count){return $false}
+    $lines=[Collections.Generic.List[string]]::new()
+    if(Test-Path -LiteralPath $Path -PathType Leaf){
+        foreach($line in @(Get-Content -LiteralPath $Path)){[void]$lines.Add([string]$line)}
+    }
+    $changed=$false
+    foreach($key in $Values.Keys){
+        if([string]$key-notmatch'^[a-zA-Z0-9_.-]+$'){throw "Clave de propiedades insegura: $key"}
+        $desired="$key=$([string]$Values[$key])";$found=$false
+        for($i=0;$i-lt$lines.Count;$i++){
+            if($lines[$i]-match("^\s*"+[regex]::Escape([string]$key)+"\s*=")){
+                $found=$true
+                if($lines[$i]-cne$desired){$lines[$i]=$desired;$changed=$true}
+                break
+            }
+        }
+        if(-not$found){$lines.Add($desired);$changed=$true}
+    }
+    if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){$changed=$true}
+    if($changed){
+        New-Item -ItemType Directory -Path (Split-Path $Path -Parent) -Force|Out-Null
+        $temporary="$Path.coco-$PID-$([guid]::NewGuid().ToString('N')).tmp"
+        try{
+            [IO.File]::WriteAllText($temporary,(($lines-join"`r`n").TrimEnd()+"`r`n"),(New-Object Text.UTF8Encoding($false)))
+            Move-Item -LiteralPath $temporary -Destination $Path -Force
+        }finally{Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}
+    }
+    $changed
+}
+
+function Set-CocoVoiceChatDefaults([string]$InstanceRoot){
+    $modIds=@(Get-CocoManagedInstanceModIds $InstanceRoot)
+    if($modIds-notcontains'voicechat'){return [pscustomobject]@{Detected=$false;Adapter='';Changed=$false}}
+    $path=Join-Path $InstanceRoot 'config\voicechat\voicechat-client.properties'
+    $changed=Set-CocoJavaProperties $path ([ordered]@{
+        config_version='1'
+        onboarding_finished='true'
+        microphone=''
+        speaker=''
+        microphone_activation_type='VOICE'
+        voice_activity_detection='true'
+        voice_activation_threshold='-50.0'
+        microphone_gain='0.0'
+        automatic_gain_control='true'
+        denoiser='true'
+        muted='false'
+        disabled='false'
+        run_local_server='true'
+        use_natives='true'
+    })
+    if(Get-Command Write-CocoLog -ErrorAction SilentlyContinue){Write-CocoLog "Simple Voice Chat configurado. Path='$path' Changed=$changed Devices=default Activation=VOICE AGC=true Denoiser=true Muted=false"}
+    [pscustomobject]@{Detected=$true;Adapter='simple-voice-chat';Changed=[bool]$changed;Path=$path}
+}
+
+function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
+    if(-not$Experience-or[string]::IsNullOrWhiteSpace($InstanceRoot)-or-not(Test-Path -LiteralPath $InstanceRoot)){return}
+    [void](Set-CocoVoiceChatDefaults $InstanceRoot)
+    $preferences=$Experience.preferences
+    if(-not$preferences){return}
+
+    if([bool]$preferences.standardControls-or$null-ne$preferences.fov){
+        foreach($optsFile in @(
+            (Join-Path $InstanceRoot 'options.txt'),
+            (Join-Path $InstanceRoot 'config\defaultoptions\options.txt'),
+            (Join-Path $InstanceRoot 'config\defaultoptions\keybindings.txt')
+        )){
+            if(-not(Test-Path -LiteralPath $optsFile -PathType Leaf)){continue}
+            $content=Get-Content -LiteralPath $optsFile -Raw
+            if([bool]$preferences.standardControls){
+                $content=$content-replace'(?m)^key_key\.sprint:.*$','key_key.sprint:key.keyboard.left.control'
+                $content=$content-replace'(?m)^key_key\.sneak:.*$','key_key.sneak:key.keyboard.left.shift'
+            }
+            if($null-ne$preferences.fov){
+                $fov=[string]([double]$preferences.fov).ToString([Globalization.CultureInfo]::InvariantCulture)
+                if($content-match'(?m)^fov:'){$content=$content-replace'(?m)^fov:.*$',("fov:$fov")}
+                else{$content=$content.TrimEnd()+"`r`nfov:$fov`r`n"}
+            }
+            [IO.File]::WriteAllText($optsFile,$content,(New-Object Text.UTF8Encoding($false)))
+        }
+    }
+
+    if($preferences.shader){
+        $pack=[string]$preferences.shader.pack
+        if(-not(Test-CocoSafeRelativePath $pack)-or$pack.Contains('/')){throw "El shader configurado para '$($Experience.id)' no es un nombre seguro."}
+        if(Test-Path -LiteralPath (Join-Path $InstanceRoot "shaderpacks\$pack") -PathType Leaf){
+            switch([string]$preferences.shader.provider){
+                'oculus'{
+                    $path=Join-Path $InstanceRoot 'config\oculus.properties'
+                    New-Item -ItemType Directory -Path (Split-Path $path -Parent) -Force|Out-Null
+                    $text="colorSpace=SRGB`r`ndisableUpdateMessage=true`r`nenableDebugOptions=false`r`nmaxShadowRenderDistance=4`r`nshaderPack=$pack`r`nenableShaders=true`r`n"
+                    [IO.File]::WriteAllText($path,$text,(New-Object Text.UTF8Encoding($false)))
+                }
+                'optifine'{
+                    [IO.File]::WriteAllText((Join-Path $InstanceRoot 'optionsshaders.txt'),"shaderPack=$pack`r`n",(New-Object Text.UTF8Encoding($false)))
+                }
+                default{throw "Proveedor de shader no soportado para '$($Experience.id)'."}
+            }
+            if($preferences.shader.companionFiles){
+                foreach($property in @($preferences.shader.companionFiles.PSObject.Properties)){
+                    $name=[string]$property.Name
+                    if(-not(Test-CocoSafeRelativePath $name)-or$name.Contains('/')){throw "Archivo auxiliar de shader inseguro para '$($Experience.id)'."}
+                    $destination=Join-Path $InstanceRoot "shaderpacks\$name"
+                    [IO.File]::WriteAllText($destination,[string]$property.Value,(New-Object Text.UTF8Encoding($false)))
+                }
+            }
+        }
+    }
+
+    if($preferences.resourcePack){
+        $pack=[string]$preferences.resourcePack
+        if(-not(Test-CocoSafeRelativePath $pack)-or$pack.Contains('/')){throw "El resource pack configurado para '$($Experience.id)' no es un nombre seguro."}
+        if(Test-Path -LiteralPath (Join-Path $InstanceRoot "resourcepacks\$pack") -PathType Leaf){
+            $optsPath=Join-Path $InstanceRoot 'options.txt'
+            if(Test-Path -LiteralPath $optsPath -PathType Leaf){
+                $optsText=Get-Content -LiteralPath $optsPath -Raw
+                $escaped=$pack.Replace('\','\\').Replace('"','\"')
+                if($optsText-match'(?m)^resourcePacks:'){$optsText=$optsText-replace'(?m)^resourcePacks:.*$',("resourcePacks:[""$escaped""]")}
+                else{$optsText=$optsText.TrimEnd()+"`r`nresourcePacks:[""$escaped""]`r`n"}
+                [IO.File]::WriteAllText($optsPath,$optsText,(New-Object Text.UTF8Encoding($false)))
+            }
+        }
+    }
+
+    if([bool]$preferences.optifineEmissive){
+        $ofText="ofShowGlErrors:false`r`nofEmissiveTextures:true`r`nofRandomEntities:true`r`nofCustomFonts:true`r`nofCustomColors:true`r`nofCustomItems:true`r`nofCustomSky:true`r`nofConnectedTextures:2`r`nofDynamicLights:3`r`nofCustomEntityModels:true`r`nofCustomGuis:true`r`nofFastRender:false`r`n"
+        [IO.File]::WriteAllText((Join-Path $InstanceRoot 'optionsof.txt'),$ofText,(New-Object Text.UTF8Encoding($false)))
+    }
+}
 
 function Invoke-CocoManagedExperienceLaunch(
     $Catalog,
@@ -1182,11 +1631,14 @@ function Invoke-CocoManagedExperienceLaunch(
 ){
     $experience=@($Catalog.experiences|Where-Object id -eq $ExperienceId|Select-Object -First 1)[0]
     if(-not$experience-or$experience.managementMode-ne'managed'){throw "La experiencia administrada '$ExperienceId' no existe."}
+    if([string]$experience.compatibility.status-eq'blocked'){throw "La experiencia '$ExperienceId' esta bloqueada: $($experience.compatibility.summary)"}
     $lockPath=Join-Path $CatalogRoot (([string]$experience.pack.lockPath)-replace'^launcher/',''-replace'/','\')
     $lock=Read-CocoExperienceLock $lockPath $experience
     $backend=Install-CocoLauncherBackend $Catalog $CacheRoot
-    $installed=Install-CocoManagedExperience $experience $lock $ExperiencesRoot $CacheRoot $Role
-    [void](Set-CocoManagedRuntimePolicies $experience $installed.InstanceRoot)
+    $installed=Install-CocoManagedExperience $experience $lock $ExperiencesRoot $CacheRoot $Role $Catalog.globalPolicies
+    [void](Remove-CocoEssentialArtifacts $installed.InstanceRoot)
+    Set-CocoGlobalSkinAssets $Catalog.globalPolicies $experience $installed.InstanceRoot $script:CocoEngineRoot
+    [void](Install-CocoSkinRegistry (Join-Path $CacheRoot 'launcher\skins\profiles') $installed.InstanceRoot)
     [void](Set-CocoManagedInstancePreferences $experience $installed.InstanceRoot)
     if(Get-Command Write-CocoManagedServerList -ErrorAction SilentlyContinue){[void](Write-CocoManagedServerList $installed.InstanceRoot $experience)}
     $mainDir=Join-Path $CacheRoot 'launcher\shared'
@@ -1206,6 +1658,9 @@ function Invoke-CocoManagedExperienceLaunch(
     # preparan con reintentos reanudables antes de abrir la ventana del juego,
     # de modo que una conexion cerrada no convierta el primer uso en un fallo.
     [void](Invoke-CocoPortableMcPreparation $backend $arguments $ExperienceId)
+    # Reaplicar justo antes del proceso recoge una skin elegida mientras se
+    # descargaban el runtime o los assets.
+    [void](Install-CocoSkinRegistry (Join-Path $CacheRoot 'launcher\skins\profiles') $installed.InstanceRoot)
     $log=Join-Path $CacheRoot ("logs\launcher-$ExperienceId-"+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.log')
     $process=Start-CocoPortableMcGame $backend $arguments $log
     [pscustomobject]@{Status='launched';Experience=$experience;Installation=$installed;Backend=$backend;Process=$process;LogPath=$log}
@@ -1438,6 +1893,8 @@ function Get-CocoLauncherPaths([string]$EngineRoot=$script:CocoEngineRoot,[strin
         CatalogRoot=Join-Path $EngineRoot 'launcher'
         CatalogPath=Join-Path $EngineRoot 'launcher\catalog.json'
         IdentityPath=Join-Path $cacheRoot 'launcher\identity.json'
+        SkinRoot=Join-Path $cacheRoot 'launcher\skins\profiles'
+        SkinStatePath=Join-Path $cacheRoot 'launcher\skins\selection.json'
         AccountDb=Join-Path $cacheRoot 'launcher\accounts\portablemc_msa.json'
         MainDir=Join-Path $cacheRoot 'launcher\shared'
         SessionStatePath=Join-Path $cacheRoot 'launcher\session\active.json'
@@ -1488,20 +1945,23 @@ function Set-CocoManagedLanWorldConfigurations([string]$InstanceRoot,$Experience
         # Una carpeta sin level.dat/session.lock todavia no es un mundo valido.
         if(-not(Test-Path -LiteralPath (Join-Path $world.FullName 'level.dat') -PathType Leaf)-and-not(Test-Path -LiteralPath (Join-Path $world.FullName 'session.lock') -PathType Leaf)){continue}
         $path=Join-Path $world.FullName 'mcwifipnp.json'
+        # MCWiFiPnP 1.19.2/1.20.1 deserializa con Gson directamente sobre
+        # estos nombres de campos Java. Las variantes kebab-case no son alias:
+        # Gson las ignora silenciosamente y deja OnlineMode=true.
         $payload=[ordered]@{
             port=[int]$Experience.hosting.port
-            'allow-host-cheat'=$true
-            'max-players'=8
-            gamemode='survival'
+            maxPlayers=8
+            GameMode='survival'
             motd=("Coco - {0}"-f[string]$Experience.name)
-            'allow-everyone-cheat'=$false
-            'enforce-whitelist'=$false
-            'enable-upnp'=$false
-            'online-mode'=$false
-            'enable-uuid-fixer'=$true
-            pvp=$true
-            'get-public-ip'=$false
-            'remove-player-reporting'=$false
+            AllPlayersCheats=$false
+            Whitelist=$false
+            UseUPnP=$false
+            AllowCommands=$true
+            OnlineMode=$false
+            EnableUUIDFixer=$true
+            ForceOfflinePlayers=@()
+            PvP=$true
+            CopyToClipboard=$false
         }
         $json=$payload|ConvertTo-Json
         $current=if(Test-Path -LiteralPath $path -PathType Leaf){try{Get-Content -LiteralPath $path -Raw}catch{''}}else{''}
@@ -1509,7 +1969,8 @@ function Set-CocoManagedLanWorldConfigurations([string]$InstanceRoot,$Experience
         if($current){
             try{
                 $parsed=$current|ConvertFrom-Json
-                $matches=[int]$parsed.port-eq[int]$Experience.hosting.port-and-not[bool]$parsed.'online-mode'-and[bool]$parsed.'enable-uuid-fixer'-and-not[bool]$parsed.'enable-upnp'
+                $matches=[int]$parsed.port-eq[int]$Experience.hosting.port-and
+                    -not[bool]$parsed.OnlineMode-and[bool]$parsed.EnableUUIDFixer-and-not[bool]$parsed.UseUPnP
             }catch{}
         }
         if($matches){continue}
@@ -1519,6 +1980,28 @@ function Set-CocoManagedLanWorldConfigurations([string]$InstanceRoot,$Experience
         $written++
     }
     return $written
+}
+
+function Test-CocoManagedLanWorldConfigurations([string]$InstanceRoot,$Experience){
+    if(-not$Experience-or$Experience.managementMode-ne'managed'){return $false}
+    $saves=Join-Path $InstanceRoot 'saves'
+    if(-not(Test-Path -LiteralPath $saves -PathType Container)){return $false}
+    $worlds=@(Get-ChildItem -LiteralPath $saves -Directory -ErrorAction SilentlyContinue|Where-Object{
+        (Test-Path -LiteralPath (Join-Path $_.FullName 'level.dat') -PathType Leaf)-or
+        (Test-Path -LiteralPath (Join-Path $_.FullName 'session.lock') -PathType Leaf)
+    })
+    if(-not$worlds.Count){return $false}
+    foreach($world in $worlds){
+        $path=Join-Path $world.FullName 'mcwifipnp.json'
+        if(-not(Test-Path -LiteralPath $path -PathType Leaf)){return $false}
+        try{$cfg=Get-Content -LiteralPath $path -Raw|ConvertFrom-Json}catch{return $false}
+        if([int]$cfg.port-ne[int]$Experience.hosting.port-or[bool]$cfg.OnlineMode-or
+            -not[bool]$cfg.EnableUUIDFixer-or[bool]$cfg.UseUPnP){return $false}
+        foreach($required in 'maxPlayers','GameMode','AllPlayersCheats','Whitelist','AllowCommands','ForceOfflinePlayers','PvP','CopyToClipboard'){
+            if($cfg.PSObject.Properties.Name-notcontains$required){return $false}
+        }
+    }
+    return $true
 }
 
 function Write-CocoManagedServerList([string]$InstanceRoot,$Experience){
@@ -1572,6 +2055,10 @@ function Invoke-CocoLegacyExperienceLaunch($Catalog,$Experience,$Identity,[strin
     [pscustomobject]@{Status='launched';Experience=$Experience;InstanceRoot=$LegacyMinecraftRoot;Backend=$backend;Process=$process;LogPath=$log}
 }
 
+<#
+Flujo histórico 0.5.50-0.5.57, conservado temporalmente como referencia de
+migración. Está comentado y no se compila: Coco ya no ofrece login Microsoft
+ni formularios Windows separados para identidad.
 function Show-CocoIdentityModeDialog($Hint){
     Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
     $dialog=New-Object Windows.Forms.Form;$dialog.Text='Identidad de Minecraft';$dialog.Size=New-Object Drawing.Size(520,250)
@@ -1629,7 +2116,7 @@ function Select-CocoMicrosoftSessionDialog([object[]]$Sessions){
     $Sessions[$index]
 }
 
-function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$Paths){
+function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$Paths,[int]$PromptStage=3,[int]$PromptProgress=24){
     $state=Read-CocoLauncherIdentityState $Paths.IdentityPath
     if($state.mode-eq'offline'){return $state}
     Set-CocoState 'Verificando cuenta Microsoft' 'Buscando una sesion Coco ya autorizada...' 20
@@ -1675,6 +2162,124 @@ function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$P
     if($completion.Status-eq'configured'){return $completion.Identity}
     if($completion.Sessions.Count){$selected=Select-CocoMicrosoftSessionDialog $completion.Sessions;return Save-CocoLauncherIdentityState $Paths.IdentityPath microsoft $selected.Username $selected.Uuid 'portablemc-account-choice'}
     throw 'Microsoft termino el flujo, pero no entrego una cuenta que posea Minecraft Java.'
+}
+#>
+
+function Set-CocoFlatButtonStyle($Button,[Drawing.Color]$BackColor,[Drawing.Color]$ForeColor){
+    $Button.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+    $Button.FlatAppearance.BorderSize=0
+    $Button.BackColor=$BackColor
+    $Button.ForeColor=$ForeColor
+    $Button.Cursor=[Windows.Forms.Cursors]::Hand
+    $Button.Font=New-Object Drawing.Font('Segoe UI Semibold',10)
+    $Button.UseCompatibleTextRendering=$true
+}
+
+function Set-CocoSkinTilePreview($Picture,$Label,[string]$SkinRoot,[string]$Username,[bool]$Pending=$false){
+    if($Picture.Image){$old=$Picture.Image;$Picture.Image=$null;$old.Dispose()}
+    $path=if(Test-CocoMinecraftUsername $Username){Join-Path $SkinRoot "$Username.png"}else{''}
+    if($path-and(Test-Path -LiteralPath $path -PathType Leaf)){
+        $Picture.Image=New-CocoSkinHeadPreview $path ([Math]::Max(1,[Math]::Min([int]$Picture.Width,[int]$Picture.Height)))
+        $Label.Text=if($Pending){"SE SINCRONIZARA AL JUGAR`r`nCLIC O ARRASTRA PARA CAMBIAR"}else{"CLIC O ARRASTRA UN PNG`r`nPARA CAMBIARLA"}
+    }else{$Label.Text="CLIC O ARRASTRA UN PNG`r`nPARA ELEGIRLA"}
+}
+
+function Show-CocoUsernamePanel([string]$Suggested='',[switch]$AllowCancel){
+    if(-not$script:CocoForm-or-not$script:CocoPanel){throw 'La interfaz Coco no esta disponible para configurar el jugador.'}
+    Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
+    $initial=if(Test-CocoMinecraftUsername $Suggested){$Suggested}else{''}
+    $overlay=New-Object Windows.Forms.Panel
+    $overlay.Name='CocoUsernamePanel';$overlay.Location=New-Object Drawing.Point(28,292);$overlay.Size=New-Object Drawing.Size(584,150)
+    $overlay.BackColor=[Drawing.Color]::FromArgb(36,22,57)
+    $edge=New-Object Windows.Forms.Panel;$edge.Location=New-Object Drawing.Point(0,0);$edge.Size=New-Object Drawing.Size(5,150);$edge.BackColor=[Drawing.Color]::FromArgb(177,92,255)
+    $heading=New-Object Windows.Forms.Label;$heading.Text='TU NOMBRE EN COCO';$heading.Location=New-Object Drawing.Point(22,14);$heading.Size=New-Object Drawing.Size(535,25)
+    $heading.Font=New-Object Drawing.Font('Segoe UI Semibold',12);$heading.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
+    $nameBox=New-Object Windows.Forms.TextBox;$nameBox.Location=New-Object Drawing.Point(24,52);$nameBox.Size=New-Object Drawing.Size(300,27)
+    $nameBox.Text=$initial;$nameBox.MaxLength=16;$nameBox.Font=New-Object Drawing.Font('Segoe UI',11);$nameBox.BorderStyle='FixedSingle'
+    $validation=New-Object Windows.Forms.Label;$validation.Location=New-Object Drawing.Point(24,84);$validation.Size=New-Object Drawing.Size(310,28)
+    $validation.Font=New-Object Drawing.Font('Segoe UI',8.5);$validation.ForeColor=[Drawing.Color]::FromArgb(255,139,151)
+    $save=New-Object Windows.Forms.Button;$save.Text='GUARDAR JUGADOR';$save.Location=New-Object Drawing.Point(367,50);$save.Size=New-Object Drawing.Size(188,38)
+    Set-CocoFlatButtonStyle $save ([Drawing.Color]::FromArgb(177,92,255)) ([Drawing.Color]::White)
+    $cancel=$null
+    if($AllowCancel){
+        $cancel=New-Object Windows.Forms.Button;$cancel.Text='CANCELAR';$cancel.Location=New-Object Drawing.Point(367,93);$cancel.Size=New-Object Drawing.Size(188,27)
+        Set-CocoFlatButtonStyle $cancel ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
+    }
+    $script:CocoUsernameChoice=''
+    $script:CocoUsernameCancelled=$false
+    $validate={
+        $candidate=([string]$nameBox.Text).Trim()
+        $valid=Test-CocoMinecraftUsername $candidate
+        $save.Enabled=$valid
+        $validation.Text=if($valid){'Nombre valido.'}else{'Usa 3-16 letras, numeros o guion bajo.'}
+        $validation.ForeColor=if($valid){[Drawing.Color]::FromArgb(78,214,132)}else{[Drawing.Color]::FromArgb(255,139,151)}
+    }
+    $nameBox.Add_TextChanged($validate)
+    $save.Add_Click({
+        $candidate=([string]$nameBox.Text).Trim()
+        if(Test-CocoMinecraftUsername $candidate){$script:CocoUsernameChoice=$candidate}
+    })
+    if($cancel){$cancel.Add_Click({$script:CocoUsernameCancelled=$true})}
+    $nameBox.Add_KeyDown({
+        param($sender,$eventArgs)
+        if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Enter-and$save.Enabled){$eventArgs.SuppressKeyPress=$true;$save.PerformClick()}
+        elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Escape-and$AllowCancel){$eventArgs.SuppressKeyPress=$true;$script:CocoUsernameCancelled=$true}
+    })
+    $controls=@($edge,$heading,$nameBox,$validation,$save)
+    if($cancel){$controls+=$cancel}
+    $overlay.Controls.AddRange($controls)
+    $previousAccept=$script:CocoForm.AcceptButton
+    try{
+        $script:CocoPanel.Controls.Add($overlay);$overlay.BringToFront();$script:CocoForm.AcceptButton=$save
+        & $validate
+        $script:CocoForm.BringToFront();$script:CocoForm.Activate();[void]$nameBox.Focus();$nameBox.SelectAll()
+        while(-not$script:CocoForm.IsDisposed-and[string]::IsNullOrWhiteSpace($script:CocoUsernameChoice)-and-not$script:CocoUsernameCancelled){
+            [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
+        }
+    }finally{
+        if(-not$script:CocoForm.IsDisposed){$script:CocoForm.AcceptButton=$previousAccept}
+        if(-not$overlay.IsDisposed){$script:CocoPanel.Controls.Remove($overlay);$overlay.Dispose()}
+    }
+    if($script:CocoUsernameCancelled-or-not(Test-CocoMinecraftUsername $script:CocoUsernameChoice)){throw 'La configuracion del jugador fue cancelada.'}
+    return $script:CocoUsernameChoice
+}
+
+# Redefinicion intencional del flujo antiguo: desde esta version Coco no ofrece
+# autenticacion Microsoft. Todos usan una identidad local estable en la red
+# privada, incluso si poseen una licencia oficial.
+function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$Paths,[int]$PromptStage=3,[int]$PromptProgress=24){
+    if($script:CocoIdentityTextBox-and-not$script:CocoIdentityTextBox.IsDisposed){
+        while(-not$script:CocoForm.IsDisposed){
+            $candidate=([string]$script:CocoIdentityTextBox.Text).Trim()
+            $current=try{Read-CocoLauncherIdentityState $Paths.IdentityPath}catch{$null}
+            if((Test-CocoMinecraftUsername $candidate)-and$current-and[string]$current.username-eq$candidate){
+                if($script:CocoIdentityStatus){
+                    $script:CocoIdentityStatus.Text='Nombre valido.'
+                    $script:CocoIdentityStatus.ForeColor=[Drawing.Color]::FromArgb(78,214,132)
+                }
+                return $current
+            }
+            Set-CocoLauncherStep $PromptStage 'FALTA TU NOMBRE' 'Escribelo en la tarjeta y pulsa Enter para abrir Minecraft.' $PromptProgress
+            if($script:CocoIdentityStatus){
+                $script:CocoIdentityStatus.Text=if(Test-CocoMinecraftUsername $candidate){'Pulsa Enter para confirmar.'}else{'3-16 letras, numeros o _.'}
+                $script:CocoIdentityStatus.ForeColor=if(Test-CocoMinecraftUsername $candidate){[Drawing.Color]::FromArgb(224,190,255)}else{[Drawing.Color]::FromArgb(255,139,151)}
+            }
+            [void]$script:CocoIdentityTextBox.Focus()
+            [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
+        }
+        throw 'Coco se cerro antes de configurar el jugador.'
+    }
+    $resolved=Resolve-CocoLauncherIdentity $Paths.IdentityPath $LegacyMinecraftRoot
+    if($resolved.Status-eq'configured'){
+        if($script:CocoIdentityButton){$script:CocoIdentityButton.Text="JUGADOR: $($resolved.Identity.username)"}
+        return $resolved.Identity
+    }
+    $suggested=if($resolved.Hint){[string]$resolved.Hint.Username}else{''}
+    Set-CocoLauncherStep $PromptStage 'CONFIGURA TU JUGADOR' 'Elige el nombre con el que entraras a la partida.' $PromptProgress
+    $username=Show-CocoUsernamePanel $suggested
+    $identity=Save-CocoLauncherIdentityState $Paths.IdentityPath offline $username '' 'user-onboarding'
+    if($script:CocoIdentityButton){$script:CocoIdentityButton.Text="JUGADOR: $username"}
+    $identity
 }
 
 function Start-CocoLauncherExperience($Catalog,$Experience,$Identity,[string]$Role,$Paths,[string]$LegacyMinecraftRoot,[switch]$DisableAutoJoin){
@@ -1724,12 +2329,22 @@ function Invoke-CocoLauncherClientSession($Catalog,$Session,$Paths,[string]$Lega
     }
     $fresh=Get-CocoSessionAnnouncement $Catalog
     if($fresh.State-ne'ready'-or[string]$fresh.Announcement.sessionId-ne$sessionId){return $null}
-    $identity=Resolve-CocoLauncherIdentityUi $Catalog $LegacyMinecraftRoot $Paths
-    # El primer login Microsoft puede tardar; no se lanza contra una sesion que
-    # terminó mientras el jugador autorizaba su cuenta.
+    # Mods, runtime y configuraciones se preparan sin depender del nombre. El
+    # botón permanece disponible durante todo ese trabajo; sólo justo antes de
+    # crear el proceso se exige una identidad si todavía falta.
+    $identity=Resolve-CocoLauncherIdentityUi $Catalog $LegacyMinecraftRoot $Paths 7 88
+    # La sesión puede terminar mientras el jugador confirma su nombre por
+    # primera vez; se vuelve a validar antes de abrir Minecraft.
     $fresh=Get-CocoSessionAnnouncement $Catalog
     if($fresh.State-ne'ready'-or[string]$fresh.Announcement.sessionId-ne$sessionId){return $null}
-    Set-CocoLauncherStep 7 'IDENTIDAD LISTA' ("{0} | {1}"-f$identity.mode,$identity.username) 89
+    $skinSync=Sync-CocoSkinRegistry $Catalog $Paths $identity
+    $instanceRoot=Join-Path $Paths.ExperiencesRoot ([string]$action.Experience.instanceId)
+    [void](Install-CocoSkinRegistry $Paths.SkinRoot $instanceRoot)
+    [void](Install-CocoSkinRegistry $Paths.SkinRoot $LegacyMinecraftRoot)
+    if($script:CocoSkinTile){Set-CocoSkinTilePreview $script:CocoSkinPicture $script:CocoSkinLabel $Paths.SkinRoot ([string]$identity.username) ([bool]$skinSync.Pending)}
+    if($script:CocoIdentityTextBox){$script:CocoIdentityTextBox.Enabled=$false}
+    if($script:CocoSkinTile){$script:CocoSkinTile.Enabled=$false}
+    Set-CocoLauncherStep 7 'JUGADOR LISTO' ("Entraras como {0}"-f$identity.username) 89
     Set-CocoLauncherStep 8 'ABRIENDO MINECRAFT' ("{0} se conectara automaticamente a {1}:{2}."-f$action.Experience.name,$action.Experience.hosting.host,$action.Experience.hosting.port) 90
     Start-CocoLauncherExperience $Catalog $action.Experience $identity client $Paths $LegacyMinecraftRoot
 }
@@ -1738,25 +2353,38 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
     if(-not$Experience-or$Experience.managementMode-ne'managed'-or$Experience.launch.workflow-ne'coco-managed'){throw 'El host solo puede alojar experiencias administradas desde Coco Launcher.'}
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{role='host';experienceId=[string]$Experience.id;packVersion=[string]$Experience.pack.version;instanceRoot=(Join-Path $Paths.ExperiencesRoot ([string]$Experience.instanceId))}}
     Set-CocoLauncherStep 3 'PREPARANDO LA PARTIDA DEL HOST' ("Experiencia seleccionada: {0}"-f$Experience.name) 25
-    $identity=Resolve-CocoLauncherIdentityUi $Catalog $LegacyMinecraftRoot $Paths
     if(Test-CocoTcpEndpoint ([string]$Experience.hosting.host) ([int]$Experience.hosting.port) 350){throw 'El puerto Coco 25565 ya esta ocupado. Cierra la partida anterior antes de iniciar otra.'}
     $sessionId=[guid]::NewGuid().ToString()
     [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id preparing $sessionId $Paths.SessionStatePath 30)
     $service=$null;$launch=$null
     try{
-        $service=Start-CocoSessionService (Join-Path $script:CocoEngineRoot 'CocoSessionService.ps1') $Paths.SessionStatePath $Paths.SessionLogPath $PID
+        $service=Start-CocoSessionService (Join-Path $script:CocoEngineRoot 'CocoSessionService.ps1') $Paths.SessionStatePath $Paths.SessionLogPath $PID $Paths.SkinRoot
         Set-CocoLauncherStep 4 'VERIFICANDO EL PACK DEL HOST' ("Instalando {0} en una instancia aislada..."-f$Experience.name) 30
+        $dummy=[pscustomobject]@{mode='offline';username='CocoPrepare';uuid=''}
+        [void](Invoke-CocoManagedExperienceLaunch $Catalog $Experience.id $dummy host $Paths.CatalogRoot $Paths.CacheRoot $Paths.ExperiencesRoot -Dry -DisableAutoJoin)
+        $identity=Resolve-CocoLauncherIdentityUi $Catalog $LegacyMinecraftRoot $Paths 7 88
+        $hostSkinSync=Sync-CocoSkinRegistry $Catalog $Paths $identity
+        if($script:CocoSkinTile){Set-CocoSkinTilePreview $script:CocoSkinPicture $script:CocoSkinLabel $Paths.SkinRoot ([string]$identity.username) ([bool]$hostSkinSync.Pending)}
         $launch=Start-CocoLauncherExperience $Catalog $Experience $identity host $Paths $LegacyMinecraftRoot -DisableAutoJoin
         $instanceRoot=if($launch.Installation){[string]$launch.Installation.InstanceRoot}elseif($launch.InstanceRoot){[string]$launch.InstanceRoot}else{$LegacyMinecraftRoot}
         if($Experience.managementMode-eq'managed'){[void](Set-CocoManagedLanWorldConfigurations $instanceRoot $Experience)}
         [void](Wait-CocoManagedMinecraftWindow $instanceRoot $launch.Process 90)
-        Set-CocoLauncherStep 9 'MINECRAFT ABIERTO' 'Entra o crea el mundo y pulsa Abrir en LAN. Coco detectara el puerto y avisara a todos.' 95
+        Set-CocoLauncherStep 9 'MINECRAFT ABIERTO' 'Entra o crea el mundo. Coco configurara el modo local y luego puedes pulsar Abrir en LAN.' 95
         try{$script:CocoForm.TopMost=$false}catch{}
         $ready=$false;$lastPublish=[DateTime]::MinValue
+        $lanConfiguredBeforeOpen=Test-CocoManagedLanWorldConfigurations $instanceRoot $Experience
+        $unsafeLanObserved=$false
         while(-not$launch.Process.HasExited){
             [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
             if($Experience.managementMode-eq'managed'){[void](Set-CocoManagedLanWorldConfigurations $instanceRoot $Experience)}
-            if(-not$ready-and(Test-CocoTcpEndpoint ([string]$Experience.hosting.host) ([int]$Experience.hosting.port) 250)){$ready=$true}
+            $configurationReady=Test-CocoManagedLanWorldConfigurations $instanceRoot $Experience
+            $portOpen=Test-CocoTcpEndpoint ([string]$Experience.hosting.host) ([int]$Experience.hosting.port) 250
+            if(-not$portOpen-and$configurationReady){$lanConfiguredBeforeOpen=$true}
+            if(-not$ready-and$portOpen-and$lanConfiguredBeforeOpen){$ready=$true}
+            elseif(-not$ready-and$portOpen-and-not$lanConfiguredBeforeOpen-and-not$unsafeLanObserved){
+                $unsafeLanObserved=$true
+                Set-CocoLauncherStep 9 'REABRE LA PARTIDA LAN' 'La LAN se abrio antes de cargar el modo local. Cierra la LAN, espera la confirmacion de Coco y vuelve a abrirla.' 95
+            }
             if((Get-Date)-gt$lastPublish.AddSeconds(8)){
                 [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id $(if($ready){'ready'}else{'preparing'}) $sessionId $Paths.SessionStatePath 30)
                 $lastPublish=Get-Date
@@ -1766,8 +2394,14 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
         [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id stopping $sessionId $Paths.SessionStatePath 10)
     }finally{
         if($launch-and$launch.Process-and$launch.Process.HasExited){$launch.Process.Dispose()}
-        if($service-and-not$service.HasExited){$service.Kill()};if($service){$service.Dispose()}
+        if($service-and-not$service.HasExited){
+            $service.Kill()
+            [void]$service.WaitForExit(5000)
+        }
+        if($service){$service.Dispose()}
         Remove-Item -LiteralPath $Paths.SessionStatePath -Force -ErrorAction SilentlyContinue
+        if($script:CocoIdentityTextBox){$script:CocoIdentityTextBox.Enabled=$true}
+        if($script:CocoSkinTile){$script:CocoSkinTile.Enabled=$true}
     }
 }
 
@@ -1775,11 +2409,13 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     if(-not(Get-Command Show-CocoWindow -ErrorAction SilentlyContinue)){throw 'El engine no contiene la UI base requerida por Coco Launcher.'}
     $paths=Get-CocoLauncherPaths $script:CocoEngineRoot $LauncherTestRoot
     $catalog=Read-CocoLauncherCatalog $paths.CatalogPath
+    if($paths.IsTest){New-Item -ItemType Directory -Path $paths.SkinRoot -Force|Out-Null}
+    else{Initialize-CocoSkinRegistry $catalog.globalPolicies $script:CocoEngineRoot $paths.SkinRoot}
     $original=@($catalog.experiences|Where-Object id -eq 'coco-original'|Select-Object -First 1)[0]
     if(-not$original-or[string]$original.pack.version-ne[string]$Manifest.version){throw 'El catalogo Coco Launcher no coincide con la version publicada del engine.'}
     Show-CocoWindow
     $script:CocoForm.Text='Coco Launcher';$script:CocoBrand.Text='COCO LAUNCHER  |  UNA PARTIDA ACTIVA'
-    $script:CocoPanel.Height=460
+    $script:CocoPanel.Height=470
     if($script:CocoAccent){$script:CocoAccent.Height=$script:CocoPanel.Height}
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{component='launcher';mode='launcher';role='detecting';stage='start'}}
     $runLabel=if(-not[string]::IsNullOrWhiteSpace([string]$script:CocoRunId)){([string]$script:CocoRunId).Substring(0,[Math]::Min(8,([string]$script:CocoRunId).Length))}else{'test/local'}
@@ -1793,21 +2429,112 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             [void](Invoke-CocoLauncherNetworkSerialized {Ensure-CocoNetwork $LegacyMinecraftRoot $role $Manifest})
         }
     }finally{$script:MinecraftPid=$oldMinecraftPid}
-    $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point(46,270);$dynamic.Size=New-Object Drawing.Size(570,110);$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic)
-    $identityButton=New-Object Windows.Forms.Button;$identityButton.Text='Cambiar identidad';$identityButton.Size=New-Object Drawing.Size(145,34);$identityButton.Location=New-Object Drawing.Point(310,398);$identityButton.Tag=$paths
-    $identityButton.Add_Click({param($sender,$eventArgs)
+    $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point(46,272);$dynamic.Size=New-Object Drawing.Size(570,100);$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic)
+    $identityResolution=try{Resolve-CocoLauncherIdentity $paths.IdentityPath $LegacyMinecraftRoot}catch{$null}
+    $savedIdentity=if($identityResolution-and$identityResolution.Status-eq'configured'){$identityResolution.Identity}else{try{Read-CocoLauncherIdentityState $paths.IdentityPath}catch{$null}}
+    $identityCard=New-Object Windows.Forms.Panel;$identityCard.Location=New-Object Drawing.Point(46,378);$identityCard.Size=New-Object Drawing.Size(445,70)
+    $identityCard.BackColor=[Drawing.Color]::FromArgb(58,36,81);$identityCard.AllowDrop=$true
+    $skinPicture=New-Object Windows.Forms.PictureBox;$skinPicture.Location=New-Object Drawing.Point(6,6);$skinPicture.Size=New-Object Drawing.Size(58,58)
+    $skinPicture.SizeMode='Zoom';$skinPicture.BackColor=[Drawing.Color]::FromArgb(36,22,57);$skinPicture.Cursor=[Windows.Forms.Cursors]::Hand;$skinPicture.AllowDrop=$true
+    $identityHeading=New-Object Windows.Forms.Label;$identityHeading.Text='TU IDENTIDAD COCO';$identityHeading.Location=New-Object Drawing.Point(76,5);$identityHeading.Size=New-Object Drawing.Size(195,18)
+    $identityHeading.Font=New-Object Drawing.Font('Segoe UI Semibold',8.5);$identityHeading.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
+    $identityText=New-Object Windows.Forms.TextBox;$identityText.Location=New-Object Drawing.Point(76,25);$identityText.Size=New-Object Drawing.Size(195,25)
+    $identityText.MaxLength=16;$identityText.Font=New-Object Drawing.Font('Segoe UI',10);$identityText.BorderStyle='FixedSingle'
+    $identityText.Text=if($savedIdentity){[string]$savedIdentity.username}else{''}
+    $identityStatus=New-Object Windows.Forms.Label;$identityStatus.Location=New-Object Drawing.Point(76,52);$identityStatus.Size=New-Object Drawing.Size(195,15)
+    $identityStatus.Font=New-Object Drawing.Font('Segoe UI',7.5)
+    $skinHeading=New-Object Windows.Forms.Label;$skinHeading.Text='TU SKIN';$skinHeading.Location=New-Object Drawing.Point(286,7);$skinHeading.Size=New-Object Drawing.Size(145,17)
+    $skinHeading.Font=New-Object Drawing.Font('Segoe UI Semibold',8.5);$skinHeading.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$skinHeading.Cursor=[Windows.Forms.Cursors]::Hand;$skinHeading.AllowDrop=$true
+    $skinLabel=New-Object Windows.Forms.Label;$skinLabel.Location=New-Object Drawing.Point(286,26);$skinLabel.Size=New-Object Drawing.Size(150,38)
+    $skinLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',7.5);$skinLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
+    $skinLabel.UseCompatibleTextRendering=$true;$skinLabel.Cursor=[Windows.Forms.Cursors]::Hand;$skinLabel.AllowDrop=$true
+    $identityCard.Controls.AddRange(@($skinPicture,$identityHeading,$identityText,$identityStatus,$skinHeading,$skinLabel));$script:CocoPanel.Controls.Add($identityCard)
+    $skinTile=$identityCard
+    $script:CocoSkinTile=$identityCard;$script:CocoSkinPicture=$skinPicture;$script:CocoSkinLabel=$skinLabel
+    $script:CocoIdentityButton=$null;$script:CocoIdentityTextBox=$identityText;$script:CocoIdentityStatus=$identityStatus
+    $script:CocoIdentityConfirmedName=if($savedIdentity){[string]$savedIdentity.username}else{''}
+    $skinState=try{if(Test-Path -LiteralPath $paths.SkinStatePath){Get-Content -LiteralPath $paths.SkinStatePath -Raw|ConvertFrom-Json}else{$null}}catch{$null}
+    $skinUsername=if($savedIdentity){[string]$savedIdentity.username}else{''}
+    Set-CocoSkinTilePreview $skinPicture $skinLabel $paths.SkinRoot $skinUsername ([bool]($skinState-and$skinState.pendingUpload))
+    $validateIdentity={
+        $candidate=([string]$identityText.Text).Trim()
+        $valid=Test-CocoMinecraftUsername $candidate
+        $confirmed=$valid-and$candidate-eq[string]$script:CocoIdentityConfirmedName
+        $identityStatus.Text=if($confirmed){'Nombre valido.'}elseif($valid){'Pulsa Enter para confirmar.'}else{'3-16 letras, numeros o _.'}
+        $identityStatus.ForeColor=if($confirmed){[Drawing.Color]::FromArgb(78,214,132)}elseif($valid){[Drawing.Color]::FromArgb(224,190,255)}else{[Drawing.Color]::FromArgb(255,139,151)}
+        $valid
+    }
+    $saveIdentity={
+        $candidate=([string]$identityText.Text).Trim()
+        if(-not(Test-CocoMinecraftUsername $candidate)){[void](&$validateIdentity);return $null}
+        $current=try{Read-CocoLauncherIdentityState $paths.IdentityPath}catch{$null}
+        if(-not$current-or[string]$current.username-ne$candidate){
+            $current=Save-CocoLauncherIdentityState $paths.IdentityPath offline $candidate '' 'inline-identity-card'
+            Write-CocoLog "Identidad local guardada desde la tarjeta: $candidate"
+        }
+        $script:CocoIdentityConfirmedName=$candidate
+        $identityStatus.Text='Nombre valido.';$identityStatus.ForeColor=[Drawing.Color]::FromArgb(78,214,132)
+        $pendingState=try{if(Test-Path -LiteralPath $paths.SkinStatePath){Get-Content -LiteralPath $paths.SkinStatePath -Raw|ConvertFrom-Json}else{$null}}catch{$null}
+        Set-CocoSkinTilePreview $skinPicture $skinLabel $paths.SkinRoot $candidate ([bool]($pendingState-and$pendingState.username-eq$candidate-and$pendingState.pendingUpload))
+        $current
+    }
+    $identityText.Add_TextChanged({[void](&$validateIdentity)})
+    $identityText.Add_Leave({[void](&$saveIdentity)})
+    $identityText.Add_KeyDown({param($sender,$eventArgs)
+        if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Enter){$eventArgs.SuppressKeyPress=$true;[void](&$saveIdentity)}
+    })
+    [void](&$validateIdentity)
+    $applySkin={
+        param([string]$SelectedPath)
         try{
-            $identityPaths=$sender.Tag;$mode=Show-CocoIdentityModeDialog $null
-            if($mode-eq'offline'){[void](Save-CocoLauncherIdentityState $identityPaths.IdentityPath offline (Show-CocoUsernameDialog) '' 'user-settings')}
-            else{[void](Save-CocoLauncherIdentityState $identityPaths.IdentityPath microsoft '' '' 'user-settings')}
-            Set-CocoState 'Identidad actualizada' 'La nueva decision se usara en el proximo lanzamiento.' 15
-        }catch{Set-CocoState 'Identidad sin cambios' $_.Exception.Message 15}
-    });$script:CocoPanel.Controls.Add($identityButton)
-    $close=New-Object Windows.Forms.Button;$close.Text='Cerrar';$close.Size=New-Object Drawing.Size(115,34);$close.Location=New-Object Drawing.Point(465,398);$close.Add_Click({$script:CocoAllowClose=$true;$script:CocoForm.Close()});$script:CocoPanel.Controls.Add($close)
+            $current=&$saveIdentity
+            if(-not$current){[void]$identityText.Focus();throw 'Escribe primero un nombre valido en la misma tarjeta.'}
+            $imported=Import-CocoUserSkin $SelectedPath ([string]$current.username) $paths.SkinRoot $paths.SkinStatePath
+            [void](Install-CocoSkinRegistry $paths.SkinRoot $LegacyMinecraftRoot)
+            if(Test-Path -LiteralPath $paths.ExperiencesRoot -PathType Container){
+                foreach($folder in Get-ChildItem -LiteralPath $paths.ExperiencesRoot -Directory){[void](Install-CocoSkinRegistry $paths.SkinRoot $folder.FullName)}
+            }
+            $skinSync=Sync-CocoSkinRegistry $catalog $paths $current
+            [void](Install-CocoSkinRegistry $paths.SkinRoot $LegacyMinecraftRoot)
+            if(Test-Path -LiteralPath $paths.ExperiencesRoot -PathType Container){
+                foreach($folder in Get-ChildItem -LiteralPath $paths.ExperiencesRoot -Directory){[void](Install-CocoSkinRegistry $paths.SkinRoot $folder.FullName)}
+            }
+            $skinLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
+            Set-CocoSkinTilePreview $skinPicture $skinLabel $paths.SkinRoot ([string]$current.username) ([bool]$skinSync.Pending)
+        }catch{
+            $skinLabel.ForeColor=[Drawing.Color]::FromArgb(255,139,151)
+            $skinLabel.Text="NO SE PUDO USAR`r`n$($_.Exception.Message)"
+        }
+    }
+    $chooseSkin={
+        $dialog=New-Object Windows.Forms.OpenFileDialog
+        try{
+            $dialog.Title='Elige tu skin de Minecraft';$dialog.Filter='Skin de Minecraft (*.png)|*.png';$dialog.Multiselect=$false;$dialog.CheckFileExists=$true
+            if($dialog.ShowDialog($script:CocoForm)-eq[Windows.Forms.DialogResult]::OK){&$applySkin $dialog.FileName}
+        }finally{$dialog.Dispose()}
+    }
+    $dragEnter={
+        param($sender,$eventArgs)
+        $files=if($eventArgs.Data.GetDataPresent([Windows.Forms.DataFormats]::FileDrop)){@($eventArgs.Data.GetData([Windows.Forms.DataFormats]::FileDrop))}else{@()}
+        $eventArgs.Effect=if($files.Count-eq1-and[IO.Path]::GetExtension([string]$files[0])-eq'.png'){[Windows.Forms.DragDropEffects]::Copy}else{[Windows.Forms.DragDropEffects]::None}
+    }
+    $dragDrop={
+        param($sender,$eventArgs)
+        $files=@($eventArgs.Data.GetData([Windows.Forms.DataFormats]::FileDrop))
+        if($files.Count-eq1){&$applySkin ([string]$files[0])}
+    }
+    foreach($control in @($identityCard,$skinPicture,$skinHeading,$skinLabel)){
+        $control.Add_Click($chooseSkin);$control.Add_DragEnter($dragEnter);$control.Add_DragDrop($dragDrop)
+    }
+    $close=New-Object Windows.Forms.Button;$close.Text='CERRAR';$close.Size=New-Object Drawing.Size(115,36);$close.Location=New-Object Drawing.Point(501,395)
+    Set-CocoFlatButtonStyle $close ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
+    $close.Add_Click({$script:CocoAllowClose=$true;$script:CocoForm.Close()});$script:CocoPanel.Controls.Add($close)
     if($role-eq'host'){
         $script:CocoLauncherSelectedExperience=''
         $index=0
-        foreach($experience in @($catalog.experiences|Where-Object{$_.managementMode-eq'managed'-and$_.launch.workflow-eq'coco-managed'})){
+        foreach($experience in @($catalog.experiences|Where-Object{
+            $_.managementMode-eq'managed'-and$_.launch.workflow-eq'coco-managed'-and[string]$_.compatibility.status-ne'blocked'
+        })){
             $button=New-Object Windows.Forms.Button;$button.Text=[string]$experience.name;$button.Tag=[string]$experience.id
             # Con New-Object, la coma puede convertir estas dos expresiones en
             # Object[] antes de evaluar la multiplicacion en PowerShell 5.1.
@@ -1815,6 +2542,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             # del host encontro antes de mostrar el primer selector real.
             $button.Size=[Drawing.Size]::new(245,42)
             $button.Location=[Drawing.Point]::new([int](($index%2)*260),[int]([math]::Floor($index/2)*50))
+            Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)
             $button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag});$dynamic.Controls.Add($button);$index++
         }
         while(-not$script:CocoForm.IsDisposed){
@@ -1823,10 +2551,10 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             while(-not$script:CocoForm.IsDisposed-and[string]::IsNullOrWhiteSpace($script:CocoLauncherSelectedExperience)){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
             if($script:CocoForm.IsDisposed){break}
             $experience=@($catalog.experiences|Where-Object id -eq $script:CocoLauncherSelectedExperience|Select-Object -First 1)[0]
-            foreach($control in @($dynamic.Controls)+@($identityButton,$close)){if($control-is[Windows.Forms.Button]){$control.Enabled=$false}}
+            foreach($control in @($dynamic.Controls)+@($close)){if($control-is[Windows.Forms.Button]){$control.Enabled=$false}}
             try{Invoke-CocoLauncherHostSession $catalog $experience $paths $LegacyMinecraftRoot;Set-CocoState 'Partida terminada' 'Minecraft se cerro. Ya puedes iniciar otra experiencia.' 15}
             catch{Write-CocoLog "ERROR Launcher host: $($_|Out-String)";Set-CocoState 'NO SE PUDO INICIAR LA PARTIDA' (Get-CocoLauncherFailureDetail $_) 0 $true 'failure'}
-            foreach($control in @($dynamic.Controls)+@($identityButton,$close)){if($control-is[Windows.Forms.Button]){$control.Enabled=$true}}
+            foreach($control in @($dynamic.Controls)+@($close)){if($control-is[Windows.Forms.Button]){$control.Enabled=$true}}
         }
     }else{
         $prepared=@{};$launched=$false;$session=$null
@@ -1841,9 +2569,12 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         if($script:CocoForm.IsDisposed){return}
         if($session.State-eq'offline'){
             Set-CocoLauncherStep 3 'NO HAY EXPERIENCIA ESPECIAL ONLINE' 'Coco actualizara el mundo original, que sigues abriendo con tu launcher habitual.' 25
-            $identityButton.Enabled=$false;$close.Enabled=$false
-            try{$legacy=Sync-CocoLegacyInstanceForLauncher $LegacyMinecraftRoot $Manifest}finally{$identityButton.Enabled=$true;$close.Enabled=$true}
+            $close.Enabled=$false
+            try{$legacy=Sync-CocoLegacyInstanceForLauncher $LegacyMinecraftRoot $Manifest}finally{$identityText.Enabled=$true;$skinTile.Enabled=$true;$close.Enabled=$true}
             if($legacy.Present){
+                $skinSync=Sync-CocoOriginalSkinRegistry $catalog $paths $LegacyMinecraftRoot ([string]$legacy.Role) 0
+                $currentIdentity=try{Read-CocoLauncherIdentityState $paths.IdentityPath}catch{$null}
+                Set-CocoSkinTilePreview $skinPicture $skinLabel $paths.SkinRoot $(if($currentIdentity){[string]$currentIdentity.username}else{''}) ([bool]$skinSync.Pending)
                 Set-CocoLauncherStep 10 'COCO ORIGINAL LISTO' $(if($legacy.Updated){'El pack fue actualizado. Ya puedes abrir Minecraft con tu launcher habitual.'}else{'Ya estabas actualizado. Abre Minecraft con tu launcher habitual.'}) 100
             }else{
                 Set-CocoLauncherStep 3 'FALTA LA INSTALACION ORIGINAL' 'No se encontro Coco original. Abre esa version una vez con tu launcher habitual y vuelve a ejecutar Coco.' 25
@@ -1857,9 +2588,9 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                 if($action.Action-eq'wait'){Set-CocoLauncherStep 3 ([string]$action.Message).ToUpperInvariant() 'Coco seguira buscando mientras esta ventana permanezca abierta.' 24}
                 else{
                     Set-CocoLauncherStep 3 ([string]$action.Message).ToUpperInvariant() 'La unica experiencia online se selecciono automaticamente.' 25
-                    $identityButton.Enabled=$false;$close.Enabled=$false
+                    $identityText.Enabled=$true;$close.Enabled=$false
                     $launch=Invoke-CocoLauncherClientSession $catalog $session $paths $LegacyMinecraftRoot $prepared
-                    if(-not$launch){$identityButton.Enabled=$true;$close.Enabled=$true}
+                    if(-not$launch){$identityText.Enabled=$true;$skinTile.Enabled=$true;$close.Enabled=$true}
                     else{
                         # PortableMC hereda pipes de Coco para registrar su salida. Coco debe
                         # permanecer vivo hasta que termine Minecraft; cerrar ahora puede
@@ -1878,7 +2609,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                     }
                 }
             }catch{
-                if(-not$script:CocoForm.IsDisposed){$identityButton.Enabled=$true;$close.Enabled=$true}
+                if(-not$script:CocoForm.IsDisposed){$identityText.Enabled=$true;$skinTile.Enabled=$true;$close.Enabled=$true}
                 Write-CocoLog "ERROR Launcher client: $($_|Out-String)";Set-CocoState 'COCO DETECTO UN PROBLEMA' (Get-CocoLauncherFailureDetail $_) 0 $true 'failure'
             }
             $until=(Get-Date).AddSeconds(3);while((Get-Date)-lt$until-and-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}

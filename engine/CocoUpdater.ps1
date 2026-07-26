@@ -91,7 +91,7 @@ function Get-CocoFailureClassification([string]$Message){
     $value=([string]$Message).ToLowerInvariant()
     if($value-match'hash|sha-?256|tamano fijado|integridad|zip slip'){return [pscustomobject]@{Code='PACK-INTEGRITY';Action='No reutilices el archivo manualmente. Reabre Coco para que elimine/reintente la descarga verificada.'}}
     if($value-match'espacio|disk|disco|no space'){return [pscustomobject]@{Code='DISK-SPACE';Action='Libera espacio en C: y vuelve a abrir Coco; las descargas verificadas ya completas se reutilizan.'}}
-    if($value-match'microsoft|xbox|minecraft java|auth|cuenta'){return [pscustomobject]@{Code='IDENTITY';Action='Reabre Coco y completa el navegador Microsoft, o revisa la identidad local guardada si corresponde.'}}
+    if($value-match'identidad|identity|username|nombre local|jugador'){return [pscustomobject]@{Code='IDENTITY';Action='Reabre Coco, revisa el nombre del jugador y usa siempre la misma identidad local.'}}
     if($value-match'zerotier|adaptador|network id|autoriz|25564|red coco'){return [pscustomobject]@{Code='ZEROTIER';Action='Comprueba que el host tenga Coco/Minecraft abierto y vuelve a ejecutar; adjunta este informe si vuelve a fallar.'}}
     if($value-match'25565|puerto|listen|socket|connection|conectar|timeout|timed out|nombre remoto'){return [pscustomobject]@{Code='CONNECTIVITY';Action='Verifica internet/host y vuelve a abrir Coco. No borres la instancia: el proceso es reanudable.'}}
     if($value-match'access|acceso|denegado|permission|administrador|uac'){return [pscustomobject]@{Code='WINDOWS-PERMISSION';Action='Permite Coco/ZeroTier en Windows o antivirus y vuelve a ejecutar. No hace falta mover la instancia.'}}
@@ -232,7 +232,7 @@ $cacheSummary
 
 PRIVACIDAD
 ----------
-Este informe no copia accessToken, contrasenas, cookies ni la base Microsoft de PortableMC.
+Este informe no copia accessToken, contrasenas, cookies ni bases privadas de otros launchers.
 Puede contener nombre/UUID de Minecraft, rutas locales, IP ZeroTier y lineas de comando necesarias para diagnosticar.
 "@
         [IO.File]::WriteAllText($diagnosticPath,$report,(New-Object Text.UTF8Encoding($true)))
@@ -259,7 +259,43 @@ if($global:CocoSharedUi){
     if(-not$script:CocoPanel){$script:CocoPanel=@($script:CocoForm.Controls|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Controls.Count-ge4}|Select-Object -First 1)[0]}
     if($script:CocoPanel-and-not$script:CocoAccent){$script:CocoAccent=@($script:CocoPanel.Controls|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Width-lt20}|Select-Object -First 1)[0]}
     if($script:CocoPanel-and-not$script:CocoBrand){$script:CocoBrand=@($script:CocoPanel.Controls|Where-Object{$_-is[Windows.Forms.Label]-and$_.Text-match'COCO PACK'}|Select-Object -First 1)[0]}
+    # Bootstrap y engine deben compartir exactamente el mismo lienzo. Versiones
+    # anteriores entregaban un panel de 780x350, pero el launcher agregaba
+    # controles hasta y=438: en el EXE publicado quedaban fuera de pantalla.
+    if($script:CocoPanel){$script:CocoPanel.Size=New-Object Drawing.Size(640,460)}
+    if($script:CocoAccent){$script:CocoAccent.Size=New-Object Drawing.Size(9,460)}
+    if($script:CocoTitle){$script:CocoTitle.Location=New-Object Drawing.Point(43,30);$script:CocoTitle.Size=New-Object Drawing.Size(570,72)}
+    if($script:CocoDetail){$script:CocoDetail.Location=New-Object Drawing.Point(46,106);$script:CocoDetail.Size=New-Object Drawing.Size(570,76)}
+    if($script:CocoTrack){$script:CocoTrack.Location=New-Object Drawing.Point(46,190);$script:CocoTrack.Size=New-Object Drawing.Size(570,30)}
+    if($script:CocoBrand){$script:CocoBrand.Location=New-Object Drawing.Point(46,240);$script:CocoBrand.Size=New-Object Drawing.Size(570,25)}
     $script:CocoVisualWorkStarted=$global:CocoSharedUi.Started
+}
+
+function Set-CocoFittedLabelText(
+    $Label,
+    [string]$Text,
+    [string]$Family,
+    [single]$MaximumSize,
+    [single]$MinimumSize,
+    [Drawing.FontStyle]$Style=[Drawing.FontStyle]::Regular
+){
+    if(-not$Label){return}
+    $Label.AutoSize=$false
+    if($Label.PSObject.Properties.Name-contains'AutoEllipsis'){$Label.AutoEllipsis=$false}
+    if($Label.PSObject.Properties.Name-contains'UseCompatibleTextRendering'){$Label.UseCompatibleTextRendering=$true}
+    $chosen=$MinimumSize
+    for($size=$MaximumSize;$size-ge$MinimumSize;$size-=0.5){
+        $candidate=New-Object Drawing.Font($Family,[single]$size,$Style)
+        try{
+            $flags=[Windows.Forms.TextFormatFlags]::WordBreak-bor[Windows.Forms.TextFormatFlags]::NoPadding
+            $measured=[Windows.Forms.TextRenderer]::MeasureText($Text,$candidate,(New-Object Drawing.Size($Label.ClientSize.Width,4096)),$flags)
+            if($measured.Height-le$Label.ClientSize.Height){$chosen=$size;break}
+        }finally{$candidate.Dispose()}
+    }
+    $old=$Label.Font
+    $Label.Font=New-Object Drawing.Font($Family,[single]$chosen,$Style)
+    $Label.Text=$Text
+    if($old){$old.Dispose()}
 }
 
 function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]$Visible = $true, [string]$Action = '') {
@@ -287,12 +323,8 @@ function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]
         }
         $uiProgress=$Progress
         if($global:CocoSharedUi){$uiProgress=[Math]::Min(100,[int]($global:CocoSharedUi.BaseProgress+(100-$global:CocoSharedUi.BaseProgress)*$Progress/100))}
-        if ($Message.Length -gt 35) {
-            $script:CocoTitle.Font = New-Object Drawing.Font('Segoe UI Semibold', 15)
-        } else {
-            $script:CocoTitle.Font = New-Object Drawing.Font('Segoe UI Semibold', 22)
-        }
-        $script:CocoTitle.Text=$Message; $script:CocoDetail.Text=$Detail
+        Set-CocoFittedLabelText $script:CocoTitle $Message 'Segoe UI Semibold' 22 11 ([Drawing.FontStyle]::Bold)
+        Set-CocoFittedLabelText $script:CocoDetail $Detail 'Segoe UI' 12 8 ([Drawing.FontStyle]::Regular)
         $trackWidth=if($script:CocoTrack){$script:CocoTrack.ClientSize.Width}else{570}
         $script:CocoProgress.Width=[Math]::Max(4,[int]($trackWidth*$uiProgress/100))
         $script:CocoForm.Refresh(); [Windows.Forms.Application]::DoEvents()
@@ -317,9 +349,9 @@ function Show-CocoWindow {
     $panel.BackColor=[Drawing.Color]::FromArgb(22,13,37)
     $accent=New-Object Windows.Forms.Panel; $accent.Location=New-Object Drawing.Point(0,0); $accent.Size=New-Object Drawing.Size(9,460)
     $accent.BackColor=[Drawing.Color]::FromArgb(177,92,255); $panel.Controls.Add($accent)
-    $t=New-Object Windows.Forms.Label; $t.Location=New-Object Drawing.Point(43,36); $t.Size=New-Object Drawing.Size(570,64)
+    $t=New-Object Windows.Forms.Label; $t.Location=New-Object Drawing.Point(43,30); $t.Size=New-Object Drawing.Size(570,72)
     $t.Font=New-Object Drawing.Font('Segoe UI Semibold',18); $t.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
-    $d=New-Object Windows.Forms.Label; $d.Location=New-Object Drawing.Point(46,108); $d.Size=New-Object Drawing.Size(570,64)
+    $d=New-Object Windows.Forms.Label; $d.Location=New-Object Drawing.Point(46,106); $d.Size=New-Object Drawing.Size(570,76)
     $d.Font=New-Object Drawing.Font('Segoe UI',12); $d.ForeColor=[Drawing.Color]::FromArgb(218,210,229)
     $track=New-Object Windows.Forms.Panel; $track.Location=New-Object Drawing.Point(46,190); $track.Size=New-Object Drawing.Size(570,30)
     $track.BackColor=[Drawing.Color]::FromArgb(58,36,81)
@@ -355,13 +387,10 @@ function Show-CocoSuccessAndWait([string]$Version,[string]$Detail="Ya puedes vol
     $green=[Drawing.Color]::FromArgb(78,214,132)
     $greenDark=[Drawing.Color]::FromArgb(30,92,61)
     $scale=[Math]::Max(0.55,[Math]::Min(1.0,$script:CocoForm.Width/1080.0))
-    $script:CocoTitle.Text="$([char]0x2714)  TODO LISTO"
-    $script:CocoTitle.Font=New-Object Drawing.Font('Segoe UI Semibold',[single](27*$scale))
+    Set-CocoFittedLabelText $script:CocoTitle "$([char]0x2714)  TODO LISTO" 'Segoe UI Semibold' ([single](27*$scale)) ([single](15*$scale)) ([Drawing.FontStyle]::Bold)
     $script:CocoTitle.ForeColor=$green
-    $script:CocoDetail.Text="Coco Pack $Version esta listo.`n$Detail"
-    $script:CocoDetail.Font=New-Object Drawing.Font('Segoe UI Semibold',[single](14*$scale))
+    Set-CocoFittedLabelText $script:CocoDetail "Coco Pack $Version esta listo.`n$Detail" 'Segoe UI Semibold' ([single](14*$scale)) ([single](8*$scale)) ([Drawing.FontStyle]::Bold)
     $script:CocoDetail.ForeColor=[Drawing.Color]::White
-    $script:CocoDetail.Size=New-Object Drawing.Size([int](640*$scale),[int](68*$scale))
     $script:CocoProgress.BackColor=$green
     $script:CocoProgress.Width=$script:CocoTrack.ClientSize.Width
     $script:CocoTrack.BackColor=$greenDark
@@ -1256,6 +1285,30 @@ try {
                 if($networkMutexAcquired){$networkMutex.ReleaseMutex()|Out-Null;$networkMutexAcquired=$false}
                 $networkMutex.Dispose();$networkMutex=$null
             }
+        }
+    }
+    if($NetworkOnly-and
+       (Get-Command Sync-CocoOriginalSkinRegistry -ErrorAction SilentlyContinue)-and
+       (Get-Command Get-CocoLauncherPaths -ErrorAction SilentlyContinue)){
+        try{
+            $skinCatalogPath=Join-Path $script:CocoEngineRoot 'launcher\catalog.json'
+            if(-not(Test-Path -LiteralPath $skinCatalogPath -PathType Leaf)){
+                $developmentCatalog=Join-Path (Split-Path $script:CocoEngineRoot -Parent) 'launcher\catalog.template.json'
+                if(Test-Path -LiteralPath $developmentCatalog -PathType Leaf){$skinCatalogPath=$developmentCatalog}
+            }
+            if(Test-Path -LiteralPath $skinCatalogPath -PathType Leaf){
+                $skinCatalog=Read-CocoLauncherCatalog $skinCatalogPath
+                $skinPaths=Get-CocoLauncherPaths $script:CocoEngineRoot
+                $skinResult=Sync-CocoOriginalSkinRegistry $skinCatalog $skinPaths $selected.Root $role $MinecraftPid
+                Write-CocoLog "Skins Coco original: Online=$($skinResult.Online) Uploaded=$($skinResult.Uploaded) Downloaded=$($skinResult.Downloaded) Pending=$($skinResult.Pending) Error='$($skinResult.Error)'"
+            }else{
+                Write-CocoLog 'Sincronizacion de skins omitida: el engine no contiene launcher/catalog.json.'
+            }
+        }catch{
+            # Una caida del registro visual no debe impedir que ZeroTier ni el
+            # mundo original arranquen. La seleccion queda pendiente y se
+            # reintenta automaticamente en la proxima apertura.
+            Write-CocoLog "Sincronizacion de skins no bloqueante: $($_.Exception.Message)"
         }
     }
     if($NetworkOnly){

@@ -25,9 +25,12 @@ if($engine-notmatch'\.AcceptButton=\$accept'-or$engine-notmatch'\.Add_Click'-or
 if($engine-notmatch'\[void\]\$accept\.Focus\(\)'){
     throw 'Focus() puede filtrar True al pipeline y ps2exe lo convertiria en un cuadro de mensaje.'
 }
-if($engine-notmatch'Drawing\.Size\(\[int\]\(640\*\$scale\)'-or
+if($engine-notmatch'Drawing\.Size\(640,460\)'-or
+   $engine-notmatch'function Set-CocoFittedLabelText'-or
+   $bootstrap-notmatch'Drawing\.Size\(640,460\)'-or
+   $bootstrap-notmatch'function Set-CocoBootstrapLabelText'-or
    $engine-match'La actualizacion termino correctamente\. Ya puedes volver a abrir Minecraft'){
-    throw 'El texto final puede volver a envolverse debajo de la barra de progreso.'
+    throw 'Bootstrap/engine no comparten el layout amplio y el ajuste de texto.'
 }
 if($engine-notmatch'\$automaticFullCheck=\$MinecraftPid-gt0-and-not\$NetworkOnly'-or
    ([regex]::Matches($engine,'\$ShowOnUpdate-or\$automaticFullCheck')).Count-lt2){

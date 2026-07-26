@@ -276,7 +276,8 @@ if($removedModIds.Count){
 .\tests\Test-CocoLauncherInstance.ps1
 .\tests\Test-CocoLauncherIntegration.ps1
 .\tests\Test-CocoLauncherObservability.ps1
-.\tests\Test-CocoIronLungLock.ps1
+.\tests\Test-CocoSkinSync.ps1
+.\tests\Test-CocoVoiceChatDefaults.ps1
 
 git fetch origin main --quiet
 if($LASTEXITCODE){throw 'No se pudo volver a comprobar origin/main antes del commit.'}

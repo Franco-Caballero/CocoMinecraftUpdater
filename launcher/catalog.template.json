@@ -15,6 +15,37 @@
         "maximumResponseBytes": 32768,
         "maximumTtlSeconds": 120
     },
+    "globalPolicies": {
+        "essential": {
+            "mode": "exclude"
+        },
+        "customSkinLoader": {
+            "mode": "required",
+            "variants": [
+                {
+                    "minecraftVersions": [
+                        "1.19.2",
+                        "1.20.1"
+                    ],
+                    "name": "CustomSkinLoader_Universal-15.0.1.jar",
+                    "path": "mods/CustomSkinLoader_Universal-15.0.1.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/idMHQ4n2/versions/OLaesh5y/CustomSkinLoader_Universal-15.0.1.jar",
+                    "sha256": "026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc",
+                    "size": 218215,
+                    "role": "all",
+                    "policy": "replace",
+                    "license": "GPL-3.0"
+                }
+            ],
+            "localSkins": [
+                {
+                    "username": "smolbird",
+                    "embeddedPath": "assets/skins/smolbird.png",
+                    "sha256": "fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb"
+                }
+            ]
+        }
+    },
     "backend": {
         "id": "portablemc",
         "version": "5.0.4",
@@ -100,6 +131,19 @@
                     "maximumPhysicalFraction": 0.45
                 }
             },
+            "compatibility": {
+                "status": "experimental",
+                "summary": "Lock e instalacion declarados; falta una sesion fisica host mas clientes."
+            },
+            "preferences": {
+                "standardControls": true,
+                "fov": 0.625,
+                "voiceChatDefaults": true,
+                "shader": {
+                    "provider": "oculus",
+                    "pack": "DREAD REBORN SHADERS - 6 - Potato.zip"
+                }
+            },
             "files": [
                 {
                     "name": "mcwifipnp-1.7.6-1.19.2-forge.jar",
@@ -110,16 +154,6 @@
                     "role": "host",
                     "policy": "replace",
                     "license": "Apache-2.0"
-                },
-                {
-                    "name": "CustomSkinLoader_Universal-15.0.1.jar",
-                    "path": "mods/CustomSkinLoader_Universal-15.0.1.jar",
-                    "sourceUrl": "https://cdn.modrinth.com/data/idMHQ4n2/versions/OLaesh5y/CustomSkinLoader_Universal-15.0.1.jar",
-                    "sha256": "026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc",
-                    "size": 218215,
-                    "role": "all",
-                    "policy": "replace",
-                    "license": "GPL-3.0"
                 }
             ]
         },
@@ -159,6 +193,15 @@
                     "maximumPhysicalFraction": 0.45
                 }
             },
+            "compatibility": {
+                "status": "validated",
+                "summary": "Primera sesion fisica completada con un host y dos clientes el 2026-07-25."
+            },
+            "preferences": {
+                "standardControls": true,
+                "fov": 0.625,
+                "voiceChatDefaults": true
+            },
             "files": [
                 {
                     "name": "mcwifipnp-1.7.6-1.20.1-fabric.jar",
@@ -169,16 +212,6 @@
                     "role": "host",
                     "policy": "replace",
                     "license": "Apache-2.0"
-                },
-                {
-                    "name": "CustomSkinLoader_Universal-15.0.1.jar",
-                    "path": "mods/CustomSkinLoader_Universal-15.0.1.jar",
-                    "sourceUrl": "https://cdn.modrinth.com/data/idMHQ4n2/versions/OLaesh5y/CustomSkinLoader_Universal-15.0.1.jar",
-                    "sha256": "026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc",
-                    "size": 218215,
-                    "role": "all",
-                    "policy": "replace",
-                    "license": "GPL-3.0"
                 }
             ]
         },
@@ -217,6 +250,16 @@
                     "recommendedMb": 4096,
                     "maximumPhysicalFraction": 0.45
                 }
+            },
+            "compatibility": {
+                "status": "blocked",
+                "summary": "Minecraft 1.12.2 no tiene todavia un adaptador LAN Coco validado para puerto fijo, modo offline y UUID estable."
+            },
+            "preferences": {
+                "standardControls": true,
+                "fov": 0.625,
+                "resourcePack": "Tissous Zombie Pack 1.12.2 - 2.6.zip",
+                "optifineEmissive": true
             },
             "files": []
         }

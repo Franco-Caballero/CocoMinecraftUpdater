@@ -19,7 +19,7 @@ public static class FakePreparation {
 }
 '@ -OutputType ConsoleApplication -OutputAssembly $fake
     $env:COCO_PREPARATION_RETRY_MARKER=Join-Path $testRoot 'attempt.marker'
-    $result=Invoke-CocoPortableMcPreparation $fake @('start','forge::1.20.1-47.4.10') iron-lung 3
+    $result=Invoke-CocoPortableMcPreparation $fake @('start','forge::1.20.1-47.4.10') test-pack 3
     if($result.ExitCode-ne0-or$result.Arguments-notcontains'--dry'){throw 'La preparacion no reintento en modo seco.'}
     'PASS: la preparacion reanuda tras un fallo transitorio y conserva --dry.'
 }finally{

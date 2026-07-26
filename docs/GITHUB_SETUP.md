@@ -30,6 +30,11 @@ Cada release estable publica:
 - `coco-engine-<versión>.zip`;
 - `latest.json`.
 
+El ZIP del engine incorpora además la skin global de `smolbird` bajo
+`assets/skins/smolbird.png`. `New-CocoEngine.ps1` la reconstruye desde la
+fuente Base64 versionada y comprueba su SHA-256 contra `globalPolicies` antes
+de empaquetar; no depende de una ruta privada del computador host.
+
 Los JARs se almacenan como assets con nombre derivado de SHA-256. Un cliente reutiliza cualquier archivo cuyo hash ya coincida y descarga únicamente contenido faltante o diferente.
 
 ## Publicación oficial

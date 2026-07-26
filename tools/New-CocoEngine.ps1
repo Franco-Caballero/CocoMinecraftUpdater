@@ -35,6 +35,15 @@ $assets=Join-Path $stage 'assets'
 New-Item -ItemType Directory -Path $assets -Force|Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'fullbody.png') -Destination (Join-Path $assets 'fullbody.png') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'reynaico.ico') -Destination (Join-Path $assets 'reynaico.ico') -Force
+$skinSource=Join-Path $projectRoot 'launcher\assets\skins\smolbird.png.base64'
+$skinDestination=Join-Path $assets 'skins\smolbird.png'
+New-Item -ItemType Directory -Path (Split-Path $skinDestination -Parent) -Force|Out-Null
+$skinBase64=([IO.File]::ReadAllText($skinSource)).Trim()
+[IO.File]::WriteAllBytes($skinDestination,[Convert]::FromBase64String($skinBase64))
+$skinPolicy=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird'|Select-Object -First 1)[0]
+if(-not$skinPolicy-or(Get-FileHash -LiteralPath $skinDestination -Algorithm SHA256).Hash.ToLowerInvariant()-ne[string]$skinPolicy.sha256){
+    throw 'La skin global de smolbird no coincide con el hash declarado.'
+}
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $zip = Join-Path $OutputDirectory "coco-engine-$Version.zip"
 Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue

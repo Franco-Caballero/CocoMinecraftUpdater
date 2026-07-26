@@ -31,7 +31,7 @@ try{
 
     $remote=Get-CocoSessionAnnouncement $catalog
     if($remote.State-ne'ready'-or$remote.Experience.id-ne'into-the-backrooms'-or$remote.Announcement.sessionId-ne$sessionId){
-        throw 'La consulta local por ZeroTier no recupero la sesion Iron Lung exacta.'
+        throw 'La consulta local por ZeroTier no recupero la sesion administrada exacta.'
     }
     'PASS: servicio productivo 10.77.37.1:25564, filtro de origen y consulta local ZeroTier validados.'
 }finally{
