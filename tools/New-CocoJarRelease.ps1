@@ -105,7 +105,8 @@ $manifest=[ordered]@{
         minecraftPort=25565;authorizationTimeoutSeconds=120
         firewallRuleName='Coco Minecraft - ZeroTier TCP 25565'
         sessionPort=25564;sessionFirewallRuleName='Coco Launcher - ZeroTier TCP 25564'
-        voicePort=24454;voiceFirewallRuleName='Coco Voice - ZeroTier UDP 24454'
+        # Simple Voice Chat cambia al puerto de la LAN en servidores integrados.
+        voicePort=25565;voiceFirewallRuleName='Coco Voice LAN - ZeroTier UDP 25565'
         leaveNetworkIds=@('154a350c866b8062')
         installer=[ordered]@{
             version='1.16.2'

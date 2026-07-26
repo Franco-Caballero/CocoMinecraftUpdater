@@ -61,7 +61,7 @@ custom_future_key=preserved
     $elevated=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoNetworkElevated.ps1'))
     $releaseBuilder=[IO.File]::ReadAllText((Join-Path $root 'tools\New-CocoJarRelease.ps1'))
     foreach($text in $network,$elevated,$releaseBuilder){
-        if($text-notmatch'24454'-or$text-notmatch'Coco Voice - ZeroTier UDP 24454'){throw 'La red publicada no declara la regla privada de voz UDP 24454.'}
+        if($text-notmatch'25565'-or$text-notmatch'Coco Voice LAN - ZeroTier UDP 25565'){throw 'La red publicada no declara la regla privada de voz UDP 25565 usada por la LAN integrada.'}
     }
     if($elevated-notmatch'(?s)New-NetFirewallRule.*?Protocol UDP.*?voicePort.*?RemoteAddress \$config\.subnet.*?Profile Private'){
         throw 'La regla elevada de voz no queda limitada a UDP, subred Coco y perfil privado.'

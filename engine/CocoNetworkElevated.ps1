@@ -63,7 +63,7 @@ try{
     if(($config.sessionPort-or$config.sessionFirewallRuleName)-and([int]$config.sessionPort-ne25564-or$config.sessionFirewallRuleName-ne'Coco Launcher - ZeroTier TCP 25564')){
         throw 'La configuracion elevada contiene una regla de sesion inesperada.'
     }
-    if(($config.voicePort-or$config.voiceFirewallRuleName)-and([int]$config.voicePort-ne24454-or$config.voiceFirewallRuleName-ne'Coco Voice - ZeroTier UDP 24454')){
+    if(($config.voicePort-or$config.voiceFirewallRuleName)-and([int]$config.voicePort-ne25565-or$config.voiceFirewallRuleName-ne'Coco Voice LAN - ZeroTier UDP 25565')){
         throw 'La configuracion elevada contiene una regla de voz inesperada.'
     }
     if($config.minimumVersion-ne'1.16.2'-or([string]$config.installerSha256).ToLowerInvariant()-ne'42514072b0fe44b8f66e0395bcd23a0b1d1642c28ed00831f1527b2f41b14670'){
@@ -163,6 +163,9 @@ try{
     }while((Get-Date)-lt$deadline)
     if(-not$profileSet){throw "Windows no permitio establecer el perfil ZeroTier como $($config.profile)."}
     if($config.mode-eq'host'){
+        # 0.5.59 y anteriores preparaban el puerto predeterminado de servidores
+        # dedicados, que el servidor integrado no usa después de abrir la LAN.
+        Remove-NetFirewallRule -DisplayName 'Coco Voice - ZeroTier UDP 24454' -ErrorAction SilentlyContinue
         Remove-NetFirewallRule -DisplayName $config.firewallRuleName -ErrorAction SilentlyContinue
         New-NetFirewallRule -DisplayName $config.firewallRuleName -Direction Inbound -Action Allow -Protocol TCP `
             -LocalPort ([int]$config.minecraftPort) -RemoteAddress $config.subnet -Profile Private `
@@ -180,6 +183,7 @@ try{
                 -ErrorAction Stop|Out-Null
         }
     }else{
+        Remove-NetFirewallRule -DisplayName 'Coco Voice - ZeroTier UDP 24454' -ErrorAction SilentlyContinue
         Remove-NetFirewallRule -DisplayName $config.firewallRuleName -ErrorAction SilentlyContinue
         if($config.sessionFirewallRuleName){Remove-NetFirewallRule -DisplayName $config.sessionFirewallRuleName -ErrorAction SilentlyContinue}
         if($config.voiceFirewallRuleName){Remove-NetFirewallRule -DisplayName $config.voiceFirewallRuleName -ErrorAction SilentlyContinue}

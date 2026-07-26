@@ -332,7 +332,7 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
     if($config.hostAddress-notmatch'^10\.77\.37\.1$'-or$config.subnet-ne'10.77.37.0/24'){throw 'El manifiesto contiene una red Coco inesperada.'}
     if([int]$config.minecraftPort-ne25565){throw 'El manifiesto contiene un puerto Coco inesperado.'}
     if(($config.sessionPort-or$config.sessionFirewallRuleName)-and([int]$config.sessionPort-ne25564-or$config.sessionFirewallRuleName-ne'Coco Launcher - ZeroTier TCP 25564')){throw 'El manifiesto contiene un puerto de sesion Coco inesperado.'}
-    if(($config.voicePort-or$config.voiceFirewallRuleName)-and([int]$config.voicePort-ne24454-or$config.voiceFirewallRuleName-ne'Coco Voice - ZeroTier UDP 24454')){throw 'El manifiesto contiene un puerto de voz Coco inesperado.'}
+    if(($config.voicePort-or$config.voiceFirewallRuleName)-and([int]$config.voicePort-ne25565-or$config.voiceFirewallRuleName-ne'Coco Voice LAN - ZeroTier UDP 25565')){throw 'El manifiesto contiene un puerto de voz Coco inesperado.'}
     if($config.installer.version-ne'1.16.2'-or
         $config.installer.url-ne'https://download.zerotier.com/RELEASES/1.16.2/dist/ZeroTier%20One.msi'-or
         ([string]$config.installer.sha256).ToLowerInvariant()-ne'42514072b0fe44b8f66e0395bcd23a0b1d1642c28ed00831f1527b2f41b14670'){

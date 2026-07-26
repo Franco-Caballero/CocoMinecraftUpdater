@@ -45,6 +45,7 @@ ZeroTier es la ruta de producción. Minecraft usa TCP normal hacia una IP virtua
 - Servicio y adaptador se instalan y reparan mediante CocoUpdater.
 - El controlador local autoriza nodos pendientes mientras Minecraft del host está abierto; no se usa ZeroTier Central ni se distribuyen tokens administrativos.
 - Firewall host: entrada TCP 25565, perfil Private, interfaz ZeroTier, origen `10.77.37.0/24`.
+- Chat de voz de servidores integrados: entrada UDP 25565 con la misma restricción. Simple Voice Chat cambia al puerto LAN al publicar el mundo; 24454 sólo es su valor predeterminado para servidores dedicados.
 - Voz administrada: entrada UDP 24454 (`Coco Voice - ZeroTier UDP 24454`), perfil Private y origen `10.77.37.0/24`.
 - Clientes: perfil ZeroTier Public, sin regla de entrada Coco.
 - `servers.dat` recibe la entrada `Coco Minecraft` automáticamente.

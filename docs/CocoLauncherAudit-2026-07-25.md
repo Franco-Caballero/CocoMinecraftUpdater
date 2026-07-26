@@ -32,7 +32,7 @@ Se decidió retirar el modo premium del UX nuevo. Todos los jugadores usan ident
 
 La preparación de red, mods, runtime y configuraciones es independiente de la identidad. El jugador puede editar nombre y skin en la misma tarjeta durante ese trabajo; si al terminar aún no existe un nombre, sólo se pausa la apertura de Minecraft. El cliente congela la tarjeta al construir el proceso para evitar una identidad a medio cambio.
 
-El wizard de Simple Voice Chat fallaba porque Backrooms usa un JAR CurseForge genérico y la detección buscaba texto en el nombre del archivo. Además se intentaban claves que 2.6.19 no consume. La reparación inspecciona `fabric.mod.json`/metadata Forge, escribe la ruta oficial anidada, actualiza archivos existentes y añade UDP 24454 privado al manifiesto de red.
+El wizard de Simple Voice Chat fallaba porque Backrooms usa un JAR CurseForge genérico y la detección buscaba texto en el nombre del archivo. Además se intentaban claves que 2.6.19 no consume. La reparación inspecciona `fabric.mod.json`/metadata Forge, escribe la ruta oficial anidada y actualiza archivos existentes. Una verificación posterior del `latest.log` real confirmó que el servidor integrado cambia la voz al puerto LAN 25565; por ello la red administrada abre UDP 25565 privado, no el 24454 predeterminado de servidores dedicados.
 
 Los estados Microsoft creados por 0.5.50–0.5.57 se migran conservando el nombre y eliminando el UUID externo. Los argumentos PortableMC rechazan cualquier modo distinto de `offline`.
 

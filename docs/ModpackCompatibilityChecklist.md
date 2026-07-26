@@ -61,7 +61,7 @@ Un archivo sólo se excluye después de probar que ninguna dependencia declarada
 - Probar clic y arrastre con PNG 64x64 y 64x32, rechazo de dimensiones inválidas, vista previa de cabeza y copia a `CustomSkinLoader/LocalSkin/skins`.
 - Probar también un jugador que no seleccione skin: debe conservar la apariencia predeterminada y abrir Minecraft únicamente con un nombre válido.
 - Con dos clientes reales, cambiar una skin, reiniciar/reingresar y comprobar que ambos reciben el mismo SHA-256. Repetir una vez con Coco original para cubrir `NetworkOnly`.
-- Si existe `voicechat`, comprobar la metadata interna aunque el JAR tenga nombre `asset_*`, ausencia de onboarding, dispositivos default, `VOICE`, AGC, denoiser, `muted=false` y conexión UDP 24454 entre dos equipos.
+- Si existe `voicechat`, comprobar la metadata interna aunque el JAR tenga nombre `asset_*`, ausencia de onboarding, dispositivos default, `VOICE`, AGC, denoiser, `muted=false` y conexión UDP 25565 entre dos equipos cuando se use el servidor integrado con LAN Coco.
 - No generar configuraciones para Plasmo Voice u otro producto sin un adaptador y claves oficiales comprobadas.
 - Probar la detección con un perfil TLauncher real si se pretende reutilizar automáticamente su nombre.
 - Confirmar que ningún estado, log o diagnóstico copia tokens de launchers.
