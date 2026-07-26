@@ -1,6 +1,10 @@
 # Operación
 
-> El release público actual es 0.5.57. Coco Launcher multi-instancia ya completó un primer test de Into The Backrooms con host y dos clientes; todavía debe pasar el protocolo del segundo test antes de ampliar el grupo. DREAD es experimental y Zombie 1.12.2 está bloqueado. Estado y puertas: [`CocoLauncherImplementation.md`](CocoLauncherImplementation.md); auditoría: [`CocoLauncherAudit-2026-07-25.md`](CocoLauncherAudit-2026-07-25.md).
+> Estado observado el 2026-07-26: host, caché, EXE y manifiesto publicados 0.5.60. El candidato siguiente hace visibles todas las experiencias administradas presentes en su catálogo: DREAD, Backrooms, Zombie 1.12.2 y COBBLEVERSE 1.7.42-CF. Ya no existen estados de bloqueo/experimento que filtren el selector. Cobbleverse completó instalación y arranque físico hasta el menú con DH+Iris; aún faltan mundo, LAN y clientes. Evidencia: [`CocoLauncherImplementation.md`](CocoLauncherImplementation.md) y auditorías bajo `docs`.
+
+Después de publicar e instalar el candidato Zombie, abrir el mundo, elegir **Abrir en LAN**, conservar el puerto `25565` y cambiar **Online Mode** a **OFF** antes de iniciar. El JAR `lanserverproperties-1.0.jar` se instala únicamente en el rol host y Coco no mezcla con esta experiencia la configuración de MCWiFiPnP de versiones modernas.
+
+Para DREAD, los amigos conectan por **Conexión directa** a `10.77.37.1:25565`; no se usa la IP pública. La IP ZeroTier por sí sola no significa que exista una partida: el host debe entrar al mundo, pulsar **Abrir en LAN**, esperar `PARTIDA ONLINE` y comprobar que TCP 25565 esté escuchando. El 2026-07-26 se observó ZeroTier sano en `10.77.37.1`, pero sin Java/Minecraft ni listener 25565 durante la consulta; no se registró ese instante como fallo del pack.
 
 ## Roles y ubicaciones
 
@@ -12,6 +16,8 @@
 - Instancias administradas: `%APPDATA%\CocoMinecraft\experiences\<instanceId>`.
 
 Into The Backrooms usa la instancia persistente `%APPDATA%\CocoMinecraft\experiences\into-the-backrooms`, que contiene el mundo del primer test. No crear una copia paralela bajo `%TEMP%`.
+
+COBBLEVERSE usa `%APPDATA%\CocoMinecraft\experiences\cobbleverse`. No trae mapa ni `save`: crear un mundo nuevo con las opciones normales y semilla vacía produce una semilla aleatoria; Terralith, incluido por el manifiesto upstream aunque figure como opcional, modifica la generación. DH se instala en ambos roles y MCWiFiPnP 1.9.0 sólo en el host.
 
 `config\coco-host.json` nunca se distribuye.
 
@@ -74,6 +80,7 @@ El Publisher:
 - verifica tamaños, SHA-256 y assets;
 - prueba recuperación transaccional;
 - para releases launcher valida catálogo y locks, backend fijado, reintentos, drenaje de pipes, serialización ZeroTier y lifecycles host/cliente;
+- el importador de experiencias conserva dependencias requeridas y opcionales; Essential es la única exclusión global;
 - instala el bootstrap compilado directamente en el host antes de ejecutar el engine, porque los assets de un release borrador todavía no son descargables de forma anónima;
 - hidrata en `%LOCALAPPDATA%\CocoMinecraftUpdater` el manifiesto, ZIP y engine extraído verificados del mismo release para que el siguiente `NetworkOnly` no use una versión anterior;
 - archiva helpers y respaldos bootstrap obsoletos bajo `backups\publisher-stale-artifacts-<versión>` después de verificar el EXE canónico;

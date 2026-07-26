@@ -7,6 +7,10 @@ function Test-CocoPathWithin([string]$Path,[string]$Root){
     }catch{return $false}
 }
 
+function Get-CocoExperienceButtonBounds([ValidateRange(0,999)][int]$Index){
+    [Drawing.Rectangle]::new([int](($Index%2)*260),[int]([math]::Floor($Index/2)*50),245,42)
+}
+
 function Set-CocoLauncherStep(
     [ValidateRange(1,10)][int]$Step,
     [string]$Title,
@@ -552,7 +556,6 @@ function Publish-CocoSessionAnnouncement(
     $experience=@($Catalog.experiences|Where-Object id -eq $ExperienceId|Select-Object -First 1)[0]
     if(-not$experience){throw "La experiencia '$ExperienceId' no existe en el catalogo."}
     if($experience.managementMode-ne'managed'-or$experience.launch.workflow-ne'coco-managed'){throw "La experiencia '$ExperienceId' usa su launcher externo y no puede anunciarse como sesion Coco Launcher."}
-    if([string]$experience.compatibility.status-eq'blocked'){throw "La experiencia '$ExperienceId' esta bloqueada: $($experience.compatibility.summary)"}
     $maximum=[int]$Catalog.sessionDiscovery.maximumTtlSeconds
     if($TtlSeconds-lt5-or$TtlSeconds-gt$maximum){throw 'El TTL solicitado para la sesion Coco es invalido.'}
     $now=[DateTime]::UtcNow
@@ -779,12 +782,13 @@ function Read-CocoLauncherCatalog([string]$Path){
             if($minimum-lt1024-or$recommended-lt$minimum-or$recommended-gt32768-or$fraction-lt0.25-or$fraction-gt0.75){throw "Politica de memoria invalida para '$id'."}
         }
         if($experience.managementMode-eq'managed'){
-            if(-not$experience.compatibility-or[string]$experience.compatibility.status-notin@('validated','experimental','blocked')){
-                throw "La experiencia '$id' no declara un estado de compatibilidad valido."
+            $lanAdapter=if($experience.hosting.adapter){[string]$experience.hosting.adapter}else{'mcwifipnp'}
+            if($lanAdapter-notin@('mcwifipnp','lan-server-properties-v1')){throw "Adaptador LAN invalido para '$id'."}
+            if($lanAdapter-eq'lan-server-properties-v1'-and[string]$experience.runtime.minecraftVersion-ne'1.12.2'){
+                throw "El adaptador LAN legado solo se admite para Minecraft 1.12.2 en '$id'."
             }
-            if([string]::IsNullOrWhiteSpace([string]$experience.compatibility.summary)){throw "La experiencia '$id' no explica su estado de compatibilidad."}
             $skinVariants=@($skinPolicy.variants|Where-Object{[string]$experience.runtime.minecraftVersion-in@($_.minecraftVersions)})
-            if([string]$experience.compatibility.status-ne'blocked'-and$skinVariants.Count-ne1){
+            if($skinVariants.Count-ne1){
                 throw "La experiencia '$id' necesita exactamente una variante compatible de CustomSkinLoader."
             }
             if(-not(Test-CocoSafeRelativePath ([string]$experience.pack.lockPath))){throw "lockPath invalido para '$id'."}
@@ -793,6 +797,19 @@ function Read-CocoLauncherCatalog([string]$Path){
                 foreach($excludedPath in @($experience.pack.excludedPaths)){
                     if([string]::IsNullOrWhiteSpace([string]$excludedPath)-or-not(Test-CocoSafeRelativePath ([string]$excludedPath))-or-not([string]$excludedPath).StartsWith('mods/',[StringComparison]::OrdinalIgnoreCase)){
                         throw "Exclusion de pack invalida para '$id': '$excludedPath'."
+                    }
+                }
+            }
+            $managedPreferencePaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+            if($experience.preferences.managedFiles){
+                foreach($managedFile in @($experience.preferences.managedFiles)){
+                    $managedPath=([string]$managedFile.path)-replace'\\','/'
+                    if(-not(Test-CocoSafeRelativePath $managedPath)-or
+                        $managedPath-notmatch'^(?i)(config|shaderpacks)/'-or
+                        -not$managedPreferencePaths.Add($managedPath)-or
+                        $managedFile.PSObject.Properties.Name-notcontains'content'-or
+                        ([string]$managedFile.content).Length-gt1048576){
+                        throw "Archivo de preferencias administradas invalido para '$id': '$managedPath'."
                     }
                 }
             }
@@ -1279,7 +1296,7 @@ function Install-CocoManagedExperience(
                     if($installIndex%10-eq0-or$installIndex-eq$installTotal){Set-CocoLauncherStep 5 'INSTALANDO LA INSTANCIA AISLADA' ("{0}/{1} | {2}: {3}"-f$installIndex,$installTotal,$outcome,$relative) (69+[int](9*$installIndex/$installTotal))}
                     continue
                 }
-                if((Test-Path -LiteralPath $destination -PathType Leaf)-and(Get-Item -LiteralPath $destination).Length-eq[int64]$file.size-and(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq[string]$file.sha256){
+                if((Test-Path -LiteralPath $destination -PathType Leaf)-and(Get-Item -LiteralPath $destination -Force).Length-eq[int64]$file.size-and(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq[string]$file.sha256){
                     $outcome='ya verificado'
                     if($installIndex%10-eq0-or$installIndex-eq$installTotal){Set-CocoLauncherStep 5 'INSTALANDO LA INSTANCIA AISLADA' ("{0}/{1} | {2}: {3}"-f$installIndex,$installTotal,$outcome,$relative) (69+[int](9*$installIndex/$installTotal))}
                     continue
@@ -1300,12 +1317,22 @@ function Install-CocoManagedExperience(
             if(Test-Path -LiteralPath $backupRoot -PathType Container){Remove-Item -LiteralPath $backupRoot -Recurse -Force}
             Set-CocoLauncherStep 5 'INSTANCIA VERIFICADA' ("{0} archivos administrados | version {1}"-f$desired.Count,$Experience.pack.version) 78
         }catch{
+            $originalError=$_
             if(Get-Command Write-CocoTimelineEvent -ErrorAction SilentlyContinue){Write-CocoTimelineEvent 'ROLLBACK DE INSTANCIA' 'Restaurando automaticamente los archivos anteriores.' $script:CocoCurrentProgress 'rollback'}
-            foreach($entry in @($journal.ToArray())|Select-Object -Reverse){
-                if($entry.NewInstalled-and(Test-Path -LiteralPath $entry.Destination -PathType Leaf)){$failed=Join-Path $failedRoot ([IO.Path]::GetFileName($entry.Destination));New-Item -ItemType Directory -Path (Split-Path $failed -Parent) -Force|Out-Null;Move-Item -LiteralPath $entry.Destination -Destination $failed -Force -ErrorAction SilentlyContinue}
-                if($entry.Backup-and(Test-Path -LiteralPath $entry.Backup -PathType Leaf)){New-Item -ItemType Directory -Path (Split-Path $entry.Destination -Parent) -Force|Out-Null;Move-Item -LiteralPath $entry.Backup -Destination $entry.Destination -Force}
+            $rollbackEntries=@($journal.ToArray())
+            [array]::Reverse($rollbackEntries)
+            $rollbackFailure=$null
+            try{
+                foreach($entry in $rollbackEntries){
+                    if($entry.NewInstalled-and(Test-Path -LiteralPath $entry.Destination -PathType Leaf)){$failed=Join-Path $failedRoot ([IO.Path]::GetFileName($entry.Destination));New-Item -ItemType Directory -Path (Split-Path $failed -Parent) -Force|Out-Null;Move-Item -LiteralPath $entry.Destination -Destination $failed -Force -ErrorAction SilentlyContinue}
+                    if($entry.Backup-and(Test-Path -LiteralPath $entry.Backup -PathType Leaf)){New-Item -ItemType Directory -Path (Split-Path $entry.Destination -Parent) -Force|Out-Null;Move-Item -LiteralPath $entry.Backup -Destination $entry.Destination -Force}
+                }
+            }catch{$rollbackFailure=$_}
+            if(-not$rollbackFailure-and(Test-Path -LiteralPath $backupRoot -PathType Container)){
+                Remove-Item -LiteralPath $backupRoot -Recurse -Force
             }
-            throw
+            if($rollbackFailure){throw "Fallo original: $($originalError.Exception.Message) | Rollback incompleto: $($rollbackFailure.Exception.Message) | Respaldo: $backupRoot"}
+            throw $originalError
         }
         [pscustomobject]@{InstanceRoot=$instanceRoot;StatePath=$statePath;Files=$desired.Count;BackupRoot=''}
     }finally{if((Test-Path -LiteralPath $stage)-and(Test-CocoPathWithin $stage $ExperiencesRoot)){Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue}}
@@ -1549,6 +1576,24 @@ function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
     $preferences=$Experience.preferences
     if(-not$preferences){return}
 
+    if($preferences.managedFiles){
+        foreach($managedFile in @($preferences.managedFiles)){
+            $relative=([string]$managedFile.path)-replace'/','\'
+            $destination=Join-Path $InstanceRoot $relative
+            if(-not(Test-CocoPathWithin $destination $InstanceRoot)){throw "Una preferencia intento escapar de '$($Experience.id)'."}
+            New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force|Out-Null
+            $content=[string]$managedFile.content
+            $current=if(Test-Path -LiteralPath $destination -PathType Leaf){[IO.File]::ReadAllText($destination)}else{$null}
+            if($current-cne$content){
+                $temporary="$destination.coco-$PID-$([guid]::NewGuid().ToString('N')).tmp"
+                try{
+                    [IO.File]::WriteAllText($temporary,$content,(New-Object Text.UTF8Encoding($false)))
+                    Move-Item -LiteralPath $temporary -Destination $destination -Force
+                }finally{Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}
+            }
+        }
+    }
+
     if([bool]$preferences.standardControls-or$null-ne$preferences.fov){
         foreach($optsFile in @(
             (Join-Path $InstanceRoot 'options.txt'),
@@ -1580,6 +1625,12 @@ function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
                     New-Item -ItemType Directory -Path (Split-Path $path -Parent) -Force|Out-Null
                     $text="colorSpace=SRGB`r`ndisableUpdateMessage=true`r`nenableDebugOptions=false`r`nmaxShadowRenderDistance=4`r`nshaderPack=$pack`r`nenableShaders=true`r`n"
                     [IO.File]::WriteAllText($path,$text,(New-Object Text.UTF8Encoding($false)))
+                }
+                'iris'{
+                    [void](Set-CocoJavaProperties (Join-Path $InstanceRoot 'config\iris.properties') ([ordered]@{
+                        shaderPack=$pack
+                        enableShaders='true'
+                    }))
                 }
                 'optifine'{
                     [IO.File]::WriteAllText((Join-Path $InstanceRoot 'optionsshaders.txt'),"shaderPack=$pack`r`n",(New-Object Text.UTF8Encoding($false)))
@@ -1631,7 +1682,6 @@ function Invoke-CocoManagedExperienceLaunch(
 ){
     $experience=@($Catalog.experiences|Where-Object id -eq $ExperienceId|Select-Object -First 1)[0]
     if(-not$experience-or$experience.managementMode-ne'managed'){throw "La experiencia administrada '$ExperienceId' no existe."}
-    if([string]$experience.compatibility.status-eq'blocked'){throw "La experiencia '$ExperienceId' esta bloqueada: $($experience.compatibility.summary)"}
     $lockPath=Join-Path $CatalogRoot (([string]$experience.pack.lockPath)-replace'^launcher/',''-replace'/','\')
     $lock=Read-CocoExperienceLock $lockPath $experience
     $backend=Install-CocoLauncherBackend $Catalog $CacheRoot
@@ -1938,6 +1988,7 @@ function Test-CocoTcpEndpoint([string]$Address,[int]$Port,[int]$TimeoutMilliseco
 
 function Set-CocoManagedLanWorldConfigurations([string]$InstanceRoot,$Experience){
     if(-not$Experience-or$Experience.managementMode-ne'managed'){return 0}
+    if([string]$Experience.hosting.adapter-eq'lan-server-properties-v1'){return 0}
     $saves=Join-Path $InstanceRoot 'saves'
     if(-not(Test-Path -LiteralPath $saves -PathType Container)){return 0}
     $written=0
@@ -1984,6 +2035,12 @@ function Set-CocoManagedLanWorldConfigurations([string]$InstanceRoot,$Experience
 
 function Test-CocoManagedLanWorldConfigurations([string]$InstanceRoot,$Experience){
     if(-not$Experience-or$Experience.managementMode-ne'managed'){return $false}
+    if([string]$Experience.hosting.adapter-eq'lan-server-properties-v1'){
+        $adapter=Join-Path $InstanceRoot 'mods\lanserverproperties-1.0.jar'
+        return (Test-Path -LiteralPath $adapter -PathType Leaf)-and
+            (Get-Item -LiteralPath $adapter).Length-eq7742-and
+            (Get-FileHash -LiteralPath $adapter -Algorithm SHA256).Hash.ToLowerInvariant()-eq'15577c28814cda5ce0d6c0e9039a093a6227e2c9ec3716dae9c840ec0a99e263'
+    }
     $saves=Join-Path $InstanceRoot 'saves'
     if(-not(Test-Path -LiteralPath $saves -PathType Container)){return $false}
     $worlds=@(Get-ChildItem -LiteralPath $saves -Directory -ErrorAction SilentlyContinue|Where-Object{
@@ -2369,7 +2426,10 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
         $instanceRoot=if($launch.Installation){[string]$launch.Installation.InstanceRoot}elseif($launch.InstanceRoot){[string]$launch.InstanceRoot}else{$LegacyMinecraftRoot}
         if($Experience.managementMode-eq'managed'){[void](Set-CocoManagedLanWorldConfigurations $instanceRoot $Experience)}
         [void](Wait-CocoManagedMinecraftWindow $instanceRoot $launch.Process 90)
-        Set-CocoLauncherStep 9 'MINECRAFT ABIERTO' 'Entra o crea el mundo. Coco configurara el modo local y luego puedes pulsar Abrir en LAN.' 95
+        $lanInstruction=if([string]$Experience.hosting.adapter-eq'lan-server-properties-v1'){
+            'Entra o crea el mundo, pulsa Abrir en LAN, deja el puerto en 25565 y cambia Online Mode a OFF antes de iniciar.'
+        }else{'Entra o crea el mundo. Coco configurara el modo local y luego puedes pulsar Abrir en LAN.'}
+        Set-CocoLauncherStep 9 'MINECRAFT ABIERTO' $lanInstruction 95
         try{$script:CocoForm.TopMost=$false}catch{}
         $ready=$false;$lastPublish=[DateTime]::MinValue
         $lanConfiguredBeforeOpen=Test-CocoManagedLanWorldConfigurations $instanceRoot $Experience
@@ -2532,16 +2592,19 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     if($role-eq'host'){
         $script:CocoLauncherSelectedExperience=''
         $index=0
-        foreach($experience in @($catalog.experiences|Where-Object{
-            $_.managementMode-eq'managed'-and$_.launch.workflow-eq'coco-managed'-and[string]$_.compatibility.status-ne'blocked'
-        })){
+        $hostExperiences=@($catalog.experiences|Where-Object{
+            $_.managementMode-eq'managed'-and$_.launch.workflow-eq'coco-managed'
+        })
+        if(-not$hostExperiences.Count){throw 'El catalogo no contiene experiencias administradas para alojar.'}
+        $dynamic.AutoScrollMinSize=[Drawing.Size]::new(0,[int]([math]::Ceiling($hostExperiences.Count/2.0)*50))
+        foreach($experience in $hostExperiences){
             $button=New-Object Windows.Forms.Button;$button.Text=[string]$experience.name;$button.Tag=[string]$experience.id
             # Con New-Object, la coma puede convertir estas dos expresiones en
             # Object[] antes de evaluar la multiplicacion en PowerShell 5.1.
             # El constructor tipado evita el op_Multiply que la prueba visual
             # del host encontro antes de mostrar el primer selector real.
-            $button.Size=[Drawing.Size]::new(245,42)
-            $button.Location=[Drawing.Point]::new([int](($index%2)*260),[int]([math]::Floor($index/2)*50))
+            $button.Bounds=Get-CocoExperienceButtonBounds $index
+            $button.Font=New-Object Drawing.Font('Segoe UI Semibold',8.5)
             Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)
             $button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag});$dynamic.Controls.Add($button);$index++
         }

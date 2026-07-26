@@ -30,8 +30,13 @@ try{[void](New-CocoPortableMcStartArguments $experience ([pscustomobject]@{mode=
 if(-not$rejected){throw 'PortableMC todavia permite el flujo premium eliminado.'}
 
 $zombie=@($catalog.experiences|Where-Object id -eq 'zombie-apocalypse-slow-zombies')[0]
-$blocked=$false
-try{[void](Invoke-CocoManagedExperienceLaunch $catalog $zombie.id $offline client (Join-Path $root 'launcher') $env:TEMP $env:TEMP -Dry)}catch{$blocked=$_.Exception.Message-match'bloqueada'}
-if(-not$blocked){throw 'La experiencia 1.12.2 sin adaptador LAN pudo lanzarse.'}
+$zombieArgs=New-CocoPortableMcStartArguments $zombie $offline 'C:\Coco Shared' 'C:\Coco Instances\zombies' 'C:\Coco Accounts\unused.json'
+if(($zombieArgs-join'|')-notlike'*forge::1.12.2-14.23.5.2855*'){throw 'Zombie no prepara Forge 1.12.2 con el loader fijado.'}
 
-'PASS: lanzamiento local aislado, autoingreso y bloqueo de compatibilidad validados.'
+$cobbleverse=@($catalog.experiences|Where-Object id -eq 'cobbleverse')[0]
+$cobbleverseArgs=New-CocoPortableMcStartArguments $cobbleverse $offline 'C:\Coco Shared' 'C:\Coco Instances\cobbleverse' 'C:\Coco Accounts\unused.json'
+$cobbleverseJoined=$cobbleverseArgs-join'|'
+if($cobbleverseJoined-notlike'*fabric:1.21.1:0.18.4*'){throw 'COBBLEVERSE no prepara Fabric 0.18.4 para Minecraft 1.21.1.'}
+if($cobbleverseJoined-notmatch'--jvm-arg=-Xms1024m,-Xmx[0-9]+m'){throw 'COBBLEVERSE no calcula memoria adaptativa.'}
+
+'PASS: lanzamiento local aislado, autoingreso y experiencias Zombie/COBBLEVERSE habilitadas validados.'

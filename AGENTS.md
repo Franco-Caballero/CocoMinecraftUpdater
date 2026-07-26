@@ -1,217 +1,155 @@
-# AGENTS.md — contexto canónico de CocoMinecraftUpdater
+# AGENTS.md — guía operativa de Coco Launcher
 
-Última revisión: 2026-07-22 (America/Santiago).
+Última revisión: 2026-07-26 (America/Santiago).
 
-Este archivo contiene el estado operativo necesario para trabajar en `C:\Users\smol\Desktop\random\CocoMinecraftUpdater`. Antes de intervenir, verificar archivos, procesos y logs: los valores observados pueden cambiar durante una sesión. Si cambia la red, el updater, la versión publicada o una decisión operativa, actualizar también `README.md`, `docs\OPERACION.md` y `docs\GITHUB_SETUP.md` cuando corresponda.
+Este repositorio mantiene **Coco Launcher**, un launcher de experiencias Minecraft aisladas, y conserva **Coco original** como una experiencia heredada. No asumas que la versión, loader, mods o configuración de Coco original aplican a las demás experiencias.
 
-## Objetivos y reglas
+## Empieza aquí
 
-1. Mantener jugable el mundo cooperativo `coco`, alojado desde el cliente mediante **Abrir en LAN**.
-2. Admitir una identidad local/offline estable para todos los jugadores, sin port forwarding.
-3. Mantener baja latencia y automatizar red y mods con la mínima interacción.
-4. Preservar mecánicas, mundo, identidades y configuración de Distant Horizons (DH).
-5. Medir antes de atribuir lag o modificar límites.
+Antes de modificar:
 
-Reglas obligatorias:
+1. Ejecuta `git status --short` y preserva cambios ajenos.
+2. Comprueba procesos Minecraft/Java y Publisher.
+3. Identifica el alcance: experiencia administrada, Coco original, red, launcher/updater o publicación.
+4. Lee únicamente la referencia de esa tarea:
 
-- No borrar mundos, `playerdata`, bases DH, mods ni configuraciones sin autorización explícita y respaldo específico.
-- No publicar mientras Minecraft o la LAN estén abiertos.
-- No tratar hipótesis históricas como causas actuales.
-- No retirar un mod por sospecha sin reproducción o evidencia.
-- La fuente viva de mods es `%APPDATA%\.minecraft\mods`; el manifiesto publicado es `release\latest.json`.
+| Tarea | Fuente principal |
+|---|---|
+| Agregar o modificar una experiencia | Esta guía y `docs\ModpackCompatibilityChecklist.md` |
+| Estado, arquitectura y flujo del launcher | `docs\CocoLauncherImplementation.md` |
+| Operar sesiones, red o recuperar una instalación | `docs\OPERACION.md` |
+| Publicar releases/GitHub | `docs\GITHUB_SETUP.md` |
+| Mundo heredado Coco original, DH o rendimiento | `docs\LegacyCocoReference.md` |
+| Investigar una regresión histórica del updater | `docs\UpdaterIncidentHistory.md` |
+| Evidencia de una experiencia | Su auditoría bajo `docs\` |
 
-## Entorno
+No leas todas las referencias por defecto. Abre las necesarias según el cambio.
 
-- Repositorio: `C:\Users\smol\Desktop\random\CocoMinecraftUpdater`
-- Instalación host: `C:\Users\smol\AppData\Roaming\.minecraft`
-- Mundo: `%APPDATA%\.minecraft\saves\coco`
-- Minecraft Java: **26.1.2**
-- Fabric Loader: **0.19.3**
-- Java: **25** (`java-runtime-epsilon`)
-- Perfil: `fabric-loader-0.19.3-26.1.2`
-- Host/OP: `smolbird`, nivel 4
-- Spawn registrado: `-1907 64 6675`; verificar `level.dat` si una tarea depende del valor exacto.
+## Reglas que no se negocian
 
-## Red principal: ZeroTier
+- No borres ni reemplaces mundos, `saves`, `playerdata`, avances, estadísticas, bases DH, mods o configuraciones del usuario sin autorización explícita y respaldo específico.
+- No publiques con Minecraft, una LAN o CocoPublisher abiertos.
+- No retires un mod por sospecha: reproduce o reúne evidencia.
+- No conviertas una observación histórica en causa actual; verifica procesos, archivos y logs vivos.
+- Mantén cada experiencia aislada bajo `%APPDATA%\CocoMinecraft\experiences\<instanceId>`. Nunca mezcles sus `mods`, `config`, `resourcepacks`, `shaderpacks`, mundos o DH con otra experiencia.
+- `%APPDATA%\.minecraft` y su carpeta `mods` pertenecen a **Coco original**, no son la fuente de experiencias administradas.
+- Essential es la única exclusión global. Todas las demás dependencias declaradas, requeridas u opcionales, se incluyen por defecto.
+- Todos los jugadores usan identidad local/offline. CustomSkinLoader debe resolver exactamente una variante compatible por versión de Minecraft. La skin propia es opcional y nunca debe bloquear instalación, red o lanzamiento.
+- Nunca publiques secretos, tokens ZeroTier, credenciales o datos personales en código, manifiestos, locks, logs o releases.
 
-ZeroTier es la ruta de producción. Minecraft usa TCP normal hacia una IP virtual; e4mc no participa en el tráfico de las sesiones ZeroTier.
+## Cambio rápido de una experiencia
 
-- ZeroTier One: **1.16.2**
-- Red privada autocontrolada: `Coco Minecraft`
-- Network ID: `58997fc5f3c0c001`
-- Subred: `10.77.37.0/24`
-- Host: `10.77.37.1:25565`
-- Nodo controlador/host: `58997fc5f3`
-- Servicio y adaptador se instalan y reparan mediante CocoUpdater.
-- El controlador local autoriza nodos pendientes mientras Minecraft del host está abierto; no se usa ZeroTier Central ni se distribuyen tokens administrativos.
-- Firewall host: entrada TCP 25565, perfil Private, interfaz ZeroTier, origen `10.77.37.0/24`.
-- Chat de voz de servidores integrados: entrada UDP 25565 con la misma restricción. Simple Voice Chat cambia al puerto LAN al publicar el mundo; 24454 sólo es su valor predeterminado para servidores dedicados.
-- Voz administrada: entrada UDP 24454 (`Coco Voice - ZeroTier UDP 24454`), perfil Private y origen `10.77.37.0/24`.
-- Clientes: perfil ZeroTier Public, sin regla de entrada Coco.
-- `servers.dat` recibe la entrada `Coco Minecraft` automáticamente.
+Fuentes:
 
-Validación real del 2026-07-15:
+- definición: `launcher\catalog.template.json`;
+- lock upstream: `launcher\experiences\<id>.lock.json`;
+- instalador y preferencias: `engine\CocoLauncher.ps1`;
+- importador CurseForge: `tools\Import-CocoCurseForgePack.ps1`;
+- instalación viva: `%APPDATA%\CocoMinecraft\experiences\<instanceId>`.
 
-- Hasta seis clientes simultáneos más el host.
-- Seis rutas `DIRECT`, 0 % de pérdida en las ventanas medidas.
-- Ping observado por cliente entre aproximadamente 6 y 46 ms.
-- Sesión cercana a dos horas sin degradación colectiva, errores de compresión ni canales e4mc.
-- Hubo dos atrasos aislados del servidor integrado (3,1 s y 2,7 s) y un timeout individual con reconexión; no coincidieron con pérdida colectiva ni fallo de ZeroTier.
+### Pack nuevo o nueva versión
 
-Flujo normal del host:
+1. Obtén project/file ID y licencia desde la fuente oficial.
+2. Importa con:
 
-1. Abrir Minecraft; Bridge inicia silenciosamente el autorizador.
-2. Entrar al mundo y usar **Start LAN**; MCWiFiPnP fija TCP 25565.
-3. Ejecutar `/e4mc stop` para dejar solo la ruta ZeroTier.
-4. Mantener Minecraft abierto durante la sesión.
-5. Cerrar normalmente al terminar; el autorizador se detiene con el proceso.
+   ```powershell
+   .\tools\Import-CocoCurseForgePack.ps1 -ProjectId <id> -FileId <id> -SourcePage <url> -SourceLicense <licencia> -OutputPath launcher\experiences\<id>.lock.json
+   ```
 
-### e4mc: respaldo
+   El importador conserva dependencias requeridas y opcionales, URLs oficiales, tamaños y hashes.
+3. Añade o actualiza la entrada del catálogo con runtime, memoria, hosting, estado y lock.
+4. Declara una variante CustomSkinLoader para esa versión si todavía no existe.
+5. Decide el mundo explícitamente: plantilla fijada o mundo nuevo aleatorio. Nunca inventes un mapa o seed.
 
-`e4mc-fabric-6.2.0-modern.jar` permanece únicamente en el paquete host como contingencia. Si ZeroTier no está disponible, no detener e4mc y distribuir el dominio temporal mostrado por el juego. En operación normal, detenerlo después de abrir la LAN para evitar una segunda ruta pública.
+Prepara el candidato con un solo comando:
 
-Motivo de la migración: e4mc presentó degradación compartida de QUIC/Netty con `ClosedChannelException`, `connection lost`, timeouts y `DataFormatException: incorrect header check`. Reiniciar la LAN recuperaba la sesión. JFR descartó TPS y GC como causa de ese incidente y mostró saturación del event loop e4mc. No reabrir esa investigación salvo que la ruta e4mc vuelva a usarse.
+```powershell
+.\tools\Invoke-CocoExperienceDev.ps1 -ExperienceId <id> -Action Prepare -Role host
+```
 
-## LAN, autenticación e identidades
+Usa `-Action Launch` para abrir la instancia temporal. Agrega `-Live` únicamente cuando la tarea autorice instalar/probar la instancia viva. El autoingreso permanece desactivado salvo `-EnableAutoJoin`.
 
-Fuente: `saves\coco\mcwifipnp.json`.
+### Mods adicionales o retirados
 
-- Puerto fijo: **25565**
-- UPnP: desactivado
-- Máximo: 8 jugadores
-- Survival y PvP activos
-- `online-mode=false`
-- UUID Fixer activo
-- Whitelist actualmente desactivada; los nombres offline pueden suplantarse. Verificar antes de afirmar que existe protección por whitelist.
+- Mod adicional fuera del manifiesto: `experiences[].files` con URL oficial permitida, tamaño, SHA-256, licencia, `policy: "replace"` y rol.
+- Usa `all` para contenido/protocolo; `host` para adaptadores exclusivos del anfitrión; `client` sólo con evidencia de que es puramente cliente.
+- Retiro solicitado para una experiencia: ruta exacta en `pack.excludedPaths`, después de revisar dependencias.
+- No edites el lock para ocultar archivos y no copies JAR manualmente a la instancia como solución final.
+- No hardcodees IDs de experiencia en el engine.
 
-La identidad `nadicon` está fijada manualmente al UUID `8aa9a0d5-6c18-3d17-8655-9ed500e98bc6` para conservar datos históricos. No migrar ni limpiar sus archivos sin revisar primero la regla de UUID Fixer y respaldar `playerdata`, avances y estadísticas.
+### Configuración y shaders
 
-## CocoMinecraftUpdater
+- Archivo de texto completo para todos los jugadores de una experiencia: `preferences.managedFiles` con ruta bajo `config/` o `shaderpacks/` y contenido exacto (máximo 1 MiB).
+- Preferencias soportadas: `standardControls`, `fov`, `resourcePack`, `optifineEmissive`, `voiceChatDefaults` y `shader`.
+- `preferences.shader.provider` admite `iris`, `oculus` y `optifine`; `pack` debe coincidir exactamente con un archivo instalado.
+- Settings auxiliares del shader: `preferences.shader.companionFiles` o `preferences.managedFiles`.
+- Si necesitas modificar claves sin reemplazar el archivo entero, crea un adaptador **genérico y declarativo** en `Set-CocoManagedInstancePreferences` con su prueba. No agregues ramas por nombre de pack.
+- Si el catálogo no declara intervención visual, conserva lo que entrega el modpack.
 
-Estado publicado verificado el 2026-07-22:
+### LAN y mundo
 
-- Release público: **0.5.57**
-- Antes de afirmar la versión instalada del host, comprobar manifiesto, EXE, Bridge y caché local: pueden no coincidir con el release público.
-- Manifiesto: 134 mods de cliente y 138 de host
-- Marcador de rol host: `config\coco-host.json`; nunca se distribuye.
+- Ruta normal: ZeroTier `10.77.37.1:25565`, red `58997fc5f3c0c001`.
+- MCWiFiPnP moderno debe producir exactamente `OnlineMode=false`, `EnableUUIDFixer=true`, `UseUPnP=false` y puerto 25565. Los nombres kebab-case son inválidos.
+- Un adaptador alternativo necesita rol host, hash, versión compatible y prueba real; no inventes configuraciones.
+- No anuncies `ready` hasta validar configuración LAN y listener TCP 25565.
+- El instalador puede administrar pack/config, pero nunca debe administrar una partida viva bajo `saves`.
 
-El EXE incorpora Coco Launcher para experiencias Fabric/Forge aisladas. En clientes, una sesión administrada activa prepara y abre automáticamente ese juego; sin sesión ejecuta el updater clásico de Coco original. El mundo original nunca se lanza mediante PortableMC: continúa abriéndose con el launcher oficial/TLauncher y Bridge conserva el chequeo dentro del juego. La fuente canónica es `docs\CocoLauncherImplementation.md`, la auditoría vigente es `docs\CocoLauncherAudit-2026-07-25.md` y toda experiencia nueva debe pasar `docs\ModpackCompatibilityChecklist.md`.
+## Validación proporcional
 
-Estado por experiencia: Into The Backrooms está validado por un primer test real con host y dos amigos; DREAD permanece experimental; Zombie Apocalypse 1.12.2 está bloqueado porque todavía no existe un adaptador LAN validado para puerto fijo, modo offline y UUID estable. Iron Lung fue retirado. Todos los jugadores usan identidad local/offline: estados Microsoft anteriores se migran conservando el nombre y no existe login premium nuevo. La identidad nunca bloquea red, descarga o instalación: puede cambiarse durante la preparación y sólo se exige, si aún falta, justo antes de crear el proceso de Minecraft.
+Siempre:
 
-MCWiFiPnP exige exactamente `OnlineMode`, `EnableUUIDFixer` y `UseUPnP`; sus equivalentes kebab-case son ignorados. No anunciar `ready` si Coco no observó la configuración válida antes de abrir 25565. Las preferencias propias de DREAD/Backrooms/Zombies deben ser declarativas en el catálogo. Essential se excluye globalmente. CustomSkinLoader es obligatorio mediante una variante compatible por versión; una versión desconocida queda bloqueada hasta declarar y probar una variante. Nombre y skin comparten una tarjeta permanente. La skin inicial de `smolbird` viaja en el engine; cada jugador puede elegir por clic o arrastre un PNG 64x64/64x32. Elegir una skin propia es opcional: su ausencia conserva la apariencia predeterminada de Minecraft y nunca bloquea el lanzamiento. El registro vive en `%LOCALAPPDATA%\CocoMinecraftUpdater\launcher\skins`, se sincroniza por `COCO-SKINS 1` en `10.77.37.1:25564` y se replica a `CustomSkinLoader\LocalSkin\skins`. Una caída nunca bloquea juego/red. Simple Voice Chat se detecta por ID interno, no nombre de JAR, y se fuerza en la ruta oficial a onboarding terminado, dispositivos default, VOICE, AGC/denoiser/nativos activos y sin mute. El host usa `Coco Voice - ZeroTier UDP 24454`, Private y limitada a `10.77.37.0/24`; no inventar configuraciones para otros mods de voz. La única instancia Backrooms viva está en `%APPDATA%\CocoMinecraft\experiences\into-the-backrooms`; no mantener copias temporales o backups de esa experiencia. No usar VM por decisión del host. No mover la instalación viva ni el mundo `coco`.
+- parseo de JSON y PowerShell;
+- `tests\Test-CocoLauncherCatalog.ps1`;
+- `tests\Test-CocoLauncherLaunch.ps1`;
+- prueba específica del cambio;
+- `git diff --check`.
 
-Incidente resuelto el 2026-07-16: 0.5.35 corrigió el falso error inicial y la detección de una JVM antigua, pero su helper usó un backup nulo con `File.Replace`, inválido en Windows PowerShell 5.1. 0.5.36 publicó el helper correcto y convirtió la carpeta `mods` en autoritativa, retirando `inventorysorter`; la verificación posterior descubrió que el Publisher intentaba descargar el bootstrap desde el release aún borrador y recibía 404. 0.5.37 instala el EXE compilado localmente antes de actualizar el host. Se verificaron release público, host, Bridge, Publisher, EXE canónico/hash, manifiesto, Git y ausencia de Minecraft abierto.
+Si cambian instalación, archivos, settings o aislamiento:
 
-0.5.38 publicó la supresión de `True`, el cierre automático temprano y la UI para Bridges antiguos. Su verificación posterior detectó que un helper 0.5.37 pendiente reemplazó el EXE 0.5.38 ya instalado. 0.5.39 compara `FileVersion` y prohíbe degradaciones en bootstrap, engine y Publisher, con una prueba real 0.5.38 frente a 0.5.37. También corrige el texto final superpuesto, actualiza el rechazo de Gate y hace que el Bridge consulte la versión pública dentro de Minecraft para no lanzar el updater completo cuando ya está actualizado. Se verificaron release público, hashes, host, Bridge, Publisher, EXE canónico estable tras espera, ausencia de helpers, Git limpio y Minecraft cerrado.
+- `tests\Test-CocoLauncherInstance.ps1`;
+- `tests\Test-CocoLauncherIntegration.ps1`;
+- comprobar roles, hashes, ausencia de Essential y preservación de `saves`;
+- preparar host y cliente cuando cambie el conjunto por rol.
 
-El reporte real posterior mostró que 0.5.39 aún podía dejar Minecraft abierto y retrasar la reina: `NetworkOnly` y el updater completo competían por el mismo mutex global, por lo que el flujo de login quedaba esperando antes de escribir la orden de cierre. 0.5.40 separa los mutex de red y actualización, comprueba el disco y cierra o fuerza el cliente antes de tocar la red, y conserva un mutex legado únicamente para serializar ZeroTier después del cierre. La regresión mantiene ocupado el mutex antiguo durante un minuto y confirma que el Minecraft simulado se cierra sin esperar. Se verificaron todas las pruebas, release público, host 0.5.40, Bridge, Publisher, EXE canónico/hash, 149/153 mods, ausencia de helpers y Git sincronizado.
+Si cambia una experiencia:
 
-Un primer cliente desde México expuso el 2026-07-18 que el autorizador del host no estaba realmente vivo: Java dejaba la entrada estándar del EXE como `PIPE` y el wrapper de `ps2exe` la leía hasta EOF antes de ejecutar PowerShell, de modo que `NetworkOnly` despertaba recién al cerrar Minecraft. La solicitud había llegado al controlador por ruta `DIRECT`, pero quedó pendiente. La instalación elevada del cliente esperaba además sus 120 segundos dentro de un helper oculto mientras la reina estaba bloqueada, y el timeout del engine no creaba el TXT del Escritorio reservado hasta entonces al bootstrap. Se autorizó el único nodo confirmado, recibió `10.77.37.213` y `wichinn` entró al servidor a las 19:40:55. 0.5.42 descarta `stdin` desde Bridge, reutiliza un autorizador sano de la misma JVM, bombea a la reina el progreso y contador del helper elevado y genera `CocoUpdater-error-*.txt` también para errores del engine.
+- instalación reanudable;
+- arranque real hasta menú;
+- mundo real, cierre y reapertura cuando el cambio afecta juego/worldgen;
+- host + cliente, LAN y reconexión cuando afecta contenido, protocolo o red.
 
-La instalación de otro cliente mostró el 2026-07-19 dos fallos adicionales: el destino persistido podía ocultar para siempre una instancia correcta abierta y cualquier proceso Minecraft recibía prioridad sin validar Fabric/Minecraft; además TLauncher reinyectaba `TLSkinCape` 1.39, incompatible de forma explícita con EntityCulling y sus JAR anidados. 0.5.42 compara la versión y Fabric del proceso, hace que la instancia 26.1.2 abierta venza al destino obsoleto, rechaza versiones incorrectas con un mensaje accionable y desactiva `skinVersion`/`activateSkinCapeForUserVersion` en los perfiles TLauncher aplicables. En la misma publicación se retiró `inventoryextended` por decisión del host: duplicaba el inventario principal y estaba roto. Su JAR y los datos de jugadores previos quedaron respaldados en `%LOCALAPPDATA%\CocoMinecraftUpdater\backups\20260719-inventoryextended-removal`. Se verificaron compilación, detección real con proceso Java, reparación TLauncher, recuperación, integración ZeroTier, `NetworkOnly` sin cambios al pack y regresiones específicas; después de publicar se comprobaron release, host, hashes, 132/136 mods, ausencia de helpers y Git sincronizado.
+Si cambia updater/red/publicación, usa las pruebas indicadas en `docs\OPERACION.md` y `docs\GITHUB_SETUP.md`. Un release nuevo debe pasar `tests\Test-CocoRelease.ps1`.
 
-La verificación posterior de 0.5.42 detectó que el Publisher instalaba directamente Bridge, mods y estado del host, pero no hidrataba el caché rápido usado por `NetworkOnly`; el host podía quedar en disco 0.5.42 con `latest.json`/engine 0.5.41 dentro de `%LOCALAPPDATA%`. Se reparó el host ejecutando una comprobación completa silenciosa y se archivaron 18 helpers/respaldos antiguos fuera de la raíz activa. 0.5.43 hace permanente el arreglo: antes de publicar hidrata y verifica manifiesto, ZIP y engine extraído del caché local, retira versiones de caché anteriores y mueve artefactos bootstrap obsoletos a un respaldo recuperable. Se verificaron release público, host, caché 0.5.43, hashes, 132/136 mods, cero helpers activos, Git limpio y Minecraft cerrado.
+Toda experiencia administrada presente en el catálogo publicado se muestra y puede lanzarse. No existen estados `blocked`, `experimental`, `normal` o `validated` que alteren visibilidad. La evidencia y las pruebas pendientes viven en documentación/auditorías; llegar al menú no equivale a validar juego o multijugador.
 
-Al abrir el host después de esa publicación, 0.5.43 expuso una regresión en el Bridge: `ProcessBuilder.Redirect.DISCARD` es un redirect de tipo `WRITE`, inválido como entrada estándar, y Java 25 abortaba el entrypoint antes del menú con `Redirect invalid for reading: WRITE`. 0.5.44 mantiene la entrada como `PIPE` y cierra inmediatamente `process.getOutputStream()` después de iniciar el hijo, enviando EOF a `ps2exe` sin bloquear Minecraft ni usar un redirect inválido. La regresión comprueba además que el patrón inválido no reaparezca.
+## Publicación
 
-Comportamiento desde 0.5.44:
+La fuente de verdad es el árbol del repositorio y, sólo para Coco original, `%APPDATA%\.minecraft\mods`. No mantengas listas manuales completas de JAR.
 
-- Primera instalación: abrir la instancia Fabric 26.1.2 correcta hasta el menú y ejecutar el EXE una vez. Una versión distinta abierta se rechaza en vez de recibir el pack.
-- El bootstrapper se autoactualiza, valida versión/Fabric y detecta `--gameDir`; una instancia compatible abierta reemplaza un destino persistido obsoleto. Luego prepara ZeroTier, sincroniza mods e instala Bridge/Gate.
-- La elevación se solicita solo cuando Windows necesita instalar o reparar red. Desde 0.5.28 no se requiere ejecutar manualmente como administrador.
-- Bridge ejecuta `-NetworkOnly` silencioso al arrancar y cierra inmediatamente el pipe de `stdin`, por lo que `ps2exe` recibe EOF y comienza antes de que Minecraft cierre. Consulta solo el número público al iniciar login y lanza el updater completo únicamente ante atraso o fallo de consulta. Red y actualización usan estados de sesión y mutex separados; el chequeo completo se reintenta hasta tres veces y reutiliza el autorizador sano del mismo PID.
-- El engine comprueba el estado local antes de preparar la red. Para cualquier cliente atrasado muestra la reina, solicita el cierre normal y fuerza solo ese PID tras ocho segundos si no responde; después serializa ZeroTier con comprobaciones nuevas o antiguas y mantiene visible todo el trabajo.
-- El chequeo de login pasa al engine la versión cargada en la JVM; la ejecución manual compara además el inicio de Minecraft con `installedAt`. Si el release nuevo ya está en disco pero la JVM es anterior, el updater cierra únicamente ese cliente y solicita reabrir sin reinstalar; si faltan archivos, instala antes de solicitarlo.
-- El reemplazo del EXE canónico nunca es requisito para continuar el engine: si Windows lo mantiene mapeado, queda una copia verificada pendiente hasta 12 horas y no se informa un falso error de conexión/mods. Un helper pendiente compara `FileVersion` y jamás puede reemplazar un destino de versión mayor.
-- Toda operación visible que termina correctamente conserva la ventana de la reina con `TODO LISTO`, indicador verde, texto ampliado y botón `ACEPTAR`; también responde a Enter y no se cierra por temporizador. Los chequeos automáticos sanos siguen sin mostrar UI.
-- La elevación de red permanece oculta pero publica sus etapas y el contador de autorización en la reina; los errores del engine, además de los del bootstrap, crean un TXT de diagnóstico en el Escritorio.
-- En perfiles TLauncher Fabric 26.1.2, el engine desactiva la inyección incompatible de TLSkinCape mediante `TLauncherAdditional.json`/JSON de versión. `CustomSkinLoader` permanece en el pack.
-- El Publisher deja `%LOCALAPPDATA%\CocoMinecraftUpdater\latest.json`, `engine-<versión>.zip` y `engine\<versión>` exactamente en el release nuevo antes de hacerlo público; los helpers bootstrap obsoletos se archivan bajo `backups` y no permanecen activos.
-- No existe un monitor periódico permanente.
+Antes de ejecutar `dist\CocoPublisher.exe`:
 
-Política de mods:
+- Minecraft/LAN cerrados;
+- versión pública y estado local verificados;
+- `HEAD == origin/main`;
+- worktree preparado de forma deliberada;
+- pruebas requeridas aprobadas.
 
-- Los clientes reciben exactamente el conjunto publicado.
-- `managed-config\Stackable.json` se distribuye como `config\Stackable.json` en ambos roles y fija `maxStack = 256`; cambiarlo es una decisión global de mecánica.
-- El host es la fuente del Publisher y conserva JAR adicionales con un Fabric ID nuevo.
-- Una versión anterior cuyo Fabric ID ya está publicado no se duplica.
-- La carpeta viva `%APPDATA%\.minecraft\mods` es autoritativa: agregar o quitar JAR se refleja directamente en la publicación siguiente, sin `-AllowModRemoval`.
-- `tsa-decorations` está retirado permanentemente y `policy\blocked-mod-ids.txt` impide reintroducirlo en la fuente viva o en cualquier rol publicado.
-- `inventoryextended` está retirado y bloqueado porque duplicaba el inventario principal de forma rota. Antes del retiro se respaldaron JAR, `players\data` y `level.dat`; revisar ese respaldo si faltan objetos que estaban en las filas extra.
-- El Publisher exige exactamente la siguiente versión pública, `HEAD == origin/main` al comenzar y que `origin/main` no cambie durante la compilación.
-- No mantener listas estáticas completas de JAR en documentación; consultar `mods` y `release\latest.json`.
+El Publisher exige la siguiente versión pública exacta, compila, valida hashes/roles, crea un borrador, actualiza el host y publica únicamente al completar el flujo. Después verifica release, manifiesto, caché/engine del host, Git limpio y `origin/main` sincronizado.
 
-Publicación, con Minecraft cerrado:
-
-1. Dejar en `%APPDATA%\.minecraft\mods` el conjunto deseado.
-2. Ejecutar `dist\CocoPublisher.exe`.
-3. El Publisher incrementa versión, compila, valida hashes/roles, ejecuta pruebas, crea un release borrador, actualiza el host y solo entonces publica.
-4. Verificar release público, manifiesto estable, Git limpio y `origin/main` sincronizado.
-
-Pruebas mínimas al modificar el updater:
-
-- Parseo de sintaxis PowerShell.
-- `tests\Test-CocoRelease.ps1` para un release nuevo.
-- `tests\Test-CocoEngineRecovery.ps1`.
-- `tests\Test-CocoSkinSync.ps1`.
-- `tests\Test-CocoVoiceChatDefaults.ps1`.
-- Pruebas específicas de Bridge/ZeroTier afectadas por el cambio.
-- Confirmar que `-Silent` no abre UI.
-
-## DH y rendimiento
-
-Configuración relevante en `config\DistantHorizons.toml`:
-
-- Radio LOD, generación y sync máxima: 128 chunks.
-- `realTimeUpdateDistanceRadiusInChunks = 64`
-- Generación servidor/distante activa, modo `FEATURES`.
-- `generationRequestRateLimit = 32`, `syncOnLoadRateLimit = 16`.
-- 4 threads, ratio 1.0.
-- `playerBandwidthLimit = 1000` KB/s, sin límite global explícito.
-- `enableAdaptiveTransferSpeed = true`.
-- `serverFolderNameMode = "NAME_ONLY"`.
-
-No reducir radios ni desactivar generación sin explicar el impacto. Cada cliente renderiza y almacena su propia caché LOD; el servidor puede generar o transferir datos faltantes.
-
-Hallazgos de rendimiento:
-
-- Captura histórica JFR: 6,81 ms/tick promedio, P95 10,4 ms, máximo 16,3 ms; pausas ZGC insignificantes.
-- El tráfico e4mc histórico estuvo dominado por actualizaciones de entidades, no por custom payloads DH.
-- PacketFixer usa timeouts de 30 s; no existe evidencia de duplicación de paquetes.
-- En la prueba ZeroTier extensa, los picos de ticks coincidieron con teletransporte/generación y no con pérdida de red.
-- La línea de comandos viva observada usa `-Xmx6714M`; verificar siempre `VM.flags`/`GC.heap_info`, porque el launcher puede regenerar argumentos.
-
-Si reaparece lag grave:
-
-1. No reiniciar inmediatamente.
-2. Registrar hora, participantes y dimensiones.
-3. Revisar `latest.log` y separar FPS, TPS, heap y red.
-4. Capturar `jcmd <PID> GC.heap_info` y `Thread.print`.
-5. Si existe una grabación JFR activa, volcarla; no asumir que sobrevive a reinicios.
-6. Opcionalmente usar `/debug start` y `/debug stop` para ticks vanilla.
-
-No culpar Just Hammers, DH, C2ME, PacketFixer o un mod de entidades sin una captura que lo sostenga.
-
-## JourneyMap y permisos
-
-- JourneyMap 6.0.0 guarda mapa y waypoints localmente por cliente; no existe sincronización colectiva configurada.
-- El teletransporte requiere permisos; actualmente solo `smolbird` es OP.
-- No conceder OP general ni copiar árboles completos de JourneyMap entre instalaciones como solución improvisada.
-
-## Rutas de soporte
+## Rutas de diagnóstico
 
 - Updater: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`
-- Bridge: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs\bridge-<PID>.log`
-- Minecraft: `%APPDATA%\.minecraft\logs\latest.log`
-- Crash reports: `%APPDATA%\.minecraft\crash-reports`
-- Estado instalado: `%APPDATA%\.minecraft\config\coco-updater-state.json`
+- Sesión/skins: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs\launcher-session-service.log`
+- Coco original: `%APPDATA%\.minecraft\logs\latest.log`
+- Experiencia: `%APPDATA%\CocoMinecraft\experiences\<instanceId>\logs\latest.log`
+- Crash: `<gameDir>\crash-reports`
+- Estado Coco original: `%APPDATA%\.minecraft\config\coco-updater-state.json`
 - Destino persistido: `%LOCALAPPDATA%\CocoMinecraftUpdater\target.json`
-- DH: `saves\coco\dimensions\minecraft\<dimension>\data\DistantHorizons.sqlite`
 
-## Seguridad operativa
+## Mantener la documentación útil
 
-- `CocoUpdater.exe` aún no tiene una firma de código con reputación; SmartScreen puede advertir en la primera ejecución.
-- Nunca incluir tokens ZeroTier, credenciales GitHub o secretos del controlador en EXE, JAR, manifiesto o release.
-- Conocer el Network ID permite solicitar ingreso mientras el autorizador está activo. La contención depende del firewall y de la whitelist; la autorización del dispositivo no autentica un nombre offline.
-- Comandos destructivos como `/kill @e[type=item]` requieren confirmación explícita.
+- `AGENTS.md` contiene reglas estables, routing y recetas; no cronologías, conteos de mods, versiones publicadas ni resultados pasajeros.
+- Estado vigente por experiencia: `docs\CocoLauncherImplementation.md`.
+- Evidencia extensa: auditoría separada.
+- Operación y recuperación: `docs\OPERACION.md`.
+- Al cambiar un contrato, actualiza la fuente principal y las referencias afectadas; no copies el mismo párrafo en todos los documentos.

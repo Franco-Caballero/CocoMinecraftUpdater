@@ -2,6 +2,8 @@
 
 Repositorio: `Franco-Caballero/CocoMinecraftUpdater`.
 
+Estado local observado el 2026-07-26: `main == origin/main` en `7c95c5f`, release/manifiesto instalado 0.5.60 y cambios de Zombie/Cobbleverse sin commit ni publicación. El selector del EXE 0.5.60 no mostrará Zombie ni Cobbleverse hasta completar una publicación posterior. El candidato Cobbleverse ya instaló 1.7.42-CF y arrancó hasta el menú con DH+Iris, pero aún necesita mundo/LAN/clientes.
+
 ## Canal estable
 
 El bootstrapper consulta:

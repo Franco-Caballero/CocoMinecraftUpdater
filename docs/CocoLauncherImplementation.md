@@ -1,6 +1,6 @@
 # Coco Launcher — implementación y estado
 
-Última revisión: 2026-07-25 (America/Santiago).
+Última revisión: 2026-07-26 (America/Santiago).
 
 Este documento es la fuente canónica del launcher multi-instancia. La auditoría detallada y la evidencia del primer test real están en [CocoLauncherAudit-2026-07-25.md](CocoLauncherAudit-2026-07-25.md).
 
@@ -28,18 +28,19 @@ El nombre tiene 3–16 letras, números o guion bajo. Determina la identidad de 
 
 La identidad no bloquea la red, la descarga, la verificación ni la instalación. Nombre y skin forman una única tarjeta permanente: la cabeza queda a la izquierda, el nombre es un campo siempre visible al centro y la acción de skin queda a la derecha. Un nombre válido se guarda con Enter o al salir del campo. Si todavía falta o quedó texto válido sin confirmar, Coco pausa únicamente la creación del proceso, mantiene el foco y muestra `Pulsa Enter para confirmar`; no abre otro formulario ni acepta prematuramente los primeros tres caracteres. Durante los milisegundos en que se construye el proceso cliente la tarjeta se congela y luego el launcher se oculta. En el host permanece editable durante la preparación y mientras la partida está online; los cambios de nombre posteriores al arranque se aplican en la sesión siguiente.
 
-La red privada y el UUID Fixer preservan una identidad offline coherente, pero **no autentican el nombre**. Una persona autorizada en ZeroTier podría suplantar otro nombre. Las sesiones actuales son sólo para el grupo de confianza; antes de ampliar el acceso debe añadirse una política de whitelist/nombres reservados.
+La red privada y el UUID Fixer preservan una identidad offline coherente, pero **no autentican el nombre**. Una persona autorizada en ZeroTier podría suplantar otro nombre. Las sesiones actuales son sólo para el grupo de confianza; antes de ampliar el acceso debe añadirse una política de whitelist/nombres reservados. La evidencia específica de Cobbleverse vive en [`CobbleverseAudit-2026-07-26.md`](CobbleverseAudit-2026-07-26.md).
 
 ## Experiencias
 
-| Experiencia | Runtime | Estado | Evidencia |
-|---|---|---|---|
-| Coco original | Fabric 26.1.2 | Producción heredada | Conserva launcher y mundo actuales. |
-| Into The Backrooms | Fabric 1.20.1 | `validated` | El 2026-07-25 el host y dos amigos entraron y jugaron mediante Coco. |
-| DREAD | Forge 1.19.2 | `experimental` | Lock e instalación existen; falta sesión física completa host + dos clientes. |
-| Zombie Apocalypse | Forge 1.12.2 | `blocked` | MCWiFiPnP no cubre 1.12.2; falta un adaptador real para puerto fijo, offline y UUID estable. |
+| Experiencia | Runtime | Engine instalado 0.5.60 | Candidato siguiente | Evidencia |
+|---|---|---|---|---|
+| Coco original | Fabric 26.1.2 | Producción heredada | Sin cambio | Conserva launcher y mundo actuales. |
+| Into The Backrooms | Fabric 1.20.1 | Visible | Visible | El 2026-07-25 el host y dos amigos entraron y jugaron mediante Coco. |
+| DREAD | Forge 1.19.2 | Visible | Visible | Lock e instalación existen; falta sesión física completa host + dos clientes. |
+| Zombie Apocalypse | Forge 1.12.2 | Oculta por el estado antiguo | Visible | La prueba real anterior fue confirmada por el host. Lan Server Properties 1.0 se instala solo al host: puerto 25565 y `Online Mode: OFF`. |
+| COBBLEVERSE 1.7.42-CF | Fabric 1.21.1 | No existe | Visible | Instalación y arranque real hasta el menú aprobados el 2026-07-26; Cobblemon, shader del pack y DH+Iris/OpenGL cargaron. Falta mundo/LAN/clientes. Crea un mundo aleatorio con Terralith, sin mapa ni semilla prefijados. |
 
-Una experiencia `blocked` no aparece al host y tampoco puede lanzarse invocando el engine directamente. `approved` a nivel catálogo no sustituye el estado individual de cada experiencia.
+La presencia en el catálogo publicado es la única regla de disponibilidad: toda entrada `managed` con workflow `coco-managed` aparece al host y puede lanzarse. Las etiquetas `blocked`, `experimental`, `normal` y `validated` fueron eliminadas del schema y del engine. Las auditorías conservan evidencia y trabajo pendiente sin alterar visibilidad.
 
 ## Flujo del amigo
 
@@ -92,11 +93,12 @@ Fuente oficial: [MCWiFiPnP en Modrinth](https://modrinth.com/mod/mcwifipnp) y [c
 - La instancia de la primera sesión Backrooms fue consolidada en `%APPDATA%\CocoMinecraft\experiences\into-the-backrooms`; ésa es la instalación que se seguirá usando.
 - No existe una copia de respaldo del mundo Backrooms ni una segunda instalación temporal.
 
-Los locks administran mods, configs, resource packs y shaders. `saves`, `playerdata`, avances y estadísticas no se reemplazan. Las preferencias especiales de DREAD, Backrooms y Zombies viven en `catalog.template.json`, mientras que las decisiones deliberadamente universales viven en `globalPolicies`.
+Los locks administran mods, configs, resource packs y shaders. `saves`, `playerdata`, avances, estadísticas y bases DH no se reemplazan. Las preferencias especiales de cada experiencia viven en `catalog.template.json`, mientras que las decisiones deliberadamente universales viven en `globalPolicies`. `preferences.managedFiles` permite fijar texto completo bajo `config/` o `shaderpacks/` para todos los jugadores de una sola experiencia; los mods adicionales viven en `experiences[].files` y los retiros explícitos en `pack.excludedPaths`.
 
 Políticas universales:
 
 - Essential se excluye de los assets, overrides y restos generados de todas las experiencias presentes y futuras.
+- Todas las demás dependencias declaradas por el manifiesto upstream se importan, incluidas las opcionales. El importador conserva `manifestRequired` para poder auditar cuáles eran opcionales; no las elimina.
 - CustomSkinLoader es obligatorio. Cada versión de Minecraft debe resolver exactamente una variante compatible; un pack no bloqueado sin variante se rechaza.
 - La skin exacta inicial de `smolbird` viaja dentro del engine, fijada por SHA-256.
 - Esto no presupone compatibilidad futura: para una versión nueva hay que localizar una versión oficial compatible de CustomSkinLoader, declararla con URL y SHA-256 y validar el arranque. Después de esa declaración, Coco automatiza su descarga, verificación, instalación y la eliminación de variantes incompatibles.
@@ -145,6 +147,7 @@ Simple Voice Chat usa UDP. En el servidor integrado cambia dinámicamente al pue
 Referencias: [configuración cliente oficial de Simple Voice Chat](https://modrepo.de/minecraft/voicechat/wiki/client_config), [onboarding 2.5.2+](https://modrepo.de/minecraft/voicechat/wiki/client_setup) y [configuración servidor/UDP](https://modrepo.de/minecraft/voicechat/wiki/server_config).
 - Into The Backrooms no declara ni distribuye MakeUp Ultra Fast como shaderpack externo. Sus efectos visuales propios sí se conservan: SP-Backrooms Revamped incluye Veil y shaders internos para VHS, niebla, desenfoque, iluminación, agua, cielo y distorsiones. La preferencia externa de MakeUp que apareció durante la auditoría era una herencia incorrecta de una rutina genérica y fue retirada.
 - Regla general: el contenido y la configuración visual entregados por el modpack se instalan y preservan como parte del pack. Coco sólo selecciona o reconfigura un shaderpack cuando existe una excepción explícita, justificada y probada para esa experiencia; la ausencia de esa excepción significa «no intervenir», no «prohibir shaders».
+- Las selecciones declarativas admiten Iris, Oculus y OptiFine. Los archivos de opciones propios de un shader se fijan mediante `preferences.shader.companionFiles` o `preferences.managedFiles`, siempre dentro de la instancia correspondiente.
 - Las copias de rollback sólo existen durante la transacción y se eliminan al confirmar el nuevo estado.
 
 ## UX y diagnóstico
@@ -166,6 +169,6 @@ Antes de llamarlo listo para más amigos:
 5. Confirmar `OnlineMode=false`, `EnableUUIDFixer=true`, `UseUPnP=false` antes de abrir LAN.
 6. Entrar con host + al menos dos clientes, cerrar/reconectar uno y verificar inventario/avances.
 7. Provocar un fallo controlado y comprobar el TXT del Escritorio.
-8. Mantener DREAD experimental y Zombie bloqueado hasta sus propias pruebas físicas.
+8. Repetir la prueba después de cambios en Forge, el pack o el adaptador LAN; los pendientes se documentan, pero no ocultan la experiencia.
 
 No publicar ni modificar el mundo `coco` con Minecraft o la LAN abiertos.

@@ -1,5 +1,7 @@
 # Auditoría completa de Coco Launcher — 2026-07-25
 
+> Adenda del 2026-07-26: este documento conserva las etiquetas históricas observadas en 0.5.60. El candidato siguiente elimina por completo esos estados como puertas de visibilidad/lanzamiento: toda experiencia presente en el catálogo se muestra. La evidencia descrita aquí continúa vigente como evidencia, no como control de acceso.
+
 ## Alcance
 
 Se revisaron historial Git, catálogo, locks, engine, bootstrap, updater, Publisher, tests, logs, procesos, instancias temporales, documentación y evidencia del primer test multiusuario.
@@ -19,7 +21,7 @@ Esto valida físicamente Backrooms, el servicio de sesión, ZeroTier, la instanc
 | Alta | El bootstrap compartido medía 780×350, pero el launcher colocaba controles hasta y=438. | Controles invisibles o fuera del panel en el EXE publicado. | Panel unificado 640×460 y layout normalizado. |
 | Alta | Una rutina genérica mezclaba shaders, voice configs, skin y resource pack Zombie sin distinguir políticas globales de ajustes por pack. | Contaminación entre experiencias y rutas inexistentes en clientes. | DREAD/Zombies/Backrooms quedaron declarativos; Essential y skin/CSL quedaron como políticas globales intencionales. |
 | Alta | El catálogo atribuía MakeUp Ultra Fast a Backrooms aunque ni el lock oficial ni la instancia validada contienen ese shaderpack externo. | Una instalación futura podía seleccionar un shader ajeno si el archivo aparecía por contaminación. | Se retiró la preferencia y se agregó una regresión que comprueba que Coco no lo inyecte en una instalación limpia; los shaders internos de SP-Backrooms Revamped se conservan. |
-| Alta | Zombie 1.12.2 carece de MCWiFiPnP compatible. | No existe garantía de puerto 25565, offline o UUID estable. | Experiencia bloqueada hasta implementar y probar un adaptador real. |
+| Alta | Zombie 1.12.2 carece de MCWiFiPnP compatible. | No se puede aplicar la configuración moderna de MCWiFiPnP. | El 2026-07-26 se habilitó usando Lan Server Properties 1.0 exclusivamente en el host, con puerto 25565 y `Online Mode: OFF`, sobre la base de la prueba real anterior confirmada por el host. |
 | Alta | El único mundo exitoso vivía bajo `%TEMP%`. | Windows o una limpieza podía borrar la primera partida. | Respaldo completo verificado por SHA-256; fuente preservada. |
 | Media | Tests y Publisher conservaban Iron Lung ya retirado. | Cuelgues, falsa cobertura y publicaciones bloqueadas por un pack inexistente. | Tests eliminados y Publisher desacoplado. |
 | Media | Documentación seguía en 0.5.47, Iron Lung y flujo premium. | Operación contradictoria con el producto real 0.5.57. | Documentación canónica reescrita. |
@@ -39,8 +41,8 @@ Los estados Microsoft creados por 0.5.50–0.5.57 se migran conservando el nombr
 ## Estado por experiencia
 
 - **Into The Backrooms:** validada por el primer test real; requiere repetir instalación fría/reconexión en el segundo test.
-- **DREAD:** experimental; todavía no debe considerarse probado por compartir engine.
-- **Zombie Apocalypse 1.12.2:** bloqueada.
+- **DREAD:** en el momento de esta auditoría aún no tenía prueba física completa; compartir engine no constituye esa evidencia.
+- **Zombie Apocalypse 1.12.2:** habilitada; repetir la prueba física cuando cambie el pack o el adaptador LAN.
 - **Iron Lung:** retirada del catálogo, Publisher, pruebas y temporales.
 
 ## Datos y limpieza
@@ -72,4 +74,4 @@ La prueba física sigue siendo obligatoria: mocks no pueden demostrar que Forge/
 
 ## Próximo test
 
-Usar Backrooms, no DREAD/Zombie. Antes de abrir LAN comprobar el estado visual de Coco. Conectar dos clientes, reconectar uno, verificar identidad/inventario y recoger Run IDs/logs. Si falla, conservar toda la instancia y enviar el TXT del Escritorio; no cambiar manualmente varias opciones antes de registrar la causa.
+Protocolo original de esta auditoría: usar Backrooms. Para pruebas posteriores puede usarse cualquier experiencia publicada; los pendientes documentales no la ocultan. Antes de abrir LAN comprobar el estado visual de Coco. Conectar dos clientes, reconectar uno, verificar identidad/inventario y recoger Run IDs/logs. Si falla, conservar toda la instancia y enviar el TXT del Escritorio; no cambiar manualmente varias opciones antes de registrar la causa.

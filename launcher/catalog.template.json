@@ -1,6 +1,6 @@
 {
     "schemaVersion": 1,
-    "catalogVersion": "0.1.0",
+    "catalogVersion": "0.3.0",
     "releaseStatus": "approved",
     "sessionPolicy": {
         "maximumConcurrentSessions": 1,
@@ -24,8 +24,10 @@
             "variants": [
                 {
                     "minecraftVersions": [
+                        "1.12.2",
                         "1.19.2",
-                        "1.20.1"
+                        "1.20.1",
+                        "1.21.1"
                     ],
                     "name": "CustomSkinLoader_Universal-15.0.1.jar",
                     "path": "mods/CustomSkinLoader_Universal-15.0.1.jar",
@@ -131,10 +133,6 @@
                     "maximumPhysicalFraction": 0.45
                 }
             },
-            "compatibility": {
-                "status": "experimental",
-                "summary": "Lock e instalacion declarados; falta una sesion fisica host mas clientes."
-            },
             "preferences": {
                 "standardControls": true,
                 "fov": 0.625,
@@ -193,10 +191,6 @@
                     "maximumPhysicalFraction": 0.45
                 }
             },
-            "compatibility": {
-                "status": "validated",
-                "summary": "Primera sesion fisica completada con un host y dos clientes el 2026-07-25."
-            },
             "preferences": {
                 "standardControls": true,
                 "fov": 0.625,
@@ -209,6 +203,74 @@
                     "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/azDO3k7E/mcwifipnp-1.7.6-1.20.1-fabric.jar",
                     "sha256": "ee285dc03f82afaf91e5a86a67df583d8bb824b7df9c5112dfa6c10a8d397661",
                     "size": 82266,
+                    "role": "host",
+                    "policy": "replace",
+                    "license": "Apache-2.0"
+                }
+            ]
+        },
+        {
+            "id": "cobbleverse",
+            "name": "COBBLEVERSE - Pokemon Adventure",
+            "description": "Aventura completa de Cobblemon con progresion, gimnasios, estructuras y generacion de terreno Terralith. Crea un mundo nuevo aleatorio; no usa mapa ni semilla prefijados.",
+            "instanceId": "cobbleverse",
+            "managementMode": "managed",
+            "runtime": {
+                "minecraftVersion": "1.21.1",
+                "loader": "fabric",
+                "loaderVersion": "0.18.4",
+                "javaMajor": 21
+            },
+            "pack": {
+                "packId": "curseforge-1210677-8488030",
+                "version": "1.7.42-CF",
+                "lockPath": "launcher/experiences/cobbleverse.lock.json",
+                "sourcePage": "https://www.curseforge.com/minecraft/modpacks/cobbleverse-cobblemon/files/8488030",
+                "redistribution": "origin-only"
+            },
+            "hosting": {
+                "mode": "lan",
+                "host": "10.77.37.1",
+                "port": 25565,
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-managed",
+                "autoJoin": true,
+                "serverName": "Coco - COBBLEVERSE",
+                "minimumFreeBytes": 4294967296,
+                "memory": {
+                    "minimumMb": 4096,
+                    "recommendedMb": 6144,
+                    "maximumPhysicalFraction": 0.45
+                }
+            },
+            "preferences": {
+                "standardControls": true,
+                "fov": 0.625,
+                "worldGeneration": {
+                    "mode": "random",
+                    "generator": "default",
+                    "fixedSeed": false
+                }
+            },
+            "files": [
+                {
+                    "name": "DistantHorizons-3.2.0-b-1.21.1-fabric-neoforge.jar",
+                    "path": "mods/DistantHorizons-3.2.0-b-1.21.1-fabric-neoforge.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/uCdwusMi/versions/ZpKb4kZp/DistantHorizons-3.2.0-b-1.21.1-fabric-neoforge.jar",
+                    "sha256": "d6a7a963f794501678113e2545d8b25c90e123ef6b9256bb5716907d059e1ef5",
+                    "size": 30207268,
+                    "role": "all",
+                    "policy": "replace",
+                    "license": "LGPL-3.0-only"
+                },
+                {
+                    "name": "mcwifipnp-1.9.0-1.21-fabric.jar",
+                    "path": "mods/mcwifipnp-1.9.0-1.21-fabric.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/RkAsw6nA/mcwifipnp-1.9.0-1.21-fabric.jar",
+                    "sha256": "0c660a930eba4ed70f869e090846d68b36c82321ef7d7626a5bef500233dc455",
+                    "size": 124782,
                     "role": "host",
                     "policy": "replace",
                     "license": "Apache-2.0"
@@ -236,6 +298,7 @@
             },
             "hosting": {
                 "mode": "lan",
+                "adapter": "lan-server-properties-v1",
                 "host": "10.77.37.1",
                 "port": 25565,
                 "networkId": "58997fc5f3c0c001"
@@ -250,10 +313,6 @@
                     "recommendedMb": 4096,
                     "maximumPhysicalFraction": 0.45
                 }
-            },
-            "compatibility": {
-                "status": "blocked",
-                "summary": "Minecraft 1.12.2 no tiene todavia un adaptador LAN Coco validado para puerto fijo, modo offline y UUID estable."
             },
             "preferences": {
                 "standardControls": true,

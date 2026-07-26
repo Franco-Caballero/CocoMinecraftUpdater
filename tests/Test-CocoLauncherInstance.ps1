@@ -37,6 +37,29 @@ try{
     if(-not(Test-Path -LiteralPath (Join-Path $instance 'mods\example.jar'))-or-not(Test-Path -LiteralPath (Join-Path $instance 'config\pack.json'))){throw 'Faltan archivos administrados instalados.'}
     if((Get-Content -LiteralPath (Join-Path $instance 'saves\world\level.dat') -Raw).Trim()-ne'world-must-survive'){throw 'El instalador altero el mundo.'}
     if(-not(Test-Path -LiteralPath $result.StatePath)){throw 'Falta el estado de instancia administrada.'}
+    $hiddenConfig=Get-Item -LiteralPath (Join-Path $instance 'config\pack.json')
+    $hiddenConfig.Attributes=$hiddenConfig.Attributes-bor[IO.FileAttributes]::Hidden
+    [void](Install-CocoManagedExperience $experience $lock $experiences $cache client $globalPolicies)
+    $hiddenConfig=Get-Item -LiteralPath (Join-Path $instance 'config\pack.json') -Force
+    $hiddenConfig.Attributes=$hiddenConfig.Attributes-band(-bnot[IO.FileAttributes]::Hidden)
+
+    $replacementSource=Join-Path $testRoot 'example-v2.jar';[IO.File]::WriteAllBytes($replacementSource,[byte[]](0x50,0x4b,0x03,0x04,5,6,7,8))
+    $replacementHash=(Get-FileHash $replacementSource -Algorithm SHA256).Hash.ToLowerInvariant()
+    $replacement=[pscustomobject]@{name='example-v2.jar';path='mods/example.jar';sourceUrl='https://www.curseforge.com/api/v1/mods/5/files/6/download';sha256=$replacementHash;size=(Get-Item $replacementSource).Length;projectId=5;fileId=6;role='all'}
+    Copy-Item -LiteralPath $replacementSource -Destination (Get-CocoLockedAssetCachePath $cache $replacement)
+    $childSource=Join-Path $testRoot 'child.jar';[IO.File]::WriteAllBytes($childSource,[byte[]](0x50,0x4b,0x03,0x04,9,10,11,12))
+    $childHash=(Get-FileHash $childSource -Algorithm SHA256).Hash.ToLowerInvariant()
+    $child=[pscustomobject]@{name='child.jar';path='mods/collision/child.jar';sourceUrl='https://www.curseforge.com/api/v1/mods/7/files/8/download';sha256=$childHash;size=(Get-Item $childSource).Length;projectId=7;fileId=8;role='all'}
+    Copy-Item -LiteralPath $childSource -Destination (Get-CocoLockedAssetCachePath $cache $child)
+    [IO.File]::WriteAllText((Join-Path $instance 'mods\collision'),'impide crear el directorio',(New-Object Text.UTF8Encoding($false)))
+    $experience.pack.version='1.0.5';$lock.assets=@($replacement,$child)
+    $rollbackError=''
+    try{[void](Install-CocoManagedExperience $experience $lock $experiences $cache client $globalPolicies)}catch{$rollbackError=$_.Exception.Message}
+    if(-not$rollbackError-or$rollbackError-match'Reverse'){throw 'La regresion no provoco rollback o este oculto el error original.'}
+    if((Get-FileHash (Join-Path $instance 'mods\example.jar') -Algorithm SHA256).Hash.ToLowerInvariant()-ne$modHash){
+        throw 'El rollback no restauro el mod anterior despues de un fallo intermedio.'
+    }
+    Remove-Item -LiteralPath (Join-Path $instance 'mods\collision') -Force
 
     $experience.pack.version='1.1';$lock.assets=@()
     $result2=Install-CocoManagedExperience $experience $lock $experiences $cache client $globalPolicies

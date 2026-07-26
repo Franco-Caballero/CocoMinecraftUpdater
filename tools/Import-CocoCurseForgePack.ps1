@@ -96,11 +96,12 @@ $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnor
 $index=0
 foreach($entry in @($manifest.files)){
     $index++
-    if([int64]$entry.projectID-le0-or[int64]$entry.fileID-le0-or-not[bool]$entry.required){throw "Dependencia CurseForge no soportada en la posicion $index."}
+    if([int64]$entry.projectID-le0-or[int64]$entry.fileID-le0){throw "Dependencia CurseForge no soportada en la posicion $index."}
     Write-Progress -Activity "Importando $($manifest.name)" -Status "$index / $(@($manifest.files).Count)" -PercentComplete ([int](100*$index/@($manifest.files).Count))
     $projectPage=[string]$projectLinks[$index-1]
     $destinationFolder=if($projectPage-match'/minecraft/texture-packs/'){'resourcepacks'}elseif($projectPage-match'/minecraft/shaders/'){'shaderpacks'}else{'mods'}
     $asset=Get-OfficialAsset ([int64]$entry.projectID) ([int64]$entry.fileID) all $destinationFolder $projectPage
+    $asset.manifestRequired=[bool]$entry.required
     if(-not$names.Add([string]$asset.name)){throw "Dos proyectos del pack producen el mismo nombre: '$($asset.name)'."}
     $assets.Add([pscustomobject]$asset)
 }

@@ -47,6 +47,14 @@ try{
     if(Test-Path (Join-Path $instance 'optionsshaders.txt')){
         throw 'Coco genero optionsshaders.txt en una instalacion limpia aunque Backrooms no declara un shaderpack externo.'
     }
+    $managedExperience=(($iron|ConvertTo-Json -Depth 20)|ConvertFrom-Json)
+    $managedExperience.preferences | Add-Member -NotePropertyName managedFiles -NotePropertyValue @(
+        [pscustomobject]@{path='config/coco-audit.toml';content="enabled=true`nvalue=7`n"}
+    ) -Force
+    Set-CocoManagedInstancePreferences $managedExperience $instance
+    if([IO.File]::ReadAllText((Join-Path $instance 'config\coco-audit.toml'))-cne"enabled=true`nvalue=7`n"){
+        throw 'Una configuracion declarativa especifica de experiencia no se aplico exactamente.'
+    }
     if(-not(Write-CocoManagedServerList $instance $iron)){throw 'No se creo la recuperacion servers.dat inicial.'}
     $serverBytes=[IO.File]::ReadAllBytes((Join-Path $instance 'servers.dat'))
     $input=[IO.MemoryStream]::new($serverBytes);$reader=[IO.BinaryReader]::new($input,(New-Object Text.UTF8Encoding($false)),$true)

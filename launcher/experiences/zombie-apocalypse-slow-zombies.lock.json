@@ -594,6 +594,18 @@
             "size": 5876048,
             "sha256": "357ef3d955d7dbb9b2fa9df211a1196f933ddb5b896bd305de0db9c48d2c00cd",
             "policy": "replace"
+        },
+        {
+            "projectId": 387365,
+            "fileId": 2994188,
+            "name": "lanserverproperties-1.0.jar",
+            "path": "mods/lanserverproperties-1.0.jar",
+            "role": "host",
+            "projectPage": "https://www.curseforge.com/minecraft/mc-mods/lan-server-properties/files/2994188",
+            "sourceUrl": "https://www.curseforge.com/api/v1/mods/387365/files/2994188/download",
+            "size": 7742,
+            "sha256": "15577c28814cda5ce0d6c0e9039a093a6227e2c9ec3716dae9c840ec0a99e263",
+            "policy": "replace"
         }
     ]
 }

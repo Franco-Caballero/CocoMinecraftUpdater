@@ -1,6 +1,6 @@
 # Checklist de compatibilidad para nuevas experiencias Coco
 
-Última revisión: 2026-07-25 (America/Santiago).
+Última revisión: 2026-07-26 (America/Santiago).
 
 Agregar un pack al catálogo no significa que esté aprobado: cada experiencia debe conservar su propio lock, evidencia y resultados. La política común vive en el engine; las excepciones justificadas viven en la entrada del pack, nunca como parches invisibles con su nombre hardcodeado.
 
@@ -11,7 +11,7 @@ Agregar un pack al catálogo no significa que esté aprobado: cada experiencia d
 - Inspeccionar el archivo fuente: un pack marcado `Map Based` no implica que incluya un `save`. Si no contiene mundo, plantilla, quests o scripts de progresión, no describirlo como minijuego listo para jugar.
 - No combinar un mapa creado para una versión posterior con un runtime anterior. La coincidencia de versión/loader se comprueba antes de descargarlo a jugadores y antes de presentarlo como disponible.
 - Conservar el ZIP original sólo en caché privada cuando su licencia no permita redistribuirlo.
-- Fijar cada archivo por URL de origen permitida, tamaño y SHA-256 en el lock.
+- Fijar cada archivo por URL de origen permitida, tamaño y SHA-256 en el lock. Importar tanto dependencias requeridas como opcionales y conservar `manifestRequired` como evidencia.
 - Confirmar que una instalación sin caché y una reanudación parcial producen el mismo árbol administrado.
 - Documentar qué puede publicarse en GitHub y qué debe descargarse directamente del autor.
 
@@ -33,7 +33,7 @@ Buscar antes del primer juego real:
 - mods sociales que dupliquen la red/hosting de Coco;
 - ventanas externas que bloqueen el arranque sin aparecer en el log principal.
 
-Un archivo sólo se excluye después de probar que ninguna dependencia declarada lo exige. Las excepciones de un pack se registran en `excludedPaths`, no mediante un `if` con su nombre. Essential es la excepción global decidida por el producto: todo pack debe instalarse sin sus JAR, overrides ni runtime generado.
+Un archivo sólo se excluye por petición explícita y después de probar que ninguna dependencia declarada lo exige. Las excepciones de un pack se registran en `excludedPaths`, no mediante un `if` con su nombre. Essential es la única excepción global decidida por el producto: todo pack debe instalarse sin sus JAR, overrides ni runtime generado. Ninguna otra dependencia opcional se omite por defecto.
 
 ## 4. Instalación y datos persistentes
 
@@ -43,6 +43,7 @@ Un archivo sólo se excluye después de probar que ninguna dependencia declarada
 - `saves`, `playerdata`, estadísticas, avances y Distant Horizons nunca pertenecen al conjunto administrado.
 - Decidir explícitamente qué archivos se preservan (por ejemplo `options.txt`) y cuáles se reemplazan.
 - Preservar los shaders, efectos internos y configuraciones visuales que entregue el pack. No añadir, seleccionar, desactivar ni retirar un shader por una regla genérica: cualquier intervención visual adicional debe pertenecer explícitamente a esa experiencia y tener evidencia y prueba física.
+- Para cambios comunes a todos los jugadores de una sola experiencia, declarar mods adicionales en `experiences[].files`, retiros en `pack.excludedPaths`, archivos de settings completos en `preferences.managedFiles` y selección de shader en `preferences.shader`. Verificar que una segunda experiencia no reciba ninguno de esos cambios.
 - Probar actualización y retiro de mods con backup y rollback provocado.
 - Abrir con Minecraft real y confirmar que `servers.dat` se lee; no basta con que un escritor NBT propio acepte su salida.
 
@@ -66,7 +67,7 @@ Un archivo sólo se excluye después de probar que ninguna dependencia declarada
 - Probar la detección con un perfil TLauncher real si se pretende reutilizar automáticamente su nombre.
 - Confirmar que ningún estado, log o diagnóstico copia tokens de launchers.
 - Verificar el archivo real de MCWiFiPnP: `OnlineMode=false`, `EnableUUIDFixer=true`, `UseUPnP=false` y puerto 25565. Los nombres kebab-case no son válidos.
-- Para versiones sin MCWiFiPnP compatible, mantener el pack bloqueado hasta contar con otro adaptador físicamente probado.
+- Para versiones sin MCWiFiPnP compatible, mantener el pack bloqueado hasta contar con otro adaptador físicamente probado. Si se usa Lan Server Properties 1.0 en Forge 1.12.2, fijar el JAR por hash sólo para el host, exigir TCP 25565 y documentar que `Online Mode` debe quedar en `OFF`; no escribir ni aceptar un `mcwifipnp.json` ficticio.
 - Confirmar que un segundo nodo ZeroTier obtiene autorización, ruta e ingreso; una prueba loopback del host no reemplaza esto.
 - Verificar que no se abre e4mc ni otro túnel secundario salvo contingencia deliberada.
 
