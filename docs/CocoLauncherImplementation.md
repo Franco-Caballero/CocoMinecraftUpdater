@@ -32,7 +32,7 @@ La red privada y el UUID Fixer preservan una identidad offline coherente, pero *
 
 ## Experiencias
 
-| Experiencia | Runtime | Estado en 0.5.61 | Evidencia |
+| Experiencia | Runtime | Estado en 0.5.62 | Evidencia |
 |---|---|---|---|
 | Coco original | Fabric 26.1.2 | Producción heredada | Conserva launcher y mundo actuales. |
 | Into The Backrooms | Fabric 1.20.1 | Visible | El 2026-07-25 el host y dos amigos entraron y jugaron mediante Coco. |

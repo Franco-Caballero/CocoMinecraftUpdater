@@ -2,7 +2,7 @@
 
 ## Decisión
 
-COBBLEVERSE está incluida y visible en el catálogo público 0.5.61. Coco Launcher ya no usa estados para ocultar o bloquear experiencias: la auditoría registra lo probado y lo pendiente sin cambiar disponibilidad.
+COBBLEVERSE está incluida y visible en el catálogo público 0.5.62. Coco Launcher ya no usa estados para ocultar o bloquear experiencias: la auditoría registra lo probado y lo pendiente sin cambiar disponibilidad.
 
 Preferencias solicitadas después de la primera prueba: heap recomendado de **5 GiB** y radio de renderizado Distant Horizons fijado declarativamente en **32 chunks** para host y amigos. El ajuste modifica sólo `client.advanced.graphics.quality.lodChunkRenderDistanceRadius`; no administra ni reemplaza bases LOD bajo `saves`.
 

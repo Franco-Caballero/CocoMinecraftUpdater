@@ -2,7 +2,7 @@
 
 Repositorio: `Franco-Caballero/CocoMinecraftUpdater`.
 
-Estado observado el 2026-07-26: release público, manifiesto, EXE, caché y engine instalados en 0.5.61. El catálogo publicado muestra DREAD, Into The Backrooms, Zombie Apocalypse y COBBLEVERSE; no usa estados para ocultar o bloquear experiencias. Cobbleverse 1.7.42-CF arrancó hasta el menú con DH+Iris, pero aún necesita prueba de mundo/LAN/clientes.
+Estado observado el 2026-07-26: release público, manifiesto, EXE, caché y engine instalados en 0.5.62. El catálogo publicado muestra DREAD, Into The Backrooms, Zombie Apocalypse y COBBLEVERSE; no usa estados para ocultar o bloquear experiencias. Cobbleverse 1.7.42-CF arrancó hasta el menú con DH+Iris, pero aún necesita prueba de mundo/LAN/clientes.
 
 ## Canal estable
 

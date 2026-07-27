@@ -1,6 +1,6 @@
 # Operación
 
-> Estado observado el 2026-07-26: release público, host, caché, EXE y manifiesto 0.5.61. Todas las experiencias administradas presentes en el catálogo son visibles: DREAD, Backrooms, Zombie 1.12.2 y COBBLEVERSE 1.7.42-CF. Ya no existen estados de bloqueo/experimento que filtren el selector. Cobbleverse completó instalación y arranque físico hasta el menú con DH+Iris; aún faltan mundo, LAN y clientes. Evidencia: [`CocoLauncherImplementation.md`](CocoLauncherImplementation.md) y auditorías bajo `docs`.
+> Estado observado el 2026-07-26: release público, host, caché, EXE y manifiesto 0.5.62. Todas las experiencias administradas presentes en el catálogo son visibles: DREAD, Backrooms, Zombie 1.12.2 y COBBLEVERSE 1.7.42-CF. Ya no existen estados de bloqueo/experimento que filtren el selector. Cobbleverse completó instalación y arranque físico hasta el menú con DH+Iris; aún faltan mundo, LAN y clientes. Evidencia: [`CocoLauncherImplementation.md`](CocoLauncherImplementation.md) y auditorías bajo `docs`.
 
 En Zombie, abrir el mundo, elegir **Abrir en LAN**, conservar el puerto `25565` y cambiar **Online Mode** a **OFF** antes de iniciar. El JAR `lanserverproperties-1.0.jar` se instala únicamente en el rol host y Coco no mezcla con esta experiencia la configuración de MCWiFiPnP de versiones modernas.
 
