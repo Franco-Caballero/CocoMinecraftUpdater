@@ -68,6 +68,16 @@ try{
         $tomlText-notmatch'(?m)^\s*keep\s*=\s*true\s*$'){
         throw 'El adaptador TOML declarativo no cambio solo la clave solicitada.'
     }
+    $newTomlPath=Join-Path $instance 'config\first-launch.toml'
+    $managedExperience.preferences.tomlValues=@(
+        [pscustomobject]@{path='config/first-launch.toml';section='client.quality';key='lodDistance';value=32}
+    )
+    Set-CocoManagedInstancePreferences $managedExperience $instance
+    $newTomlText=[IO.File]::ReadAllText($newTomlPath)
+    if($newTomlText-notmatch'(?m)^\[client\.quality\]\r?$'-or
+        $newTomlText-notmatch'(?m)^lodDistance\s*=\s*32\r?$'){
+        throw 'El adaptador TOML no creo una configuracion declarativa ausente antes del primer arranque.'
+    }
     Set-CocoManagedInstancePreferences $iron $instance
     if((Get-Content -LiteralPath $tomlPath -Raw)-notmatch'(?m)^\s*lodDistance\s*=\s*32\s*$'){
         throw 'Otra experiencia altero una preferencia TOML que no declara.'

@@ -1617,8 +1617,24 @@ function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
         foreach($tomlGroup in @($preferences.tomlValues|Group-Object path)){
             $relative=([string]$tomlGroup.Name)-replace'/','\'
             $destination=Join-Path $InstanceRoot $relative
-            if(-not(Test-CocoPathWithin $destination $InstanceRoot)-or-not(Test-Path -LiteralPath $destination -PathType Leaf)){
-                throw "No existe el TOML administrado de '$($Experience.id)': '$relative'."
+            if(-not(Test-CocoPathWithin $destination $InstanceRoot)){
+                throw "Una preferencia TOML intento escapar de '$($Experience.id)': '$relative'."
+            }
+            if(-not(Test-Path -LiteralPath $destination -PathType Leaf)){
+                New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force|Out-Null
+                $sections=[Collections.Generic.List[string]]::new()
+                foreach($sectionGroup in @($tomlGroup.Group|Group-Object section)){
+                    $sections.Add("[$([string]$sectionGroup.Name)]")
+                    foreach($tomlValue in @($sectionGroup.Group)){
+                        $value=$tomlValue.value
+                        $encoded=if($value-is[bool]){([string]$value).ToLowerInvariant()}elseif($value-is[string]){
+                            '"'+(([string]$value)-replace'\\','\\'-replace'"','\"')+'"'
+                        }else{[Convert]::ToString($value,[Globalization.CultureInfo]::InvariantCulture)}
+                        $sections.Add("$([string]$tomlValue.key) = $encoded")
+                    }
+                    $sections.Add('')
+                }
+                [IO.File]::WriteAllText($destination,(($sections-join"`r`n").TrimEnd()+"`r`n"),(New-Object Text.UTF8Encoding($false)))
             }
             $content=[IO.File]::ReadAllText($destination)
             foreach($tomlValue in @($tomlGroup.Group)){

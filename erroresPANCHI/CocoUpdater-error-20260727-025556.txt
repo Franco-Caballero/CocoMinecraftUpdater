@@ -1,0 +1,834 @@
+﻿COCO LAUNCHER - DIAGNOSTICO COMPLETO
+====================================
+Failure ID: COCO-0e95ffbce9cd4269a8273cc80482d62e-0073
+Run ID: 0e95ffbce9cd4269a8273cc80482d62e
+Timestamp: 2026-07-27T02:55:56.5634151-03:00
+Elapsed: 00:01:15.5972285
+Classification: INTERNAL
+Recommended next action: No borres nada. Envia este TXT completo junto con la hora aproximada del fallo.
+Last visible stage: ERROR
+Last progress: 78%
+
+RESUMEN DE LA OPERACION
+-----------------------
+{
+    "component":  "launcher",
+    "mode":  "launcher",
+    "role":  "client",
+    "experienceId":  "cobbleverse",
+    "packVersion":  "1.7.42-CF",
+    "instanceRoot":  "C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse",
+    "stage":  "ERROR"
+}
+Engine PID / Minecraft PID: 22204 / 0
+Manifest version/path: 0.5.62 / C:\Users\Toledo\AppData\Local\CocoMinecraftUpdater\latest.json
+Engine root: C:\Users\Toledo\AppData\Local\CocoMinecraftUpdater\engine\0.5.62
+Selected/instance root: C:\Users\Toledo\AppData\Roaming\CocoMinecraft\experiences\cobbleverse
+NetworkOnly / Silent / ShowOnUpdate: False / False / False
+
+ERROR ORIGINAL
+--------------
+System.Management.Automation.RuntimeException: No existe el TOML administrado de 'cobbleverse': 'config\DistantHorizons.toml'.
+
+ErrorRecord:
+
+
+PSMessageDetails      : 
+Exception             : System.Management.Automation.RuntimeException: No existe el TOML administrado de 
+                        'cobbleverse': 'config\DistantHorizons.toml'.
+TargetObject          : No existe el TOML administrado de 'cobbleverse': 'config\DistantHorizons.toml'.
+CategoryInfo          : OperationStopped: (No existe el TO...Horizons.toml'.:String) [], RuntimeException
+FullyQualifiedErrorId : No existe el TOML administrado de 'cobbleverse': 'config\DistantHorizons.toml'.
+ErrorDetails          : 
+InvocationInfo        : System.Management.Automation.InvocationInfo
+ScriptStackTrace      : en Set-CocoManagedInstancePreferences, <sin archivo>: línea 1621
+                        en Invoke-CocoManagedExperienceLaunch, <sin archivo>: línea 1742
+                        en Invoke-CocoLauncherClientSession, <sin archivo>: línea 2434
+                        en Start-CocoLauncherUi, <sin archivo>: línea 2705
+                        en <ScriptBlock>, <sin archivo>: línea 1200
+                        en <ScriptBlock>, <sin archivo>: línea 475
+PipelineIterationInfo : {}
+
+
+
+
+
+Script stack trace:
+en Set-CocoManagedInstancePreferences, <sin archivo>: línea 1621
+en Invoke-CocoManagedExperienceLaunch, <sin archivo>: línea 1742
+en Invoke-CocoLauncherClientSession, <sin archivo>: línea 2434
+en Start-CocoLauncherUi, <sin archivo>: línea 2705
+en <ScriptBlock>, <sin archivo>: línea 1200
+en <ScriptBlock>, <sin archivo>: línea 475
+
+Invocation:
+En línea: 1621 Carácter: 17
++ ...             throw "No existe el TOML administrado de '$($Experience.i ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TIMELINE DE ETAPAS (JSONL, orden cronologico)
+------------------------------------------------
+{"timestampUtc":"2026-07-27T05:54:47.5330624Z","elapsedMs":6573,"sequence":1,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"detecting","experienceId":"","packVersion":"","instanceRoot":"","message":"ETAPA 1/10 | INICIANDO COCO LAUNCHER","detail":"Engine 0.5.62 | ejecucion 0e95ffbc","progress":13,"action":""}
+{"timestampUtc":"2026-07-27T05:54:47.6420032Z","elapsedMs":6675,"sequence":2,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"","packVersion":"","instanceRoot":"","message":"ETAPA 2/10 | PREPARANDO LA RED PRIVADA","detail":"Verificando ZeroTier, adaptador, autorizacion y rutas Coco...","progress":16,"action":""}
+{"timestampUtc":"2026-07-27T05:54:47.7027737Z","elapsedMs":6736,"sequence":3,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"","packVersion":"","instanceRoot":"","message":"Verificando red Coco","detail":"Preparando la LAN virtual privada...","progress":10,"action":""}
+{"timestampUtc":"2026-07-27T05:54:54.8843600Z","elapsedMs":13919,"sequence":4,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"","packVersion":"","instanceRoot":"","message":"ETAPA 3/10 | ENTRANDO A COBBLEVERSE - POKEMON ADVENTURE","detail":"La unica experiencia online se selecciono automaticamente.","progress":25,"action":""}
+{"timestampUtc":"2026-07-27T05:54:54.9420116Z","elapsedMs":13975,"sequence":5,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 3/10 | PARTIDA LISTA","detail":"Verificando COBBLEVERSE - Pokemon Adventure antes de abrir Minecraft...","progress":27,"action":""}
+{"timestampUtc":"2026-07-27T05:54:55.2404327Z","elapsedMs":14274,"sequence":6,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 4/10 | VERIFICANDO ARCHIVOS DEL PACK","detail":"145 archivos fijados | 656,3 MB totales | rol client","progress":30,"action":""}
+{"timestampUtc":"2026-07-27T05:55:07.0571602Z","elapsedMs":26091,"sequence":7,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"0/1760 archivos | mundos y datos de jugador quedan fuera del area administrada","progress":69,"action":""}
+{"timestampUtc":"2026-07-27T05:55:07.3153266Z","elapsedMs":26348,"sequence":8,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"20/1760 | ya verificado: config/cobblecuisine.json","progress":69,"action":""}
+{"timestampUtc":"2026-07-27T05:55:07.5745764Z","elapsedMs":26608,"sequence":9,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"70/1760 | ya verificado: config/rctmod-client.toml","progress":69,"action":""}
+{"timestampUtc":"2026-07-27T05:55:07.8419981Z","elapsedMs":26875,"sequence":10,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"130/1760 | ya verificado: config/fancymenu/legacy_checklist.txt","progress":70,"action":""}
+{"timestampUtc":"2026-07-27T05:55:08.1228554Z","elapsedMs":27156,"sequence":11,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"200/1760 | ya verificado: config/particlerain/config.json","progress":70,"action":""}
+{"timestampUtc":"2026-07-27T05:55:08.3884126Z","elapsedMs":27422,"sequence":12,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"260/1760 | ya verificado: licenses/Cobblemon Additions - License.txt","progress":70,"action":""}
+{"timestampUtc":"2026-07-27T05:55:08.6457414Z","elapsedMs":27679,"sequence":13,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"320/1760 | ya verificado: licenses/More Culling - License.txt","progress":71,"action":""}
+{"timestampUtc":"2026-07-27T05:55:09.1457094Z","elapsedMs":28179,"sequence":14,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"390/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/InformationEuphoriaPatches.md","progress":71,"action":""}
+{"timestampUtc":"2026-07-27T05:55:09.4161337Z","elapsedMs":28449,"sequence":15,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"460/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/colors/blocklightColors.glsl","progress":71,"action":""}
+{"timestampUtc":"2026-07-27T05:55:09.6683832Z","elapsedMs":28702,"sequence":16,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"530/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/materials/specificMaterials/terrain/candle.glsl","progress":72,"action":""}
+{"timestampUtc":"2026-07-27T05:55:09.9211668Z","elapsedMs":28955,"sequence":17,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"600/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/shaderSettings/emissiveFlowers.glsl","progress":72,"action":""}
+{"timestampUtc":"2026-07-27T05:55:10.1991911Z","elapsedMs":29233,"sequence":18,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"680/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/palettes/INSTRUCTIONS.txt","progress":72,"action":""}
+{"timestampUtc":"2026-07-27T05:55:10.4720467Z","elapsedMs":29505,"sequence":19,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"760/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world-1/composite6.vsh","progress":73,"action":""}
+{"timestampUtc":"2026-07-27T05:55:10.7248044Z","elapsedMs":29759,"sequence":20,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"830/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world0/clrwl_gbuffers_translucent.vsh","progress":73,"action":""}
+{"timestampUtc":"2026-07-27T05:55:10.9835833Z","elapsedMs":30017,"sequence":21,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"900/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world0/gbuffers_water.vsh","progress":74,"action":""}
+{"timestampUtc":"2026-07-27T05:55:11.2494915Z","elapsedMs":30283,"sequence":22,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"980/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world1/gbuffers_spidereyes.vsh","progress":74,"action":""}
+{"timestampUtc":"2026-07-27T05:55:11.5301127Z","elapsedMs":30564,"sequence":23,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1060/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/atmospherics/rainbow.glsl","progress":74,"action":""}
+{"timestampUtc":"2026-07-27T05:55:11.7884420Z","elapsedMs":30822,"sequence":24,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1130/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/materials/specificMaterials/planks/acaciaPlanks.glsl","progress":75,"action":""}
+{"timestampUtc":"2026-07-27T05:55:12.0672819Z","elapsedMs":31101,"sequence":25,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1210/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/shaderSettings/composite1.glsl","progress":75,"action":""}
+{"timestampUtc":"2026-07-27T05:55:12.3490579Z","elapsedMs":31383,"sequence":26,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1290/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/voxelization/puddleVoxelization.glsl","progress":76,"action":""}
+{"timestampUtc":"2026-07-27T05:55:12.6014916Z","elapsedMs":31635,"sequence":27,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1360/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world-1/clrwl_gbuffers_translucent.vsh","progress":76,"action":""}
+{"timestampUtc":"2026-07-27T05:55:12.8663850Z","elapsedMs":31900,"sequence":28,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1430/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world-1/gbuffers_water.vsh","progress":76,"action":""}
+{"timestampUtc":"2026-07-27T05:55:13.1173219Z","elapsedMs":32151,"sequence":29,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1500/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world0/gbuffers_lightning.vsh","progress":77,"action":""}
+{"timestampUtc":"2026-07-27T05:55:13.3958887Z","elapsedMs":32430,"sequence":30,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1580/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world1/gbuffers_entities.vsh","progress":77,"action":""}
+{"timestampUtc":"2026-07-27T05:55:13.7484950Z","elapsedMs":32782,"sequence":31,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1640/1760 | ya verificado: mods/neruina-3.3.3+1.21.1-fabric.jar","progress":77,"action":""}
+{"timestampUtc":"2026-07-27T05:55:14.0448088Z","elapsedMs":33078,"sequence":32,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1660/1760 | ya verificado: mods/fancymenu_fabric_3.9.8_MC_1.21.1.jar","progress":77,"action":""}
+{"timestampUtc":"2026-07-27T05:55:14.3684316Z","elapsedMs":33402,"sequence":33,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1690/1760 | ya verificado: mods/Iceberg-1.21.1-fabric-1.3.2.jar","progress":78,"action":""}
+{"timestampUtc":"2026-07-27T05:55:16.7845411Z","elapsedMs":35818,"sequence":34,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1720/1760 | ya verificado: mods/accessories-fabric-1.1.0-beta.53+1.21.1.jar","progress":78,"action":""}
+{"timestampUtc":"2026-07-27T05:55:18.4742863Z","elapsedMs":37509,"sequence":35,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1730/1760 | ya verificado: mods/Terralith_1.21.x_v2.5.8.jar","progress":78,"action":""}
+{"timestampUtc":"2026-07-27T05:55:18.8829522Z","elapsedMs":37916,"sequence":36,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1750/1760 | ya verificado: mods/fabric-api-0.116.14+1.21.1.jar","progress":78,"action":""}
+{"timestampUtc":"2026-07-27T05:55:19.3737657Z","elapsedMs":38407,"sequence":37,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1760/1760 | ya verificado: mods/CustomSkinLoader_Universal-15.0.1.jar","progress":78,"action":""}
+{"timestampUtc":"2026-07-27T05:55:19.4339462Z","elapsedMs":38468,"sequence":38,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTANCIA VERIFICADA","detail":"1759 archivos administrados | version 1.7.42-CF","progress":78,"action":""}
+{"timestampUtc":"2026-07-27T05:55:21.2890222Z","elapsedMs":40323,"sequence":39,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ERROR","detail":"INTERNAL: No existe el TOML administrado de \u0027cobbleverse\u0027: \u0027config\\DistantHorizons.toml\u0027.","progress":78,"action":"failure"}
+{"timestampUtc":"2026-07-27T05:55:21.8430548Z","elapsedMs":40877,"sequence":40,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"COCO DETECTO UN PROBLEMA","detail":"No existe el TOML administrado de \u0027cobbleverse\u0027: \u0027config\\DistantHorizons.toml\u0027.\nCodigo: INTERNAL | No borres nada. Envia este TXT completo junto con la hora aproximada del fallo.\nEnvia por Discord: CocoUpdater-error-20260727-025521.txt","progress":0,"action":"failure"}
+{"timestampUtc":"2026-07-27T05:55:25.1694317Z","elapsedMs":44202,"sequence":41,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 3/10 | ENTRANDO A COBBLEVERSE - POKEMON ADVENTURE","detail":"La unica experiencia online se selecciono automaticamente.","progress":25,"action":""}
+{"timestampUtc":"2026-07-27T05:55:25.1910420Z","elapsedMs":44225,"sequence":42,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 3/10 | PARTIDA LISTA","detail":"Verificando COBBLEVERSE - Pokemon Adventure antes de abrir Minecraft...","progress":27,"action":""}
+{"timestampUtc":"2026-07-27T05:55:25.3736122Z","elapsedMs":44407,"sequence":43,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 4/10 | VERIFICANDO ARCHIVOS DEL PACK","detail":"145 archivos fijados | 656,3 MB totales | rol client","progress":30,"action":""}
+{"timestampUtc":"2026-07-27T05:55:44.4572688Z","elapsedMs":63491,"sequence":44,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"0/1760 archivos | mundos y datos de jugador quedan fuera del area administrada","progress":69,"action":""}
+{"timestampUtc":"2026-07-27T05:55:44.7392659Z","elapsedMs":63773,"sequence":45,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"60/1760 | ya verificado: config/obc-common.toml","progress":69,"action":""}
+{"timestampUtc":"2026-07-27T05:55:45.0133309Z","elapsedMs":64047,"sequence":46,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"130/1760 | ya verificado: config/fancymenu/legacy_checklist.txt","progress":70,"action":""}
+{"timestampUtc":"2026-07-27T05:55:45.2713337Z","elapsedMs":64306,"sequence":47,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"190/1760 | ya verificado: config/fancymenu/ui_themes/cherry_blossom.json","progress":70,"action":""}
+{"timestampUtc":"2026-07-27T05:55:45.5502674Z","elapsedMs":64583,"sequence":48,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"260/1760 | ya verificado: licenses/Cobblemon Additions - License.txt","progress":70,"action":""}
+{"timestampUtc":"2026-07-27T05:55:45.8131728Z","elapsedMs":64846,"sequence":49,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"340/1760 | ya verificado: licenses/Radical Cobblemon Trainers - License.md","progress":71,"action":""}
+{"timestampUtc":"2026-07-27T05:55:48.0973582Z","elapsedMs":67131,"sequence":50,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"350/1760 | ya verificado: licenses/Sophisticated Backpacks - License.txt","progress":71,"action":""}
+{"timestampUtc":"2026-07-27T05:55:48.4673698Z","elapsedMs":67501,"sequence":51,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"390/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/InformationEuphoriaPatches.md","progress":71,"action":""}
+{"timestampUtc":"2026-07-27T05:55:48.7437689Z","elapsedMs":67778,"sequence":52,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"470/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/lighting/coloredBlocklight.glsl","progress":71,"action":""}
+{"timestampUtc":"2026-07-27T05:55:49.0236039Z","elapsedMs":68057,"sequence":53,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"550/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/materials/specificMaterials/terrain/leaves.glsl","progress":72,"action":""}
+{"timestampUtc":"2026-07-27T05:55:49.2840131Z","elapsedMs":68318,"sequence":54,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"630/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/textRendering/error_apple_photonics.glsl","progress":72,"action":""}
+{"timestampUtc":"2026-07-27T05:55:49.5437849Z","elapsedMs":68578,"sequence":55,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"710/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/program/composite9.glsl","progress":73,"action":""}
+{"timestampUtc":"2026-07-27T05:55:49.9603358Z","elapsedMs":68994,"sequence":56,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"720/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/program/gbuffers_damagedblock.glsl","progress":73,"action":""}
+{"timestampUtc":"2026-07-27T05:55:50.2256610Z","elapsedMs":69259,"sequence":57,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"800/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world-1/gbuffers_line.vsh","progress":73,"action":""}
+{"timestampUtc":"2026-07-27T05:55:50.4863949Z","elapsedMs":69519,"sequence":58,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"880/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world0/gbuffers_entities_translucent.vsh","progress":73,"action":""}
+{"timestampUtc":"2026-07-27T05:55:50.7437460Z","elapsedMs":69778,"sequence":59,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"960/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world1/gbuffers_clouds.vsh","progress":74,"action":""}
+{"timestampUtc":"2026-07-27T05:55:51.0131104Z","elapsedMs":70046,"sequence":60,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1040/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lang/ru_RU.lang","progress":74,"action":""}
+{"timestampUtc":"2026-07-27T05:55:51.2954459Z","elapsedMs":70329,"sequence":61,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1110/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/materials/materialMethods/customEmission.glsl","progress":75,"action":""}
+{"timestampUtc":"2026-07-27T05:55:51.5809329Z","elapsedMs":70614,"sequence":62,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1180/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/materials/specificMaterials/terrain/snow.glsl","progress":75,"action":""}
+{"timestampUtc":"2026-07-27T05:55:51.8318388Z","elapsedMs":70865,"sequence":63,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1250/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/textRendering/error_multiple_lod_mods.glsl","progress":75,"action":""}
+{"timestampUtc":"2026-07-27T05:55:52.1127196Z","elapsedMs":71146,"sequence":64,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1330/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/program/final.glsl","progress":76,"action":""}
+{"timestampUtc":"2026-07-27T05:55:52.3871301Z","elapsedMs":71420,"sequence":65,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1410/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world-1/gbuffers_entities_translucent.vsh","progress":76,"action":""}
+{"timestampUtc":"2026-07-27T05:55:52.6585125Z","elapsedMs":71692,"sequence":66,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1490/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world0/gbuffers_damagedblock.vsh","progress":77,"action":""}
+{"timestampUtc":"2026-07-27T05:55:52.9318713Z","elapsedMs":71965,"sequence":67,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1570/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world1/gbuffers_beaconbeam.vsh","progress":77,"action":""}
+{"timestampUtc":"2026-07-27T05:55:53.2118043Z","elapsedMs":72245,"sequence":68,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1640/1760 | ya verificado: mods/neruina-3.3.3+1.21.1-fabric.jar","progress":77,"action":""}
+{"timestampUtc":"2026-07-27T05:55:53.4881102Z","elapsedMs":72521,"sequence":69,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1690/1760 | ya verificado: mods/Iceberg-1.21.1-fabric-1.3.2.jar","progress":78,"action":""}
+{"timestampUtc":"2026-07-27T05:55:53.7871279Z","elapsedMs":72820,"sequence":70,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1740/1760 | ya verificado: resourcepacks/E19 Cobblemon Minimap Icons.zip","progress":78,"action":""}
+{"timestampUtc":"2026-07-27T05:55:54.1681615Z","elapsedMs":73201,"sequence":71,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA","detail":"1760/1760 | ya verificado: mods/CustomSkinLoader_Universal-15.0.1.jar","progress":78,"action":""}
+{"timestampUtc":"2026-07-27T05:55:54.2273873Z","elapsedMs":73261,"sequence":72,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ETAPA 5/10 | INSTANCIA VERIFICADA","detail":"1759 archivos administrados | version 1.7.42-CF","progress":78,"action":""}
+{"timestampUtc":"2026-07-27T05:55:56.1490916Z","elapsedMs":75183,"sequence":73,"runId":"0e95ffbce9cd4269a8273cc80482d62e","component":"launcher","mode":"launcher","role":"client","experienceId":"cobbleverse","packVersion":"1.7.42-CF","instanceRoot":"C:\\Users\\Toledo\\AppData\\Roaming\\CocoMinecraft\\experiences\\cobbleverse","message":"ERROR","detail":"INTERNAL: No existe el TOML administrado de \u0027cobbleverse\u0027: \u0027config\\DistantHorizons.toml\u0027.","progress":78,"action":"failure"}
+
+TIMELINE DEL BOOTSTRAP (mismo Run ID)
+------------------------------------
+2026-07-27T02:54:39.5202764-03:00 STATE 1% elapsedMs=26 Preparando el actualizador...
+2026-07-27T02:54:39.8480161-03:00 STATE 5% elapsedMs=352 Comprobando la version mas reciente...
+2026-07-27T02:54:40.6859070-03:00 STATE 7% elapsedMs=1190 Manifiesto descargado; validando el canal y la version...
+2026-07-27T02:54:40.7240407-03:00 STATE 8% elapsedMs=1229 Engine 0.5.62: comprobando cache local verificado...
+2026-07-27T02:54:40.8880530-03:00 STATE 12% elapsedMs=1392 Engine verificado; transfiriendo la ejecucion al launcher...
+
+LOG DEL ENGINE
+--------------
+2026-07-27T02:54:40.9683225-03:00 Inicio. EnginePid=22204 GameDir='' MinecraftPid=0 RunningPackVersion='' Silent=False ShowOnUpdate=False
+2026-07-27T02:54:41.1984844-03:00 Acceso directo Coco Launcher listo en 'C:\Users\Toledo\Desktop\Coco Launcher.lnk'.
+2026-07-27T02:54:47.3349474-03:00 Modo Coco Launcher para experiencias administradas. LegacyRoot de deteccion de identidad='C:\Users\Toledo\AppData\Roaming\.minecraft'
+2026-07-27T02:54:47.5802430-03:00 STATE 13% | ETAPA 1/10 | INICIANDO COCO LAUNCHER | Engine 0.5.62 | ejecucion 0e95ffbc | Action=
+2026-07-27T02:54:47.6470490-03:00 STATE 16% | ETAPA 2/10 | PREPARANDO LA RED PRIVADA | Verificando ZeroTier, adaptador, autorizacion y rutas Coco... | Action=
+2026-07-27T02:54:47.7037874-03:00 STATE 10% | Verificando red Coco | Preparando la LAN virtual privada... | Action=
+2026-07-27T02:54:54.5800316-03:00 Red Coco lista. Role=client Status=OK PeerMode=UNKNOWN Addresses=10.77.37.73/24
+2026-07-27T02:54:54.8913676-03:00 STATE 25% | ETAPA 3/10 | ENTRANDO A COBBLEVERSE - POKEMON ADVENTURE | La unica experiencia online se selecciono automaticamente. | Action=
+2026-07-27T02:54:54.9440395-03:00 STATE 27% | ETAPA 3/10 | PARTIDA LISTA | Verificando COBBLEVERSE - Pokemon Adventure antes de abrir Minecraft... | Action=
+2026-07-27T02:54:55.2429385-03:00 STATE 30% | ETAPA 4/10 | VERIFICANDO ARCHIVOS DEL PACK | 145 archivos fijados | 656,3 MB totales | rol client | Action=
+2026-07-27T02:55:07.0606829-03:00 STATE 69% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 0/1760 archivos | mundos y datos de jugador quedan fuera del area administrada | Action=
+2026-07-27T02:55:07.3163272-03:00 STATE 69% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 20/1760 | ya verificado: config/cobblecuisine.json | Action=
+2026-07-27T02:55:07.5760799-03:00 STATE 69% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 70/1760 | ya verificado: config/rctmod-client.toml | Action=
+2026-07-27T02:55:07.8435031-03:00 STATE 70% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 130/1760 | ya verificado: config/fancymenu/legacy_checklist.txt | Action=
+2026-07-27T02:55:08.1238665-03:00 STATE 70% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 200/1760 | ya verificado: config/particlerain/config.json | Action=
+2026-07-27T02:55:08.3904146-03:00 STATE 70% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 260/1760 | ya verificado: licenses/Cobblemon Additions - License.txt | Action=
+2026-07-27T02:55:08.6472439-03:00 STATE 71% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 320/1760 | ya verificado: licenses/More Culling - License.txt | Action=
+2026-07-27T02:55:09.1457094-03:00 STATE 71% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 390/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/InformationEuphoriaPatches.md | Action=
+2026-07-27T02:55:09.4171344-03:00 STATE 71% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 460/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/colors/blocklightColors.glsl | Action=
+2026-07-27T02:55:09.6693842-03:00 STATE 72% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 530/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/materials/specificMaterials/terrain/candle.glsl | Action=
+2026-07-27T02:55:09.9226695-03:00 STATE 72% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 600/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/shaderSettings/emissiveFlowers.glsl | Action=
+2026-07-27T02:55:10.2001922-03:00 STATE 72% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 680/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/palettes/INSTRUCTIONS.txt | Action=
+2026-07-27T02:55:10.4730478-03:00 STATE 73% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 760/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world-1/composite6.vsh | Action=
+2026-07-27T02:55:10.7263082-03:00 STATE 73% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 830/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world0/clrwl_gbuffers_translucent.vsh | Action=
+2026-07-27T02:55:10.9845849-03:00 STATE 74% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 900/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world0/gbuffers_water.vsh | Action=
+2026-07-27T02:55:11.2504926-03:00 STATE 74% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 980/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world1/gbuffers_spidereyes.vsh | Action=
+2026-07-27T02:55:11.5311137-03:00 STATE 74% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1060/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/atmospherics/rainbow.glsl | Action=
+2026-07-27T02:55:11.7894435-03:00 STATE 75% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1130/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/materials/specificMaterials/planks/acaciaPlanks.glsl | Action=
+2026-07-27T02:55:12.0682850-03:00 STATE 75% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1210/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/shaderSettings/composite1.glsl | Action=
+2026-07-27T02:55:12.3500592-03:00 STATE 76% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1290/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/voxelization/puddleVoxelization.glsl | Action=
+2026-07-27T02:55:12.6029941-03:00 STATE 76% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1360/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world-1/clrwl_gbuffers_translucent.vsh | Action=
+2026-07-27T02:55:12.8673868-03:00 STATE 76% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1430/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world-1/gbuffers_water.vsh | Action=
+2026-07-27T02:55:13.1183227-03:00 STATE 77% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1500/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world0/gbuffers_lightning.vsh | Action=
+2026-07-27T02:55:13.3973917-03:00 STATE 77% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1580/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world1/gbuffers_entities.vsh | Action=
+2026-07-27T02:55:13.7494960-03:00 STATE 77% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1640/1760 | ya verificado: mods/neruina-3.3.3+1.21.1-fabric.jar | Action=
+2026-07-27T02:55:14.0458087-03:00 STATE 77% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1660/1760 | ya verificado: mods/fancymenu_fabric_3.9.8_MC_1.21.1.jar | Action=
+2026-07-27T02:55:14.3704342-03:00 STATE 78% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1690/1760 | ya verificado: mods/Iceberg-1.21.1-fabric-1.3.2.jar | Action=
+2026-07-27T02:55:16.7855418-03:00 STATE 78% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1720/1760 | ya verificado: mods/accessories-fabric-1.1.0-beta.53+1.21.1.jar | Action=
+2026-07-27T02:55:18.4757885-03:00 STATE 78% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1730/1760 | ya verificado: mods/Terralith_1.21.x_v2.5.8.jar | Action=
+2026-07-27T02:55:18.8839616-03:00 STATE 78% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1750/1760 | ya verificado: mods/fabric-api-0.116.14+1.21.1.jar | Action=
+2026-07-27T02:55:19.3747665-03:00 STATE 78% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1760/1760 | ya verificado: mods/CustomSkinLoader_Universal-15.0.1.jar | Action=
+2026-07-27T02:55:19.4359481-03:00 STATE 78% | ETAPA 5/10 | INSTANCIA VERIFICADA | 1759 archivos administrados | version 1.7.42-CF | Action=
+2026-07-27T02:55:21.2674705-03:00 ERROR Launcher client: No existe el TOML administrado de 'cobbleverse': 'config\DistantHorizons.toml'.
+En línea: 1621 Carácter: 17
++ ...             throw "No existe el TOML administrado de '$($Experience.i ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (No existe el TO...Horizons.toml'.:String) [], RuntimeException
+    + FullyQualifiedErrorId : No existe el TOML administrado de 'cobbleverse': 'config\DistantHorizons.toml'.
+ 
+
+2026-07-27T02:55:21.2925275-03:00 STATE 78% | ERROR | INTERNAL: No existe el TOML administrado de 'cobbleverse': 'config\DistantHorizons.toml'. | Action=failure
+2026-07-27T02:55:21.8520847-03:00 STATE 0% | COCO DETECTO UN PROBLEMA | No existe el TOML administrado de 'cobbleverse': 'config\DistantHorizons.toml'.
+Codigo: INTERNAL | No borres nada. Envia este TXT completo junto con la hora aproximada del fallo.
+Envia por Discord: CocoUpdater-error-20260727-025521.txt | Action=failure
+2026-07-27T02:55:25.1704328-03:00 STATE 25% | ETAPA 3/10 | ENTRANDO A COBBLEVERSE - POKEMON ADVENTURE | La unica experiencia online se selecciono automaticamente. | Action=
+2026-07-27T02:55:25.1930498-03:00 STATE 27% | ETAPA 3/10 | PARTIDA LISTA | Verificando COBBLEVERSE - Pokemon Adventure antes de abrir Minecraft... | Action=
+2026-07-27T02:55:25.3746139-03:00 STATE 30% | ETAPA 4/10 | VERIFICANDO ARCHIVOS DEL PACK | 145 archivos fijados | 656,3 MB totales | rol client | Action=
+2026-07-27T02:55:44.4587735-03:00 STATE 69% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 0/1760 archivos | mundos y datos de jugador quedan fuera del area administrada | Action=
+2026-07-27T02:55:44.7402675-03:00 STATE 69% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 60/1760 | ya verificado: config/obc-common.toml | Action=
+2026-07-27T02:55:45.0143328-03:00 STATE 70% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 130/1760 | ya verificado: config/fancymenu/legacy_checklist.txt | Action=
+2026-07-27T02:55:45.2728372-03:00 STATE 70% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 190/1760 | ya verificado: config/fancymenu/ui_themes/cherry_blossom.json | Action=
+2026-07-27T02:55:45.5512682-03:00 STATE 70% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 260/1760 | ya verificado: licenses/Cobblemon Additions - License.txt | Action=
+2026-07-27T02:55:48.0537452-03:00 STATE 71% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 340/1760 | ya verificado: licenses/Radical Cobblemon Trainers - License.md | Action=
+2026-07-27T02:55:48.0983603-03:00 STATE 71% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 350/1760 | ya verificado: licenses/Sophisticated Backpacks - License.txt | Action=
+2026-07-27T02:55:48.4683706-03:00 STATE 71% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 390/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/InformationEuphoriaPatches.md | Action=
+2026-07-27T02:55:48.7462791-03:00 STATE 71% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 470/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/lighting/coloredBlocklight.glsl | Action=
+2026-07-27T02:55:49.0246066-03:00 STATE 72% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 550/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/materials/specificMaterials/terrain/leaves.glsl | Action=
+2026-07-27T02:55:49.2850140-03:00 STATE 72% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 630/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/lib/textRendering/error_apple_photonics.glsl | Action=
+2026-07-27T02:55:49.9272129-03:00 STATE 73% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 710/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/program/composite9.glsl | Action=
+2026-07-27T02:55:49.9628407-03:00 STATE 73% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 720/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/program/gbuffers_damagedblock.glsl | Action=
+2026-07-27T02:55:50.2271632-03:00 STATE 73% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 800/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world-1/gbuffers_line.vsh | Action=
+2026-07-27T02:55:50.4873968-03:00 STATE 73% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 880/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world0/gbuffers_entities_translucent.vsh | Action=
+2026-07-27T02:55:50.7452484-03:00 STATE 74% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 960/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders/shaders/world1/gbuffers_clouds.vsh | Action=
+2026-07-27T02:55:51.0146152-03:00 STATE 74% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1040/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lang/ru_RU.lang | Action=
+2026-07-27T02:55:51.2974921-03:00 STATE 75% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1110/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/materials/materialMethods/customEmission.glsl | Action=
+2026-07-27T02:55:51.5819337-03:00 STATE 75% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1180/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/materials/specificMaterials/terrain/snow.glsl | Action=
+2026-07-27T02:55:51.8333440-03:00 STATE 75% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1250/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/lib/textRendering/error_multiple_lod_mods.glsl | Action=
+2026-07-27T02:55:52.1137354-03:00 STATE 76% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1330/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/program/final.glsl | Action=
+2026-07-27T02:55:52.3881318-03:00 STATE 76% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1410/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world-1/gbuffers_entities_translucent.vsh | Action=
+2026-07-27T02:55:52.6595133-03:00 STATE 77% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1490/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world0/gbuffers_damagedblock.vsh | Action=
+2026-07-27T02:55:52.9318713-03:00 STATE 77% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1570/1760 | ya verificado: shaderpacks/COBBLEVERSE - Shaders (High Quality)/shaders/world1/gbuffers_beaconbeam.vsh | Action=
+2026-07-27T02:55:53.2148276-03:00 STATE 77% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1640/1760 | ya verificado: mods/neruina-3.3.3+1.21.1-fabric.jar | Action=
+2026-07-27T02:55:53.4891103-03:00 STATE 78% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1690/1760 | ya verificado: mods/Iceberg-1.21.1-fabric-1.3.2.jar | Action=
+2026-07-27T02:55:53.7881295-03:00 STATE 78% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1740/1760 | ya verificado: resourcepacks/E19 Cobblemon Minimap Icons.zip | Action=
+2026-07-27T02:55:54.1691621-03:00 STATE 78% | ETAPA 5/10 | INSTALANDO LA INSTANCIA AISLADA | 1760/1760 | ya verificado: mods/CustomSkinLoader_Universal-15.0.1.jar | Action=
+2026-07-27T02:55:54.2304349-03:00 STATE 78% | ETAPA 5/10 | INSTANCIA VERIFICADA | 1759 archivos administrados | version 1.7.42-CF | Action=
+2026-07-27T02:55:56.1380713-03:00 ERROR Launcher client: No existe el TOML administrado de 'cobbleverse': 'config\DistantHorizons.toml'.
+En línea: 1621 Carácter: 17
++ ...             throw "No existe el TOML administrado de '$($Experience.i ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (No existe el TO...Horizons.toml'.:String) [], RuntimeException
+    + FullyQualifiedErrorId : No existe el TOML administrado de 'cobbleverse': 'config\DistantHorizons.toml'.
+ 
+
+2026-07-27T02:55:56.1500920-03:00 STATE 78% | ERROR | INTERNAL: No existe el TOML administrado de 'cobbleverse': 'config\DistantHorizons.toml'. | Action=failure
+
+LOGS PORTABLEMC/MINECRAFT RECIENTES
+----------------------------------
+
+--- C:\Users\Toledo\AppData\Local\CocoMinecraftUpdater\logs\launcher-into-the-backrooms-20260725-075649.log ---
+log_xml	info	2026-07-25T08:09:40.842-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by â”¬Âºkiuheruihytgery
+log_xml	error	2026-07-25T08:09:52.428-03:00	spb-revamped	SoundSourceThread-df0d9176-e693-3b3a-9422-4f04af1e4b6e	Error pitching down the Skinwalker's Voice: java.util.ConcurrentModificationException
+log_xml	info	2026-07-25T08:10:35.680-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by smolbird
+log_xml	info	2026-07-25T08:10:52.686-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] <Panchi> â”¬ÂºkHELP ME
+log_xml	info	2026-07-25T08:10:55.724-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <cuiisissii> sdsa
+log_xml	info	2026-07-25T08:11:08.407-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by smolbird
+log_xml	info	2026-07-25T08:11:21.164-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by â”¬Âºkiuheruihytgery
+log_xml	info	2026-07-25T08:12:19.566-03:00	Veil	Render thread	Using Indirect Point Light Renderer
+log_xml	info	2026-07-25T08:12:19.566-03:00	Veil	Render thread	Using GPU Frustum Culling for IndirectPointLightRenderer renderer
+log_xml	info	2026-07-25T08:12:55.818-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:12:55.819-03:00	voicechat	AudioChannelThread-df0d9176-e693-3b3a-9422-4f04af1e4b6e	[voicechat] Closed audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:13:00.283-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:13:15.112-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <cuiisissii> ococo
+log_xml	info	2026-07-25T08:14:33.401-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:14:33.402-03:00	voicechat	AudioChannelThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	[voicechat] Closed audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:14:33.801-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:14:59.168-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by â”¬Âºkiuheruihytgery
+log_xml	info	2026-07-25T08:16:32.974-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] cuiisissii has made the advancement [He's coming]
+log_xml	info	2026-07-25T08:22:34.877-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] <Panchi> Help
+log_xml	info	2026-07-25T08:25:44.217-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by smolbird
+log_xml	info	2026-07-25T08:26:37.168-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel c9ee3419-1745-4811-acfb-f0a101846b3b
+log_xml	info	2026-07-25T08:27:09.231-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by smolbird
+log_xml	info	2026-07-25T08:27:12.767-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by smolbird
+log_xml	info	2026-07-25T08:27:54.208-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel c9ee3419-1745-4811-acfb-f0a101846b3b
+log_xml	info	2026-07-25T08:27:54.209-03:00	voicechat	AudioChannelThread-c9ee3419-1745-4811-acfb-f0a101846b3b	[voicechat] Closed audio channel c9ee3419-1745-4811-acfb-f0a101846b3b
+log_xml	info	2026-07-25T08:28:33.736-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by â”¬Âºkiuheruihytgery
+log_xml	info	2026-07-25T08:28:42.429-03:00	net.minecraft.class_2983	Render thread	[STDOUT]: Sound Keyframe found for SkinWalkerEntity -> controller, but no keyframe handler registered
+log_xml	info	2026-07-25T08:28:45.920-03:00	net.minecraft.class_2983	Render thread	[STDOUT]: Sound Keyframe found for SkinWalkerEntity -> controller, but no keyframe handler registered
+log_xml	info	2026-07-25T08:28:46.930-03:00	net.minecraft.class_2983	Render thread	[STDOUT]: Sound Keyframe found for SkinWalkerEntity -> controller, but no keyframe handler registered
+log_xml	info	2026-07-25T08:28:54.171-03:00	Veil	Render thread	Using Indirect Point Light Renderer
+log_xml	info	2026-07-25T08:28:54.171-03:00	Veil	Render thread	Using GPU Frustum Culling for IndirectPointLightRenderer renderer
+log_xml	info	2026-07-25T08:28:54.514-03:00	Veil	Render thread	Recompiled 5 shaders from: pinwheel/shaders/program
+log_xml	info	2026-07-25T08:29:22.798-03:00	Veil	Render thread	Recompiled 5 shaders from: pinwheel/shaders/program
+log_xml	info	2026-07-25T08:29:23.204-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:29:23.205-03:00	voicechat	AudioChannelThread-df0d9176-e693-3b3a-9422-4f04af1e4b6e	[voicechat] Closed audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:29:44.620-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <Panchi> COCO GIL}+WW
+log_xml	info	2026-07-25T08:29:50.890-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported smolbird to cuiisissii]
+log_xml	info	2026-07-25T08:29:51.239-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:30:02.173-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] cuiisissii has made the advancement [Where Are You ?]
+log_xml	error	2026-07-25T08:30:12.781-03:00	spb-revamped	SoundSourceThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	Error pitching down the Skinwalker's Voice: java.util.ConcurrentModificationException
+log_xml	info	2026-07-25T08:30:35.082-03:00	Veil	Render thread	Recompiled 6 shaders from: pinwheel/shaders/program
+log_xml	info	2026-07-25T08:30:35.105-03:00	Veil	Render thread	Using Indirect Point Light Renderer
+log_xml	info	2026-07-25T08:30:35.105-03:00	Veil	Render thread	Using GPU Frustum Culling for IndirectPointLightRenderer renderer
+log_xml	info	2026-07-25T08:30:37.381-03:00	net.minecraft.class_163	Render thread	Loaded 57 advancements
+log_xml	info	2026-07-25T08:32:20.619-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by â”¬Âºkiuheruihytgery
+log_xml	info	2026-07-25T08:33:28.229-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] Can you hear me ?
+log_xml	info	2026-07-25T08:33:38.395-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <cuiisissii> si
+log_xml	info	2026-07-25T08:33:50.648-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <Panchi> CERRA EL OCOTE
+log_xml	info	2026-07-25T08:35:04.272-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] cuiisissii burned in Acid!
+log_xml	info	2026-07-25T08:35:16.807-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <cuiisissii> SAJDAJAJDJAD
+log_xml	info	2026-07-25T08:35:18.208-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	info	2026-07-25T08:36:27.566-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by cuiisissii
+log_xml	info	2026-07-25T08:36:42.023-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported smolbird to cuiisissii]
+log_xml	info	2026-07-25T08:38:31.296-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:38:31.296-03:00	voicechat	AudioChannelThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	[voicechat] Closed audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:38:37.838-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	info	2026-07-25T08:38:40.096-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:38:45.067-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by smolbird
+log_xml	info	2026-07-25T08:39:30.913-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by smolbird
+log_xml	info	2026-07-25T08:39:40.563-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel 868be869-a53e-4ec3-b8b1-620dec0ccc41
+log_xml	info	2026-07-25T08:40:32.702-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	info	2026-07-25T08:40:51.675-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel 868be869-a53e-4ec3-b8b1-620dec0ccc41
+log_xml	info	2026-07-25T08:40:51.676-03:00	voicechat	AudioChannelThread-868be869-a53e-4ec3-b8b1-620dec0ccc41	[voicechat] Closed audio channel 868be869-a53e-4ec3-b8b1-620dec0ccc41
+log_xml	info	2026-07-25T08:41:06.194-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:41:06.194-03:00	voicechat	AudioChannelThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	[voicechat] Closed audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:41:06.337-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird burned in Acid!
+log_xml	info	2026-07-25T08:41:08.621-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by smolbird
+log_xml	info	2026-07-25T08:41:10.570-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <cuiisissii> ola
+log_xml	info	2026-07-25T08:41:15.239-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <Panchi> CALLATE
+log_xml	info	2026-07-25T08:41:18.416-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <cuiisissii> pewro
+log_xml	info	2026-07-25T08:41:21.229-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <cuiisissii> PERO
+log_xml	info	2026-07-25T08:41:29.534-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	info	2026-07-25T08:41:30.033-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:41:42.275-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] cuiisissii was slain by Panchi
+log_xml	info	2026-07-25T08:41:47.248-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Set own game mode to Creative Mode]
+log_xml	info	2026-07-25T08:41:50.704-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	info	2026-07-25T08:42:02.694-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] Panchi burned in Acid!
+log_xml	info	2026-07-25T08:42:11.106-03:00	net.minecraft.class_338	Render thread	[Not Secure] [CHAT] <Panchi> TP
+log_xml	info	2026-07-25T08:42:13.233-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	info	2026-07-25T08:42:16.634-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported Panchi to smolbird]
+log_xml	info	2026-07-25T08:42:19.308-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported Panchi to smolbird]
+log_xml	info	2026-07-25T08:42:37.796-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	info	2026-07-25T08:43:15.927-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	info	2026-07-25T08:43:16.818-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported Panchi to smolbird]
+log_xml	info	2026-07-25T08:43:42.989-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported Panchi to smolbird]
+log_xml	info	2026-07-25T08:43:43.843-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	error	2026-07-25T08:43:50.280-03:00	spb-revamped	SoundSourceThread-df0d9176-e693-3b3a-9422-4f04af1e4b6e	Error pitching down the Skinwalker's Voice: java.util.ConcurrentModificationException
+log_xml	info	2026-07-25T08:43:53.019-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by smolbird
+log_xml	info	2026-07-25T08:44:11.968-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] cuiisissii burned in Acid!
+log_xml	info	2026-07-25T08:44:20.842-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	info	2026-07-25T08:44:43.962-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel 7aaf4f41-07a5-45e2-88e9-9c7400486ad0
+log_xml	info	2026-07-25T08:44:54.168-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] You can't move anything. This isn't your body anymore
+log_xml	error	2026-07-25T08:45:33.820-03:00	spb-revamped	SoundSourceThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	Error pitching down the Skinwalker's Voice: java.util.ConcurrentModificationException
+log_xml	info	2026-07-25T08:45:50.072-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel 7aaf4f41-07a5-45e2-88e9-9c7400486ad0
+log_xml	info	2026-07-25T08:45:50.073-03:00	voicechat	AudioChannelThread-7aaf4f41-07a5-45e2-88e9-9c7400486ad0	[voicechat] Closed audio channel 7aaf4f41-07a5-45e2-88e9-9c7400486ad0
+log_xml	info	2026-07-25T08:45:54.738-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] No one can hear you scream
+log_xml	info	2026-07-25T08:45:58.156-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported Panchi to smolbird]
+log_xml	info	2026-07-25T08:46:08.600-03:00	net.minecraft.class_2983	Render thread	[STDOUT]: Sound Keyframe found for SkinWalkerEntity -> controller, but no keyframe handler registered
+log_xml	info	2026-07-25T08:46:10.079-03:00	net.minecraft.class_2983	Render thread	[STDOUT]: Sound Keyframe found for SkinWalkerEntity -> controller, but no keyframe handler registered
+log_xml	info	2026-07-25T08:46:13.058-03:00	net.minecraft.class_2983	Render thread	[STDOUT]: Sound Keyframe found for SkinWalkerEntity -> controller, but no keyframe handler registered
+log_xml	info	2026-07-25T08:46:39.665-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel 7aaf4f41-07a5-45e2-88e9-9c7400486ad0
+log_xml	info	2026-07-25T08:46:39.666-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:46:39.666-03:00	voicechat	AudioChannelThread-df0d9176-e693-3b3a-9422-4f04af1e4b6e	[voicechat] Closed audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:46:39.666-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:46:39.667-03:00	voicechat	AudioChannelThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	[voicechat] Closed audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:46:56.876-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:47:00.288-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] it's coming
+log_xml	info	2026-07-25T08:47:01.614-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:47:41.535-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] cuiisissii was slain by entity.spb-revamped.skin_walker
+log_xml	info	2026-07-25T08:47:51.950-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported cuiisissii to smolbird]
+log_xml	info	2026-07-25T08:48:31.732-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel 7aaf4f41-07a5-45e2-88e9-9c7400486ad0
+log_xml	info	2026-07-25T08:48:31.733-03:00	voicechat	AudioChannelThread-7aaf4f41-07a5-45e2-88e9-9c7400486ad0	[voicechat] Closed audio channel 7aaf4f41-07a5-45e2-88e9-9c7400486ad0
+log_xml	info	2026-07-25T08:48:55.384-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] Panchi burned in Acid!
+log_xml	info	2026-07-25T08:49:02.674-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported Panchi to smolbird]
+log_xml	info	2026-07-25T08:49:07.746-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported Panchi to smolbird]
+log_xml	info	2026-07-25T08:49:10.060-03:00	Veil	Render thread	Using Indirect Point Light Renderer
+log_xml	info	2026-07-25T08:49:10.060-03:00	Veil	Render thread	Using GPU Frustum Culling for IndirectPointLightRenderer renderer
+log_xml	info	2026-07-25T08:49:11.066-03:00	Veil	Render thread	Recompiled 10 shaders from: pinwheel/shaders/program
+log_xml	info	2026-07-25T08:50:53.307-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported Panchi to smolbird]
+log_xml	info	2026-07-25T08:50:53.311-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Closing audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:50:53.311-03:00	voicechat	AudioChannelThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	[voicechat] Closed audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:50:53.605-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:50:54.892-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] smolbird was slain by â”¬Âºkiuheruihytgery
+log_xml	info	2026-07-25T08:51:22.685-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] cuiisissii was slain by Panchi
+log_xml	info	2026-07-25T08:51:27.654-03:00	voicechat	Render thread	[voicechat] Clearing audio channels
+log_xml	info	2026-07-25T08:51:27.655-03:00	voicechat	Render thread	[voicechat] Closing audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:51:27.655-03:00	voicechat	AudioChannelThread-df0d9176-e693-3b3a-9422-4f04af1e4b6e	[voicechat] Closed audio channel df0d9176-e693-3b3a-9422-4f04af1e4b6e
+log_xml	info	2026-07-25T08:51:27.656-03:00	voicechat	Render thread	[voicechat] Closing audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:51:27.656-03:00	voicechat	AudioChannelThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	[voicechat] Closed audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:51:27.672-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Creating audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	error	2026-07-25T08:51:27.673-03:00	voicechat	SoundSourceThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	[voicechat] Voicechat sound manager ALC error: de.maxhenkel.voicechat.voice.client.SoundManager.openContext[203] Invalid context
+log_xml	error	2026-07-25T08:51:27.674-03:00	voicechat	SoundSourceThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	[voicechat] Voicechat sound manager ALC error: de.maxhenkel.voicechat.voice.client.SoundManager.openContext[203] Invalid context
+log_xml	info	2026-07-25T08:51:27.675-03:00	voicechat	Render thread	[voicechat] Stopping microphone thread
+log_xml	info	2026-07-25T08:51:27.689-03:00	voicechat	Render thread	[voicechat] Disconnecting voicechat
+log_xml	info	2026-07-25T08:51:27.693-03:00	voicechat	AudioChannelThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	[voicechat] Closing audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:51:27.693-03:00	voicechat	AudioChannelThread-64793f18-c380-3cd6-8f3d-ddf36a675db9	[voicechat] Closed audio channel 64793f18-c380-3cd6-8f3d-ddf36a675db9
+log_xml	info	2026-07-25T08:51:29.076-03:00	kits	Render thread	This is an example mixin - you've reached the title screen!
+log_xml	info	2026-07-25T08:51:29.340-03:00	net.minecraft.class_4341	Realms Notification Availability checker #1	Could not authorize you against Realms server: javax.ws.rs.BadRequestException: Invalid session
+log_xml	info	2026-07-25T08:51:29.857-03:00	net.minecraft.class_310	Render thread	Stopping!
+terminated	0
+
+--- C:\Users\Toledo\AppData\Local\CocoMinecraftUpdater\logs\launcher-into-the-backrooms-20260725-075357.log ---
+\n\tat net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72)
+\n\tat net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+\nCaused by: java.io.FileNotFoundException: veil:pinwheel/shaders/include/deferred_buffers.glsl
+\n\tat knot//net.minecraft.class_5912.method_43043(class_5912.java:21)
+\n\tat java.base/java.util.Optional.orElseThrow(Optional.java:403)
+\n\tat knot//net.minecraft.class_5912.getResourceOrThrow(class_5912.java:21)
+\n\tat knot//foundry.veil.api.client.render.shader.processor.ShaderImportProcessor.loadImport(ShaderImportProcessor.java:98)
+\n\tat knot//foundry.veil.api.client.render.shader.processor.ShaderImportProcessor.modify(ShaderImportProcessor.java:70)
+\n\t... 21 more
+log_xml	info	2026-07-25T07:54:31.107-03:00	Veil	Render thread	Loaded 34 shaders from: pinwheel/shaders/program
+log_xml	warn	2026-07-25T07:54:31.152-03:00	net.minecraft.class_1140	Render thread	Missing sound for event: minecraft:item.goat_horn.play
+log_xml	warn	2026-07-25T07:54:31.152-03:00	net.minecraft.class_1140	Render thread	Missing sound for event: minecraft:entity.goat.screaming.horn_break
+log_xml	info	2026-07-25T07:54:31.213-03:00	net.minecraft.class_4225	Render thread	OpenAL initialized on device OpenAL Soft on Altavoces (Realtek High Definition Audio)
+log_xml	info	2026-07-25T07:54:31.213-03:00	net.minecraft.class_1140	Render thread	Sound engine started
+log_xml	info	2026-07-25T07:54:31.338-03:00	net.minecraft.class_1059	Render thread	Created: 8192x4096x0 minecraft:textures/atlas/blocks.png-atlas
+log_xml	info	2026-07-25T07:54:31.363-03:00	net.minecraft.class_1059	Render thread	Created: 256x256x0 minecraft:textures/atlas/signs.png-atlas
+log_xml	info	2026-07-25T07:54:31.365-03:00	net.minecraft.class_1059	Render thread	Created: 512x512x0 minecraft:textures/atlas/banner_patterns.png-atlas
+log_xml	info	2026-07-25T07:54:31.365-03:00	net.minecraft.class_1059	Render thread	Created: 512x512x0 minecraft:textures/atlas/shield_patterns.png-atlas
+log_xml	info	2026-07-25T07:54:31.366-03:00	net.minecraft.class_1059	Render thread	Created: 1024x1024x0 minecraft:textures/atlas/armor_trims.png-atlas
+log_xml	info	2026-07-25T07:54:31.371-03:00	net.minecraft.class_1059	Render thread	Created: 8192x4096x0 spb-revamped:textures/atlas/height.png-atlas
+log_xml	info	2026-07-25T07:54:31.425-03:00	net.minecraft.class_1059	Render thread	Created: 8192x4096x0 spb-revamped:textures/atlas/normal.png-atlas
+log_xml	info	2026-07-25T07:54:31.488-03:00	net.minecraft.class_1059	Render thread	Created: 256x256x0 minecraft:textures/atlas/chest.png-atlas
+log_xml	info	2026-07-25T07:54:31.489-03:00	net.minecraft.class_1059	Render thread	Created: 128x64x0 minecraft:textures/atlas/decorated_pot.png-atlas
+log_xml	info	2026-07-25T07:54:31.489-03:00	net.minecraft.class_1059	Render thread	Created: 512x256x0 minecraft:textures/atlas/beds.png-atlas
+log_xml	info	2026-07-25T07:54:31.489-03:00	net.minecraft.class_1059	Render thread	Created: 512x256x0 minecraft:textures/atlas/shulker_boxes.png-atlas
+log_xml	warn	2026-07-25T07:54:32.095-03:00	net.minecraft.class_5944	Render thread	Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+log_xml	info	2026-07-25T07:54:32.677-03:00	net.minecraft.class_1059	Render thread	Created: 256x256x0 minecraft:textures/atlas/particles.png-atlas
+log_xml	info	2026-07-25T07:54:32.678-03:00	net.minecraft.class_1059	Render thread	Created: 256x256x0 minecraft:textures/atlas/paintings.png-atlas
+log_xml	info	2026-07-25T07:54:32.680-03:00	net.minecraft.class_1059	Render thread	Created: 128x128x0 minecraft:textures/atlas/mob_effects.png-atlas
+log_xml	info	2026-07-25T07:54:32.685-03:00	Veil	Render thread	Loaded 2 ImGui fonts
+log_xml	info	2026-07-25T07:54:32.686-03:00	Veil	Render thread	Built veil:jetbrains_mono
+log_xml	info	2026-07-25T07:54:32.689-03:00	Veil	Render thread	Built veil:remixicon
+log_xml	info	2026-07-25T07:54:32.757-03:00	Veil	Render thread	Loaded 10 framebuffers
+log_xml	info	2026-07-25T07:54:32.766-03:00	Veil	Render thread	Loaded 4 post pipelines
+log_xml	info	2026-07-25T07:54:32.766-03:00	Veil	Render thread	Loaded 0 render types
+log_xml	info	2026-07-25T07:54:32.771-03:00	Veil	Render thread	Loaded 0 quasar particles
+log_xml	info	2026-07-25T07:54:32.830-03:00	net.minecraft.class_412	Render thread	Connecting to 10.77.37.1, 25565
+log_xml	info	2026-07-25T07:54:34.846-03:00	net.minecraft.class_3304	Render thread	Reloading ResourceManager: vanilla, fabric (auto_mod, camerapture, cardinal-components-base, cardinal-components-entity, cardinal-components-world, collective, configured, cubes-without-borders, fabric-api, fabric-api-base, fabric-api-lookup-api-v1, fabric-biome-api-v1, fabric-block-api-v1, fabric-block-view-api-v2, fabric-blockrenderlayer-v1, fabric-client-tags-api-v1, fabric-command-api-v1, fabric-command-api-v2, fabric-commands-v0, fabric-containers-v0, fabric-content-registries-v0, fabric-convention-tags-v1, fabric-crash-report-info-v1, fabric-data-attachment-api-v1, fabric-data-generation-api-v1, fabric-dimensions-v1, fabric-entity-events-v1, fabric-events-interaction-v0, fabric-events-lifecycle-v0, fabric-game-rule-api-v1, fabric-item-api-v1, fabric-item-group-api-v1, fabric-key-binding-api-v1, fabric-keybindings-v0, fabric-lifecycle-events-v1, fabric-loot-api-v2, fabric-loot-tables-v1, fabric-message-api-v1, fabric-mining-level-api-v1, fabric-model-loading-api-v1, fabric-models-v0, fabric-networking-api-v1, fabric-networking-v0, fabric-object-builder-api-v1, fabric-particles-v1, fabric-recipe-api-v1, fabric-registry-sync-v0, fabric-renderer-api-v1, fabric-renderer-indigo, fabric-renderer-registries-v1, fabric-rendering-data-attachment-v1, fabric-rendering-fluids-v1, fabric-rendering-v0, fabric-rendering-v1, fabric-resource-conditions-api-v1, fabric-resource-loader-v0, fabric-screen-api-v1, fabric-screen-handler-api-v1, fabric-sound-api-v1, fabric-transfer-api-v1, fabric-transitive-access-wideners-v1, fabricloader, fake_death_messages, fake_join_leave_fabric, firstperson, forgeconfigapiport, geckolib, horror_responses_fabric_, horrormessages, justzoom, kits, konkrete, lanoperators, midnightlib, more_thunder_fabric, notenoughanimations, notenoughcrashes, random_advancement_, serversidehorror, skinlayers3d, spb-revamped, trender, veil, voicechat), veil:deferred
+log_xml	info	2026-07-25T07:54:34.850-03:00	Veil	Render thread	Deferred Renderer Enabled
+log_xml	info	2026-07-25T07:54:34.854-03:00	net.minecraft.class_391	Worker-Main-7	Found unifont_all_no_pua-15.0.06.hex, loading
+log_xml	error	2026-07-25T07:54:35.402-03:00	Veil	Worker-Main-9	java.io.FileNotFoundException: minecraft:datapacks/bundle/pack.mcmeta
+\n\tat knot//net.minecraft.class_5912.method_43043(class_5912.java:21)
+\n\tat java.base/java.util.Optional.orElseThrow(Optional.java:403)
+\n\tat knot//net.minecraft.class_5912.getResourceOrThrow(class_5912.java:21)
+\n\tat knot//net.minecraft.class_5912.open(class_5912.java:25)
+\n\tat knot//foundry.veil.impl.resource.loader.McMetaResourceLoader.load(McMetaResourceLoader.java:34)
+\n\tat knot//foundry.veil.impl.resource.VeilResourceManagerImpl.visitResource(VeilResourceManagerImpl.java:118)
+\n\tat knot//foundry.veil.impl.resource.VeilResourceManagerImpl.lambda$loadPack$0(VeilResourceManagerImpl.java:79)
+\n\tat knot//net.minecraft.class_3268$Anonymous$0b67308e65293a68926d777d2a51246a.visitFile(VanillaPackResourcesMixin.java:67)
+\n\tat knot//net.minecraft.class_3268$Anonymous$0b67308e65293a68926d777d2a51246a.visitFile(VanillaPackResourcesMixin.java:48)
+\n\tat java.base/java.nio.file.Files.walkFileTree(Files.java:2811)
+\n\tat java.base/java.nio.file.Files.walkFileTree(Files.java:2882)
+\n\tat knot//net.minecraft.class_3268.veil$listResources(class_3268.java:548)
+\n\tat knot//foundry.veil.impl.resource.VeilResourceManagerImpl.loadPack(VeilResourceManagerImpl.java:77)
+\n\tat knot//foundry.veil.impl.resource.VeilResourceManagerImpl.lambda$reloadClient$4(VeilResourceManagerImpl.java:156)
+\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)
+\n\tat java.base/java.util.stream.Streams$StreamBuilderImpl.forEachRemaining(Streams.java:411)
+\n\tat java.base/java.util.stream.ReferencePipeline$Head.forEach(ReferencePipeline.java:762)
+\n\tat java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+\n\tat java.base/java.util.AbstractList$RandomAccessSpliterator.forEachRemaining(AbstractList.java:720)
+\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)
+\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)
+\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+\n\tat knot//foundry.veil.impl.resource.VeilResourceManagerImpl.lambda$reloadClient$5(VeilResourceManagerImpl.java:154)
+\n\tat java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1768)
+\n\tat java.base/java.util.concurrent.CompletableFuture$AsyncSupply.exec(CompletableFuture.java:1760)
+\n\tat java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:373)
+\n\tat java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1182)
+\n\tat java.base/java.util.concurrent.ForkJoinPool.scan(ForkJoinPool.java:1655)
+\n\tat java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1622)
+\n\tat java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:165)
+log_xml	warn	2026-07-25T07:54:36.196-03:00	net.minecraft.class_1088	Worker-Main-3	Exception loading blockstate definition: 'spb-revamped:blockstates/one_sided_shelf.json' in resourcepack: 'fabric' for variant: 'facing=north,stuff=5': Unknown value: '5' for blockstate property: 'stuff' [0, 1, 2, 3, 4]
+log_xml	warn	2026-07-25T07:54:36.196-03:00	net.minecraft.class_1088	Worker-Main-3	Exception loading blockstate definition: 'spb-revamped:blockstates/one_sided_shelf.json' in resourcepack: 'fabric' for variant: 'facing=south,stuff=5': Unknown value: '5' for blockstate property: 'stuff' [0, 1, 2, 3, 4]
+log_xml	warn	2026-07-25T07:54:36.197-03:00	net.minecraft.class_1088	Worker-Main-3	Exception loading blockstate definition: 'spb-revamped:blockstates/one_sided_shelf.json' in resourcepack: 'fabric' for variant: 'facing=east,stuff=5': Unknown value: '5' for blockstate property: 'stuff' [0, 1, 2, 3, 4]
+log_xml	warn	2026-07-25T07:54:36.197-03:00	net.minecraft.class_1088	Worker-Main-3	Exception loading blockstate definition: 'spb-revamped:blockstates/one_sided_shelf.json' in resourcepack: 'fabric' for variant: 'facing=west,stuff=5': Unknown value: '5' for blockstate property: 'stuff' [0, 1, 2, 3, 4]
+log_xml	warn	2026-07-25T07:54:36.200-03:00	net.minecraft.class_1088	Worker-Main-3	Unable to load model: 'spb-revamped:none_reflective_plastic#inventory' referenced from: spb-revamped:none_reflective_plastic#inventory: java.io.FileNotFoundException: spb-revamped:models/item/none_reflective_plastic.json
+log_xml	warn	2026-07-25T07:54:36.206-03:00	net.minecraft.class_1088	Worker-Main-3	Unable to load model: 'spb-revamped:one_sided_shelf#inventory' referenced from: spb-revamped:one_sided_shelf#inventory: java.io.FileNotFoundException: spb-revamped:models/item/one_sided_shelf.json
+log_xml	warn	2026-07-25T07:54:36.207-03:00	net.minecraft.class_1088	Worker-Main-3	Unable to load model: 'spb-revamped:tiny_fluorescent_light#inventory' referenced from: spb-revamped:tiny_fluorescent_light#inventory: java.io.FileNotFoundException: spb-revamped:models/item/tiny_fluorescent_light.json
+log_xml	warn	2026-07-25T07:54:36.207-03:00	net.minecraft.class_1088	Worker-Main-3	Unable to load model: 'spb-revamped:double_sided_shelf#inventory' referenced from: spb-revamped:double_sided_shelf#inventory: java.io.FileNotFoundException: spb-revamped:models/item/double_sided_shelf.json
+log_xml	info	2026-07-25T07:54:37.179-03:00	Veil	Render thread	Loaded 2 shader modifications
+log_xml	info	2026-07-25T07:54:39.634-03:00	Camerapture	Netty Client IO #0	received synced config: SyncedConfig[permissionLevels={takePicture=0, upload=0}, maxImageBytes=500000, maxImageResolution=1920]
+log_xml	info	2026-07-25T07:54:40.013-03:00	Veil	Render thread	Loaded 41 shaders from: pinwheel/shaders/program
+log_xml	info	2026-07-25T07:54:40.489-03:00	voicechat	Render thread	[voicechat] Sending secret request to the server
+log_xml	warn	2026-07-25T07:54:40.495-03:00	voicechat	Render thread	[voicechat] Failed to open audio device 'OpenAL Soft on Headset Earphone (HyperX Virtual Surround Sound)', falling back to default
+log_xml	info	2026-07-25T07:54:40.783-03:00	spb-revamped	Render thread	Loaded 1077 Default Block IDs
+log_xml	error	2026-07-25T07:54:40.806-03:00	Veil	Render thread	Missing deferred opaque buffer
+log_xml	info	2026-07-25T07:54:42.133-03:00	net.minecraft.class_338	Render thread	[System] [CHAT]
+log_xml	info	2026-07-25T07:54:42.138-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] Need a server? Click here and use code 'kamussy' for 25% off!\n
+log_xml	info	2026-07-25T07:54:42.138-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] Suffocate yourself with sand or gravel to enter the backrooms\n\n- Click F or R to toggle your flashlight and V to set up voice chat\n- /kits for a camera and food\n\nIF YOU USE THIS MODPACK IN A VIDEO, PLEASE LINK IT IN THE DESCRIPTION !!!!!!\n\nâ”¬ÂºmIT CAN SEE YOUR MESSAGES\n
+log_xml	info	2026-07-25T07:54:42.139-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] Click for discord server
+log_xml	info	2026-07-25T07:54:42.142-03:00	net.minecraft.class_163	Render thread	Loaded 2 advancements
+log_xml	warn	2026-07-25T07:54:42.175-03:00	net.minecraft.class_1140	Render thread	Missing sound for event: minecraft:item.goat_horn.play
+log_xml	warn	2026-07-25T07:54:42.175-03:00	net.minecraft.class_1140	Render thread	Missing sound for event: minecraft:entity.goat.screaming.horn_break
+log_xml	info	2026-07-25T07:54:42.213-03:00	net.minecraft.class_4225	Render thread	OpenAL initialized on device OpenAL Soft on Altavoces (Realtek High Definition Audio)
+log_xml	info	2026-07-25T07:54:42.213-03:00	net.minecraft.class_1140	Render thread	Sound engine started
+log_xml	info	2026-07-25T07:54:42.226-03:00	voicechat	Render thread	[voicechat] Received secret
+log_xml	info	2026-07-25T07:54:42.228-03:00	voicechat	Render thread	[voicechat] Connecting to voice chat server: '10.77.37.1:25565'
+log_xml	info	2026-07-25T07:54:42.232-03:00	voicechat	VoiceChatAuthenticationThread	[voicechat] Trying to authenticate voice chat connection
+log_xml	info	2026-07-25T07:54:42.234-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [Simple Voice Chat] Press V to set up
+log_xml	info	2026-07-25T07:54:42.286-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Server acknowledged authentication
+log_xml	info	2026-07-25T07:54:42.377-03:00	net.minecraft.class_1059	Render thread	Created: 8192x4096x0 minecraft:textures/atlas/blocks.png-atlas
+log_xml	info	2026-07-25T07:54:42.436-03:00	net.minecraft.class_1059	Render thread	Created: 256x256x0 minecraft:textures/atlas/signs.png-atlas
+log_xml	info	2026-07-25T07:54:42.437-03:00	net.minecraft.class_1059	Render thread	Created: 512x512x0 minecraft:textures/atlas/banner_patterns.png-atlas
+log_xml	info	2026-07-25T07:54:42.438-03:00	net.minecraft.class_1059	Render thread	Created: 512x512x0 minecraft:textures/atlas/shield_patterns.png-atlas
+log_xml	info	2026-07-25T07:54:42.438-03:00	net.minecraft.class_1059	Render thread	Created: 1024x1024x0 minecraft:textures/atlas/armor_trims.png-atlas
+log_xml	info	2026-07-25T07:54:42.452-03:00	net.minecraft.class_1059	Render thread	Created: 8192x4096x0 spb-revamped:textures/atlas/height.png-atlas
+log_xml	info	2026-07-25T07:54:42.498-03:00	net.minecraft.class_1059	Render thread	Created: 8192x4096x0 spb-revamped:textures/atlas/normal.png-atlas
+log_xml	info	2026-07-25T07:54:42.532-03:00	net.minecraft.class_1059	Render thread	Created: 256x256x0 minecraft:textures/atlas/chest.png-atlas
+log_xml	info	2026-07-25T07:54:42.532-03:00	net.minecraft.class_1059	Render thread	Created: 128x64x0 minecraft:textures/atlas/decorated_pot.png-atlas
+log_xml	info	2026-07-25T07:54:42.532-03:00	net.minecraft.class_1059	Render thread	Created: 512x256x0 minecraft:textures/atlas/beds.png-atlas
+log_xml	info	2026-07-25T07:54:42.533-03:00	net.minecraft.class_1059	Render thread	Created: 512x256x0 minecraft:textures/atlas/shulker_boxes.png-atlas
+log_xml	warn	2026-07-25T07:54:42.570-03:00	net.minecraft.class_5944	Render thread	Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+log_xml	info	2026-07-25T07:54:42.636-03:00	net.minecraft.class_1059	Render thread	Created: 256x256x0 minecraft:textures/atlas/particles.png-atlas
+log_xml	info	2026-07-25T07:54:42.637-03:00	net.minecraft.class_1059	Render thread	Created: 256x256x0 minecraft:textures/atlas/paintings.png-atlas
+log_xml	info	2026-07-25T07:54:42.638-03:00	net.minecraft.class_1059	Render thread	Created: 128x128x0 minecraft:textures/atlas/mob_effects.png-atlas
+log_xml	info	2026-07-25T07:54:42.639-03:00	Veil	Render thread	Loaded 2 ImGui fonts
+log_xml	info	2026-07-25T07:54:42.642-03:00	Veil	Render thread	Built veil:jetbrains_mono
+log_xml	info	2026-07-25T07:54:42.643-03:00	Veil	Render thread	Built veil:remixicon
+log_xml	info	2026-07-25T07:54:42.709-03:00	Veil	Render thread	Loaded 17 framebuffers
+log_xml	info	2026-07-25T07:54:42.710-03:00	Veil	Render thread	Loaded 7 post pipelines
+log_xml	info	2026-07-25T07:54:43.066-03:00	Veil	Render thread	Loaded 25 shaders from: pinwheel/shaders/deferred
+log_xml	info	2026-07-25T07:54:43.067-03:00	Veil	Render thread	Loaded 0 render types
+log_xml	info	2026-07-25T07:54:43.067-03:00	Veil	Render thread	Loaded 0 quasar particles
+log_xml	info	2026-07-25T07:54:43.241-03:00	voicechat	VoiceChatAuthenticationThread	[voicechat] Trying to validate voice chat connection
+log_xml	info	2026-07-25T07:54:43.273-03:00	voicechat	VoiceChatConnectionThread	[voicechat] Server acknowledged connection check
+log_xml	warn	2026-07-25T07:54:43.292-03:00	voicechat	MicrophoneThread	[voicechat] Failed to open microphone 'OpenAL Soft on Microphone (HyperX Quadcast)', falling back to default microphone
+log_xml	info	2026-07-25T07:54:43.405-03:00	spb-revamped	Render thread	Loaded 2154 Default Block IDs
+log_xml	info	2026-07-25T07:54:46.448-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Teleported Panchi to smolbird]
+log_xml	info	2026-07-25T07:54:52.994-03:00	net.minecraft.class_338	Render thread	[System] [CHAT] [smolbird: Set the time to 1000]
+log_xml	error	2026-07-25T07:54:53.893-03:00	Veil	Render thread	Unknown Quasar Particle Emitter: veil:basic_smoke
+log_xml	info	2026-07-25T07:55:18.632-03:00	voicechat	Render thread	[voicechat] Clearing audio channels
+log_xml	info	2026-07-25T07:55:18.646-03:00	voicechat	Render thread	[voicechat] Stopping microphone thread
+log_xml	info	2026-07-25T07:55:18.654-03:00	voicechat	Render thread	[voicechat] Disconnecting voicechat
+log_xml	info	2026-07-25T07:55:19.628-03:00	kits	Render thread	This is an example mixin - you've reached the title screen!
+log_xml	info	2026-07-25T07:55:19.891-03:00	net.minecraft.class_4341	Realms Notification Availability checker #1	Could not authorize you against Realms server: javax.ws.rs.BadRequestException: Invalid session
+log_xml	info	2026-07-25T07:55:20.274-03:00	net.minecraft.class_310	Render thread	Stopping!
+terminated	0
+
+
+ULTIMO latest.log DE LA INSTANCIA
+---------------------------------
+No existe: C:\Users\Toledo\AppData\Roaming\CocoMinecraft\experiences\cobbleverse\logs\latest.log
+
+ESTADO DE INSTALACION ADMINISTRADA
+---------------------------------
+                      "sha256":  "92329d98c57f5a22091a0adb509fdb1d60113a5602c708b799b13134bad13baa",
+                      "size":  797454,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/better-pokedex-scanner-1.0.0.jar",
+                      "sha256":  "aca37fa43fe9226cf99f75f194bf6cb9ec27d71dad1ae6c732d0791636231180",
+                      "size":  350293,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/c2me-fabric-mc1.21.1-0.4.0-alpha.0.23.jar",
+                      "sha256":  "6a77c69140f3da10e20b25ee8a75da039c5835b73f9c7a03615fbd968b574e5e",
+                      "size":  3757044,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "resourcepacks/COBBLEVERSE-CCC.zip",
+                      "sha256":  "0200e6ef4454afc46204bc8f7c298bf59c243679442ffee7f5b913a5ff2d973f",
+                      "size":  8536643,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/fusion-1.2.12-fabric-mc1.21.jar",
+                      "sha256":  "904b53bd8e0aacf200c700997c7467bc0c66cca1fb4a17c9999afb8eb62942e8",
+                      "size":  515411,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/particular-1.21.1-Fabric-1.5.5.jar",
+                      "sha256":  "47d724637888227d18e4bc49a11f67b50f0e39d21f4d494cf92215be96f8873c",
+                      "size":  285813,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/cobblemon-battle-extras-fabric-1.13.45.jar",
+                      "sha256":  "099c3dafd5c7d29e8d91f954a9598565fdd07dac235bb9c49ab305d9af37f826",
+                      "size":  1515972,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/sound-physics-remastered-fabric-1.21.1-1.5.1.jar",
+                      "sha256":  "8884ded0f53f97a6cb2fca9ef035947af8c3376a406e0bdaa8309bfe87801799",
+                      "size":  205671,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/particlerain-4.0.0-beta.10+1.21.1-fabric.jar",
+                      "sha256":  "49bf60c5b95ea954efa51c63609f0a4668230e12f870f0eb6bdb63d207a22dc8",
+                      "size":  608651,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "resourcepacks/E19 Cobblemon Minimap Icons.zip",
+                      "sha256":  "8732ecb1ee0b8cceda4ad973ffcf53e0c6689f503652320107d2569c0cd7f9ba",
+                      "size":  19398814,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/VanillaBackport-fabric-1.21.1-1.1.7.10.jar",
+                      "sha256":  "6aba8f56fd71b9b5b724812b22f14d11a71e9ca0bf7e84b52b4c8b91736e0734",
+                      "size":  54994072,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/RoughlyEnoughItems-16.0.799-fabric.jar",
+                      "sha256":  "098c840780940010f2ba48cb758b77c1b991e69ab3fbec8725af099351653c9d",
+                      "size":  2451799,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/zamega-fabric-1.7.3.jar",
+                      "sha256":  "0d134591a9db9834f5f2bffdce4bd4cd0976a1b7879aa7f52ce064c38199cfaa",
+                      "size":  2387420,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/BetterThirdPerson-Fabric-1.21-1.9.0.jar",
+                      "sha256":  "f9ec9dc6508b20d32a3c770ecc77641e8f87c98e298d58e2757a6ef14abbb457",
+                      "size":  52188,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/yet_another_config_lib_v3-3.8.2+1.21.1-fabric.jar",
+                      "sha256":  "6ab420b7d1326fc9851b96a8967504bd644da421ed6438ceb9a9d9c993a408b1",
+                      "size":  1131265,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "shaderpacks/ComplementaryUnbound_r5.8.1.zip",
+                      "sha256":  "bb89b1fc54687d4147a837fb2e3c3f7261a13bee51819761e9b6a91cb7915965",
+                      "size":  546928,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/BetterF3-11.0.3-Fabric-1.21.1.jar",
+                      "sha256":  "e0e4bb25fbe23b16b7574474ee9fde5cdc9757d05885bc43978f4ea5e8e258ad",
+                      "size":  1810710,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/MouseTweaks-fabric-mc1.21-2.26.jar",
+                      "sha256":  "3e9fa4800fafef616fbf1545d62f5898f55c83fbd4126ce2b48b5e0077243fc0",
+                      "size":  75984,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/pastureLoot-1.0.5+1.21.1.jar",
+                      "sha256":  "48a705eb70a3f129d64af565ff79cfe164d0e59fe2bbc20a903024d0cc844b8f",
+                      "size":  45871,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/fabric-api-0.116.14+1.21.1.jar",
+                      "sha256":  "333f15bceb117a0ac41e3396eac9873fa6c325c31e746d679809f9a7a0228196",
+                      "size":  2451978,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/Cobblemon-fabric-1.7.3+1.21.1.jar",
+                      "sha256":  "f7c25955176badc444ad6211fc556514fedbdba776227f105fe899f8819d74e3",
+                      "size":  135801550,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/mega_showdown-fabric-1.8.4+1.7.3+1.21.1.jar",
+                      "sha256":  "0cf4568128805816a8d6f3cbab08374b2e0261784c3d6e8c091c602f79bebf51",
+                      "size":  17213370,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/advancementdisable-fabric-1.0.1+1.21.jar",
+                      "sha256":  "b2a51c10b3dbe2e81bbca10ad56e2d9df9e7e70bbf7ee8e1cfcd65b4e6de120e",
+                      "size":  430412,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/interactic-0.2.3+1.21.jar",
+                      "sha256":  "fad6a5321f0a69c70dcbe62c631166b6549b1d9656929c011e6c1d57b1dea0da",
+                      "size":  118011,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/Searchables-fabric-1.21.1-1.0.2.jar",
+                      "sha256":  "0b58a40a41db4a4af4ef84475b0ea330be3b18fdcac2eca68ede46d9f4df3d76",
+                      "size":  79531,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/notenoughcrashes-fabric-4.4.9+1.21.1.jar",
+                      "sha256":  "1a3a0ec9e7bb60f9c15938ca4287beaf5e49e81183ac273d1a02d734aa327a74",
+                      "size":  601087,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/modmenu-11.0.4.jar",
+                      "sha256":  "a88e0d67c82b0434cbf56776c482587c275ed660f635d33f53ba485dfa30dcc3",
+                      "size":  973059,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/huge-structure-blocks-fabric-1.1.6.jar",
+                      "sha256":  "759071bd7b1db4367f232db35872ce6a30e8adee57a8543d0967d0b39b37819d",
+                      "size":  100230,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/DistantHorizons-3.2.0-b-1.21.1-fabric-neoforge.jar",
+                      "sha256":  "d6a7a963f794501678113e2545d8b25c90e123ef6b9256bb5716907d059e1ef5",
+                      "size":  30207268,
+                      "policy":  "replace"
+                  },
+                  {
+                      "path":  "mods/CustomSkinLoader_Universal-15.0.1.jar",
+                      "sha256":  "026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc",
+                      "size":  218215,
+                      "policy":  "replace"
+                  }
+              ]
+}
+
+IDENTIDAD COCO (sin tokens ni contrasenas)
+-----------------------------------------
+
+
+schemaVersion   : 1
+mode            : offline
+username        : Panchi
+uuid            : 
+decisionSource  : user-settings
+configuredAtUtc : 2026-07-25T10:53:53.2321607Z
+
+
+
+
+
+RED ZEROTIER
+------------
+Service:
+
+
+Name      : ZeroTierOneService
+Status    : Running
+StartType : Automatic
+
+
+
+
+Adapters:
+
+Name                            Status MacAddress        LinkSpeed ifIndex
+----                            ------ ----------        --------- -------
+ZeroTier One [58997fc5f3c0c001] Up     02-5A-7B-CA-BE-48 100 Mbps       16
+
+
+
+Connections/listeners 25564/25565:
+No Coco TCP connections/listeners observed.
+Last network state:
+{
+    "provider":  "zerotier",
+    "networkId":  "58997fc5f3c0c001",
+    "status":  "OK",
+    "assignedAddresses":  [
+                              "10.77.37.73/24"
+                          ],
+    "role":  "client",
+    "peerMode":  "UNKNOWN",
+    "verifiedAt":  "2026-07-27T02:54:54.5790310-03:00"
+}
+
+PROCESOS RELEVANTES
+-------------------
+Java/Minecraft:
+
+Coco/PortableMC:
+
+
+ProcessId       : 22204
+ParentProcessId : 7868
+Name            : CocoUpdater.exe
+CreationDate    : 27/7/2026 02:54:39
+CommandLine     : "C:\Users\Toledo\AppData\Local\CocoMinecraftUpdater\CocoUpdater.exe" 
+
+
+
+
+
+EQUIPO Y CAPACIDAD
+------------------
+Windows: Microsoft Windows NT 6.2.9200.0
+PowerShell: 5.1.26100.8875 (Desktop)
+Language mode: FullLanguage
+64-bit OS/process: True / True
+
+
+Manufacturer     : To Be Filled By O.E.M.
+Model            : To Be Filled By O.E.M.
+PhysicalMemoryGB : 15,37
+
+
+
+
+
+
+Name        : C:\
+DriveFormat : NTFS
+FreeGB      : 9,88
+TotalGB     : 110,89
+
+
+
+
+Cache:
+
+
+CacheRoot       : C:\Users\Toledo\AppData\Local\CocoMinecraftUpdater
+DownloadedFiles : 1
+DownloadedBytes : 3970368
+RuntimeFiles    : 5
+RuntimeBytes    : 10193900
+
+
+
+
+
+PRIVACIDAD
+----------
+Este informe no copia accessToken, contrasenas, cookies ni bases privadas de otros launchers.
+Puede contener nombre/UUID de Minecraft, rutas locales, IP ZeroTier y lineas de comando necesarias para diagnosticar.
