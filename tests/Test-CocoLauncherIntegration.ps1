@@ -55,6 +55,23 @@ try{
     if([IO.File]::ReadAllText((Join-Path $instance 'config\coco-audit.toml'))-cne"enabled=true`nvalue=7`n"){
         throw 'Una configuracion declarativa especifica de experiencia no se aplico exactamente.'
     }
+    $tomlPath=Join-Path $instance 'config\coco-settings.toml'
+    "[client.quality]`r`notherValue = 91`r`nlodDistance = 128`r`n`r`n[server]`r`nkeep = true`r`n" |
+        Set-Content -LiteralPath $tomlPath -Encoding UTF8
+    $managedExperience.preferences | Add-Member -NotePropertyName tomlValues -NotePropertyValue @(
+        [pscustomobject]@{path='config/coco-settings.toml';section='client.quality';key='lodDistance';value=32}
+    ) -Force
+    Set-CocoManagedInstancePreferences $managedExperience $instance
+    $tomlText=Get-Content -LiteralPath $tomlPath -Raw
+    if($tomlText-notmatch'(?m)^\s*lodDistance\s*=\s*32\s*$'-or
+        $tomlText-notmatch'(?m)^\s*otherValue\s*=\s*91\s*$'-or
+        $tomlText-notmatch'(?m)^\s*keep\s*=\s*true\s*$'){
+        throw 'El adaptador TOML declarativo no cambio solo la clave solicitada.'
+    }
+    Set-CocoManagedInstancePreferences $iron $instance
+    if((Get-Content -LiteralPath $tomlPath -Raw)-notmatch'(?m)^\s*lodDistance\s*=\s*32\s*$'){
+        throw 'Otra experiencia altero una preferencia TOML que no declara.'
+    }
     if(-not(Write-CocoManagedServerList $instance $iron)){throw 'No se creo la recuperacion servers.dat inicial.'}
     $serverBytes=[IO.File]::ReadAllBytes((Join-Path $instance 'servers.dat'))
     $input=[IO.MemoryStream]::new($serverBytes);$reader=[IO.BinaryReader]::new($input,(New-Object Text.UTF8Encoding($false)),$true)

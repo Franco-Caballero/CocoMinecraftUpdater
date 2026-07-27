@@ -102,6 +102,17 @@ if($cobbleverse.preferences.worldGeneration.mode-ne'random'-or
     [bool]$cobbleverse.preferences.worldGeneration.fixedSeed){
     throw 'COBBLEVERSE no conserva la creacion de mundo aleatorio sin semilla fija.'
 }
+if([int]$cobbleverse.launch.memory.recommendedMb-ne5120){
+    throw 'COBBLEVERSE no fija el heap solicitado de 5 GiB.'
+}
+$cobbleverseDhDistance=@($cobbleverse.preferences.tomlValues|Where-Object{
+    $_.path-eq'config/DistantHorizons.toml'-and
+    $_.section-eq'client.advanced.graphics.quality'-and
+    $_.key-eq'lodChunkRenderDistanceRadius'
+})
+if($cobbleverseDhDistance.Count-ne1-or[int]$cobbleverseDhDistance[0].value-ne32){
+    throw 'COBBLEVERSE no fija declarativamente Distant Horizons en 32 chunks.'
+}
 $zombieLock=Read-CocoExperienceLock (Join-Path $root (($zombie.pack.lockPath)-replace'/','\')) $zombie
 $zombieLan=@($zombieLock.assets|Where-Object path -eq 'mods/lanserverproperties-1.0.jar')
 if($zombieLan.Count-ne1-or$zombieLan[0].role-ne'host'-or$zombieLan[0].sha256-ne'15577c28814cda5ce0d6c0e9039a093a6227e2c9ec3716dae9c840ec0a99e263'){

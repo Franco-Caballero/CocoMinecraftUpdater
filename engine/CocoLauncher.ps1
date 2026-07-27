@@ -813,6 +813,25 @@ function Read-CocoLauncherCatalog([string]$Path){
                     }
                 }
             }
+            $managedTomlKeys=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+            if($experience.preferences.tomlValues){
+                foreach($tomlValue in @($experience.preferences.tomlValues)){
+                    $tomlPath=([string]$tomlValue.path)-replace'\\','/'
+                    $tomlSection=[string]$tomlValue.section
+                    $tomlKey=[string]$tomlValue.key
+                    $tomlIdentity="$tomlPath|$tomlSection|$tomlKey"
+                    if(-not(Test-CocoSafeRelativePath $tomlPath)-or
+                        $tomlPath-notmatch'^(?i)config/.+\.toml$'-or
+                        $tomlSection-notmatch'^[A-Za-z0-9_.-]+$'-or
+                        $tomlKey-notmatch'^[A-Za-z0-9_.-]+$'-or
+                        -not$managedTomlKeys.Add($tomlIdentity)-or
+                        $tomlValue.PSObject.Properties.Name-notcontains'value'-or
+                        $null-eq$tomlValue.value-or
+                        $tomlValue.value-isnot[string]-and$tomlValue.value-isnot[bool]-and$tomlValue.value-isnot[ValueType]){
+                        throw "Valor TOML administrado invalido para '$id': '$tomlIdentity'."
+                    }
+                }
+            }
             if($experience.worldTemplate){
                 if(-not(Test-CocoSafeRelativePath ([string]$experience.worldTemplate.lockPath))){throw "worldTemplate.lockPath invalido para '$id'."}
                 if([string]$experience.worldTemplate.installRole-ne'host'){throw "El mundo de '$id' debe instalarse exclusivamente en el host."}
@@ -1591,6 +1610,37 @@ function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
                     Move-Item -LiteralPath $temporary -Destination $destination -Force
                 }finally{Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}
             }
+        }
+    }
+
+    if($preferences.tomlValues){
+        foreach($tomlGroup in @($preferences.tomlValues|Group-Object path)){
+            $relative=([string]$tomlGroup.Name)-replace'/','\'
+            $destination=Join-Path $InstanceRoot $relative
+            if(-not(Test-CocoPathWithin $destination $InstanceRoot)-or-not(Test-Path -LiteralPath $destination -PathType Leaf)){
+                throw "No existe el TOML administrado de '$($Experience.id)': '$relative'."
+            }
+            $content=[IO.File]::ReadAllText($destination)
+            foreach($tomlValue in @($tomlGroup.Group)){
+                $section=[string]$tomlValue.section
+                $key=[string]$tomlValue.key
+                $sectionMatch=[regex]::Match($content,("(?m)^\s*\[{0}\]\s*\r?$"-f[regex]::Escape($section)))
+                if(-not$sectionMatch.Success){throw "No existe la seccion TOML '$section' en '$relative'."}
+                $bodyStart=$sectionMatch.Index+$sectionMatch.Length
+                $nextSection=(New-Object regex '(?m)^\s*\[').Match($content,$bodyStart)
+                $bodyLength=if($nextSection.Success){$nextSection.Index-$bodyStart}else{$content.Length-$bodyStart}
+                $body=$content.Substring($bodyStart,$bodyLength)
+                $keyMatch=[regex]::Match($body,("(?m)^(\s*{0}\s*=\s*).*$"-f[regex]::Escape($key)))
+                if(-not$keyMatch.Success){throw "No existe la clave TOML '$section.$key' en '$relative'."}
+                $value=$tomlValue.value
+                $encoded=if($value-is[bool]){([string]$value).ToLowerInvariant()}elseif($value-is[string]){
+                    '"'+(([string]$value)-replace'\\','\\'-replace'"','\"')+'"'
+                }else{[Convert]::ToString($value,[Globalization.CultureInfo]::InvariantCulture)}
+                $replacement=$keyMatch.Groups[1].Value+$encoded
+                $absoluteIndex=$bodyStart+$keyMatch.Index
+                $content=$content.Remove($absoluteIndex,$keyMatch.Length).Insert($absoluteIndex,$replacement)
+            }
+            [IO.File]::WriteAllText($destination,$content,(New-Object Text.UTF8Encoding($false)))
         }
     }
 

@@ -4,6 +4,8 @@
 
 COBBLEVERSE está incluida y visible en el catálogo público 0.5.61. Coco Launcher ya no usa estados para ocultar o bloquear experiencias: la auditoría registra lo probado y lo pendiente sin cambiar disponibilidad.
 
+Preferencias solicitadas después de la primera prueba: heap recomendado de **5 GiB** y radio de renderizado Distant Horizons fijado declarativamente en **32 chunks** para host y amigos. El ajuste modifica sólo `client.advanced.graphics.quality.lodChunkRenderDistanceRadius`; no administra ni reemplaza bases LOD bajo `saves`.
+
 ## Fuente y runtime
 
 - Pack oficial: [COBBLEVERSE 1.7.42-CF, archivo CurseForge 8488030](https://www.curseforge.com/minecraft/modpacks/cobbleverse-cobblemon/files/8488030).

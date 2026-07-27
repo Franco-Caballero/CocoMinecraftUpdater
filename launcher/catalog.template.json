@@ -241,13 +241,21 @@
                 "minimumFreeBytes": 4294967296,
                 "memory": {
                     "minimumMb": 4096,
-                    "recommendedMb": 6144,
+                    "recommendedMb": 5120,
                     "maximumPhysicalFraction": 0.45
                 }
             },
             "preferences": {
                 "standardControls": true,
                 "fov": 0.625,
+                "tomlValues": [
+                    {
+                        "path": "config/DistantHorizons.toml",
+                        "section": "client.advanced.graphics.quality",
+                        "key": "lodChunkRenderDistanceRadius",
+                        "value": 32
+                    }
+                ],
                 "worldGeneration": {
                     "mode": "random",
                     "generator": "default",
