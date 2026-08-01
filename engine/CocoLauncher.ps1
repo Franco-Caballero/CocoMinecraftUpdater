@@ -1,3 +1,11 @@
+if(-not(Get-Command Write-CocoLog -ErrorAction SilentlyContinue)){
+    function Write-CocoLog([string]$Text){
+        if($script:CocoLogPath){
+            try{ Add-Content -LiteralPath $script:CocoLogPath -Value ("{0:o} {1}" -f (Get-Date),$Text) -Encoding UTF8 }catch{}
+        }
+    }
+}
+
 function Test-CocoPathWithin([string]$Path,[string]$Root){
     if([string]::IsNullOrWhiteSpace($Path)-or[string]::IsNullOrWhiteSpace($Root)){return $false}
     try{
@@ -33,12 +41,18 @@ function Test-CocoSafeRelativePath([string]$Path){
     return $true
 }
 
-function Test-CocoManagedGameRunning([string]$InstanceRoot){
+function Test-CocoManagedGameRunning([string]$InstanceRoot, [string]$ExecutableName=''){
     if([string]::IsNullOrWhiteSpace($InstanceRoot)){return $false}
     $full=[IO.Path]::GetFullPath($InstanceRoot)
     try{
-        $matches=@(Get-CimInstance Win32_Process -Filter "Name='java.exe' OR Name='javaw.exe'" -ErrorAction Stop|Where-Object{
-            -not[string]::IsNullOrWhiteSpace($_.CommandLine)-and$_.CommandLine.IndexOf($full,[StringComparison]::OrdinalIgnoreCase)-ge0
+        $all=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+        $matches=@($all|Where-Object{
+            if([string]::IsNullOrWhiteSpace($_.CommandLine)-and[string]::IsNullOrWhiteSpace($_.ExecutablePath)){return $false}
+            $inLine=-not[string]::IsNullOrWhiteSpace($_.CommandLine)-and$_.CommandLine.IndexOf($full,[StringComparison]::OrdinalIgnoreCase)-ge0
+            $inPath=-not[string]::IsNullOrWhiteSpace($_.ExecutablePath)-and$_.ExecutablePath.IndexOf($full,[StringComparison]::OrdinalIgnoreCase)-ge0
+            if(-not($inLine-or$inPath)){return $false}
+            if(-not[string]::IsNullOrWhiteSpace($ExecutableName)){return $_.Name-eq$ExecutableName}
+            return $true
         })
         return $matches.Count-gt0
     }catch{return $false}
@@ -770,9 +784,14 @@ function Read-CocoLauncherCatalog([string]$Path){
         if([string]::IsNullOrWhiteSpace([string]$experience.name)){throw "La experiencia '$id' no tiene nombre."}
         if([string]$experience.instanceId-notmatch'^[a-z0-9][a-z0-9-]{1,47}$'){throw "instanceId invalido para '$id'."}
         if($experience.managementMode-notin@('legacy-current','managed')){throw "managementMode invalido para '$id'."}
-        if(-not$experience.runtime-or[string]::IsNullOrWhiteSpace([string]$experience.runtime.minecraftVersion)){throw "Runtime incompleto para '$id'."}
-        if($experience.runtime.loader-notin@('fabric','forge','neoforge')){throw "Loader invalido para '$id'."}
-        if([int]$experience.runtime.javaMajor-notin@(8,17,21,25)){throw "Java no soportado para '$id'."}
+        if(-not$experience.runtime){throw "Runtime incompleto para '$id'."}
+        if([string]$experience.runtime.type-eq'standalone'){
+            if(-not(Test-CocoSafeRelativePath ([string]$experience.runtime.executable))){throw "Ejecutable standalone invalido para '$id'."}
+        }else{
+            if([string]::IsNullOrWhiteSpace([string]$experience.runtime.minecraftVersion)){throw "Runtime incompleto para '$id'."}
+            if($experience.runtime.loader-notin@('fabric','forge','neoforge')){throw "Loader invalido para '$id'."}
+            if([int]$experience.runtime.javaMajor-notin@(8,17,21,25)){throw "Java no soportado para '$id'."}
+        }
         if($experience.runtimePolicies-and$experience.runtimePolicies.essentialLoaderUpdates-and[string]$experience.runtimePolicies.essentialLoaderUpdates-ne'disabled'){
             throw "Politica Essential Loader invalida para '$id'."
         }
@@ -780,7 +799,9 @@ function Read-CocoLauncherCatalog([string]$Path){
         $port=[int]$experience.hosting.port
         if($port-lt1-or$port-gt65535){throw "Puerto invalido para '$id'."}
         if(-not$experience.launch-or[string]::IsNullOrWhiteSpace([string]$experience.launch.serverName)){throw "Lanzamiento incompleto para '$id'."}
-        $expectedWorkflow=if($experience.managementMode-eq'managed'){'coco-managed'}else{'external-launcher'}
+        $expectedWorkflow=if($experience.managementMode-eq'managed'){
+            if([string]$experience.runtime.type-eq'standalone'-or[string]$experience.launch.workflow-eq'coco-standalone'){'coco-standalone'}else{'coco-managed'}
+        }else{'external-launcher'}
         if([string]$experience.launch.workflow-ne$expectedWorkflow){throw "Workflow de lanzamiento invalido para '$id'."}
         if($experience.managementMode-eq'legacy-current'-and[bool]$experience.launch.autoJoin){throw "Coco original no puede autoarrancarse desde Coco Launcher."}
         if($experience.launch.minimumFreeBytes-and[int64]$experience.launch.minimumFreeBytes-lt1073741824){throw "minimumFreeBytes invalido para '$id'."}
@@ -789,17 +810,23 @@ function Read-CocoLauncherCatalog([string]$Path){
             if($minimum-lt1024-or$recommended-lt$minimum-or$recommended-gt32768-or$fraction-lt0.25-or$fraction-gt0.75){throw "Politica de memoria invalida para '$id'."}
         }
         if($experience.managementMode-eq'managed'){
-            $lanAdapter=if($experience.hosting.adapter){[string]$experience.hosting.adapter}else{'mcwifipnp'}
-            if($lanAdapter-notin@('mcwifipnp','lan-server-properties-v1')){throw "Adaptador LAN invalido para '$id'."}
-            if($lanAdapter-eq'lan-server-properties-v1'-and[string]$experience.runtime.minecraftVersion-ne'1.12.2'){
-                throw "El adaptador LAN legado solo se admite para Minecraft 1.12.2 en '$id'."
+            if([string]$experience.launch.workflow-eq'coco-standalone'){
+                if([string]$experience.pack.sha256-notmatch'^[a-fA-F0-9]{64}$'){throw "pack.sha256 invalido para '$id'."}
+                if([int64]$experience.pack.size-le0){throw "pack.size invalido para '$id'."}
+                if([string]$experience.pack.archiveUrl-notmatch'^(https://|file://)'){throw "archiveUrl invalido para '$id'."}
+            }else{
+                $lanAdapter=if($experience.hosting.adapter){[string]$experience.hosting.adapter}else{'mcwifipnp'}
+                if($lanAdapter-notin@('mcwifipnp','lan-server-properties-v1')){throw "Adaptador LAN invalido para '$id'."}
+                if($lanAdapter-eq'lan-server-properties-v1'-and[string]$experience.runtime.minecraftVersion-ne'1.12.2'){
+                    throw "El adaptador LAN legado solo se admite para Minecraft 1.12.2 en '$id'."
+                }
+                $skinVariants=@($skinPolicy.variants|Where-Object{[string]$experience.runtime.minecraftVersion-in@($_.minecraftVersions)})
+                if($skinVariants.Count-ne1){
+                    throw "La experiencia '$id' necesita exactamente una variante compatible de CustomSkinLoader."
+                }
+                if(-not(Test-CocoSafeRelativePath ([string]$experience.pack.lockPath))){throw "lockPath invalido para '$id'."}
+                if($experience.pack.redistribution-ne'origin-only'){throw "La experiencia '$id' no declara distribucion desde origen."}
             }
-            $skinVariants=@($skinPolicy.variants|Where-Object{[string]$experience.runtime.minecraftVersion-in@($_.minecraftVersions)})
-            if($skinVariants.Count-ne1){
-                throw "La experiencia '$id' necesita exactamente una variante compatible de CustomSkinLoader."
-            }
-            if(-not(Test-CocoSafeRelativePath ([string]$experience.pack.lockPath))){throw "lockPath invalido para '$id'."}
-            if($experience.pack.redistribution-ne'origin-only'){throw "La experiencia '$id' no declara distribucion desde origen."}
             if($experience.pack.excludedPaths){
                 foreach($excludedPath in @($experience.pack.excludedPaths)){
                     if([string]::IsNullOrWhiteSpace([string]$excludedPath)-or-not(Test-CocoSafeRelativePath ([string]$excludedPath))-or-not([string]$excludedPath).StartsWith('mods/',[StringComparison]::OrdinalIgnoreCase)){
@@ -1215,6 +1242,241 @@ function Set-CocoGlobalSkinAssets($GlobalPolicies,$Experience,[string]$InstanceR
         Copy-Item -LiteralPath $embedded -Destination $temporary -Force
         Move-Item -LiteralPath $temporary -Destination $destination -Force
     }
+}
+
+function Ensure-CocoSteamRunning(){
+    Write-CocoLog "Verificando ejecucion de Steam..."
+    $running=@(Get-CimInstance Win32_Process -Filter "Name='steam.exe'" -ErrorAction SilentlyContinue)
+    if($running.Count-gt0){
+        Write-CocoLog "Steam ya se encuentra en ejecucion (PID: $($running[0].ProcessId))."
+        return $true
+    }
+
+    Set-CocoLauncherStep 4 'VERIFICANDO STEAM' 'Buscando Steam para habilitar la red multijugador P2P en segundo plano...' 31
+    $steamExe=''
+
+    # 1. Registry HKCU
+    try{
+        $regVal=Get-ItemProperty -Path 'HKCU:\Software\Valve\Steam' -ErrorAction SilentlyContinue
+        if($regVal-and$regVal.SteamExe-and(Test-Path -LiteralPath $regVal.SteamExe -PathType Leaf)){
+            $steamExe=[string]$regVal.SteamExe
+        }elseif($regVal-and$regVal.SteamPath-and(Test-Path -LiteralPath (Join-Path $regVal.SteamPath 'steam.exe') -PathType Leaf)){
+            $steamExe=Join-Path $regVal.SteamPath 'steam.exe'
+        }
+    }catch{}
+
+    # 2. Registry HKLM WOW6432Node & 64-bit
+    if([string]::IsNullOrWhiteSpace($steamExe)){
+        foreach($regKey in 'HKLM:\SOFTWARE\WOW6432Node\Valve\Steam','HKLM:\SOFTWARE\Valve\Steam'){
+            try{
+                $regVal=Get-ItemProperty -Path $regKey -ErrorAction SilentlyContinue
+                if($regVal-and$regVal.InstallPath-and(Test-Path -LiteralPath (Join-Path $regVal.InstallPath 'steam.exe') -PathType Leaf)){
+                    $steamExe=Join-Path $regVal.InstallPath 'steam.exe'
+                    break
+                }
+            }catch{}
+        }
+    }
+
+    # 3. Known disk locations across all available fixed drives
+    if([string]::IsNullOrWhiteSpace($steamExe)){
+        $candidateSubPaths=@(
+            'Program Files (x86)\Steam\steam.exe',
+            'Program Files\Steam\steam.exe',
+            'Steam\steam.exe',
+            'Games\Steam\steam.exe',
+            'Juegos\Steam\steam.exe'
+        )
+        $drives=@([IO.DriveInfo]::GetDrives()|Where-Object{$_.DriveType-eq'Fixed'}|Select-Object -ExpandProperty Name)
+        foreach($drive in $drives){
+            foreach($sub in $candidateSubPaths){
+                $candidate=Join-Path $drive $sub
+                if(Test-Path -LiteralPath $candidate -PathType Leaf){
+                    $steamExe=$candidate
+                    break
+                }
+            }
+            if(-not[string]::IsNullOrWhiteSpace($steamExe)){break}
+        }
+    }
+
+    if([string]::IsNullOrWhiteSpace($steamExe)){
+        throw "No se encontro Steam en esta PC. Por favor abre Steam antes de iniciar Machine Party."
+    }
+
+    Write-CocoLog "Iniciando Steam minimizado a la bandeja desde '$steamExe'..."
+    Set-CocoLauncherStep 4 'INICIANDO STEAM' 'Steam se iniciara minimizado en la bandeja del sistema (0 friccion)...' 33
+
+    try{
+        Start-Process -FilePath $steamExe -ArgumentList '-silent' -ErrorAction Stop
+    }catch{
+        throw "No se pudo ejecutar Steam desde '$steamExe': $($_.Exception.Message)"
+    }
+
+    $started=$false
+    for($i=0; $i-lt30; $i++){
+        Start-Sleep -Milliseconds 500
+        $running=@(Get-CimInstance Win32_Process -Filter "Name='steam.exe'" -ErrorAction SilentlyContinue)
+        if($running.Count-gt0){
+            $started=$true
+            break
+        }
+    }
+
+    if(-not$started){
+        Write-CocoLog "Steam fue iniciado pero tardo mas de 15s en registrar su proceso."
+    }else{
+        Write-CocoLog "Steam iniciado con exito minimizado en la bandeja."
+    }
+    return $true
+}
+
+function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot, [string]$CacheRoot){
+    if($Experience.managementMode-ne'managed'){throw 'La experiencia no esta marcada como administrada.'}
+    $instanceRoot=Join-Path $ExperiencesRoot ([string]$Experience.instanceId)
+    if(-not(Test-CocoPathWithin $instanceRoot $ExperiencesRoot)){throw 'La raiz de instancia escapa del directorio de experiencias.'}
+    $execName=[string]$Experience.runtime.executable
+    if(Test-CocoManagedGameRunning $instanceRoot $execName){
+        throw "La instancia '$($Experience.name)' ya esta abierta. Cierrala antes de verificar sus archivos."
+    }
+    if([int64]$Experience.launch.minimumFreeBytes-gt0){
+        $drive=[IO.DriveInfo]::new([IO.Path]::GetPathRoot([IO.Path]::GetFullPath($ExperiencesRoot)))
+        if($drive.AvailableFreeSpace-lt[int64]$Experience.launch.minimumFreeBytes){
+            throw ("No hay espacio suficiente para {0}. Libera al menos {1:N1} GB en {2}."-f$Experience.name,([int64]$Experience.launch.minimumFreeBytes/1GB),$drive.Name)
+        }
+    }
+    $statePath=Join-Path $instanceRoot '.coco\standalone-state.json'
+    $expectedSha=([string]$Experience.pack.sha256).ToLowerInvariant()
+    $expectedSize=[int64]$Experience.pack.size
+
+    Write-CocoLog "Comprobando instalacion standalone de '$($Experience.id)': Hash esperado=$expectedSha, Tamano=$expectedSize bytes"
+
+    if(Test-Path -LiteralPath $statePath){
+        try{
+            $state=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
+            $execPath=Join-Path $instanceRoot ($execName -replace '/','\')
+            if([string]$state.sha256-eq$expectedSha-and(Test-Path -LiteralPath $execPath)){
+                Write-CocoLog "Instancia standalone '$($Experience.id)' ya esta al dia. Omitiendo descarga."
+                Set-CocoLauncherStep 4 'PAQUETE STANDALONE VERIFICADO' ("{0} v{1} ya esta instalado y verificado."-f $Experience.name, $Experience.pack.version) 65
+                return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$false}
+            }
+        }catch{
+            Write-CocoLog "No se pudo leer el estado anterior de la instancia standalone: $($_.Exception.Message)"
+        }
+    }
+
+    Set-CocoLauncherStep 4 'DESCARGANDO JUEGO STANDALONE' ("{0} | {1:N1} MB totales"-f $Experience.name, ($expectedSize / 1MB)) 30
+    $downloadsDir=Join-Path $CacheRoot 'downloads\standalone-packs'
+    New-Item -ItemType Directory -Path $downloadsDir -Force|Out-Null
+    $archive=Join-Path $downloadsDir ("$expectedSha.zip")
+
+    $archiveValid=$false
+    if(Test-Path -LiteralPath $archive){
+        Set-CocoLauncherStep 4 'VERIFICANDO HASH DEL ARCHIVO DESCARGADO' ("Calculando SHA-256 de {0:N1} MB..."-f ((Get-Item -LiteralPath $archive).Length / 1MB)) 32
+        $actualSha=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+        if($actualSha-eq$expectedSha){
+            $archiveValid=$true
+            Write-CocoLog "Archivo en cache verificado con exito: $archive"
+        }else{
+            Write-CocoLog "Hash en cache no coincide (Encontrado: $actualSha, Esperado: $expectedSha). Eliminando archivo corrupto."
+            Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    if(-not$archiveValid){
+        $sourceUrl=[string]$Experience.pack.archiveUrl
+        if([string]::IsNullOrWhiteSpace($sourceUrl)-and$Experience.pack.manifestUrl){
+            $sourceUrl=[string]$Experience.pack.manifestUrl
+        }
+        $localDevArchive=Join-Path $env:USERPROFILE 'Downloads\Machine-Party.zip'
+        if(-not(Test-Path -LiteralPath $sourceUrl)-and(Test-Path -LiteralPath $localDevArchive)-and(Get-FileHash -LiteralPath $localDevArchive -Algorithm SHA256).Hash.ToLowerInvariant()-eq$expectedSha){
+            $sourceUrl=$localDevArchive
+        }
+        Write-CocoLog "Iniciando descarga/copia de paquete standalone desde: $sourceUrl -> $archive"
+
+        if(Test-Path -LiteralPath $sourceUrl){
+            Write-CocoLog "Copiando paquete standalone desde origen local: $sourceUrl"
+            Copy-Item -LiteralPath $sourceUrl -Destination $archive -Force
+        }else{
+            if(Get-Command Download-VerifiedFile -ErrorAction SilentlyContinue){
+                Download-VerifiedFile $sourceUrl $archive $expectedSha
+            }else{
+                $webClient=New-Object System.Net.WebClient
+                try{
+                    $lastStepReport=[DateTime]::MinValue
+                    $webClient.add_DownloadProgressChanged({
+                        param($sender, $e)
+                        if((Get-Date)-gt$lastStepReport.AddMilliseconds(200)){
+                            $pct=$e.ProgressPercentage
+                            $receivedMb=$e.BytesReceived / 1MB
+                            $totalMb=$e.TotalBytesToReceive / 1MB
+                            if($totalMb-le0){$totalMb=$expectedSize / 1MB}
+                            Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("{0:N1} MB / {1:N1} MB ({2}%) | {3}"-f $receivedMb, $totalMb, $pct, $Experience.name) (30 + [int]($pct * 0.35))
+                            $lastStepReport=Get-Date
+                        }
+                    })
+                    $asyncTask=$webClient.DownloadFileTaskAsync([Uri]$sourceUrl, $archive)
+                    while(-not$asyncTask.IsCompleted){
+                        [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
+                    }
+                    if($asyncTask.IsFaulted){
+                        throw $asyncTask.Exception.InnerException
+                    }
+                }finally{
+                    $webClient.Dispose()
+                }
+            }
+        }
+
+        Set-CocoLauncherStep 4 'VERIFICANDO INTEGRIDAD DEL PAQUETE' ("Comprobando hash SHA-256..."-f $Experience.name) 62
+        $downloadedSha=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+        if($downloadedSha-ne$expectedSha){
+            throw "El paquete descargado de '$($Experience.name)' no coincide con el SHA-256 esperado (Obtenido: $downloadedSha, Esperado: $expectedSha)."
+        }
+        Write-CocoLog "Descarga de paquete standalone completada y verificada: SHA256=$downloadedSha"
+    }
+
+    Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Instalando {0} en una carpeta aislada..." -f $Experience.name) 65
+    Write-CocoLog "Extrayendo paquete standalone '$archive' en '$instanceRoot'..."
+    New-Item -ItemType Directory -Path $instanceRoot -Force|Out-Null
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $zip=[IO.Compression.ZipFile]::OpenRead($archive)
+    try{
+        $entries=@($zip.Entries|Where-Object{-not$_.FullName.EndsWith('/')})
+        $totalEntries=[Math]::Max(1, $entries.Count)
+        $extractedCount=0
+        foreach($entry in $entries){
+            $extractedCount++
+            $targetPath=Join-Path $instanceRoot ($entry.FullName -replace '/','\')
+            $targetDir=Split-Path $targetPath -Parent
+            if(-not(Test-Path -LiteralPath $targetDir)){
+                New-Item -ItemType Directory -Path $targetDir -Force|Out-Null
+            }
+            [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
+            if($extractedCount%25-eq0 -or $extractedCount-eq$totalEntries){
+                $pct=[int](($extractedCount / $totalEntries) * 30)
+                Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("{0}/{1} archivos extraidos ({2}%) | {3}" -f $extractedCount, $totalEntries, [int](($extractedCount/$totalEntries)*100), $Experience.name) (65 + $pct)
+                [Windows.Forms.Application]::DoEvents()
+            }
+        }
+    }finally{
+        $zip.Dispose()
+    }
+
+    $metaDir=Join-Path $instanceRoot '.coco'
+    New-Item -ItemType Directory -Path $metaDir -Force|Out-Null
+    $stateObj=[ordered]@{
+        schemaVersion=1
+        experienceId=[string]$Experience.id
+        sha256=$expectedSha
+        size=$expectedSize
+        version=[string]$Experience.pack.version
+        installedAtUtc=[DateTime]::UtcNow.ToString('o')
+    }
+    [IO.File]::WriteAllText($statePath,($stateObj|ConvertTo-Json -Depth 4),(New-Object Text.UTF8Encoding($false)))
+    Write-CocoLog "Instalacion standalone de '$($Experience.id)' completada en '$instanceRoot'."
+    return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$true}
 }
 
 function Install-CocoManagedExperience(
@@ -1760,6 +2022,23 @@ function Invoke-CocoManagedExperienceLaunch(
 ){
     $experience=@($Catalog.experiences|Where-Object id -eq $ExperienceId|Select-Object -First 1)[0]
     if(-not$experience-or$experience.managementMode-ne'managed'){throw "La experiencia administrada '$ExperienceId' no existe."}
+
+    if([string]$experience.launch.workflow-eq'coco-standalone'-or[string]$experience.runtime.type-eq'standalone'){
+        $installed=Install-CocoStandaloneExperience $experience $ExperiencesRoot $CacheRoot
+        if($Dry){
+            return [pscustomobject]@{Status='prepared';Experience=$experience;Installation=$installed}
+        }
+        [void](Ensure-CocoSteamRunning)
+        $log=Join-Path $CacheRoot ("logs\launcher-$ExperienceId-"+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.log')
+        $execPath=Join-Path $installed.InstanceRoot (([string]$experience.runtime.executable)-replace'/','\')
+        if(-not(Test-Path -LiteralPath $execPath)){
+            throw "No se encontro el ejecutable '$execPath' tras la instalacion standalone."
+        }
+        Write-CocoLog "Iniciando proceso standalone '$execPath' en '$($installed.InstanceRoot)'"
+        $process=Start-Process -FilePath $execPath -WorkingDirectory $installed.InstanceRoot -PassThru
+        return [pscustomobject]@{Status='launched';Experience=$experience;Installation=$installed;Process=$process;LogPath=$log}
+    }
+
     $lockPath=Join-Path $CatalogRoot (([string]$experience.pack.lockPath)-replace'^launcher/',''-replace'/','\')
     $lock=Read-CocoExperienceLock $lockPath $experience
     $backend=Install-CocoLauncherBackend $Catalog $CacheRoot
@@ -2485,10 +2764,12 @@ function Invoke-CocoLauncherClientSession($Catalog,$Session,$Paths,[string]$Lega
 }
 
 function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$LegacyMinecraftRoot){
-    if(-not$Experience-or$Experience.managementMode-ne'managed'-or$Experience.launch.workflow-ne'coco-managed'){throw 'El host solo puede alojar experiencias administradas desde Coco Launcher.'}
+    if(-not$Experience-or$Experience.managementMode-ne'managed'-or($Experience.launch.workflow-ne'coco-managed'-and$Experience.launch.workflow-ne'coco-standalone')){throw 'El host solo puede alojar experiencias administradas desde Coco Launcher.'}
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{role='host';experienceId=[string]$Experience.id;packVersion=[string]$Experience.pack.version;instanceRoot=(Join-Path $Paths.ExperiencesRoot ([string]$Experience.instanceId))}}
     Set-CocoLauncherStep 3 'PREPARANDO LA PARTIDA DEL HOST' ("Experiencia seleccionada: {0}"-f$Experience.name) 25
-    if(Test-CocoTcpEndpoint ([string]$Experience.hosting.host) ([int]$Experience.hosting.port) 350){throw 'El puerto Coco 25565 ya esta ocupado. Cierra la partida anterior antes de iniciar otra.'}
+    if($Experience.launch.workflow-eq'coco-managed'-and(Test-CocoTcpEndpoint ([string]$Experience.hosting.host) ([int]$Experience.hosting.port) 350)){
+        throw 'El puerto Coco 25565 ya esta ocupado. Cierra la partida anterior antes de iniciar otra.'
+    }
     $sessionId=[guid]::NewGuid().ToString()
     [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id preparing $sessionId $Paths.SessionStatePath 30)
     $service=$null;$launch=$null
@@ -2502,31 +2783,45 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
         if($script:CocoSkinTile){Set-CocoSkinTilePreview $script:CocoSkinPicture $script:CocoSkinLabel $Paths.SkinRoot ([string]$identity.username) ([bool]$hostSkinSync.Pending)}
         $launch=Start-CocoLauncherExperience $Catalog $Experience $identity host $Paths $LegacyMinecraftRoot -DisableAutoJoin
         $instanceRoot=if($launch.Installation){[string]$launch.Installation.InstanceRoot}elseif($launch.InstanceRoot){[string]$launch.InstanceRoot}else{$LegacyMinecraftRoot}
-        if($Experience.managementMode-eq'managed'){[void](Set-CocoManagedLanWorldConfigurations $instanceRoot $Experience)}
-        [void](Wait-CocoManagedMinecraftWindow $instanceRoot $launch.Process 90)
-        $lanInstruction=if([string]$Experience.hosting.adapter-eq'lan-server-properties-v1'){
-            'Entra o crea el mundo, pulsa Abrir en LAN, deja el puerto en 25565 y cambia Online Mode a OFF antes de iniciar.'
-        }else{'Entra o crea el mundo. Coco configurara el modo local y luego puedes pulsar Abrir en LAN.'}
-        Set-CocoLauncherStep 9 'MINECRAFT ABIERTO' $lanInstruction 95
-        try{$script:CocoForm.TopMost=$false}catch{}
-        $ready=$false;$lastPublish=[DateTime]::MinValue
-        $lanConfiguredBeforeOpen=Test-CocoManagedLanWorldConfigurations $instanceRoot $Experience
-        $unsafeLanObserved=$false
-        while(-not$launch.Process.HasExited){
-            [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
-            if($Experience.managementMode-eq'managed'){[void](Set-CocoManagedLanWorldConfigurations $instanceRoot $Experience)}
-            $configurationReady=Test-CocoManagedLanWorldConfigurations $instanceRoot $Experience
-            $portOpen=Test-CocoTcpEndpoint ([string]$Experience.hosting.host) ([int]$Experience.hosting.port) 250
-            if(-not$portOpen-and$configurationReady){$lanConfiguredBeforeOpen=$true}
-            if(-not$ready-and$portOpen-and$lanConfiguredBeforeOpen){$ready=$true}
-            elseif(-not$ready-and$portOpen-and-not$lanConfiguredBeforeOpen-and-not$unsafeLanObserved){
-                $unsafeLanObserved=$true
-                Set-CocoLauncherStep 9 'REABRE LA PARTIDA LAN' 'La LAN se abrio antes de cargar el modo local. Cierra la LAN, espera la confirmacion de Coco y vuelve a abrirla.' 95
+        if($Experience.managementMode-eq'managed'-and$Experience.launch.workflow-eq'coco-managed'){[void](Set-CocoManagedLanWorldConfigurations $instanceRoot $Experience)}
+        if($Experience.launch.workflow-eq'coco-standalone'){
+            Set-CocoLauncherStep 9 'JUEGO STANDALONE ABIERTO' ("{0} esta ejecutandose. Tus amigos entraran al detectar tu sesion."-f$Experience.name) 95
+            try{$script:CocoForm.TopMost=$false}catch{}
+            $ready=$true;$lastPublish=[DateTime]::MinValue
+            while(-not$launch.Process.HasExited){
+                [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+                if((Get-Date)-gt$lastPublish.AddSeconds(8)){
+                    [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id 'ready' $sessionId $Paths.SessionStatePath 30)
+                    $lastPublish=Get-Date
+                    Set-CocoLauncherStep 10 'PARTIDA ONLINE' ("{0} esta lista; tus amigos entraran automaticamente."-f$Experience.name) 100
+                }
             }
-            if((Get-Date)-gt$lastPublish.AddSeconds(8)){
-                [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id $(if($ready){'ready'}else{'preparing'}) $sessionId $Paths.SessionStatePath 30)
-                $lastPublish=Get-Date
-                if($ready){Set-CocoLauncherStep 10 'PARTIDA ONLINE' ("{0} esta lista; tus amigos entraran automaticamente."-f$Experience.name) 100}
+        }else{
+            [void](Wait-CocoManagedMinecraftWindow $instanceRoot $launch.Process 90)
+            $lanInstruction=if([string]$Experience.hosting.adapter-eq'lan-server-properties-v1'){
+                'Entra o crea el mundo, pulsa Abrir en LAN, deja el puerto en 25565 y cambia Online Mode a OFF antes de iniciar.'
+            }else{'Entra o crea el mundo. Coco configurara el modo local y luego puedes pulsar Abrir en LAN.'}
+            Set-CocoLauncherStep 9 'MINECRAFT ABIERTO' $lanInstruction 95
+            try{$script:CocoForm.TopMost=$false}catch{}
+            $ready=$false;$lastPublish=[DateTime]::MinValue
+            $lanConfiguredBeforeOpen=Test-CocoManagedLanWorldConfigurations $instanceRoot $Experience
+            $unsafeLanObserved=$false
+            while(-not$launch.Process.HasExited){
+                [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+                if($Experience.managementMode-eq'managed'){[void](Set-CocoManagedLanWorldConfigurations $instanceRoot $Experience)}
+                $configurationReady=Test-CocoManagedLanWorldConfigurations $instanceRoot $Experience
+                $portOpen=Test-CocoTcpEndpoint ([string]$Experience.hosting.host) ([int]$Experience.hosting.port) 250
+                if(-not$portOpen-and$configurationReady){$lanConfiguredBeforeOpen=$true}
+                if(-not$ready-and$portOpen-and$lanConfiguredBeforeOpen){$ready=$true}
+                elseif(-not$ready-and$portOpen-and-not$lanConfiguredBeforeOpen-and-not$unsafeLanObserved){
+                    $unsafeLanObserved=$true
+                    Set-CocoLauncherStep 9 'REABRE LA PARTIDA LAN' 'La LAN se abrio antes de cargar el modo local. Cierra la LAN, espera la confirmacion de Coco y vuelve a abrirla.' 95
+                }
+                if((Get-Date)-gt$lastPublish.AddSeconds(8)){
+                    [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id $(if($ready){'ready'}else{'preparing'}) $sessionId $Paths.SessionStatePath 30)
+                    $lastPublish=Get-Date
+                    if($ready){Set-CocoLauncherStep 10 'PARTIDA ONLINE' ("{0} esta lista; tus amigos entraran automaticamente."-f$Experience.name) 100}
+                }
             }
         }
         [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id stopping $sessionId $Paths.SessionStatePath 10)
@@ -2671,7 +2966,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         $script:CocoLauncherSelectedExperience=''
         $index=0
         $hostExperiences=@($catalog.experiences|Where-Object{
-            $_.managementMode-eq'managed'-and$_.launch.workflow-eq'coco-managed'
+            $_.managementMode-eq'managed'-and($_.launch.workflow-eq'coco-managed'-or$_.launch.workflow-eq'coco-standalone')
         })
         if(-not$hostExperiences.Count){throw 'El catalogo no contiene experiencias administradas para alojar.'}
         $dynamic.AutoScrollMinSize=[Drawing.Size]::new(0,[int]([math]::Ceiling($hostExperiences.Count/2.0)*50))
@@ -2693,7 +2988,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             if($script:CocoForm.IsDisposed){break}
             $experience=@($catalog.experiences|Where-Object id -eq $script:CocoLauncherSelectedExperience|Select-Object -First 1)[0]
             foreach($control in @($dynamic.Controls)+@($close)){if($control-is[Windows.Forms.Button]){$control.Enabled=$false}}
-            try{Invoke-CocoLauncherHostSession $catalog $experience $paths $LegacyMinecraftRoot;Set-CocoState 'Partida terminada' 'Minecraft se cerro. Ya puedes iniciar otra experiencia.' 15}
+            try{Invoke-CocoLauncherHostSession $catalog $experience $paths $LegacyMinecraftRoot;Set-CocoState 'Partida terminada' 'La partida se cerro. Ya puedes iniciar otra experiencia.' 15}
             catch{Write-CocoLog "ERROR Launcher host: $($_|Out-String)";Set-CocoState 'NO SE PUDO INICIAR LA PARTIDA' (Get-CocoLauncherFailureDetail $_) 0 $true 'failure'}
             foreach($control in @($dynamic.Controls)+@($close)){if($control-is[Windows.Forms.Button]){$control.Enabled=$true}}
         }
@@ -2733,20 +3028,32 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                     $launch=Invoke-CocoLauncherClientSession $catalog $session $paths $LegacyMinecraftRoot $prepared
                     if(-not$launch){$identityText.Enabled=$true;$skinTile.Enabled=$true;$close.Enabled=$true}
                     else{
-                        # PortableMC hereda pipes de Coco para registrar su salida. Coco debe
-                        # permanecer vivo hasta que termine Minecraft; cerrar ahora puede
-                        # cortar esos pipes y bloquear el arranque en un cliente real.
                         $launched=$true
-                        $instanceRoot=if($launch.Installation){[string]$launch.Installation.InstanceRoot}else{''}
-                        [void](Wait-CocoManagedMinecraftWindow $instanceRoot $launch.Process 90)
-                        Set-CocoLauncherStep 9 'CONECTANDO AUTOMATICAMENTE' 'La ventana de Minecraft ya esta abierta; Quick Play entrara al servidor sin elegirlo en menus.' 96
-                        $script:CocoForm.Hide()
-                        $exitCode=Wait-CocoPortableMcGame $launch.Process -PumpUi -Dispose
-                        if($exitCode-ne0){
-                            $script:CocoForm.Show();$script:CocoForm.Activate()
-                            throw "Minecraft no pudo iniciarse o termino con codigo $exitCode. Revisa $($launch.LogPath)."
+                        if([string]$launch.Experience.launch.workflow-eq'coco-standalone'){
+                            Set-CocoLauncherStep 9 'JUEGO STANDALONE ABIERTO' ("{0} se inicio automaticamente."-f$launch.Experience.name) 96
+                            $script:CocoForm.Hide()
+                            while(-not$launch.Process.HasExited){
+                                [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+                            }
+                            $exitCode=$launch.Process.ExitCode
+                            if($launch.Process){$launch.Process.Dispose()}
+                            if($exitCode-ne0){
+                                $script:CocoForm.Show();$script:CocoForm.Activate()
+                                throw "El juego standalone '$($launch.Experience.name)' termino con codigo de error $exitCode."
+                            }
+                            $script:CocoAllowClose=$true;$script:CocoForm.Close();break
+                        }else{
+                            $instanceRoot=if($launch.Installation){[string]$launch.Installation.InstanceRoot}else{''}
+                            [void](Wait-CocoManagedMinecraftWindow $instanceRoot $launch.Process 90)
+                            Set-CocoLauncherStep 9 'CONECTANDO AUTOMATICAMENTE' 'La ventana de Minecraft ya esta abierta; Quick Play entrara al servidor sin elegirlo en menus.' 96
+                            $script:CocoForm.Hide()
+                            $exitCode=Wait-CocoPortableMcGame $launch.Process -PumpUi -Dispose
+                            if($exitCode-ne0){
+                                $script:CocoForm.Show();$script:CocoForm.Activate()
+                                throw "Minecraft no pudo iniciarse o termino con codigo $exitCode. Revisa $($launch.LogPath)."
+                            }
+                            $script:CocoAllowClose=$true;$script:CocoForm.Close();break
                         }
-                        $script:CocoAllowClose=$true;$script:CocoForm.Close();break
                     }
                 }
             }catch{

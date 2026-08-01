@@ -59,8 +59,13 @@ if(-not$nightfallcraft-or
 if($zombie.hosting.adapter-ne'lan-server-properties-v1'){
     throw 'Zombie 1.12.2 no esta habilitado con su adaptador LAN legado.'
 }
+$valorantcraft=@($catalog.experiences|Where-Object id -eq 'valorant-craft'|Select-Object -First 1)[0]
+$machineparty=@($catalog.experiences|Where-Object id -eq 'machine-party'|Select-Object -First 1)[0]
+if(-not$machineparty-or$machineparty.runtime.type-ne'standalone'-or$machineparty.launch.workflow-ne'coco-standalone'){
+    throw 'Machine Party no esta habilitado como experiencia standalone.'
+}
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne5-or
+if($managedExperiences.Count-ne7-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -139,7 +144,7 @@ if($zombie.preferences.resourcePack-ne'Tissous Zombie Pack 1.12.2 - 2.6.zip'-or-
 }
 $nightfallLock=Read-CocoExperienceLock (Join-Path $root (($nightfallcraft.pack.lockPath)-replace'/','\')) $nightfallcraft
 if(@($nightfallLock.assets).Count-ne215){throw 'El lock oficial de NightfallCraft no contiene los 215 assets declarados.'}
-foreach($managed in @($dread,$backrooms,$cobbleverse,$zombie,$nightfallcraft)){
+foreach($managed in @($dread,$backrooms,$cobbleverse,$zombie,$nightfallcraft,$valorantcraft)){
     if(-not$managed.preferences){throw "Falta politica declarativa en $($managed.id)."}
 }
 foreach($unsafe in '..\mods\bad.jar','C:\escape.jar','mods//bad.jar','/rooted.jar','mods/../bad.jar'){

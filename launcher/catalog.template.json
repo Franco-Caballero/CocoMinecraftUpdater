@@ -424,6 +424,91 @@
                     "license": "Apache-2.0"
                 }
             ]
+        },
+        {
+            "id": "valorant-craft",
+            "name": "VALORANTCraft - Ultimate 3D Shooter",
+            "description": "Experiencia shooter tactica de Valorant con armas 3D hiperrealistas (TACZ), arsenal completo (Vandal, Phantom, Karambit), habilidades de agentes, motor de rondas/Spike y mapas 1:1 (Ascent, Haven, Bind).",
+            "instanceId": "valorant-craft",
+            "managementMode": "managed",
+            "runtime": {
+                "minecraftVersion": "1.20.1",
+                "loader": "forge",
+                "loaderVersion": "47.4.4",
+                "javaMajor": 17
+            },
+            "pack": {
+                "packId": "curseforge-1268425-5800000",
+                "version": "1.0.0",
+                "lockPath": "launcher/experiences/valorant-craft.lock.json",
+                "sourcePage": "https://www.curseforge.com/minecraft/customization/tacz-valorant-gun-pack-for-tacz",
+                "redistribution": "origin-only"
+            },
+            "hosting": {
+                "mode": "lan",
+                "host": "10.77.37.1",
+                "port": 25565,
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-managed",
+                "autoJoin": true,
+                "serverName": "Coco - ValorantCraft",
+                "minimumFreeBytes": 4294967296,
+                "memory": {
+                    "minimumMb": 4096,
+                    "recommendedMb": 4096,
+                    "maximumPhysicalFraction": 0.45
+                }
+            },
+            "preferences": {
+                "standardControls": true,
+                "fov": 0.625,
+                "voiceChatDefaults": true,
+                "language": "es_cl"
+            },
+            "files": [
+                {
+                    "name": "mcwifipnp-1.7.6-1.20.1-forge.jar",
+                    "path": "mods/mcwifipnp-1.7.6-1.20.1-forge.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/NW8GxGB5/mcwifipnp-1.7.6-1.20.1-forge.jar",
+                    "sha256": "6355f4569ec26046c0877f45fbc37a28d57b656999945f3f6491cf0109f23aa0",
+                    "size": 82482,
+                    "role": "host",
+                    "policy": "replace",
+                    "license": "Apache-2.0"
+                }
+            ]
+        },
+        {
+            "id": "machine-party",
+            "name": "Machine Party",
+            "description": "Juego party multijugador en Godot. Servidor y clientes se inician directamente desde Coco Launcher.",
+            "instanceId": "machine-party",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "Machine Party.exe"
+            },
+            "pack": {
+                "packId": "standalone-machine-party",
+                "version": "1.0.0",
+                "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.63/Machine-Party.zip",
+                "sha256": "3b079ee754b8a3be28173da59e0e7631b2e36773d4128e3ba0399b9a46caa72f",
+                "size": 504692751
+            },
+            "hosting": {
+                "mode": "lan",
+                "host": "10.77.37.1",
+                "port": 25564,
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Machine Party"
+            },
+            "files": []
         }
     ]
 }

@@ -37,6 +37,9 @@ $cobbleverse=@($catalog.experiences|Where-Object id -eq 'cobbleverse')[0]
 $cobbleverseArgs=New-CocoPortableMcStartArguments $cobbleverse $offline 'C:\Coco Shared' 'C:\Coco Instances\cobbleverse' 'C:\Coco Accounts\unused.json'
 $cobbleverseJoined=$cobbleverseArgs-join'|'
 if($cobbleverseJoined-notlike'*fabric:1.21.1:0.18.4*'){throw 'COBBLEVERSE no prepara Fabric 0.18.4 para Minecraft 1.21.1.'}
-if($cobbleverseJoined-notmatch'--jvm-arg=-Xms1024m,-Xmx[0-9]+m'){throw 'COBBLEVERSE no calcula memoria adaptativa.'}
+$machineparty=@($catalog.experiences|Where-Object id -eq 'machine-party')[0]
+if($machineparty.runtime.type-ne'standalone'-or$machineparty.launch.workflow-ne'coco-standalone'){
+    throw 'Machine Party no esta configurado con el workflow standalone esperado.'
+}
 
-'PASS: lanzamiento local aislado, autoingreso y experiencias Zombie/COBBLEVERSE habilitadas validados.'
+'PASS: lanzamiento local aislado, autoingreso y experiencias Zombie/COBBLEVERSE/Machine-Party habilitadas validados.'

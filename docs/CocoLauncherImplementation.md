@@ -39,8 +39,9 @@ La red privada y el UUID Fixer preservan una identidad offline coherente, pero *
 | DREAD | Forge 1.19.2 | Visible | Lock e instalación existen; falta sesión física completa host + dos clientes. |
 | Zombie Apocalypse | Forge 1.12.2 | Visible | La prueba real anterior fue confirmada por el host. Lan Server Properties 1.0 se instala solo al host: puerto 25565 y `Online Mode: OFF`. |
 | COBBLEVERSE 1.7.42-CF | Fabric 1.21.1 | Visible | Instalación y arranque real hasta el menú aprobados el 2026-07-26; Cobblemon, shader del pack y DH+Iris/OpenGL cargaron. Usa heap recomendado de 5 GiB y fija DH en 32 chunks para host y clientes. Falta completar LAN/clientes. Crea un mundo aleatorio con Terralith, sin mapa ni semilla prefijados. |
+| Machine Party | Standalone Executable | Visible | Juego party multijugador en Godot 4. Workflow `coco-standalone` para descarga de ZIP verificado por SHA-256 y ejecucion directa sin Java/PortableMC. |
 
-La presencia en el catálogo publicado es la única regla de disponibilidad: toda entrada `managed` con workflow `coco-managed` aparece al host y puede lanzarse. Las etiquetas `blocked`, `experimental`, `normal` y `validated` fueron eliminadas del schema y del engine. Las auditorías conservan evidencia y trabajo pendiente sin alterar visibilidad.
+La presencia en el catálogo publicado es la única regla de disponibilidad: toda entrada `managed` con workflow `coco-managed` o `coco-standalone` aparece al host y puede lanzarse. Las etiquetas `blocked`, `experimental`, `normal` y `validated` fueron eliminadas del schema y del engine. Las auditorías conservan evidencia y trabajo pendiente sin alterar visibilidad.
 
 ## Flujo del amigo
 
