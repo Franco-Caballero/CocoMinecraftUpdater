@@ -1,19 +1,19 @@
 {
     "schemaVersion":  2,
     "packId":  "coco-fabric-26.1.2",
-    "version":  "0.5.66",
-    "publishedAt":  "2026-08-01T23:16:18.8208153Z",
+    "version":  "0.5.67",
+    "publishedAt":  "2026-08-01T23:30:36.6494048Z",
     "engine":  {
-                   "version":  "0.5.66",
-                   "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.66/coco-engine-0.5.66.zip",
-                   "sha256":  "cbd62ae5d365235d441b74cf5d06e2a203c6a3ffcba2963a533ad952cdaaea47",
-                   "size":  625540
+                   "version":  "0.5.67",
+                   "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.67/coco-engine-0.5.67.zip",
+                   "sha256":  "70a03628581868305ec4d47a833ab8331a534a99b0227a5482f25e65b34527c1",
+                   "size":  625618
                },
     "bootstrap":  {
-                      "version":  "0.5.66",
-                      "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.66/CocoUpdater.exe",
-                      "sha256":  "716d27e02189ead5c2530978b4380edf4c5e5d7b9a8ff6c6218ea91b5f833d54",
-                      "size":  652800
+                      "version":  "0.5.67",
+                      "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.67/CocoUpdater.exe",
+                      "sha256":  "55bd1fa7a034b81960a3f3200937d187196f4193700eb721c68bb90211b54ab6",
+                      "size":  653312
                   },
     "network":  {
                     "provider":  "zerotier",
@@ -348,10 +348,10 @@
                                           "size":  1135373
                                       },
                                       {
-                                          "name":  "coco-session-bridge-0.5.66.jar",
+                                          "name":  "coco-session-bridge-0.5.67.jar",
                                           "fabricId":  "coco_session_bridge",
-                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0e656e0ef1fe7051d9216933221346c971f4c2b1985459e977aca9abae8fa6e4.jar",
-                                          "sha256":  "0e656e0ef1fe7051d9216933221346c971f4c2b1985459e977aca9abae8fa6e4",
+                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-125dc8d2d2bffdb226c4aa283ac28f970fa3b52231deffc4e56a388d35f3f571.jar",
+                                          "sha256":  "125dc8d2d2bffdb226c4aa283ac28f970fa3b52231deffc4e56a388d35f3f571",
                                           "size":  16481
                                       },
                                       {
@@ -1291,10 +1291,10 @@
                                           "size":  1135373
                                       },
                                       {
-                                          "name":  "coco-session-bridge-0.5.66.jar",
+                                          "name":  "coco-session-bridge-0.5.67.jar",
                                           "fabricId":  "coco_session_bridge",
-                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-0e656e0ef1fe7051d9216933221346c971f4c2b1985459e977aca9abae8fa6e4.jar",
-                                          "sha256":  "0e656e0ef1fe7051d9216933221346c971f4c2b1985459e977aca9abae8fa6e4",
+                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-125dc8d2d2bffdb226c4aa283ac28f970fa3b52231deffc4e56a388d35f3f571.jar",
+                                          "sha256":  "125dc8d2d2bffdb226c4aa283ac28f970fa3b52231deffc4e56a388d35f3f571",
                                           "size":  16481
                                       },
                                       {
