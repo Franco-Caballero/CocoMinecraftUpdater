@@ -435,7 +435,15 @@ if (-not (Test-Path -LiteralPath $entryPoint)) {
     Set-CocoSplash 'Extrayendo el engine en una carpeta temporal segura...' 10
     Expand-CocoEngineArchive $engineZip $temporaryRoot
     New-Item -ItemType Directory -Path (Split-Path $engineRoot -Parent) -Force | Out-Null
-    Move-Item -LiteralPath $temporaryRoot -Destination $engineRoot -Force
+    if(Test-Path -LiteralPath $engineRoot){
+        Remove-Item -LiteralPath $engineRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    if(Test-Path -LiteralPath $engineRoot){
+        Get-ChildItem -LiteralPath $temporaryRoot -Force | Copy-Item -Destination $engineRoot -Recurse -Force
+        Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }else{
+        Move-Item -LiteralPath $temporaryRoot -Destination $engineRoot -Force
+    }
 }
 
 $processPath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
