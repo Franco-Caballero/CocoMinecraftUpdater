@@ -358,7 +358,15 @@ if($existing){
 }else{
     $release=Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$Repository/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body))
 }
-$assets=@(Get-Item (Join-Path $releaseDir "coco-engine-$Version.zip"),(Join-Path $releaseDir 'latest.json'),$bootstrapExe)
+$standaloneArchive = Join-Path $env:USERPROFILE 'Downloads\Machine-Party.zip'
+$assets=@(
+    (Get-Item (Join-Path $releaseDir "coco-engine-$Version.zip")),
+    (Get-Item (Join-Path $releaseDir 'latest.json')),
+    (Get-Item $bootstrapExe)
+)
+if(Test-Path -LiteralPath $standaloneArchive){
+    $assets += (Get-Item -LiteralPath $standaloneArchive)
+}
 $index=0
 foreach($asset in $assets){
     $index++;Write-Progress -Activity "Publicando Coco Pack $Version" -Status $asset.Name -PercentComplete (100*$index/$assets.Count)
