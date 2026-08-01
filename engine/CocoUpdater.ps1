@@ -1166,8 +1166,12 @@ try {
     if (-not $mutexAcquired) { exit 0 }
     $engineParent=Split-Path $script:CocoEngineRoot -Parent
     if((Split-Path $engineParent -Leaf)-eq'engine'){
-        Get-ChildItem -LiteralPath $engineParent -Directory -ErrorAction SilentlyContinue |
-            Where-Object FullName -ne $script:CocoEngineRoot | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        $currentVer=try{[version](Split-Path $script:CocoEngineRoot -Leaf)}catch{$null}
+        Get-ChildItem -LiteralPath $engineParent -Directory -ErrorAction SilentlyContinue | Where-Object {
+            $dirVer=try{[version]$_.Name}catch{$null}
+            if($currentVer -and $dirVer){ return $dirVer -lt $currentVer }
+            return $_.FullName -ne $script:CocoEngineRoot
+        } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
         $cacheRoot=Split-Path $engineParent -Parent
         Get-ChildItem -LiteralPath $cacheRoot -File -Filter 'engine-*.zip' -ErrorAction SilentlyContinue |
             Where-Object Name -ne "engine-$((Split-Path $script:CocoEngineRoot -Leaf)).zip" | Remove-Item -Force -ErrorAction SilentlyContinue
