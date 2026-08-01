@@ -25,9 +25,15 @@ $cliCandidates=@(
 )
 $cli=@($cliCandidates|Where-Object{Test-Path -LiteralPath $_}|Select-Object -First 1)[0]
 if($cli){
-    $info=(& $cli -j info 2>&1|Out-String)|ConvertFrom-Json
+    $infoRaw=(& $cli -j info 2>&1|Out-String).Trim()
+    $infoStart=$infoRaw.IndexOf('{')
+    if($infoStart-lt0){throw "Respuesta invalida de ZeroTier info: $infoRaw"}
+    $info=$infoRaw.Substring($infoStart)|ConvertFrom-Json
     if(-not$info.online-or[version]$info.version-lt[version]'1.16.2'){throw 'La instalacion viva de ZeroTier no esta ONLINE o es antigua.'}
-    $networks=@((& $cli -j listnetworks 2>&1|Out-String)|ConvertFrom-Json)
+    $networksRaw=(& $cli -j listnetworks 2>&1|Out-String).Trim()
+    $networksStart=$networksRaw.IndexOf('[')
+    if($networksStart-lt0){throw "Respuesta invalida de ZeroTier listnetworks: $networksRaw"}
+    $networks=@($networksRaw.Substring($networksStart)|ConvertFrom-Json)
     $network=@($networks|Where-Object{$_.id-eq$networkId-or$_.nwid-eq$networkId}|Select-Object -First 1)[0]
     if(-not$network-or$network.status-ne'OK'-or@($network.assignedAddresses)-notcontains'10.77.37.1/24'){
         throw 'La red Coco viva del host no esta lista en 10.77.37.1/24.'
