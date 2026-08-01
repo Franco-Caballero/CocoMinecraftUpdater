@@ -1667,7 +1667,7 @@ function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
         }
     }
 
-    if([bool]$preferences.standardControls-or$null-ne$preferences.fov){
+    if([bool]$preferences.standardControls-or$null-ne$preferences.fov-or$preferences.language){
         foreach($optsFile in @(
             (Join-Path $InstanceRoot 'options.txt'),
             (Join-Path $InstanceRoot 'config\defaultoptions\options.txt'),
@@ -1683,6 +1683,11 @@ function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
                 $fov=[string]([double]$preferences.fov).ToString([Globalization.CultureInfo]::InvariantCulture)
                 if($content-match'(?m)^fov:'){$content=$content-replace'(?m)^fov:.*$',("fov:$fov")}
                 else{$content=$content.TrimEnd()+"`r`nfov:$fov`r`n"}
+            }
+            if($preferences.language){
+                $lang=[string]$preferences.language
+                if($content-match'(?m)^lang:'){$content=$content-replace'(?m)^lang:.*$',("lang:$lang")}
+                else{$content=$content.TrimEnd()+"`r`nlang:$lang`r`n"}
             }
             [IO.File]::WriteAllText($optsFile,$content,(New-Object Text.UTF8Encoding($false)))
         }

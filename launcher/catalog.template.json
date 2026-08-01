@@ -374,6 +374,7 @@
                 "standardControls": true,
                 "fov": 0.625,
                 "voiceChatDefaults": true,
+                "language": "es_cl",
                 "shader": {
                     "provider": "oculus",
                     "pack": "ComplementaryUnbound_r5.7.1.zip",
