@@ -47,7 +47,7 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     $key=[Drawing.Color]::FromArgb(1,2,3)
     $form=New-Object Windows.Forms.Form;$form.Text='Coco Minecraft Updater';$form.Size=New-Object Drawing.Size(1080,740)
     $form.StartPosition='CenterScreen';$form.FormBorderStyle='None';$form.BackColor=$key;$form.TransparencyKey=$key
-    $form.AutoScaleMode='None';$form.ForeColor=[Drawing.Color]::White;$form.TopMost=$true
+    $form.AutoScaleMode='None';$form.ForeColor=[Drawing.Color]::White;$form.TopMost=$false
     $form.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
     try{$embeddedIcon=[Drawing.Icon]::ExtractAssociatedIcon([Diagnostics.Process]::GetCurrentProcess().MainModule.FileName);if($embeddedIcon){$form.Icon=$embeddedIcon}}catch{}
     $panel=New-Object Windows.Forms.Panel;$panel.Location=New-Object Drawing.Point(25,190);$panel.Size=New-Object Drawing.Size(640,460)
@@ -307,6 +307,7 @@ function Test-CocoEngineExtraction([string]$Destination){
         $managed=@($catalog.experiences|Where-Object managementMode -eq 'managed')
         if(-not$managed.Count){return $false}
         foreach($experience in $managed){
+            if([string]$experience.launch.workflow-eq'coco-standalone'-or[string]$experience.runtime.type-eq'standalone'){ continue }
             $lockPaths=@([string]$experience.pack.lockPath)
             if($experience.worldTemplate){$lockPaths+=([string]$experience.worldTemplate.lockPath)}
             foreach($declaredPath in $lockPaths){

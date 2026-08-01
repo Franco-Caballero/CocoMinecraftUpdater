@@ -343,7 +343,7 @@ function Show-CocoWindow {
     $key=[Drawing.Color]::FromArgb(1,2,3)
     $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1080,740)
     $f.StartPosition='CenterScreen'; $f.FormBorderStyle='None'; $f.MaximizeBox=$false; $f.ShowInTaskbar=$true
-    $f.AutoScaleMode='None'; $f.TopMost=$true
+    $f.AutoScaleMode='None'; $f.TopMost=$false
     $f.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
     $f.BackColor=$key; $f.TransparencyKey=$key; $f.ForeColor=[Drawing.Color]::White
     $iconPath=Join-Path $script:CocoEngineRoot 'assets\reynaico.ico'
