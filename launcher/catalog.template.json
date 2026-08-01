@@ -393,6 +393,16 @@
             },
             "files": [
                 {
+                    "name": "tcresptranslation-1.0.2.jar",
+                    "path": "mods/tcresptranslation-1.0.2.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/MdYH8B12/versions/VwymBm4z/tcresptranslation-1.0.2.jar",
+                    "sha256": "31a3d7f1c92c0d72e06991dd54ce6137c293d66551f0ba57fa40e24fd85bff0d",
+                    "size": 4384554,
+                    "role": "all",
+                    "policy": "replace",
+                    "license": "All Rights Reserved"
+                },
+                {
                     "name": "DistantHorizons-3.2.0-b-1.20.1-fabric-forge.jar",
                     "path": "mods/DistantHorizons-3.2.0-b-1.20.1-fabric-forge.jar",
                     "sourceUrl": "https://cdn.modrinth.com/data/uCdwusMi/versions/FWGxbEM3/DistantHorizons-3.2.0-b-1.20.1-fabric-forge.jar",
