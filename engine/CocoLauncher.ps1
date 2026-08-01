@@ -576,7 +576,7 @@ function Publish-CocoSessionAnnouncement(
     if($SessionId-notmatch'^[a-fA-F0-9-]{32,36}$'){throw 'El sessionId Coco no es valido.'}
     $experience=@($Catalog.experiences|Where-Object id -eq $ExperienceId|Select-Object -First 1)[0]
     if(-not$experience){throw "La experiencia '$ExperienceId' no existe en el catalogo."}
-    if($experience.managementMode-ne'managed'-or$experience.launch.workflow-ne'coco-managed'){throw "La experiencia '$ExperienceId' usa su launcher externo y no puede anunciarse como sesion Coco Launcher."}
+    if($experience.managementMode-ne'managed'-or($experience.launch.workflow-ne'coco-managed'-and$experience.launch.workflow-ne'coco-standalone')){throw "La experiencia '$ExperienceId' usa su launcher externo y no puede anunciarse como sesion Coco Launcher."}
     $maximum=[int]$Catalog.sessionDiscovery.maximumTtlSeconds
     if($TtlSeconds-lt5-or$TtlSeconds-gt$maximum){throw 'El TTL solicitado para la sesion Coco es invalido.'}
     $now=[DateTime]::UtcNow
@@ -602,7 +602,7 @@ function Test-CocoSessionAnnouncement($Catalog,$Announcement){
     if([string]$Announcement.sessionId-notmatch'^[a-fA-F0-9-]{32,36}$'){throw 'La respuesta de sesion Coco contiene un sessionId invalido.'}
     $experience=@($Catalog.experiences|Where-Object id -eq([string]$Announcement.experienceId)|Select-Object -First 1)[0]
     if(-not$experience){throw 'La sesion anuncia una experiencia que no existe en el catalogo firmado.'}
-    if($experience.managementMode-ne'managed'-or$experience.launch.workflow-ne'coco-managed'){throw 'La sesion intento anunciar una experiencia reservada al launcher externo.'}
+    if($experience.managementMode-ne'managed'-or($experience.launch.workflow-ne'coco-managed'-and$experience.launch.workflow-ne'coco-standalone')){throw 'La sesion intento anunciar una experiencia reservada al launcher externo.'}
     if([string]$Announcement.packVersion-ne[string]$experience.pack.version){throw 'La sesion y el catalogo no coinciden en packVersion.'}
     if([string]$Announcement.host-ne[string]$experience.hosting.host-or[int]$Announcement.port-ne[int]$experience.hosting.port){throw 'La sesion intento cambiar el endpoint fijado de la experiencia.'}
     try{$issued=[DateTime]::Parse([string]$Announcement.issuedAtUtc).ToUniversalTime();$expires=[DateTime]::Parse([string]$Announcement.expiresAtUtc).ToUniversalTime()}catch{throw 'La sesion contiene fechas invalidas.'}
@@ -2697,7 +2697,7 @@ function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$P
 }
 
 function Start-CocoLauncherExperience($Catalog,$Experience,$Identity,[string]$Role,$Paths,[string]$LegacyMinecraftRoot,[switch]$DisableAutoJoin){
-    if($Experience.managementMode-ne'managed'-or$Experience.launch.workflow-ne'coco-managed'){
+    if($Experience.managementMode-ne'managed'-or($Experience.launch.workflow-ne'coco-managed'-and$Experience.launch.workflow-ne'coco-standalone')){
         throw 'Coco original se abre con el launcher habitual de cada jugador, no con Coco Launcher.'
     }
     Invoke-CocoManagedExperienceLaunch $Catalog $Experience.id $Identity $Role $Paths.CatalogRoot $Paths.CacheRoot $Paths.ExperiencesRoot -DisableAutoJoin:$DisableAutoJoin
