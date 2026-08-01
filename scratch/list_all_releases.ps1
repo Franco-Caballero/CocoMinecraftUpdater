@@ -9,5 +9,7 @@ $headers = @{
     Accept = 'application/vnd.github+json'
     'X-GitHub-Api-Version' = '2022-11-28'
 }
-$releases = Invoke-RestMethod -Uri 'https://api.github.com/repos/Franco-Caballero/CocoMinecraftUpdater/releases?per_page=100' -Headers $headers
-$releases | Where-Object { $_.draft -or $_.tag_name -like '*67*' } | Select-Object id, tag_name, name, draft, prerelease | Format-Table -AutoSize
+$releases = Invoke-RestMethod -Uri 'https://api.github.com/repos/Franco-Caballero/CocoMinecraftUpdater/releases?per_page=10' -Headers $headers
+foreach ($rel in $releases) {
+    Write-Host ("ID: {0} | Tag: {1} | Name: {2} | Draft: {3} | Prerelease: {4}" -f $rel.id, $rel.tag_name, $rel.name, $rel.draft, $rel.prerelease)
+}
