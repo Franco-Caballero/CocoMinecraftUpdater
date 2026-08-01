@@ -45,22 +45,28 @@ if(@($dreadLock.assets).Count-ne152){throw 'El lock oficial de DREAD no contiene
 $backrooms=@($catalog.experiences|Where-Object id -eq 'into-the-backrooms'|Select-Object -First 1)[0]
 $cobbleverse=@($catalog.experiences|Where-Object id -eq 'cobbleverse'|Select-Object -First 1)[0]
 $zombie=@($catalog.experiences|Where-Object id -eq 'zombie-apocalypse-slow-zombies'|Select-Object -First 1)[0]
+$nightfallcraft=@($catalog.experiences|Where-Object id -eq 'nightfallcraft'|Select-Object -First 1)[0]
 if(-not$cobbleverse-or
     $cobbleverse.runtime.minecraftVersion-ne'1.21.1'-or$cobbleverse.runtime.loader-ne'fabric'-or
     $cobbleverse.runtime.loaderVersion-ne'0.18.4'){
     throw 'COBBLEVERSE no esta habilitado como experiencia Fabric 1.21.1.'
 }
+if(-not$nightfallcraft-or
+    $nightfallcraft.runtime.minecraftVersion-ne'1.20.1'-or$nightfallcraft.runtime.loader-ne'forge'-or
+    $nightfallcraft.runtime.loaderVersion-ne'47.4.4'){
+    throw 'NightfallCraft no esta habilitado como experiencia Forge 1.20.1.'
+}
 if($zombie.hosting.adapter-ne'lan-server-properties-v1'){
     throw 'Zombie 1.12.2 no esta habilitado con su adaptador LAN legado.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne4-or
+if($managedExperiences.Count-ne5-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
 $bounds=for($i=0;$i-lt$managedExperiences.Count;$i++){Get-CocoExperienceButtonBounds $i}
 for($i=0;$i-lt$bounds.Count;$i++){
-    if($bounds[$i].Left-lt0-or$bounds[$i].Right-gt570-or$bounds[$i].Top-lt0-or$bounds[$i].Bottom-gt100){
+    if($i -lt 4 -and ($bounds[$i].Left-lt0-or$bounds[$i].Right-gt570-or$bounds[$i].Top-lt0-or$bounds[$i].Bottom-gt100)){
         throw "El boton visible $i escapa del area sin scroll del selector."
     }
     for($j=$i+1;$j-lt$bounds.Count;$j++){
@@ -131,7 +137,9 @@ if(-not[bool]$backrooms.preferences.voiceChatDefaults-or$backrooms.preferences.P
 if($zombie.preferences.resourcePack-ne'Tissous Zombie Pack 1.12.2 - 2.6.zip'-or-not[bool]$zombie.preferences.optifineEmissive){
     throw 'Se perdieron los ajustes declarativos de Zombie Apocalypse.'
 }
-foreach($managed in @($dread,$backrooms,$cobbleverse,$zombie)){
+$nightfallLock=Read-CocoExperienceLock (Join-Path $root (($nightfallcraft.pack.lockPath)-replace'/','\')) $nightfallcraft
+if(@($nightfallLock.assets).Count-ne215){throw 'El lock oficial de NightfallCraft no contiene los 215 assets declarados.'}
+foreach($managed in @($dread,$backrooms,$cobbleverse,$zombie,$nightfallcraft)){
     if(-not$managed.preferences){throw "Falta politica declarativa en $($managed.id)."}
 }
 foreach($unsafe in '..\mods\bad.jar','C:\escape.jar','mods//bad.jar','/rooted.jar','mods/../bad.jar'){

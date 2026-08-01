@@ -329,6 +329,90 @@
                 "optifineEmissive": true
             },
             "files": []
+        },
+        {
+            "id": "nightfallcraft",
+            "name": "NightfallCraft - The Casket of Reveries",
+            "description": "Experiencia RPG de accion y fantasia oscura (estilo Souls) con combate Epic Fight, misiones, exploracion y atmosfera inmersiva.",
+            "instanceId": "nightfallcraft",
+            "managementMode": "managed",
+            "runtime": {
+                "minecraftVersion": "1.20.1",
+                "loader": "forge",
+                "loaderVersion": "47.4.4",
+                "javaMajor": 17
+            },
+            "pack": {
+                "packId": "curseforge-1354886-8544899",
+                "version": "2.2.8.6",
+                "lockPath": "launcher/experiences/nightfallcraft.lock.json",
+                "sourcePage": "https://www.curseforge.com/minecraft/modpacks/nightfallcraft-the-casket-of-reveries",
+                "redistribution": "origin-only"
+            },
+            "hosting": {
+                "mode": "lan",
+                "host": "10.77.37.1",
+                "port": 25565,
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-managed",
+                "autoJoin": true,
+                "serverName": "Coco - NightfallCraft",
+                "minimumFreeBytes": 4294967296,
+                "memory": {
+                    "minimumMb": 4096,
+                    "recommendedMb": 6144,
+                    "maximumPhysicalFraction": 0.5
+                },
+                "jvmArgs": [
+                    "-Dforge.parallelModLoading=false",
+                    "-Dfml.parallelModLoading=false"
+                ]
+            },
+            "preferences": {
+                "standardControls": true,
+                "fov": 0.625,
+                "voiceChatDefaults": true,
+                "shader": {
+                    "provider": "oculus",
+                    "pack": "ComplementaryUnbound_r5.7.1.zip",
+                    "companionFiles": {
+                        "ComplementaryUnbound_r5.7.1.zip.txt": "#Sat Aug 01 00:02:50 CLT 2026\r\nshadowDistance=64.0\r\nWATER_REFLECT_QUALITY=1\r\nVIGNETTE_R=false\r\nCLOUD_QUALITY=1\r\nBLOCK_REFLECT_QUALITY=0\r\nENTITY_SHADOW=-1\r\nLENSFLARE_MODE=2\r\nLENSFLARE_I=2.60\r\nFXAA_DEFINE=-1\r\nSHADOW_QUALITY=0\r\nDETAIL_QUALITY=0\r\nLIGHTSHAFT_QUALI_DEFINE=0\r\n",
+                        "ComplementaryUnbound_r5.7.1 + EuphoriaPatches_1.8.6.txt": "#Sat Mar 07 13:35:39 CST 2026\r\nAAA_THIS_IS_A_EUPHORIA_PATCHES_SETTINGS_FILE=true\r\nAAB_FOR_EUPHORIA_PATCHES_VERSION_1_8_6=true\r\n"
+                    }
+                },
+                "tomlValues": [
+                    {
+                        "path": "config/DistantHorizons.toml",
+                        "section": "client.advanced.graphics.quality",
+                        "key": "lodChunkRenderDistanceRadius",
+                        "value": 30
+                    }
+                ]
+            },
+            "files": [
+                {
+                    "name": "DistantHorizons-3.2.0-b-1.20.1-fabric-forge.jar",
+                    "path": "mods/DistantHorizons-3.2.0-b-1.20.1-fabric-forge.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/uCdwusMi/versions/FWGxbEM3/DistantHorizons-3.2.0-b-1.20.1-fabric-forge.jar",
+                    "sha256": "27cc6df2189e142671e4174ad7b2d773318b1b871758ec27756538947052a302",
+                    "size": 29561297,
+                    "role": "all",
+                    "policy": "replace",
+                    "license": "LGPL-3.0-only"
+                },
+                {
+                    "name": "mcwifipnp-1.7.6-1.20.1-forge.jar",
+                    "path": "mods/mcwifipnp-1.7.6-1.20.1-forge.jar",
+                    "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/NW8GxGB5/mcwifipnp-1.7.6-1.20.1-forge.jar",
+                    "sha256": "6355f4569ec26046c0877f45fbc37a28d57b656999945f3f6491cf0109f23aa0",
+                    "size": 82482,
+                    "role": "host",
+                    "policy": "replace",
+                    "license": "Apache-2.0"
+                }
+            ]
         }
     ]
 }

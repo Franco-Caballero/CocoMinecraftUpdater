@@ -338,6 +338,13 @@ function New-CocoPortableMcStartArguments(
         $heap=[Math]::Max($minimum,[int]$heap)
         $arguments.Add(("--jvm-arg=-Xms1024m,-Xmx{0}m"-f$heap))
     }
+    if($Experience.launch.jvmArgs){
+        foreach($jvmArg in @($Experience.launch.jvmArgs)){
+            if(-not[string]::IsNullOrWhiteSpace([string]$jvmArg)){
+                $arguments.Add(("--jvm-arg={0}"-f[string]$jvmArg))
+            }
+        }
+    }
     if($Experience.runtimePolicies-and[string]$Experience.runtimePolicies.essentialLoaderUpdates-eq'disabled'){
         # La propiedad desactiva el update fuera del lock; los dos auto-answer
         # cubren loaders antiguos que ya hubieran dejado una version pendiente.
@@ -1167,7 +1174,7 @@ function Remove-CocoEssentialArtifacts([string]$InstanceRoot){
     if([string]::IsNullOrWhiteSpace($InstanceRoot)-or-not[IO.Path]::IsPathRooted($InstanceRoot)){throw 'La raiz de instancia para excluir Essential no es valida.'}
     $removed=0
     $mods=Join-Path $InstanceRoot 'mods'
-    foreach($jar in @(Get-ChildItem -LiteralPath $mods -File -ErrorAction SilentlyContinue|Where-Object{$_.Name-match'(?i)essential.*\.jar$'})){
+    foreach($jar in @(Get-ChildItem -LiteralPath $mods -File -ErrorAction SilentlyContinue|Where-Object{$_.Name-match'(?i)^(?!ftb-)essential.*\.jar$'})){
         if(-not(Test-CocoPathWithin $jar.FullName $InstanceRoot)){throw 'Essential intento escapar de la instancia.'}
         Remove-Item -LiteralPath $jar.FullName -Force
         $removed++
@@ -1246,7 +1253,7 @@ function Install-CocoManagedExperience(
         $rawRoleAssets=@(@($Lock.assets)+@($Experience.files)+$globalAssets|Where-Object{
             (-not$_.role-or$_.role-in@('all',$Role))-and
             -not$excludedPaths.Contains(([string]$_.path-replace'\\','/'))-and
-            ([string]$_.path-notmatch'(?i)^(mods/.*essential.*\.jar|essential/.*)$')
+            ([string]$_.path-notmatch'(?i)^(mods/(?!ftb-).*essential.*\.jar|essential/.*)$')
         })
         $roleAssets=[Collections.Generic.List[object]]::new()
         $seenRolePaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -1265,7 +1272,7 @@ function Install-CocoManagedExperience(
         Expand-CocoCurseForgeOverrides $packArchive ([string]$Lock.pack.overridesRoot) $stageFiles
         foreach($file in @(Get-ChildItem -LiteralPath $stageFiles -Recurse -File)){
             $relative=($file.FullName.Substring($stageFiles.Length).TrimStart('\','/'))-replace'\\','/'
-            if($excludedPaths.Contains($relative)-or$relative-match'(?i)^(mods/.*essential.*\.jar|essential/.*)$'){
+            if($excludedPaths.Contains($relative)-or$relative-match'(?i)^(mods/(?!ftb-).*essential.*\.jar|essential/.*)$'){
                 Remove-Item -LiteralPath $file.FullName -Force -ErrorAction SilentlyContinue
                 continue
             }
