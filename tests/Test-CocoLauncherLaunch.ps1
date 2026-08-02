@@ -41,5 +41,16 @@ $machineparty=@($catalog.experiences|Where-Object id -eq 'machine-party')[0]
 if($machineparty.runtime.type-ne'standalone'-or$machineparty.launch.workflow-ne'coco-standalone'){
     throw 'Machine Party no esta configurado con el workflow standalone esperado.'
 }
+$tempExpDir=Join-Path $env:TEMP ('coco-launch-test-'+[guid]::NewGuid())
+$tempCacheDir=Join-Path $env:TEMP ('coco-cache-test-'+[guid]::NewGuid())
+try{
+    $prep=Invoke-CocoManagedExperienceLaunch $catalog 'machine-party' $offline client $root $tempCacheDir $tempExpDir -Dry
+    $expectedIpFile=Join-Path $prep.Installation.InstanceRoot 'ip.txt'
+    if(-not(Test-Path -LiteralPath $expectedIpFile)-or([IO.File]::ReadAllText($expectedIpFile).Trim()-ne'10.77.37.1')){
+        throw 'Invoke-CocoManagedExperienceLaunch no creo ip.txt con 10.77.37.1 para la experiencia standalone.'
+    }
+}finally{
+    Remove-Item -LiteralPath $tempExpDir,$tempCacheDir -Recurse -Force -ErrorAction SilentlyContinue
+}
 
 'PASS: lanzamiento local aislado, autoingreso y experiencias Zombie/COBBLEVERSE/Machine-Party habilitadas validados.'

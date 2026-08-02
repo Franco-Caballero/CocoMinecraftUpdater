@@ -2025,6 +2025,14 @@ function Invoke-CocoManagedExperienceLaunch(
 
     if([string]$experience.launch.workflow-eq'coco-standalone'-or[string]$experience.runtime.type-eq'standalone'){
         $installed=Install-CocoStandaloneExperience $experience $ExperiencesRoot $CacheRoot
+        if($experience.hosting.host){
+            $hostIp=[string]$experience.hosting.host
+            [IO.File]::WriteAllText((Join-Path $installed.InstanceRoot 'ip.txt'),$hostIp,(New-Object Text.UTF8Encoding($false)))
+            Get-ChildItem -Path $installed.InstanceRoot -Recurse -Filter 'steam_api64.dll' -ErrorAction SilentlyContinue|ForEach-Object{
+                $targetIpFile=Join-Path $_.DirectoryName 'ip.txt'
+                [IO.File]::WriteAllText($targetIpFile,$hostIp,(New-Object Text.UTF8Encoding($false)))
+            }
+        }
         if($Dry){
             return [pscustomobject]@{Status='prepared';Experience=$experience;Installation=$installed}
         }
