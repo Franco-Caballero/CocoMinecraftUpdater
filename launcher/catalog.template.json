@@ -494,7 +494,7 @@
                 "packId": "standalone-machine-party",
                 "version": "1.0.0",
                 "lockPath": "launcher/experiences/machine-party.lock.json",
-                "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.66/Machine-Party.zip",
+                "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.71/Machine-Party.zip",
                 "sha256": "3b079ee754b8a3be28173da59e0e7631b2e36773d4128e3ba0399b9a46caa72f",
                 "size": 504692751
             },
