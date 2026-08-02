@@ -128,8 +128,6 @@ function Write-CocoEngineDiagnostic([Management.Automation.ErrorRecord]$Record){
         $minecraftLog=Get-CocoDiagnosticTail $minecraftLogPath 220
         $ipTextPath=if($selectedRoot-ne'Unknown'){Join-Path $selectedRoot 'ip.txt'}else{''}
         $standaloneIpText=Get-CocoDiagnosticTail $ipTextPath 80
-        $godotLogPath=Join-Path $env:APPDATA 'Godot\app_userdata\Machine Party\logs\godot.log'
-        $godotLogText=Get-CocoDiagnosticTail $godotLogPath 220
         $recentLauncherLogs=''
         try{
             foreach($file in @(Get-ChildItem -LiteralPath $script:CocoLogDirectory -File -Filter 'launcher-*.log' -ErrorAction SilentlyContinue|Sort-Object LastWriteTime -Descending|Select-Object -First 3)){
@@ -137,7 +135,6 @@ function Write-CocoEngineDiagnostic([Management.Automation.ErrorRecord]$Record){
             }
             if(-not$recentLauncherLogs){$recentLauncherLogs='No launcher logs found.'}
             if($standaloneIpText){$recentLauncherLogs+="`r`n--- STANDALONE IP CONFIG (ip.txt) ---`r`n$standaloneIpText`r`n"}
-            if($godotLogText){$recentLauncherLogs+="`r`n--- GODOT / STANDALONE GAME LOG (godot.log) ---`r`n$godotLogText`r`n"}
         }catch{$recentLauncherLogs="Unavailable: $($_.Exception.Message)"}
         $cacheSummary=try{
             $cacheRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater'

@@ -102,17 +102,15 @@ if([string]$valorantKeys.'key_key.origins.primary_active'-ne'key.keyboard.c'-or
 }
 try{$valorantState=[string]$valorantStateFile[0].content|ConvertFrom-Json}catch{throw 'La configuracion declarativa de CSmain no es JSON valido.'}
 $valorantShop=@($valorantState.shop)
-if($valorantShop.Count-ne9-or
+if($valorantState.startItemAll-ne'shop:knife'-or
+    $valorantShop.Count-ne10-or
     @($valorantShop|Where-Object{$_.itemId-eq'tacz:modern_kinetic_gun'}).Count-ne7-or
-    @($valorantShop|Where-Object{$_.templateSnbt-match'valorant:(classic|ghost|sheriff|vandal|phantom|operator|odin)'}).Count-ne7){
-    throw 'La tienda de CSmain no contiene el arsenal Valorant fijado con NBT de TACZ.'
-}
-$machineparty=@($catalog.experiences|Where-Object id -eq 'machine-party'|Select-Object -First 1)[0]
-if(-not$machineparty-or$machineparty.runtime.type-ne'standalone'-or$machineparty.launch.workflow-ne'coco-standalone'){
-    throw 'Machine Party no esta habilitado como experiencia standalone.'
+    @($valorantShop|Where-Object{$_.templateSnbt-match'valorant:(classic|ghost|sheriff|vandal|phantom|operator|odin)'}).Count-ne7-or
+    @($valorantShop|Where-Object{$_.id-eq'knife'-and$_.itemId-eq'lrtactical:melee'-and$_.enabled-eq$false-and$_.templateSnbt-match'MeleeWeaponId.*killfeedtacz_knife:1b'}).Count-ne1){
+    throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne7-or
+if($managedExperiences.Count-ne6-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }

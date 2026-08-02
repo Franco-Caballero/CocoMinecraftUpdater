@@ -1326,7 +1326,7 @@ function Ensure-CocoSteamRunning(){
     }
 
     if([string]::IsNullOrWhiteSpace($steamExe)){
-        throw "No se encontro Steam en esta PC. Por favor abre Steam antes de iniciar Machine Party."
+        throw "No se encontro Steam en esta PC. Por favor abre Steam antes de iniciar la experiencia standalone."
     }
 
     Write-CocoLog "Iniciando Steam minimizado a la bandeja desde '$steamExe'..."
@@ -1412,10 +1412,6 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         $sourceUrl=[string]$Experience.pack.archiveUrl
         if([string]::IsNullOrWhiteSpace($sourceUrl)-and$Experience.pack.manifestUrl){
             $sourceUrl=[string]$Experience.pack.manifestUrl
-        }
-        $localDevArchive=Join-Path $env:USERPROFILE 'Downloads\Machine-Party.zip'
-        if(-not(Test-Path -LiteralPath $sourceUrl)-and(Test-Path -LiteralPath $localDevArchive)-and(Get-FileHash -LiteralPath $localDevArchive -Algorithm SHA256).Hash.ToLowerInvariant()-eq$expectedSha){
-            $sourceUrl=$localDevArchive
         }
         Write-CocoLog "Iniciando descarga/copia de paquete standalone desde: $sourceUrl -> $archive"
 

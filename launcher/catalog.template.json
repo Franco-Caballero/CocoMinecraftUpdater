@@ -507,7 +507,7 @@
                     {
                         "path": "config/killfeedtacz_state.json",
                         "writeMode": "initialize",
-                        "content": "{\n  \"warmupSeconds\": 20,\n  \"freezeSeconds\": 15,\n  \"buySeconds\": 20,\n  \"roundSeconds\": 180,\n  \"bombSeconds\": 45,\n  \"plantTicks\": 80,\n  \"defuseTicks\": 140,\n  \"defuseKitTicks\": 70,\n  \"winRounds\": 9,\n  \"bombEnabled\": 1,\n  \"giveBombAtRoundStart\": 1,\n  \"autoRespawnRoundStart\": 1,\n  \"scopeRestrictionEnabled\": 1,\n  \"classic1\": \"shop:classic\",\n  \"ammoBox\": \"tacz:creative_ammo_box\",\n  \"shop\": [\n    {\"id\":\"classic\",\"category\":\"LIGHT\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":0,\"stats\":\"LIGHT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:classic'}\"},\n    {\"id\":\"ghost\",\"category\":\"LIGHT\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":500,\"stats\":\"LIGHT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:ghost'}\"},\n    {\"id\":\"sheriff\",\"category\":\"LIGHT\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":800,\"stats\":\"LIGHT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:sheriff'}\"},\n    {\"id\":\"vandal\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":2900,\"stats\":\"HEAVY\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:vandal'}\"},\n    {\"id\":\"phantom\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":2900,\"stats\":\"HEAVY\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:phantom'}\"},\n    {\"id\":\"operator\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":4700,\"stats\":\"HEAVY\",\"scope\":true,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:operator'}\"},\n    {\"id\":\"odin\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":3200,\"stats\":\"HEAVY\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:odin'}\"},\n    {\"id\":\"armor\",\"category\":\"ARMOR\",\"itemId\":\"minecraft:iron_chestplate\",\"price\":1000,\"stats\":\"ARMOR\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"\"},\n    {\"id\":\"defuse_kit\",\"category\":\"GRENADES\",\"itemId\":\"minecraft:shears\",\"price\":400,\"stats\":\"KIT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"\"}\n  ]\n}\n"
+                        "content": "{\n  \"warmupSeconds\": 20,\n  \"freezeSeconds\": 15,\n  \"buySeconds\": 20,\n  \"roundSeconds\": 180,\n  \"bombSeconds\": 45,\n  \"plantTicks\": 80,\n  \"defuseTicks\": 140,\n  \"defuseKitTicks\": 70,\n  \"winRounds\": 9,\n  \"bombEnabled\": 1,\n  \"giveBombAtRoundStart\": 1,\n  \"autoRespawnRoundStart\": 1,\n  \"scopeRestrictionEnabled\": 1,\n  \"startItemAll\": \"shop:knife\",\n  \"classic1\": \"shop:classic\",\n  \"ammoBox\": \"tacz:creative_ammo_box\",\n  \"shop\": [\n    {\"id\":\"classic\",\"category\":\"LIGHT\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":0,\"stats\":\"LIGHT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:classic'}\"},\n    {\"id\":\"ghost\",\"category\":\"LIGHT\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":500,\"stats\":\"LIGHT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:ghost'}\"},\n    {\"id\":\"sheriff\",\"category\":\"LIGHT\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":800,\"stats\":\"LIGHT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:sheriff'}\"},\n    {\"id\":\"vandal\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":2900,\"stats\":\"HEAVY\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:vandal'}\"},\n    {\"id\":\"phantom\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":2900,\"stats\":\"HEAVY\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:phantom'}\"},\n    {\"id\":\"operator\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":4700,\"stats\":\"HEAVY\",\"scope\":true,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:operator'}\"},\n    {\"id\":\"odin\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":3200,\"stats\":\"HEAVY\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:odin'}\"},\n    {\"id\":\"armor\",\"category\":\"ARMOR\",\"itemId\":\"minecraft:iron_chestplate\",\"price\":1000,\"stats\":\"ARMOR\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"\"},\n    {\"id\":\"defuse_kit\",\"category\":\"GRENADES\",\"itemId\":\"minecraft:shears\",\"price\":400,\"stats\":\"KIT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"\"},\n    {\"id\":\"knife\",\"category\":\"LIGHT\",\"itemId\":\"lrtactical:melee\",\"price\":0,\"stats\":\"KNIFE\",\"scope\":false,\"silencer\":false,\"enabled\":false,\"templateSnbt\":\"{MeleeWeaponId:'wtyj:eternal_karambit',killfeedtacz_knife:1b}\"}\n  ]\n}\n"
                     }
                 ]
             },
@@ -523,37 +523,6 @@
                     "license": "Apache-2.0"
                 }
             ]
-        },
-        {
-            "id": "machine-party",
-            "name": "Machine Party",
-            "description": "Juego party multijugador en Godot. Servidor y clientes se inician directamente desde Coco Launcher.",
-            "instanceId": "machine-party",
-            "managementMode": "managed",
-            "runtime": {
-                "type": "standalone",
-                "executable": "Machine Party.exe"
-            },
-            "pack": {
-                "packId": "standalone-machine-party",
-                "version": "1.0.0",
-                "lockPath": "launcher/experiences/machine-party.lock.json",
-                "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.72/Machine-Party.zip",
-                "sha256": "3b079ee754b8a3be28173da59e0e7631b2e36773d4128e3ba0399b9a46caa72f",
-                "size": 504692751
-            },
-            "hosting": {
-                "mode": "lan",
-                "host": "10.77.37.1",
-                "port": 25564,
-                "networkId": "58997fc5f3c0c001"
-            },
-            "launch": {
-                "workflow": "coco-standalone",
-                "autoJoin": true,
-                "serverName": "Coco - Machine Party"
-            },
-            "files": []
         }
     ]
 }

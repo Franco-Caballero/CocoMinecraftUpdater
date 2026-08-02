@@ -16,7 +16,7 @@ CSmain es el controlador de partida. No se recrean en Coco las rondas ni la bomb
 
 La integración usa TACZ como arma base. El lock instala el mismo TACZ 1.1.8-hotfix que ya tenía la instancia, CSmain en ambos lados, el gunpack Valorant válido bajo tacz/, Origins, Valorant Origins, LR Tactical, Player Animator, GeckoLib, el pack de cuchillos y MCWiFiPnP solo en el host.
 
-La tienda inicial se escribe una sola vez en config/killfeedtacz_state.json. Contiene los IDs valorant:classic, ghost, sheriff, vandal, phantom, operator y odin; las compras posteriores reutilizan el NBT del arma TACZ, por lo que no se entregan armas genéricas.
+La tienda inicial se escribe una sola vez en config/killfeedtacz_state.json. Contiene los IDs valorant:classic, ghost, sheriff, vandal, phantom, operator y odin; las compras posteriores reutilizan el NBT del arma TACZ, por lo que no se entregan armas genéricas. CSmain usa `startItemAll: "shop:knife"` para entregar un `Eternal Karambit` gratuito al inicio de cada ronda; la entrada está desactivada para compras y solo sirve como carga inicial.
 
 ## Preparación de un mapa
 
@@ -96,7 +96,7 @@ El jugador usa el orbe con clic derecho. Para revisar o asignar directamente des
 
 La elección se hace en el hub, antes de `/cs start`, no durante cada ronda. Permanece guardada por jugador aunque CSmain limpie el inventario y reinicie la munición. La tecla `O` sirve para ver el agente/poderes actuales; para cambiarlo se usa la GUI de `/origin gui` o el Orb of Origin.
 
-La instalación viva preparada para Ascent y Haven incluye además el datapack `coco_agent_orb`: todos los jugadores conectados reciben un orbe si no tienen uno en el inventario. Como el objeto original se consume al abrirlo, el servidor lo repone en el siguiente tick; en la práctica es infinito para jugadores nuevos y antiguos. El mismo datapack entrega un único `Eternal Karambit` (`wtyj:eternal_karambit`) a cada jugador que no tenga un cuchillo `lrtactical:melee`; CSmain lo vuelve a entregar cuando limpia el inventario al comenzar una ronda. No modifica `playerdata` ni reemplaza mundos.
+La instalación viva preparada para Ascent y Haven incluye además el datapack `coco_agent_orb`: todos los jugadores conectados reciben un orbe si no tienen uno en el inventario. Como el objeto original se consume al abrirlo, el servidor lo repone en el siguiente tick; en la práctica es infinito para jugadores nuevos y antiguos. El mismo datapack entrega un `Eternal Karambit` (`wtyj:eternal_karambit`) en el hub si falta, mientras CSmain lo entrega de forma nativa al comenzar cada ronda. No modifica `playerdata` ni reemplaza mundos.
 
 ## Flujo de los jugadores
 
