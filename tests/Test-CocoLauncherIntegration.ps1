@@ -47,6 +47,26 @@ try{
     if(Test-Path (Join-Path $instance 'optionsshaders.txt')){
         throw 'Coco genero optionsshaders.txt en una instalacion limpia aunque Backrooms no declara un shaderpack externo.'
     }
+    $keyExperience=(($iron|ConvertTo-Json -Depth 20)|ConvertFrom-Json)
+    $keyExperience.preferences | Add-Member -NotePropertyName keybindings -NotePropertyValue ([pscustomobject]@{
+        'key_key.origins.primary_active'='key.keyboard.c'
+        'key_key.origins.secondary_active'='key.keyboard.x'
+        'key_key.tacz.inspect.desc'='key.keyboard.y'
+        'key_key.tacz.reload.desc'='key.keyboard.r'
+        'key_iris.keybind.reload'='key.keyboard.f8'
+    }) -Force
+    Set-CocoManagedInstancePreferences $keyExperience $instance
+    $options=Get-Content -LiteralPath (Join-Path $instance 'options.txt') -Raw
+    if($options-notmatch'(?m)^key_key\.origins\.primary_active:key\.keyboard\.c\r?$'-or
+       $options-notmatch'(?m)^key_key\.origins\.secondary_active:key\.keyboard\.x\r?$'-or
+       $options-notmatch'(?m)^key_key\.tacz\.inspect\.desc:key\.keyboard\.y\r?$'-or
+       $options-notmatch'(?m)^key_key\.tacz\.reload\.desc:key\.keyboard\.r\r?$'-or
+       $options-notmatch'(?m)^key_iris\.keybind\.reload:key\.keyboard\.f8\r?$'){
+        throw 'El adaptador declarativo de atajos no aplico el layout solicitado.'
+    }
+    if($options-match'(?m)^key_iris\.keybind\.reload:key\.keyboard\.r\r?$'){
+        throw 'El adaptador de atajos dejo Iris en R junto a la recarga de TACZ.'
+    }
     $managedExperience=(($iron|ConvertTo-Json -Depth 20)|ConvertFrom-Json)
     $managedExperience.preferences | Add-Member -NotePropertyName managedFiles -NotePropertyValue @(
         [pscustomobject]@{path='config/coco-audit.toml';content="enabled=true`nvalue=7`n"}
@@ -54,6 +74,20 @@ try{
     Set-CocoManagedInstancePreferences $managedExperience $instance
     if([IO.File]::ReadAllText((Join-Path $instance 'config\coco-audit.toml'))-cne"enabled=true`nvalue=7`n"){
         throw 'Una configuracion declarativa especifica de experiencia no se aplico exactamente.'
+    }
+    $initializePath=Join-Path $instance 'config\coco-initialize.json'
+    $managedExperience.preferences | Add-Member -NotePropertyName initializeFile -NotePropertyValue $null -Force
+    $managedExperience.preferences.initializeFile=[pscustomobject]@{
+        path='config/coco-initialize.json'
+        writeMode='initialize'
+        content=('{'+[Environment]::NewLine+'  "createdByCoco": true'+[Environment]::NewLine+'}'+[Environment]::NewLine)
+    }
+    $managedExperience.preferences.managedFiles=@($managedExperience.preferences.managedFiles,$managedExperience.preferences.initializeFile)
+    Set-CocoManagedInstancePreferences $managedExperience $instance
+    '{"createdByCoco":false}'|Set-Content -LiteralPath $initializePath -Encoding UTF8
+    Set-CocoManagedInstancePreferences $managedExperience $instance
+    if((Get-Content -LiteralPath $initializePath -Raw).Trim()-ne'{"createdByCoco":false}'){
+        throw 'Una preferencia initialize reemplazo una configuracion persistente del mundo.'
     }
     $tomlPath=Join-Path $instance 'config\coco-settings.toml'
     "[client.quality]`r`notherValue = 91`r`nlodDistance = 128`r`n`r`n[server]`r`nkeep = true`r`n" |

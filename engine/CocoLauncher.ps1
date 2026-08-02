@@ -858,9 +858,11 @@ function Read-CocoLauncherCatalog([string]$Path){
             if($experience.preferences.managedFiles){
                 foreach($managedFile in @($experience.preferences.managedFiles)){
                     $managedPath=([string]$managedFile.path)-replace'\\','/'
+                    $writeMode=if($managedFile.writeMode){[string]$managedFile.writeMode}else{'replace'}
                     if(-not(Test-CocoSafeRelativePath $managedPath)-or
                         $managedPath-notmatch'^(?i)(config|shaderpacks)/'-or
                         -not$managedPreferencePaths.Add($managedPath)-or
+                        $writeMode-notin@('replace','initialize') -or
                         $managedFile.PSObject.Properties.Name-notcontains'content'-or
                         ([string]$managedFile.content).Length-gt1048576){
                         throw "Archivo de preferencias administradas invalido para '$id': '$managedPath'."
@@ -909,11 +911,14 @@ function Read-CocoExperienceLock([string]$Path,$Experience){
     try{$lock=Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json}catch{throw "El lock de experiencia no es JSON valido: $($_.Exception.Message)"}
     if([int]$lock.schemaVersion-ne1-or$lock.source.provider-ne'curseforge'-or$lock.source.redistribution-ne'origin-only'){throw 'El lock de experiencia usa un origen o schema no soportado.'}
     if([string]$lock.runtime.minecraftVersion-ne[string]$Experience.runtime.minecraftVersion-or[string]$lock.runtime.loader-ne[string]$Experience.runtime.loader-or[string]$lock.runtime.loaderVersion-ne[string]$Experience.runtime.loaderVersion){throw 'El runtime del lock no coincide con el catalogo.'}
-    if(-not$lock.pack.archive-or[string]$lock.pack.archive.sha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$lock.pack.archive.size-le0){throw 'El archivo fuente del pack no esta fijado.'}
+    $packMode=if($lock.pack.mode){[string]$lock.pack.mode}else{'curseforge-archive'}
+    if($packMode-notin@('curseforge-archive','assets-only')){throw "Modo de pack no soportado: '$packMode'."}
+    if($packMode-eq'curseforge-archive' -and (-not$lock.pack.archive-or[string]$lock.pack.archive.sha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$lock.pack.archive.size-le0)){throw 'El archivo fuente del pack no esta fijado.'}
+    if($packMode-eq'assets-only' -and $lock.pack.archive){throw 'Un pack assets-only no puede declarar un archivo fuente de pack.'}
     $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($asset in @($lock.assets)){
         if(([int64]$asset.projectId-le0-or[int64]$asset.fileId-le0)-and[string]$asset.sourceUrl-notmatch'^https://cdn\.modrinth\.com/'){throw 'El lock contiene un asset CurseForge sin IDs validos.'}
-        $allowedRoot=@('mods/','resourcepacks/','shaderpacks/')|Where-Object{([string]$asset.path).StartsWith($_,[StringComparison]::OrdinalIgnoreCase)}|Select-Object -First 1
+        $allowedRoot=@('mods/','tacz/','resourcepacks/','shaderpacks/')|Where-Object{([string]$asset.path).StartsWith($_,[StringComparison]::OrdinalIgnoreCase)}|Select-Object -First 1
         if(-not(Test-CocoSafeRelativePath ([string]$asset.path))-or-not$allowedRoot){throw "Ruta de asset invalida en lock: '$($asset.path)'."}
         if(-not$paths.Add([string]$asset.path)){throw "Ruta duplicada en lock: '$($asset.path)'."}
         if([string]$asset.sha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$asset.size-le0){throw "Asset no fijado correctamente: '$($asset.path)'."}
@@ -1543,15 +1548,19 @@ function Install-CocoManagedExperience(
             $normPath=([string]$asset.path)-replace'\\','/'
             if($asset-and$normPath-and$seenRolePaths.Add($normPath)){[void]$roleAssets.Add($asset)}
         }
-        $downloadAssets=@($Lock.pack.archive)+@($roleAssets)
+        $downloadAssets=@()
+        if($Lock.pack.archive){$downloadAssets=@($Lock.pack.archive)}
+        $downloadAssets+=@($roleAssets)
         $totalBytes=[int64](@($downloadAssets|Measure-Object -Property size -Sum).Sum)
         $experienceLabel=if(-not[string]::IsNullOrWhiteSpace([string]$Experience.name)){[string]$Experience.name}else{[string]$Experience.id}
         $progress=@{Index=0;Count=$downloadAssets.Count;CompletedBytes=[int64]0;TotalBytes=$totalBytes;ProgressStart=30;ProgressEnd=68;Step=4;Title="DESCARGANDO $($experienceLabel.ToUpperInvariant())"}
         if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{role=$Role;experienceId=[string]$Experience.id;packVersion=[string]$Experience.pack.version;instanceRoot=$instanceRoot}}
         Set-CocoLauncherStep 4 'VERIFICANDO ARCHIVOS DEL PACK' ("{0} archivos fijados | {1:N1} MB totales | rol {2}"-f$downloadAssets.Count,($totalBytes/1MB),$Role) 30
         [void](Get-CocoLockedAssetsParallel $CacheRoot $downloadAssets $progress)
-        $packArchive=Get-CocoLockedAsset $CacheRoot $Lock.pack.archive $null
-        Expand-CocoCurseForgeOverrides $packArchive ([string]$Lock.pack.overridesRoot) $stageFiles
+        if($Lock.pack.archive){
+            $packArchive=Get-CocoLockedAsset $CacheRoot $Lock.pack.archive $null
+            Expand-CocoCurseForgeOverrides $packArchive ([string]$Lock.pack.overridesRoot) $stageFiles
+        }
         foreach($file in @(Get-ChildItem -LiteralPath $stageFiles -Recurse -File)){
             $relative=($file.FullName.Substring($stageFiles.Length).TrimStart('\','/'))-replace'\\','/'
             if($excludedPaths.Contains($relative)-or$relative-match'(?i)^(mods/(?!ftb-).*essential.*\.jar|essential/.*)$'){
@@ -1884,11 +1893,26 @@ function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
     $preferences=$Experience.preferences
     if(-not$preferences){return}
 
+    $keybindings=[ordered]@{}
+    if($preferences.keybindings){
+        foreach($property in @($preferences.keybindings.PSObject.Properties)){
+            $key=[string]$property.Name
+            $value=[string]$property.Value
+            if($key-notmatch'^key_[a-zA-Z0-9_.-]+$'){throw "Clave de atajo insegura para '$($Experience.id)': '$key'."}
+            if($value-notmatch'^key\.(keyboard|mouse)\.[a-zA-Z0-9_.-]+(?::[a-zA-Z0-9_.-]+)*$'){
+                throw "Valor de atajo inseguro para '$($Experience.id)': '$value'."
+            }
+            $keybindings[$key]=$value
+        }
+    }
+
     if($preferences.managedFiles){
         foreach($managedFile in @($preferences.managedFiles)){
             $relative=([string]$managedFile.path)-replace'/','\'
             $destination=Join-Path $InstanceRoot $relative
             if(-not(Test-CocoPathWithin $destination $InstanceRoot)){throw "Una preferencia intento escapar de '$($Experience.id)'."}
+            $writeMode=if($managedFile.writeMode){[string]$managedFile.writeMode}else{'replace'}
+            if($writeMode-eq'initialize'-and(Test-Path -LiteralPath $destination -PathType Leaf)){continue}
             New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force|Out-Null
             $content=[string]$managedFile.content
             $current=if(Test-Path -LiteralPath $destination -PathType Leaf){[IO.File]::ReadAllText($destination)}else{$null}
@@ -1949,7 +1973,7 @@ function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
         }
     }
 
-    if([bool]$preferences.standardControls-or$null-ne$preferences.fov-or$preferences.language){
+    if([bool]$preferences.standardControls-or$null-ne$preferences.fov-or$preferences.language-or$keybindings.Count-gt0){
         foreach($optsFile in @(
             (Join-Path $InstanceRoot 'options.txt'),
             (Join-Path $InstanceRoot 'config\defaultoptions\options.txt'),
@@ -1970,6 +1994,12 @@ function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
                 $lang=[string]$preferences.language
                 if($content-match'(?m)^lang:'){$content=$content-replace'(?m)^lang:.*$',("lang:$lang")}
                 else{$content=$content.TrimEnd()+"`r`nlang:$lang`r`n"}
+            }
+            foreach($key in $keybindings.Keys){
+                $replacement="${key}:$($keybindings[$key])"
+                $pattern='(?m)^'+[regex]::Escape([string]$key)+':.*$'
+                if($content-match$pattern){$content=[regex]::Replace($content,$pattern,$replacement)}
+                else{$content=$content.TrimEnd()+"`r`n$replacement`r`n"}
             }
             [IO.File]::WriteAllText($optsFile,$content,(New-Object Text.UTF8Encoding($false)))
         }

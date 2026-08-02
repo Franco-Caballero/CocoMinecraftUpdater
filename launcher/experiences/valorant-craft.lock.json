@@ -1,29 +1,18 @@
 {
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-08-01T14:58:00.0000000Z",
+  "generatedAtUtc": "2026-08-02T00:00:00.0000000Z",
   "source": {
     "provider": "curseforge",
-    "projectId": 1354886,
-    "fileId": 8544899,
-    "page": "https://www.curseforge.com/minecraft/modpacks/nightfallcraft-the-casket-of-reveries",
+    "projectId": 1472644,
+    "fileId": 7682938,
+    "page": "https://www.curseforge.com/minecraft/mc-mods/csmain",
     "license": "All Rights Reserved",
     "redistribution": "origin-only"
   },
   "pack": {
-    "name": "ValorantCraft - Ultimate 3D Tactical Shooter",
-    "version": "1.0.0",
-    "archive": {
-      "projectId": 1354886,
-      "fileId": 8544899,
-      "name": "The Casket of Reveries -2.2.8.6.zip",
-      "path": "mods/The Casket of Reveries -2.2.8.6.zip",
-      "role": "source-pack",
-      "projectPage": "https://www.curseforge.com/minecraft/modpacks/nightfallcraft-the-casket-of-reveries",
-      "sourceUrl": "https://www.curseforge.com/api/v1/mods/1354886/files/8544899/download",
-      "size": 160278,
-      "sha256": "aa6856b3fb826e160e1dbe174f2176053a44ec6639254168b4652cdd428c7002"
-    },
-    "overridesRoot": "overrides"
+    "name": "VALORANTCraft - CSmain Tactical",
+    "version": "1.1.0-csmain-beta.1",
+    "mode": "assets-only"
   },
   "runtime": {
     "minecraftVersion": "1.20.1",
@@ -41,7 +30,34 @@
       "sourceUrl": "https://cdn.modrinth.com/data/SzzJttH8/versions/yOVIzIJR/tacz-1.20.1-1.1.8-hotfix.jar",
       "size": 57465167,
       "sha256": "9ed8ada1283ed7a793a70cc1b51c4a340f367ce84707e1a7b8cf21ee3d288d77",
-      "policy": "replace"
+      "policy": "replace",
+      "license": "MIT"
+    },
+    {
+      "projectId": 1472644,
+      "fileId": 7682938,
+      "name": "csmain-1.0.0-beta.1.jar",
+      "path": "mods/csmain-1.0.0-beta.1.jar",
+      "role": "all",
+      "projectPage": "https://www.curseforge.com/minecraft/mc-mods/csmain",
+      "sourceUrl": "https://www.curseforge.com/api/v1/mods/1472644/files/7682938/download",
+      "size": 236754,
+      "sha256": "a263470939a773b3aa7bb9fe88ec071930e77cd4c8958a40422e5ea249fab7f3",
+      "policy": "replace",
+      "license": "All Rights Reserved"
+    },
+    {
+      "projectId": 1268425,
+      "fileId": 8072551,
+      "name": "Valorant_gunpack_v0.1.3_hotfix_4.zip",
+      "path": "tacz/Valorant_gunpack_v0.1.3_hotfix_4.zip",
+      "role": "all",
+      "projectPage": "https://www.curseforge.com/minecraft/customization/tacz-valorant-gun-pack-for-tacz",
+      "sourceUrl": "https://www.curseforge.com/api/v1/mods/1268425/files/8072551/download",
+      "size": 6923006,
+      "sha256": "aec346aec55dece5993c1891a85b0ba32c5091c92b666a41c6f6c1fe7b4ae51b",
+      "policy": "replace",
+      "license": "All Rights Reserved"
     },
     {
       "projectId": 388172,
@@ -53,7 +69,8 @@
       "sourceUrl": "https://cdn.modrinth.com/data/8BmcQJ2H/versions/aC5KMoNg/geckolib-forge-1.20.1-4.8.4.jar",
       "size": 1038209,
       "sha256": "4518779a31b6c2abb92c98b5ad17ef3d60177df68626bfc86c44de2764913c2b",
-      "policy": "replace"
+      "policy": "replace",
+      "license": "MIT"
     },
     {
       "projectId": 682736,
@@ -65,7 +82,8 @@
       "sourceUrl": "https://cdn.modrinth.com/data/gedNE4y2/versions/xe2EVE6q/player-animation-lib-forge-1.0.2-rc1%2B1.20.jar",
       "size": 181437,
       "sha256": "90d9965cb9efdbda29fdc5610be3914cf7008bf5c392ff34f7ab25f96a852691",
-      "policy": "replace"
+      "policy": "replace",
+      "license": "MIT"
     },
     {
       "projectId": 1400000,
@@ -77,7 +95,8 @@
       "sourceUrl": "https://cdn.modrinth.com/data/AiwNM9O0/versions/McZNhhZ1/lrtactical-1.20.1-0.4.1.jar",
       "size": 5439652,
       "sha256": "42f3b2f5a4194baa10ce76720b5770290a64105634f0dcd9182fc0ef33800e6e",
-      "policy": "replace"
+      "policy": "replace",
+      "license": "GPL-3.0"
     },
     {
       "projectId": 1607535,
@@ -89,7 +108,34 @@
       "sourceUrl": "https://www.curseforge.com/api/v1/mods/1607535/files/8418809/download",
       "size": 2521866,
       "sha256": "8475ccdc41c6d767908f5b512468903af50c620da39396e8344587b6ca22bf55",
-      "policy": "replace"
+      "policy": "replace",
+      "license": "All Rights Reserved"
+    },
+    {
+      "projectId": 474438,
+      "fileId": 5314209,
+      "name": "origins-forge-1.20.1-1.10.0.9-all.jar",
+      "path": "mods/origins-forge-1.20.1-1.10.0.9-all.jar",
+      "role": "all",
+      "projectPage": "https://www.curseforge.com/minecraft/mc-mods/origins-forge",
+      "sourceUrl": "https://www.curseforge.com/api/v1/mods/474438/files/5314209/download",
+      "size": 2307868,
+      "sha256": "5244b8b4434cd1bb6f4ebb71a36008218e700ed3245c14f867b8dc5487137c64",
+      "policy": "replace",
+      "license": "MIT"
+    },
+    {
+      "projectId": 1079617,
+      "fileId": 6229799,
+      "name": "Valorant_Origins+forge1.20.1+1.4.0.jar",
+      "path": "mods/Valorant_Origins+forge1.20.1+1.4.0.jar",
+      "role": "all",
+      "projectPage": "https://www.curseforge.com/minecraft/mc-mods/valorant-origins",
+      "sourceUrl": "https://www.curseforge.com/api/v1/mods/1079617/files/6229799/download",
+      "size": 95654,
+      "sha256": "8c36858648f17af27d0a1de2f9357503c8d5440673d131ca75ce878cd2be408a",
+      "policy": "replace",
+      "license": "GPL-3.0"
     },
     {
       "projectId": 359052,
@@ -101,7 +147,8 @@
       "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/NW8GxGB5/mcwifipnp-1.7.6-1.20.1-forge.jar",
       "size": 82482,
       "sha256": "6355f4569ec26046c0877f45fbc37a28d57b656999945f3f6491cf0109f23aa0",
-      "policy": "replace"
+      "policy": "replace",
+      "license": "Apache-2.0"
     }
   ]
 }

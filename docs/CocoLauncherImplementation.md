@@ -94,7 +94,7 @@ Fuente oficial: [MCWiFiPnP en Modrinth](https://modrinth.com/mod/mcwifipnp) y [c
 - La instancia de la primera sesión Backrooms fue consolidada en `%APPDATA%\CocoMinecraft\experiences\into-the-backrooms`; ésa es la instalación que se seguirá usando.
 - No existe una copia de respaldo del mundo Backrooms ni una segunda instalación temporal.
 
-Los locks administran mods, configs, resource packs y shaders. `saves`, `playerdata`, avances, estadísticas y bases DH no se reemplazan. Las preferencias especiales de cada experiencia viven en `catalog.template.json`, mientras que las decisiones deliberadamente universales viven en `globalPolicies`. `preferences.managedFiles` permite fijar texto completo bajo `config/` o `shaderpacks/` para todos los jugadores de una sola experiencia; los mods adicionales viven en `experiences[].files` y los retiros explícitos en `pack.excludedPaths`.
+Los locks administran mods, configs, resource packs y shaders. `saves`, `playerdata`, avances, estadísticas y bases DH no se reemplazan. Las preferencias especiales de cada experiencia viven en `catalog.template.json`, mientras que las decisiones deliberadamente universales viven en `globalPolicies`. `preferences.managedFiles` permite fijar texto completo bajo `config/` o `shaderpacks/` para todos los jugadores de una sola experiencia; por defecto reemplaza el archivo y `writeMode: "initialize"` permite crear una configuración base una sola vez para que una experiencia pueda persistir sus propios cambios. Los mods adicionales viven en `experiences[].files` y los retiros explícitos en `pack.excludedPaths`.
 
 Políticas universales:
 

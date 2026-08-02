@@ -43,7 +43,7 @@ Un archivo sólo se excluye por petición explícita y después de probar que ni
 - `saves`, `playerdata`, estadísticas, avances y Distant Horizons nunca pertenecen al conjunto administrado.
 - Decidir explícitamente qué archivos se preservan (por ejemplo `options.txt`) y cuáles se reemplazan.
 - Preservar los shaders, efectos internos y configuraciones visuales que entregue el pack. No añadir, seleccionar, desactivar ni retirar un shader por una regla genérica: cualquier intervención visual adicional debe pertenecer explícitamente a esa experiencia y tener evidencia y prueba física.
-- Para cambios comunes a todos los jugadores de una sola experiencia, declarar mods adicionales en `experiences[].files`, retiros en `pack.excludedPaths`, archivos de settings completos en `preferences.managedFiles` y selección de shader en `preferences.shader`. Verificar que una segunda experiencia no reciba ninguno de esos cambios.
+- Para cambios comunes a todos los jugadores de una sola experiencia, declarar mods adicionales en `experiences[].files`, retiros en `pack.excludedPaths`, archivos de settings completos en `preferences.managedFiles` y selección de shader en `preferences.shader`. Usar `writeMode: "initialize"` solo cuando el mod de la experiencia debe conservar cambios posteriores, como coordenadas de un mapa; verificar que una segunda experiencia no reciba ninguno de esos cambios.
 - Probar actualización y retiro de mods con backup y rollback provocado.
 - Abrir con Minecraft real y confirmar que `servers.dat` se lee; no basta con que un escritor NBT propio acepte su salida.
 

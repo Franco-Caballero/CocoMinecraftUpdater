@@ -60,6 +60,53 @@ if($zombie.hosting.adapter-ne'lan-server-properties-v1'){
     throw 'Zombie 1.12.2 no esta habilitado con su adaptador LAN legado.'
 }
 $valorantcraft=@($catalog.experiences|Where-Object id -eq 'valorant-craft'|Select-Object -First 1)[0]
+if(-not$valorantcraft-or$valorantcraft.runtime.minecraftVersion-ne'1.20.1'-or$valorantcraft.runtime.loader-ne'forge'-or
+    $valorantcraft.runtime.loaderVersion-ne'47.4.4'-or$valorantcraft.pack.sourcePage-ne'https://www.curseforge.com/minecraft/mc-mods/csmain'){
+    throw 'VALORANTCraft no esta fijado al runtime y fuente oficiales de CSmain.'
+}
+$valorantLock=Read-CocoExperienceLock (Join-Path $root (($valorantcraft.pack.lockPath)-replace'/','\')) $valorantcraft
+if($valorantLock.pack.mode-ne'assets-only'-or$valorantLock.pack.archive){throw 'VALORANTCraft debe usar una composicion de assets sin archive ficticio.'}
+$valorantRequiredPaths=@(
+    'mods/csmain-1.0.0-beta.1.jar',
+    'mods/tacz-1.20.1-1.1.8-hotfix.jar',
+    'tacz/Valorant_gunpack_v0.1.3_hotfix_4.zip',
+    'mods/origins-forge-1.20.1-1.10.0.9-all.jar',
+    'mods/Valorant_Origins+forge1.20.1+1.4.0.jar'
+)
+foreach($requiredPath in $valorantRequiredPaths){
+    $match=@($valorantLock.assets|Where-Object path -eq $requiredPath)
+    if($match.Count-ne1-or$match[0].role-ne'all'){throw "VALORANTCraft no fija el asset requerido '$requiredPath' para ambos roles."}
+}
+$valorantCsmain=@($valorantLock.assets|Where-Object path -eq 'mods/csmain-1.0.0-beta.1.jar')[0]
+if($valorantCsmain.sourceUrl-ne'https://www.curseforge.com/api/v1/mods/1472644/files/7682938/download'-or
+    $valorantCsmain.sha256-ne'a263470939a773b3aa7bb9fe88ec071930e77cd4c8958a40422e5ea249fab7f3'){
+    throw 'CSmain no esta fijado al archivo CurseForge verificado.'
+}
+$valorantStateFile=@($valorantcraft.preferences.managedFiles|Where-Object path -eq 'config/killfeedtacz_state.json')
+if($valorantStateFile.Count-ne1-or$valorantStateFile[0].writeMode-ne'initialize'){
+    throw 'La configuracion persistente de CSmain debe inicializarse una vez y conservar los spawns del mapa.'
+}
+$valorantOriginsFile=@($valorantcraft.preferences.managedFiles|Where-Object path -eq 'config/origins.json')
+if($valorantOriginsFile.Count-ne1-or[string]$valorantOriginsFile[0].content-notmatch'disableDefaultOrigins\"\s*:\s*true'){
+    throw 'VALORANTCraft debe desactivar los origenes base y conservar solo la capa de agentes.'
+}
+$valorantKeys=$valorantcraft.preferences.keybindings
+if([string]$valorantKeys.'key_key.origins.primary_active'-ne'key.keyboard.c'-or
+   [string]$valorantKeys.'key_key.origins.secondary_active'-ne'key.keyboard.x'-or
+   [string]$valorantKeys.'key_key.tacz.inspect.desc'-ne'key.keyboard.y'-or
+   [string]$valorantKeys.'key_key.killfeedtacz.shop'-ne'key.keyboard.b'-or
+   [string]$valorantKeys.'key_key.tacz.reload.desc'-ne'key.keyboard.r'-or
+   [string]$valorantKeys.'key_iris.keybind.reload'-ne'key.keyboard.f8'-or
+   [string]$valorantKeys.'key_iris.keybind.shaderPackSelection'-ne'key.keyboard.f7'){
+    throw 'VALORANTCraft no declara el layout de controles sin conflictos.'
+}
+try{$valorantState=[string]$valorantStateFile[0].content|ConvertFrom-Json}catch{throw 'La configuracion declarativa de CSmain no es JSON valido.'}
+$valorantShop=@($valorantState.shop)
+if($valorantShop.Count-ne9-or
+    @($valorantShop|Where-Object{$_.itemId-eq'tacz:modern_kinetic_gun'}).Count-ne7-or
+    @($valorantShop|Where-Object{$_.templateSnbt-match'valorant:(classic|ghost|sheriff|vandal|phantom|operator|odin)'}).Count-ne7){
+    throw 'La tienda de CSmain no contiene el arsenal Valorant fijado con NBT de TACZ.'
+}
 $machineparty=@($catalog.experiences|Where-Object id -eq 'machine-party'|Select-Object -First 1)[0]
 if(-not$machineparty-or$machineparty.runtime.type-ne'standalone'-or$machineparty.launch.workflow-ne'coco-standalone'){
     throw 'Machine Party no esta habilitado como experiencia standalone.'

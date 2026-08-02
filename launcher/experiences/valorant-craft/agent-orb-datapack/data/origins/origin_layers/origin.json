@@ -1,0 +1,18 @@
+{
+  "replace": true,
+  "order": 0,
+  "enabled": true,
+  "origins": [
+    "valorant_origins:phoenix",
+    "valorant_origins:jett",
+    "valorant_origins:sova",
+    "valorant_origins:harbor",
+    "valorant_origins:omen",
+    "valorant_origins:skye",
+    "valorant_origins:breach",
+    "valorant_origins:neon",
+    "valorant_origins:sage",
+    "valorant_origins:iso"
+  ],
+  "allow_random": true
+}

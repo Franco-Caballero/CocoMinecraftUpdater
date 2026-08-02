@@ -427,8 +427,8 @@
         },
         {
             "id": "valorant-craft",
-            "name": "VALORANTCraft - Ultimate 3D Shooter",
-            "description": "Experiencia shooter tactica de Valorant con armas 3D hiperrealistas (TACZ), arsenal completo (Vandal, Phantom, Karambit), habilidades de agentes, motor de rondas/Spike y mapas 1:1 (Ascent, Haven, Bind).",
+            "name": "VALORANTCraft - CSmain Tactical",
+            "description": "Partida tactica basada en CSmain: equipos, rondas, fase de compra, economia, Spike y defuse, con armas TACZ de Valorant y agentes Origins.",
             "instanceId": "valorant-craft",
             "managementMode": "managed",
             "runtime": {
@@ -438,10 +438,10 @@
                 "javaMajor": 17
             },
             "pack": {
-                "packId": "curseforge-1268425-5800000",
-                "version": "1.0.0",
+                "packId": "curseforge-1472644-7682938",
+                "version": "1.1.0-csmain-beta.1",
                 "lockPath": "launcher/experiences/valorant-craft.lock.json",
-                "sourcePage": "https://www.curseforge.com/minecraft/customization/tacz-valorant-gun-pack-for-tacz",
+                "sourcePage": "https://www.curseforge.com/minecraft/mc-mods/csmain",
                 "redistribution": "origin-only"
             },
             "hosting": {
@@ -463,9 +463,53 @@
             },
             "preferences": {
                 "standardControls": true,
+                "keybindings": {
+                    "key_key.origins.primary_active": "key.keyboard.c",
+                    "key_key.origins.secondary_active": "key.keyboard.x",
+                    "key_key.origins.view_origin": "key.keyboard.f6",
+                    "key_key.killfeedtacz.shop": "key.keyboard.b",
+                    "key_key.killfeedtacz.pickup": "key.keyboard.g",
+                    "key_key.tacz.reload.desc": "key.keyboard.r",
+                    "key_key.tacz.inspect.desc": "key.keyboard.y",
+                    "key_key.tacz.interact.desc": "key.keyboard.o",
+                    "key_key.tacz.fire_select.desc": "key.keyboard.z",
+                    "key_key.tacz.crawl.desc": "key.keyboard.left.alt",
+                    "key_key.tacz.refit.desc": "key.keyboard.unknown",
+                    "key_key.tacz.zoom.desc": "key.keyboard.v",
+                    "key_key.tacz.melee.desc": "key.keyboard.f",
+                    "key_key.swapOffhand": "key.keyboard.unknown",
+                    "key_key.saveToolbarActivator": "key.keyboard.unknown",
+                    "key_key.loadToolbarActivator": "key.keyboard.unknown",
+                    "key_key.jei.showRecipe": "key.keyboard.f9",
+                    "key_key.jei.bookmark": "key.keyboard.unknown",
+                    "key_key.lrtactical.normal_attack.desc": "key.keyboard.unknown",
+                    "key_key.lrtactical.sp_attack.desc": "key.keyboard.unknown",
+                    "key_iris.keybind.reload": "key.keyboard.f8",
+                    "key_iris.keybind.shaderPackSelection": "key.keyboard.f7"
+                },
                 "fov": 0.625,
                 "voiceChatDefaults": true,
-                "language": "es_cl"
+                "language": "es_cl",
+                "matchController": "csmain",
+                "matchCommands": {
+                    "start": "/cs start",
+                    "save": "/cs save",
+                    "teamT": "/joint",
+                    "teamCT": "/joinct",
+                    "spectator": "/joinspec",
+                    "shopKey": "B"
+                },
+                "managedFiles": [
+                    {
+                        "path": "config/origins.json",
+                        "content": "{\n  \"disableDefaultOrigins\": true,\n  \"performVersionCheck\": false\n}\n"
+                    },
+                    {
+                        "path": "config/killfeedtacz_state.json",
+                        "writeMode": "initialize",
+                        "content": "{\n  \"warmupSeconds\": 20,\n  \"freezeSeconds\": 15,\n  \"buySeconds\": 20,\n  \"roundSeconds\": 180,\n  \"bombSeconds\": 45,\n  \"plantTicks\": 80,\n  \"defuseTicks\": 140,\n  \"defuseKitTicks\": 70,\n  \"winRounds\": 9,\n  \"bombEnabled\": 1,\n  \"giveBombAtRoundStart\": 1,\n  \"autoRespawnRoundStart\": 1,\n  \"scopeRestrictionEnabled\": 1,\n  \"classic1\": \"shop:classic\",\n  \"ammoBox\": \"tacz:creative_ammo_box\",\n  \"shop\": [\n    {\"id\":\"classic\",\"category\":\"LIGHT\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":0,\"stats\":\"LIGHT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:classic'}\"},\n    {\"id\":\"ghost\",\"category\":\"LIGHT\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":500,\"stats\":\"LIGHT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:ghost'}\"},\n    {\"id\":\"sheriff\",\"category\":\"LIGHT\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":800,\"stats\":\"LIGHT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:sheriff'}\"},\n    {\"id\":\"vandal\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":2900,\"stats\":\"HEAVY\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:vandal'}\"},\n    {\"id\":\"phantom\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":2900,\"stats\":\"HEAVY\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:phantom'}\"},\n    {\"id\":\"operator\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":4700,\"stats\":\"HEAVY\",\"scope\":true,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:operator'}\"},\n    {\"id\":\"odin\",\"category\":\"HEAVY\",\"itemId\":\"tacz:modern_kinetic_gun\",\"price\":3200,\"stats\":\"HEAVY\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"{GunId:'valorant:odin'}\"},\n    {\"id\":\"armor\",\"category\":\"ARMOR\",\"itemId\":\"minecraft:iron_chestplate\",\"price\":1000,\"stats\":\"ARMOR\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"\"},\n    {\"id\":\"defuse_kit\",\"category\":\"GRENADES\",\"itemId\":\"minecraft:shears\",\"price\":400,\"stats\":\"KIT\",\"scope\":false,\"silencer\":false,\"enabled\":true,\"templateSnbt\":\"\"}\n  ]\n}\n"
+                    }
+                ]
             },
             "files": [
                 {
