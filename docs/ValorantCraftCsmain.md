@@ -96,7 +96,7 @@ El jugador usa el orbe con clic derecho. Para revisar o asignar directamente des
 
 La elección se hace en el hub, antes de `/cs start`, no durante cada ronda. Permanece guardada por jugador aunque CSmain limpie el inventario y reinicie la munición. La tecla `O` sirve para ver el agente/poderes actuales; para cambiarlo se usa la GUI de `/origin gui` o el Orb of Origin.
 
-La instalación viva preparada para Ascent y Haven incluye además el datapack `coco_agent_orb`: todos los jugadores conectados reciben un orbe si no tienen uno en el inventario. Como el objeto original se consume al abrirlo, el servidor lo repone en el siguiente tick; en la práctica es infinito para jugadores nuevos y antiguos. No modifica `playerdata` ni reemplaza mundos.
+La instalación viva preparada para Ascent y Haven incluye además el datapack `coco_agent_orb`: todos los jugadores conectados reciben un orbe si no tienen uno en el inventario. Como el objeto original se consume al abrirlo, el servidor lo repone en el siguiente tick; en la práctica es infinito para jugadores nuevos y antiguos. El mismo datapack entrega un único `Eternal Karambit` (`wtyj:eternal_karambit`) a cada jugador que no tenga un cuchillo `lrtactical:melee`; CSmain lo vuelve a entregar cuando limpia el inventario al comenzar una ronda. No modifica `playerdata` ni reemplaza mundos.
 
 ## Flujo de los jugadores
 
