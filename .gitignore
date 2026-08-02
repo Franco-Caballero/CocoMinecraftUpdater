@@ -8,3 +8,4 @@ dist/
 __pycache__/
 *.pyc
 fabric-mod/build/
+forge-mod/build/
