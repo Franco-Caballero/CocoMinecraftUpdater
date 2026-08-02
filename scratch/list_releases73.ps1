@@ -9,8 +9,7 @@ $headers = @{
     Accept = 'application/vnd.github+json'
     'X-GitHub-Api-Version' = '2022-11-28'
 }
-$r = Invoke-RestMethod -Uri 'https://api.github.com/repos/Franco-Caballero/CocoMinecraftUpdater/releases/363665816' -Headers $headers
-Write-Host "Tag:" $r.tag_name "Draft:" $r.draft
-foreach ($a in $r.assets) {
-    Write-Host "  Asset Name:" $a.name "Size:" $a.size "Download URL:" $a.browser_download_url
+$releases = Invoke-RestMethod -Uri 'https://api.github.com/repos/Franco-Caballero/CocoMinecraftUpdater/releases?per_page=10' -Headers $headers
+foreach ($rel in $releases) {
+    Write-Host ("ID: {0} | Tag: {1} | Name: {2} | Draft: {3}" -f $rel.id, $rel.tag_name, $rel.name, $rel.draft)
 }
