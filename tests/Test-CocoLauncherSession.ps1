@@ -38,7 +38,7 @@ try{
     $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+$script+'"'),'-BindAddress','127.0.0.1','-Port','25564','-StatePath',('"'+$statePath+'"'),'-ParentPid',[string]$PID,'-LogPath',('"'+$log+'"'),'-TestMode')
     $service=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $arguments -PassThru
     $deadline=(Get-Date).AddSeconds(8)
-    do{Start-Sleep -Milliseconds 100;if(Test-Path $log){$ready=(Get-Content $log -Raw)-match'READY'}}while(-not$ready-and-not$service.HasExited-and(Get-Date)-lt$deadline)
+    do{Start-Sleep -Milliseconds 100;if(Test-Path $log){$ready=try{(Get-Content $log -Raw -ErrorAction SilentlyContinue)-match'READY'}catch{$false}}}while(-not$ready-and-not$service.HasExited-and(Get-Date)-lt$deadline)
     if(-not$ready){throw 'El servicio de sesion de prueba no inicio.'}
     $remote=Get-CocoSessionAnnouncement $loopback
     if($remote.State-ne'ready'-or$remote.Announcement.sessionId-ne$sessionId){throw 'El cliente no obtuvo la unica sesion ready.'}
