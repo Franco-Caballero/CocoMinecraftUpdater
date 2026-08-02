@@ -358,7 +358,10 @@ if($existing){
 }else{
     $release=Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$Repository/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body))
 }
-$standaloneArchive = Join-Path $env:USERPROFILE 'Downloads\Machine-Party.zip'
+$standaloneArchive = Join-Path $root 'release\Machine-Party.zip'
+if(-not(Test-Path -LiteralPath $standaloneArchive)){
+    $standaloneArchive = Join-Path $env:USERPROFILE 'Downloads\Machine-Party.zip'
+}
 $assets=@(
     (Get-Item (Join-Path $releaseDir "coco-engine-$Version.zip")),
     (Get-Item (Join-Path $releaseDir 'latest.json')),
