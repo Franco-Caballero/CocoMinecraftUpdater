@@ -19,7 +19,6 @@ if(-not$original){throw 'El catalogo launcher no contiene Coco original.'}
 $original.pack.version=$Version
 [IO.File]::WriteAllText((Join-Path $launcherStage 'catalog.json'),($catalog|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding($false)))
 foreach($experience in @($catalog.experiences|Where-Object managementMode -eq 'managed')){
-    if([string]$experience.launch.workflow-eq'coco-standalone'-or[string]$experience.runtime.type-eq'standalone'){ continue }
     $lockPaths=@([string]$experience.pack.lockPath)
     if($experience.worldTemplate){$lockPaths+=([string]$experience.worldTemplate.lockPath)}
     foreach($declaredPath in $lockPaths){
