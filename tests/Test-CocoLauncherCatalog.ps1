@@ -71,7 +71,8 @@ $valorantRequiredPaths=@(
     'mods/tacz-1.20.1-1.1.8-hotfix.jar',
     'tacz/Valorant_gunpack_v0.1.3_hotfix_4.zip',
     'mods/origins-forge-1.20.1-1.10.0.9-all.jar',
-    'mods/Valorant_Origins+forge1.20.1+1.4.0.jar'
+    'mods/Valorant_Origins+forge1.20.1+1.4.0.jar',
+    'mods/coco-valorant-tools-0.1.0.jar'
 )
 foreach($requiredPath in $valorantRequiredPaths){
     $match=@($valorantLock.assets|Where-Object path -eq $requiredPath)
@@ -81,6 +82,12 @@ $valorantCsmain=@($valorantLock.assets|Where-Object path -eq 'mods/csmain-1.0.0-
 if($valorantCsmain.sourceUrl-ne'https://www.curseforge.com/api/v1/mods/1472644/files/7682938/download'-or
     $valorantCsmain.sha256-ne'a263470939a773b3aa7bb9fe88ec071930e77cd4c8958a40422e5ea249fab7f3'){
     throw 'CSmain no esta fijado al archivo CurseForge verificado.'
+}
+$valorantTools=@($valorantLock.assets|Where-Object path -eq 'mods/coco-valorant-tools-0.1.0.jar')[0]
+if($valorantTools.sourceUrl-ne'https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.78/coco-valorant-tools-0.1.0.jar'-or
+    $valorantTools.sha256-ne'97d07c264ca138021b44919863a8849e348ee324edcffd7e879878b21453f9cc'-or
+    [int64]$valorantTools.size-ne15531){
+    throw 'Coco VALORANT Tools no esta fijado al JAR first-party compilado.'
 }
 $valorantStateFile=@($valorantcraft.preferences.managedFiles|Where-Object path -eq 'config/killfeedtacz_state.json')
 if($valorantStateFile.Count-ne1-or$valorantStateFile[0].writeMode-ne'initialize'){
@@ -93,6 +100,7 @@ if($valorantOriginsFile.Count-ne1-or[string]$valorantOriginsFile[0].content-notm
 $valorantKeys=$valorantcraft.preferences.keybindings
 if([string]$valorantKeys.'key_key.origins.primary_active'-ne'key.keyboard.c'-or
    [string]$valorantKeys.'key_key.origins.secondary_active'-ne'key.keyboard.x'-or
+   [string]$valorantKeys.'key_key.coco_valorant_tools.menu'-ne'key.keyboard.m'-or
    [string]$valorantKeys.'key_key.tacz.inspect.desc'-ne'key.keyboard.y'-or
    [string]$valorantKeys.'key_key.killfeedtacz.shop'-ne'key.keyboard.b'-or
    [string]$valorantKeys.'key_key.tacz.reload.desc'-ne'key.keyboard.r'-or

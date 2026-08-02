@@ -358,11 +358,21 @@ if($existing){
 }else{
     $release=Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$Repository/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body))
 }
+$experienceAssetDir=Join-Path $releaseDir 'experience-assets'
+$experienceBuilder=Join-Path $root 'tools\Build-CocoValorantTools.ps1'
+if(Test-Path -LiteralPath $experienceBuilder -PathType Leaf){
+    & $experienceBuilder -OutputDirectory $experienceAssetDir
+    if($LASTEXITCODE){throw 'No se pudo compilar el asset de VALORANTCraft.'}
+}
+$experienceAssets=@()
+if(Test-Path -LiteralPath $experienceAssetDir -PathType Container){
+    $experienceAssets=@(Get-ChildItem -LiteralPath $experienceAssetDir -File)
+}
 $assets=@(
     (Get-Item (Join-Path $releaseDir "coco-engine-$Version.zip")),
     (Get-Item (Join-Path $releaseDir 'latest.json')),
     (Get-Item $bootstrapExe)
-)
+)+$experienceAssets
 $index=0
 foreach($asset in $assets){
     $index++;Write-Progress -Activity "Publicando Coco Pack $Version" -Status $asset.Name -PercentComplete (100*$index/$assets.Count)

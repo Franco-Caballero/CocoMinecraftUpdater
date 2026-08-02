@@ -917,12 +917,13 @@ function Read-CocoExperienceLock([string]$Path,$Experience){
     if($packMode-eq'assets-only' -and $lock.pack.archive){throw 'Un pack assets-only no puede declarar un archivo fuente de pack.'}
     $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($asset in @($lock.assets)){
-        if(([int64]$asset.projectId-le0-or[int64]$asset.fileId-le0)-and[string]$asset.sourceUrl-notmatch'^https://cdn\.modrinth\.com/'){throw 'El lock contiene un asset CurseForge sin IDs validos.'}
+        $firstPartySource=[string]$asset.sourceUrl-match'^https://github\.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v\d+\.\d+\.\d+/[^/?#]+$'
+        if(([int64]$asset.projectId-le0-or[int64]$asset.fileId-le0)-and-not$firstPartySource-and[string]$asset.sourceUrl-notmatch'^https://cdn\.modrinth\.com/'){throw 'El lock contiene un asset CurseForge sin IDs validos.'}
         $allowedRoot=@('mods/','tacz/','resourcepacks/','shaderpacks/')|Where-Object{([string]$asset.path).StartsWith($_,[StringComparison]::OrdinalIgnoreCase)}|Select-Object -First 1
         if(-not(Test-CocoSafeRelativePath ([string]$asset.path))-or-not$allowedRoot){throw "Ruta de asset invalida en lock: '$($asset.path)'."}
         if(-not$paths.Add([string]$asset.path)){throw "Ruta duplicada en lock: '$($asset.path)'."}
         if([string]$asset.sha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$asset.size-le0){throw "Asset no fijado correctamente: '$($asset.path)'."}
-        if([string]$asset.sourceUrl-notmatch'^https://(www\.curseforge\.com/api/v1/mods/[0-9]+/files/[0-9]+/download|cdn\.modrinth\.com/data/|optifine\.net/download)'){throw "Origen de asset invalido: '$($asset.sourceUrl)'."}
+        if(-not$firstPartySource-and[string]$asset.sourceUrl-notmatch'^https://(www\.curseforge\.com/api/v1/mods/[0-9]+/files/[0-9]+/download|cdn\.modrinth\.com/data/|optifine\.net/download)'){throw "Origen de asset invalido: '$($asset.sourceUrl)'."}
     }
     $lock
 }
@@ -980,7 +981,7 @@ function Get-CocoLockedAsset([string]$CacheRoot,$Asset,[hashtable]$ProgressConte
         return $destination
     }
     $url=[string]$Asset.sourceUrl
-    if($url-notmatch'^https://(www\.curseforge\.com/api/v1/mods/[0-9]+/files/[0-9]+/download|cdn\.modrinth\.com/data/)'){throw "Origen de asset Coco no permitido: '$url'."}
+    if($url-notmatch'^https://(www\.curseforge\.com/api/v1/mods/[0-9]+/files/[0-9]+/download|cdn\.modrinth\.com/data/|github\.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v\d+\.\d+\.\d+/[^/?#]+)'){throw "Origen de asset Coco no permitido: '$url'."}
     $parent=Split-Path $destination -Parent;New-Item -ItemType Directory -Path $parent -Force|Out-Null
     $temporary=Join-Path $parent ("download-$PID-$([guid]::NewGuid().ToString('N')).tmp")
     try{

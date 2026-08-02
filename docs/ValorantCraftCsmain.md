@@ -1,5 +1,16 @@
 # VALORANTCraft con CSmain
 
+## Flujo comodo con botones
+
+La experiencia instala `Coco VALORANT Tools` en host y clientes. Al entrar, cada jugador pulsa `M` (o usa el boton/comando `/coco menu`) y ve solo las acciones que le corresponden:
+
+- Jugador: abrir seleccion de agente, elegir T/CT/espectador, marcarse listo y consultar controles.
+- Host: las mismas acciones, mas panel para equilibrar equipos, iniciar cuando todos estan listos, iniciar una prueba, preparar el lobby, guardar CSmain y activar/desactivar edicion del mapa.
+
+El host se identifica por permisos de operador (`permission level 2`); los amigos no necesitan ejecutar comandos. Para conservar esta separacion, el host debe ser el unico operador del mundo. La tecla `M` se entrega a todos mediante el mod, incluido cada cliente nuevo.
+
+El lobby aplica Adventure a jugadores que todavia no estan participando en una ronda y, ademas, cancela rotura, colocacion, liquidos, modificaciones de herramientas y pisoteo. El modo edicion es temporal y solo lo puede activar el host desde su panel. Al iniciar, CSmain recupera Survival y mantiene el control de las rondas; no se fuerza Adventure durante el combate.
+
 Estado: integración en desarrollo, CSmain 1.0.0-beta.1, Minecraft 1.20.1 Forge 47.4.4.
 
 ## Qué aporta CSmain
@@ -44,7 +55,7 @@ Antes de abrir Minecraft se puede revisar la instalacion viva con:
 powershell -ExecutionPolicy Bypass -File .\tests\Test-CocoValorantPreflight.ps1
 ~~~
 
-El preflight confirma mods, gunpack, CSmain, Orb permanente, LAN y datapacks antiguos. Si marca
+El preflight confirma mods, gunpack, CSmain, Coco VALORANT Tools/Orb, cuchillo inicial, LAN y datapacks antiguos. Si marca
 `Mapa CSmain` como pendiente, todavia hay que ejecutar los cinco `setspawn` dentro del mapa y luego
 `/cs save`; no se inventan coordenadas automaticamente.
 
@@ -110,6 +121,10 @@ La instalación viva preparada para Ascent y Haven incluye además el datapack `
 Las habilidades son aproximaciones de Valorant Origins y sus cooldowns funcionan con las teclas `C` (primaria) y `X` (secundaria). El agente queda separado del equipo: por ejemplo, un Jett puede jugar T o CT.
 
 El layout jugable reserva `R` exclusivamente para recargar, `B` para la tienda, `G` para recoger la C4, `F` para melee, `V` para zoom, `Y` para inspeccionar, `F7/F8` para las funciones de Iris y `F9` para la receta de JEI. Las funciones de combate de LR Tactical, el swap de mano y los atajos creativos quedan desactivados para no robar teclas al combate.
+
+## Instalaciones nuevas y mundos existentes
+
+`Coco VALORANT Tools` es ahora la fuente distribuible del Orb: lo entrega al entrar y lo repone si el jugador lo consume, sin depender de editar `saves`. El datapack `coco_agent_orb` se conserva solo como compatibilidad para Ascent/Haven ya preparados; que falte en un mundo nuevo no bloquea el preflight. El cuchillo de ronda no depende del Orb: CSmain lo crea desde `startItemAll: "shop:knife"`.
 
 ## Fuentes fijadas
 

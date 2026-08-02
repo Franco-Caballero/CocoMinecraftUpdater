@@ -467,6 +467,7 @@
                     "key_key.origins.primary_active": "key.keyboard.c",
                     "key_key.origins.secondary_active": "key.keyboard.x",
                     "key_key.origins.view_origin": "key.keyboard.f6",
+                    "key_key.coco_valorant_tools.menu": "key.keyboard.m",
                     "key_key.killfeedtacz.shop": "key.keyboard.b",
                     "key_key.killfeedtacz.pickup": "key.keyboard.g",
                     "key_key.tacz.reload.desc": "key.keyboard.r",

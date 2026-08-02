@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Specification-Title: Coco VALORANT Tools
+Specification-Vendor: Coco
+Specification-Version: 1
+Implementation-Title: coco-valorant-tools
+Implementation-Version: 0.1.0
+Implementation-Vendor: Coco
+

@@ -1,0 +1,80 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0.36,6.2)'
+}
+
+version = project.mod_version
+group = project.mod_group_id
+
+base {
+    archivesName = 'coco-valorant-tools'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: project.mappings_channel, version: project.mappings_version
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                coco_valorant_tools {
+                    source sourceSets.main
+                }
+            }
+        }
+        client {}
+        server {
+            args '--nogui'
+        }
+    }
+}
+
+repositories {
+    maven { url = 'https://maven.minecraftforge.net/' }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'minecraft_version', project.minecraft_version
+    inputs.property 'forge_version', project.forge_version
+    filesMatching('META-INF/mods.toml') {
+        expand version: project.version,
+            mod_id: project.mod_id,
+            mod_name: project.mod_name,
+            mod_authors: project.mod_authors,
+            mod_license: project.mod_license,
+            mod_description: project.mod_description,
+            minecraft_version: project.minecraft_version,
+            forge_version: project.forge_version,
+            minecraft_version_range: project.minecraft_version_range,
+            forge_version_range: project.forge_version_range,
+            loader_version_range: project.loader_version_range
+    }
+}
+
+jar {
+    manifest {
+        attributes([
+            'Specification-Title'     : project.mod_name,
+            'Specification-Vendor'    : project.mod_authors,
+            'Specification-Version'   : '1',
+            'Implementation-Title'    : project.name,
+            'Implementation-Version'  : project.version,
+            'Implementation-Vendor'   : project.mod_authors
+        ])
+    }
+}

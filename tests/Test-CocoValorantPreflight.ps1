@@ -76,13 +76,16 @@ $taczPath = Join-Path $InstanceRoot 'tacz'
 $configPath = Join-Path $InstanceRoot 'config'
 $savesPath = Join-Path $InstanceRoot 'saves'
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$lockPath = Join-Path $repoRoot 'launcher\experiences\valorant-craft.lock.json'
+$valorantLock = Test-JsonFile -Path $lockPath
 
 $requiredMods = @(
     @{ Name = 'TACZ'; Pattern = '^tacz-.*\.jar$' },
     @{ Name = 'CSmain'; Pattern = '^csmain-.*\.jar$' },
     @{ Name = 'Origins Forge'; Pattern = '^origins-forge-.*\.jar$' },
     @{ Name = 'Valorant Origins'; Pattern = '^Valorant_Origins\+.*\.jar$' },
-    @{ Name = 'MCWiFiPnP'; Pattern = '^MCWiFiPnP-.*\.jar$' }
+    @{ Name = 'MCWiFiPnP'; Pattern = '^MCWiFiPnP-.*\.jar$' },
+    @{ Name = 'Coco VALORANT Tools'; Pattern = '^coco-valorant-tools-.*\.jar$' }
 )
 
 foreach ($requiredMod in $requiredMods) {
@@ -90,12 +93,28 @@ foreach ($requiredMod in $requiredMods) {
     Add-PreflightCheck -Name "Mod $($requiredMod.Name)" -Passed ($null -ne $mod) -Detail $(if ($mod) { $mod.Name } else { 'FALTA' })
 }
 
+$toolsMod = Get-FirstMatchingFile -Path $modsPath -Pattern '^coco-valorant-tools-.*\.jar$'
+$toolsAsset = if ($null -ne $valorantLock) {
+    @($valorantLock.assets | Where-Object { $_.path -eq 'mods/coco-valorant-tools-0.1.0.jar' } | Select-Object -First 1)
+}
+else {
+    $null
+}
+$toolsHashOk = $false
+if ($toolsMod -and $toolsAsset) {
+    $toolsHash = (Get-FileHash -LiteralPath $toolsMod.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    $toolsHashOk = $toolsMod.Length -eq [int64]$toolsAsset.size -and $toolsHash -eq ([string]$toolsAsset.sha256).ToLowerInvariant()
+    Add-PreflightCheck -Name 'Coco VALORANT Tools verificado' -Passed $toolsHashOk -Detail "$($toolsMod.Name), SHA256=$toolsHash"
+}
+else {
+    Add-PreflightCheck -Name 'Coco VALORANT Tools verificado' -Passed $false -Detail 'FALTA el asset o su referencia en el lock'
+}
+
 $gunpack = Get-FirstMatchingFile -Path $taczPath -Pattern '^Valorant_gunpack_.*\.zip$'
 $gunpackHashOk = $false
 if ($gunpack) {
     $gunpackHash = (Get-FileHash -LiteralPath $gunpack.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-    $lockPath = Join-Path $repoRoot 'launcher\experiences\valorant-craft.lock.json'
-    $lock = Test-JsonFile -Path $lockPath
+    $lock = $valorantLock
     $expectedGunpackHash = @($lock.assets | Where-Object { $_.path -eq 'tacz/Valorant_gunpack_v0.1.3_hotfix_4.zip' } | Select-Object -First 1).sha256
     $gunpackHashOk = $null -ne $expectedGunpackHash -and $gunpackHash -eq $expectedGunpackHash.ToLowerInvariant()
     Add-PreflightCheck -Name 'Gunpack Valorant oficial' -Passed $gunpackHashOk -Detail "$($gunpack.Name), SHA256=$gunpackHash"
@@ -112,11 +131,26 @@ if ($stateOk) {
         'warmupSeconds', 'freezeSeconds', 'buySeconds', 'roundSeconds',
         'bombSeconds', 'plantTicks', 'defuseTicks', 'defuseKitTicks',
         'winRounds', 'bombEnabled', 'giveBombAtRoundStart',
-        'autoRespawnRoundStart', 'scopeRestrictionEnabled', 'classic1', 'ammoBox', 'shop'
+        'autoRespawnRoundStart', 'scopeRestrictionEnabled', 'startItemAll', 'classic1', 'ammoBox', 'shop'
     )
     $missingStateProperties = @($requiredStateProperties | Where-Object { $null -eq $state.PSObject.Properties[$_] })
-    $stateOk = $missingStateProperties.Count -eq 0
-    $stateDetail = if ($stateOk) { 'CSmain state y tienda presentes' } else { "Faltan claves: $($missingStateProperties -join ', ')" }
+    $knifeEntries = @($state.shop | Where-Object {
+            $_.id -eq 'knife' -and
+            $_.itemId -eq 'lrtactical:melee' -and
+            $_.templateSnbt -match 'killfeedtacz_knife:1b'
+        })
+    $stateOk = $missingStateProperties.Count -eq 0 -and
+        [string]$state.startItemAll -eq 'shop:knife' -and
+        $knifeEntries.Count -eq 1
+    $stateDetail = if ($stateOk) {
+        'CSmain state, tienda, cuchillo inicial y carga de ronda presentes'
+    }
+    elseif ($missingStateProperties.Count -gt 0) {
+        "Faltan claves: $($missingStateProperties -join ', ')"
+    }
+    else {
+        'Falta startItemAll=shop:knife o la entrada de cuchillo TACZ'
+    }
 }
 else {
     $stateDetail = 'FALTA o JSON inválido'
@@ -140,7 +174,7 @@ foreach ($world in $worlds) {
         (Test-Path -LiteralPath $tickPath -PathType Leaf) -and
         (Test-Path -LiteralPath $orbFunctionPath -PathType Leaf) -and
         ((Get-Content -LiteralPath $orbFunctionPath -Raw) -match 'origins:orb_of_origin')
-    Add-PreflightCheck -Name "Orb permanente: $worldName" -Passed $orbPackOk -Detail $(if ($orbPackOk) { 'datapack instalado' } else { 'FALTA datapack coco_agent_orb' })
+    Add-PreflightCheck -Name "Datapack legado de Orb: $worldName" -Passed $orbPackOk -Critical $false -Detail $(if ($orbPackOk) { 'presente (compatibilidad con mundos existentes)' } else { 'opcional; Coco VALORANT Tools distribuye el Orb' })
 
     $wifiPath = Join-Path $world.FullName 'mcwifipnp.json'
     $wifi = Test-JsonFile -Path $wifiPath

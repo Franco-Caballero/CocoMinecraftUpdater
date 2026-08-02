@@ -149,6 +149,19 @@
       "sha256": "6355f4569ec26046c0877f45fbc37a28d57b656999945f3f6491cf0109f23aa0",
       "policy": "replace",
       "license": "Apache-2.0"
+    },
+    {
+      "projectId": 0,
+      "fileId": 0,
+      "name": "coco-valorant-tools-0.1.0.jar",
+      "path": "mods/coco-valorant-tools-0.1.0.jar",
+      "role": "all",
+      "projectPage": "https://github.com/Franco-Caballero/CocoMinecraftUpdater",
+      "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.78/coco-valorant-tools-0.1.0.jar",
+      "size": 15531,
+      "sha256": "97d07c264ca138021b44919863a8849e348ee324edcffd7e879878b21453f9cc",
+      "policy": "replace",
+      "license": "All-Rights-Reserved"
     }
   ]
 }

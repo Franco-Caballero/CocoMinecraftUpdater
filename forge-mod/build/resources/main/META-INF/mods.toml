@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All-Rights-Reserved"
+
+[[mods]]
+modId="coco_valorant_tools"
+version="0.1.0"
+displayName="Coco VALORANT Tools"
+authors="Coco"
+displayTest="MATCH_VERSION"
+description='''Lobby, agentes, equipos, Orb permanente y proteccion de mapas para VALORANTCraft.'''
+
+[[dependencies.coco_valorant_tools]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.4,48)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.coco_valorant_tools]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"

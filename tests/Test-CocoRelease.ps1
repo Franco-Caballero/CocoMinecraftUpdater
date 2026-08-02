@@ -70,6 +70,15 @@ try{
     }
 }finally{$engineArchive.Dispose()}
 
+$valorantLock=Get-Content 'launcher\experiences\valorant-craft.lock.json' -Raw|ConvertFrom-Json
+$valorantTools=@($valorantLock.assets|Where-Object path -eq 'mods/coco-valorant-tools-0.1.0.jar')|Select-Object -First 1
+$valorantToolsPath=Join-Path (Join-Path $ReleaseDirectory 'experience-assets') 'coco-valorant-tools-0.1.0.jar'
+if(-not$valorantTools-or-not(Test-Path -LiteralPath $valorantToolsPath -PathType Leaf)){throw 'Falta el asset first-party de Coco VALORANT Tools.'}
+if((Get-Item -LiteralPath $valorantToolsPath).Length-ne[int64]$valorantTools.size-or
+   (Get-FileHash -LiteralPath $valorantToolsPath -Algorithm SHA256).Hash.ToLowerInvariant()-ne([string]$valorantTools.sha256).ToLowerInvariant()){
+    throw 'El asset first-party de Coco VALORANT Tools no coincide con su lock.'
+}
+
 foreach($role in 'client','host'){
     $package=@($manifest.packages|Where-Object role -eq $role)
     if($package.Count -ne 1){throw "Debe existir exactamente un paquete $role."}
@@ -93,6 +102,6 @@ $hostMods=@($manifest.packages|Where-Object role -eq host).mods.name
 if($client-match'(?i)^(e4mc|mcwifipnp|serversidehorror-|deimos-)'){throw 'El paquete cliente contiene mods exclusivos del host.'}
 if(-not($hostMods-match'(?i)^e4mc')-or-not($hostMods-match'(?i)^mcwifipnp')-or-not($hostMods-match'(?i)^serversidehorror-')-or-not($hostMods-match'(?i)^deimos-')){throw 'El paquete host no contiene todos los mods exclusivos requeridos.'}
 
-$scripts=@('bootstrap\CocoBootstrapper.ps1','engine\CocoUpdater.ps1','engine\CocoLauncher.ps1','engine\CocoSessionService.ps1','engine\CocoNetwork.ps1','engine\CocoNetworkElevated.ps1','engine\CocoNetworkAuthorizer.ps1','publisher\CocoPublisher.ps1','tools\Import-CocoCurseForgePack.ps1','tools\New-CocoJarRelease.ps1','tools\Publish-CocoRelease.ps1')
+$scripts=@('bootstrap\CocoBootstrapper.ps1','engine\CocoUpdater.ps1','engine\CocoLauncher.ps1','engine\CocoSessionService.ps1','engine\CocoNetwork.ps1','engine\CocoNetworkElevated.ps1','engine\CocoNetworkAuthorizer.ps1','publisher\CocoPublisher.ps1','tools\Import-CocoCurseForgePack.ps1','tools\New-CocoJarRelease.ps1','tools\Build-CocoValorantTools.ps1','tools\Publish-CocoRelease.ps1')
 foreach($script in $scripts){[void][scriptblock]::Create([IO.File]::ReadAllText((Resolve-Path $script)))}
 'PASS: manifiesto, hashes, assets, roles y sintaxis validados.'
