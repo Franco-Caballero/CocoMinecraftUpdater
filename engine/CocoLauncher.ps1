@@ -19,6 +19,26 @@ function Get-CocoExperienceButtonBounds([ValidateRange(0,999)][int]$Index){
     [Drawing.Rectangle]::new([int](($Index%2)*260),[int]([math]::Floor($Index/2)*50),245,42)
 }
 
+function Get-CocoExperienceDiskUsage([string]$InstanceRoot){
+    if(-not$InstanceRoot-or-not(Test-Path -LiteralPath $InstanceRoot -PathType Container)){return [pscustomobject]@{Bytes=0;Label='No instalado';Installed=$false}}
+    $totalBytes=0
+    foreach($file in [IO.Directory]::EnumerateFiles($InstanceRoot,'*','AllDirectories')){
+        try{$totalBytes+=(New-Object IO.FileInfo($file)).Length}catch{}
+    }
+    $label=if($totalBytes-ge1GB){'{0:N1} GB'-f($totalBytes/1GB)}elseif($totalBytes-ge1MB){'{0:N0} MB'-f($totalBytes/1MB)}elseif($totalBytes-gt0){'{0:N0} KB'-f($totalBytes/1KB)}else{'Vacio'}
+    [pscustomobject]@{Bytes=$totalBytes;Label=$label;Installed=$true}
+}
+
+function Remove-CocoInstalledExperience([string]$InstanceRoot,[string]$ExperiencesRoot){
+    if(-not$InstanceRoot-or-not$ExperiencesRoot){throw 'La ruta de la instancia o la raiz de experiencias no fue proporcionada.'}
+    if(-not(Test-CocoPathWithin $InstanceRoot $ExperiencesRoot)){throw 'La ruta de la instancia escapa del directorio de experiencias.'}
+    if(-not(Test-Path -LiteralPath $InstanceRoot -PathType Container)){return [pscustomobject]@{Removed=$false;Reason='not-installed'}}
+    if(Test-CocoManagedGameRunning $InstanceRoot){throw 'La experiencia esta abierta. Cierrala antes de eliminarla.'}
+    Remove-Item -LiteralPath $InstanceRoot -Recurse -Force
+    Write-CocoLog "Experiencia eliminada para liberar espacio: $InstanceRoot"
+    [pscustomobject]@{Removed=$true;Reason='deleted'}
+}
+
 function Set-CocoLauncherStep(
     [ValidateRange(1,10)][int]$Step,
     [string]$Title,
@@ -3027,9 +3047,62 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             }else{
                 Set-CocoLauncherStep 3 'FALTA LA INSTALACION ORIGINAL' 'No se encontro Coco original. Abre esa version una vez con tu launcher habitual y vuelve a ejecutar Coco.' 25
             }
+            # --- Experience Storage Manager UI ---
+            $managedExperiences=@($catalog.experiences|Where-Object{$_.managementMode-eq'managed'-and($_.launch.workflow-eq'coco-managed'-or$_.launch.workflow-eq'coco-standalone')})
+            if($managedExperiences.Count-gt0){
+                $dynamic.Controls.Clear();$dynamic.AutoScroll=$true
+                $dynamic.Size=New-Object Drawing.Size(570,100)
+                $storageHeader=New-Object Windows.Forms.Label;$storageHeader.Text='EXPERIENCIAS INSTALADAS';$storageHeader.Font=New-Object Drawing.Font('Segoe UI Semibold',9)
+                $storageHeader.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$storageHeader.Location=New-Object Drawing.Point(0,0);$storageHeader.Size=New-Object Drawing.Size(550,22);$dynamic.Controls.Add($storageHeader)
+                $cardY=26;$cardIndex=0
+                foreach($exp in $managedExperiences){
+                    $instanceRoot=Join-Path $paths.ExperiencesRoot ([string]$exp.instanceId)
+                    $usage=Get-CocoExperienceDiskUsage $instanceRoot
+                    $expType=if([string]$exp.launch.workflow-eq'coco-standalone'){'Standalone'}else{'Minecraft'}
+                    $card=New-Object Windows.Forms.Panel;$card.Location=New-Object Drawing.Point(0,$cardY);$card.Size=New-Object Drawing.Size(545,52)
+                    $card.BackColor=[Drawing.Color]::FromArgb($(if($cardIndex%2-eq0){48}else{56}),30,72)
+                    $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=[string]$exp.name;$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',9)
+                    $nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.Location=New-Object Drawing.Point(10,4);$nameLabel.Size=New-Object Drawing.Size(280,20);$nameLabel.AutoEllipsis=$true
+                    $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI',7.5)
+                    $detailLabel.Location=New-Object Drawing.Point(10,26);$detailLabel.Size=New-Object Drawing.Size(280,18);$detailLabel.AutoEllipsis=$true
+                    if($usage.Installed){
+                        $detailLabel.Text="$expType  |  $($usage.Label)";$detailLabel.ForeColor=[Drawing.Color]::FromArgb(168,236,168)
+                    }else{
+                        $detailLabel.Text="$expType  |  No instalado";$detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)
+                    }
+                    $card.Controls.AddRange(@($nameLabel,$detailLabel))
+                    if($usage.Installed){
+                        $deleteBtn=New-Object Windows.Forms.Button;$deleteBtn.Text='LIBERAR ESPACIO';$deleteBtn.Font=New-Object Drawing.Font('Segoe UI Semibold',7.5)
+                        $deleteBtn.Size=New-Object Drawing.Size(130,30);$deleteBtn.Location=New-Object Drawing.Point(400,10)
+                        Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(120,40,55)) ([Drawing.Color]::White)
+                        $deleteBtn.Tag=[pscustomobject]@{InstanceRoot=$instanceRoot;ExperiencesRoot=[string]$paths.ExperiencesRoot;Name=[string]$exp.name;DetailLabel=$detailLabel;Card=$card;SizeLabel=$usage.Label}
+                        $deleteBtn.Add_Click({param($sender,$eventArgs)
+                            $info=$sender.Tag
+                            $confirm=[Windows.Forms.MessageBox]::Show(("Esto eliminara todos los archivos de '{0}' ({1}).`r`n`r`nSe liberara el espacio en disco. Si vuelves a jugar, se descargara de nuevo.`r`n`r`n¿Continuar?"-f$info.Name,$info.SizeLabel),'Liberar espacio',[Windows.Forms.MessageBoxButtons]::YesNo,[Windows.Forms.MessageBoxIcon]::Warning)
+                            if($confirm-eq[Windows.Forms.DialogResult]::Yes){
+                                try{
+                                    $result=Remove-CocoInstalledExperience $info.InstanceRoot $info.ExperiencesRoot
+                                    if($result.Removed){
+                                        $info.DetailLabel.Text=$info.DetailLabel.Text.Split('|')[0].Trim()+'  |  No instalado'
+                                        $info.DetailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)
+                                        $sender.Visible=$false
+                                        [Windows.Forms.MessageBox]::Show(("'{0}' eliminado correctamente. Se libero {1}."-f$info.Name,$info.SizeLabel),'Espacio liberado',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Information)|Out-Null
+                                    }
+                                }catch{
+                                    [Windows.Forms.MessageBox]::Show(("No se pudo eliminar '{0}': {1}"-f$info.Name,$_.Exception.Message),'Error',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Error)|Out-Null
+                                }
+                            }
+                        })
+                        $card.Controls.Add($deleteBtn)
+                    }
+                    $dynamic.Controls.Add($card);$cardY+=56;$cardIndex++
+                }
+                $dynamic.AutoScrollMinSize=[Drawing.Size]::new(0,$cardY)
+            }
             while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
             return
         }
+
         while(-not$script:CocoForm.IsDisposed-and-not$launched){
             try{
                 $action=Get-CocoClientSessionAction $session
