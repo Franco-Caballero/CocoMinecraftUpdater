@@ -53,7 +53,7 @@ $mutex.Dispose()
     $savedRunningVersion=$env:COCO_RUNNING_PACK_VERSION
     $env:COCO_RUNNING_PACK_VERSION='9.9.8'
     try{
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $engine -ManifestPath $manifestPath -GameDir $game -MinecraftPid $dummy.Id -SessionStatePath $sessionState -AutomaticCloseTimeoutSeconds 1 -Silent -TestSuppressUi
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $engine -ManifestPath $manifestPath -GameDir $game -MinecraftPid $dummy.Id -SessionStatePath $sessionState -AutomaticCloseTimeoutSeconds 3 -Silent -TestSuppressUi
     }finally{$env:COCO_RUNNING_PACK_VERSION=$savedRunningVersion}
     if($LASTEXITCODE-ne0){throw "Engine automatico termino con codigo $LASTEXITCODE."}
     $dummy.Refresh()
