@@ -125,6 +125,7 @@ function Install-CocoPublishedEngineCacheLocally([string]$ManifestPath,[string]$
         if(-not$managed.Count){throw 'El engine candidato no contiene experiencias administradas.'}
         foreach($experience in $managed){
             $relative=([string]$experience.pack.lockPath)-replace'\\','/'
+            if([string]::IsNullOrWhiteSpace($relative)){continue}
             if($relative-notmatch'^launcher/experiences/[a-z0-9][a-z0-9.-]{1,95}\.lock\.json$'-or
                -not(Test-Path -LiteralPath (Join-Path $staging ($relative-replace'/','\')) -PathType Leaf)){
                 throw "El engine candidato no contiene un lock valido para '$($experience.id)'."
