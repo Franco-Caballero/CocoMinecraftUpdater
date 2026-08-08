@@ -1376,15 +1376,23 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         }
     }
     $statePath=Join-Path $instanceRoot '.coco\standalone-state.json'
-    $expectedSha=([string]$Experience.pack.sha256).ToLowerInvariant()
-    $expectedSize=[int64]$Experience.pack.size
+    $archiveItems = if($Experience.pack.archives){@($Experience.pack.archives)}else{@($Experience.pack)}
+    $expectedSha = [string]$Experience.pack.sha256
+    if(-not$expectedSha -and $archiveItems.Count-gt0){
+        $expectedSha = [string]$archiveItems[0].sha256
+    }
+    $expectedSha = $expectedSha.ToLowerInvariant()
+    $expectedSize = if([int64]$Experience.pack.size-gt0){[int64]$Experience.pack.size}else{
+        $sum=0;foreach($item in $archiveItems){$sum+=[int64]$item.size};$sum
+    }
 
     Write-CocoLog "Comprobando instalacion standalone de '$($Experience.id)': Hash esperado=$expectedSha, Tamano=$expectedSize bytes"
 
+    $execPath=Join-Path $instanceRoot ($execName -replace '/','\')
     if(Test-Path -LiteralPath $statePath){
         try{
             $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
-            if([string]$state.sha256 -eq $expectedSha){
+            if([string]$state.sha256 -eq $expectedSha -and (Test-Path -LiteralPath $execPath)){
                 return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$false}
             }
         }catch{
