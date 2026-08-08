@@ -57,6 +57,10 @@ $mutex.Dispose()
     }finally{$env:COCO_RUNNING_PACK_VERSION=$savedRunningVersion}
     if($LASTEXITCODE-ne0){throw "Engine automatico termino con codigo $LASTEXITCODE."}
     $dummy.Refresh()
+    if(-not$dummy.HasExited){
+        Start-Sleep -Milliseconds 500
+        $dummy.Refresh()
+    }
     if(-not$dummy.HasExited){throw 'Minecraft simulado siguio abierto con una version antigua cargada.'}
     $state=Get-Content -LiteralPath $sessionState -Raw|ConvertFrom-Json
     if($state.message-ne'Coco Pack actualizado'-or$state.detail-notmatch'Vuelve a abrir Minecraft'){
