@@ -2080,6 +2080,15 @@ function Invoke-CocoManagedExperienceLaunch(
                 [IO.File]::WriteAllText($targetIpFile,$hostIp,(New-Object Text.UTF8Encoding($false)))
             }
         }
+        $publicOf=Join-Path $env:PUBLIC 'Documents\OnlineFix'
+        try{
+            $of3527=Join-Path $publicOf '3527290\Stats'
+            if(-not(Test-Path -LiteralPath $of3527)){New-Item -ItemType Directory -Path $of3527 -Force -ErrorAction SilentlyContinue|Out-Null}
+            $statsFile=Join-Path $of3527 'Stats.ini'
+            if(-not(Test-Path -LiteralPath $statsFile)){[IO.File]::WriteAllText($statsFile,"[Stats]`r`nLoadedCosmeticsPreviously=1`r`n",(New-Object Text.UTF8Encoding($false)))}
+            $achFile=Join-Path $of3527 'Achievements.ini'
+            if(-not(Test-Path -LiteralPath $achFile)){[IO.File]::WriteAllText($achFile,'',(New-Object Text.UTF8Encoding($false)))}
+        }catch{}
         if($Dry){
             return [pscustomobject]@{Status='prepared';Experience=$experience;Installation=$installed}
         }
