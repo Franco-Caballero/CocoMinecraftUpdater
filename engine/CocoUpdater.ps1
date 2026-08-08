@@ -709,18 +709,22 @@ function Download-VerifiedFile(
             $request.Timeout=30000; $request.ReadWriteTimeout=30000; $request.AutomaticDecompression=[Net.DecompressionMethods]::GZip -bor [Net.DecompressionMethods]::Deflate
             $response=$request.GetResponse(); $total=[int64]$response.ContentLength
             $input=$response.GetResponseStream(); $output=[IO.File]::Create($partial)
-            $buffer=New-Object byte[] (256KB); $received=[int64]0; $watch=[Diagnostics.Stopwatch]::StartNew()
+            $buffer=New-Object byte[] (1MB); $received=[int64]0; $watch=[Diagnostics.Stopwatch]::StartNew(); $lastUi=[DateTime]::MinValue
             try {
                 while (($read=$input.Read($buffer,0,$buffer.Length)) -gt 0) {
                     $output.Write($buffer,0,$read); $received += $read
-                    $span=[Math]::Max(0,$ProgressEnd-$ProgressStart)
-                    $percent=if($AllBytes -gt 0){$ProgressStart+[int]($span*($CompletedBytes+$received)/$AllBytes)}elseif($total -gt 0){$ProgressStart+[int]($span*$received/$total)}else{$ProgressStart+[int]($span/2)}
-                    $percent=[Math]::Max($ProgressStart,[Math]::Min($ProgressEnd,$percent))
-                    $speed=if($watch.Elapsed.TotalSeconds -gt 0){$received/$watch.Elapsed.TotalSeconds}else{0}
-                    $eta=if($speed -gt 0 -and $total -gt 0){[TimeSpan]::FromSeconds(($total-$received)/$speed)}else{[TimeSpan]::Zero}
-                    $transfer='{0:N1} / {1:N1} MB  |  {2:N1} MB/s  |  faltan ~{3:mm\:ss}' -f ($received/1MB),($total/1MB),($speed/1MB),$eta
-                    $detail=if($DetailPrefix){"$DetailPrefix`r`n$transfer"}else{$transfer}
-                    Set-CocoState $ActivityTitle $detail $percent
+                    $now=[DateTime]::UtcNow
+                    if (($now - $lastUi).TotalMilliseconds -ge 150 -or $received -eq $total) {
+                        $lastUi=$now
+                        $span=[Math]::Max(0,$ProgressEnd-$ProgressStart)
+                        $percent=if($AllBytes -gt 0){$ProgressStart+[int]($span*($CompletedBytes+$received)/$AllBytes)}elseif($total -gt 0){$ProgressStart+[int]($span*$received/$total)}else{$ProgressStart+[int]($span/2)}
+                        $percent=[Math]::Max($ProgressStart,[Math]::Min($ProgressEnd,$percent))
+                        $speed=if($watch.Elapsed.TotalSeconds -gt 0){$received/$watch.Elapsed.TotalSeconds}else{0}
+                        $eta=if($speed -gt 0 -and $total -gt 0){[TimeSpan]::FromSeconds(($total-$received)/$speed)}else{[TimeSpan]::Zero}
+                        $transfer='{0:N1} / {1:N1} MB  |  {2:N1} MB/s  |  faltan ~{3:mm\:ss}' -f ($received/1MB),($total/1MB),($speed/1MB),$eta
+                        $detail=if($DetailPrefix){"$DetailPrefix`r`n$transfer"}else{$transfer}
+                        Set-CocoState $ActivityTitle $detail $percent
+                    }
                 }
             } finally { if($output){$output.Dispose()}; if($input){$input.Dispose()}; if($response){$response.Dispose()} }
             if ((Get-Sha256 $partial) -ne $ExpectedHash.ToLowerInvariant()) { throw 'La descarga no coincide con el SHA-256 publicado.' }
