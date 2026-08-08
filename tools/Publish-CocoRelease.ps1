@@ -411,7 +411,7 @@ $candidateEngineZip=Join-Path $releaseDir "coco-engine-$Version.zip"
 Install-CocoPublishedEngineCacheLocally (Join-Path $releaseDir 'latest.json') $candidateEngineZip
 [void](Archive-StaleCocoBootstrapArtifacts $Version)
 
-$publishBody=@{draft=$false;prerelease=$false}|ConvertTo-Json
+$publishBody=@{draft=$false;prerelease=$false;make_latest=$true}|ConvertTo-Json
 $release=Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($release.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $publishBody
 Write-Progress -Activity "Publicando Coco Pack $Version" -Completed
 Write-Host "Publicado: $($release.html_url)"
