@@ -61,9 +61,11 @@ try{
     }
     $launcherCatalog=Get-Content -LiteralPath 'launcher\catalog.template.json' -Raw|ConvertFrom-Json
     foreach($experience in @($launcherCatalog.experiences|Where-Object managementMode -eq 'managed')){
-        $lockPaths=@([string]$experience.pack.lockPath)
-        if($experience.worldTemplate){$lockPaths+=([string]$experience.worldTemplate.lockPath)}
+        $lockPaths=@()
+        if($experience.pack -and [string]$experience.pack.lockPath){$lockPaths+=([string]$experience.pack.lockPath)}
+        if($experience.worldTemplate -and [string]$experience.worldTemplate.lockPath){$lockPaths+=([string]$experience.worldTemplate.lockPath)}
         foreach($declaredPath in $lockPaths){
+            if([string]::IsNullOrWhiteSpace($declaredPath)){continue}
             $lockPath=$declaredPath-replace'\\','/'
             if($lockPath-notmatch'^launcher/experiences/[a-z0-9][a-z0-9.-]{1,95}\.lock\.json$'-or$entryNames-notcontains$lockPath){throw "Falta el lock de '$($experience.id)' en el engine."}
         }
