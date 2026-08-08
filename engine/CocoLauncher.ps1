@@ -1438,55 +1438,67 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                 Write-CocoLog "Copiando paquete standalone desde origen local: $sourceUrl"
                 Copy-Item -LiteralPath $sourceUrl -Destination $archive -Force
             }else{
+                $curlSuccess = $false
                 if(Get-Command curl.exe -ErrorAction SilentlyContinue){
-                    Write-CocoLog "Iniciando descarga a alta velocidad con curl.exe: $sourceUrl -> $archive"
-                    Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: Conectando descarga a alta velocidad... | {2}"-f $partIndex, $archiveItems.Count, $Experience.name) (30 + [int]((($partIndex - 1)/$archiveItems.Count)*35))
-                    $proc = Start-Process -FilePath "curl.exe" -ArgumentList @("-L", "-s", "--retry", "3", "-o", $archive, $sourceUrl) -PassThru -NoNewWindow
-                    $lastUi = [DateTime]::MinValue
-                    while(-not $proc.HasExited){
-                        if(Test-Path -LiteralPath $archive){
-                            $now = [DateTime]::UtcNow
-                            if(($now - $lastUi).TotalMilliseconds -ge 150){
-                                $lastUi = $now
-                                $curBytes = (Get-Item -LiteralPath $archive).Length
-                                $curMb = $curBytes / 1MB
-                                $totalMb = if($itemSize -gt 0){$itemSize / 1MB}else{1}
-                                $pct = [Math]::Min(99, [int](($curBytes / [Math]::Max(1, $itemSize)) * 100))
-                                Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: {2:N1} MB / {3:N1} MB ({4}%) | {5}"-f $partIndex, $archiveItems.Count, $curMb, $totalMb, $pct, $Experience.name) (30 + [int]($pct * 0.35))
-                            }
-                        }
-                        if(Get-Command [Windows.Forms.Application] -ErrorAction SilentlyContinue){[Windows.Forms.Application]::DoEvents()}
-                        Start-Sleep -Milliseconds 100
-                    }
-                    if($proc.ExitCode -ne 0){
-                        throw "La descarga con curl.exe fallo con codigo de salida $($proc.ExitCode)."
-                    }
-                }elseif(Get-Command Download-VerifiedFile -ErrorAction SilentlyContinue){
-                    Download-VerifiedFile $sourceUrl $archive $itemSha
-                }else{
-                    $webClient=New-Object System.Net.WebClient
                     try{
-                        $lastStepReport=[DateTime]::MinValue
-                        $webClient.add_DownloadProgressChanged({
-                            param($sender, $e)
-                            if((Get-Date)-gt$lastStepReport.AddMilliseconds(200)){
-                                $pct=$e.ProgressPercentage
-                                $receivedMb=$e.BytesReceived / 1MB
-                                $totalMb=$e.TotalBytesToReceive / 1MB
-                                if($totalMb-le0){$totalMb=$itemSize / 1MB}
-                                Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: {2:N1} MB / {3:N1} MB ({4}%) | {5}"-f $partIndex, $archiveItems.Count, $receivedMb, $totalMb, $pct, $Experience.name) (30 + [int]($pct * 0.35))
-                                $lastStepReport=Get-Date
+                        Write-CocoLog "Iniciando descarga a alta velocidad con curl.exe: $sourceUrl -> $archive"
+                        Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: Conectando descarga a alta velocidad... | {2}"-f $partIndex, $archiveItems.Count, $Experience.name) (30 + [int]((($partIndex - 1)/$archiveItems.Count)*35))
+                        $proc = Start-Process -FilePath "curl.exe" -ArgumentList @("-L", "-s", "--retry", "3", "-o", $archive, $sourceUrl) -PassThru -NoNewWindow
+                        $lastUi = [DateTime]::MinValue
+                        while(-not $proc.HasExited){
+                            if(Test-Path -LiteralPath $archive){
+                                $now = [DateTime]::UtcNow
+                                if(($now - $lastUi).TotalMilliseconds -ge 150){
+                                    $lastUi = $now
+                                    $curBytes = (Get-Item -LiteralPath $archive).Length
+                                    $curMb = $curBytes / 1MB
+                                    $totalMb = if($itemSize -gt 0){$itemSize / 1MB}else{1}
+                                    $pct = [Math]::Min(99, [int](($curBytes / [Math]::Max(1, $itemSize)) * 100))
+                                    Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: {2:N1} MB / {3:N1} MB ({4}%) | {5}"-f $partIndex, $archiveItems.Count, $curMb, $totalMb, $pct, $Experience.name) (30 + [int]($pct * 0.35))
+                                }
                             }
-                        })
-                        $asyncTask=$webClient.DownloadFileTaskAsync([Uri]$sourceUrl, $archive)
-                        while(-not$asyncTask.IsCompleted){
-                            [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
+                            if(Get-Command [Windows.Forms.Application] -ErrorAction SilentlyContinue){[Windows.Forms.Application]::DoEvents()}
+                            Start-Sleep -Milliseconds 100
                         }
-                        if($asyncTask.IsFaulted){
-                            throw $asyncTask.Exception.InnerException
+                        if($proc.ExitCode -eq 0){
+                            $curlSuccess = $true
+                        }else{
+                            Write-CocoLog "curl.exe finalizo con codigo $($proc.ExitCode). Reintentando con fallback..."
+                            Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
                         }
-                    }finally{
-                        $webClient.Dispose()
+                    }catch{
+                        Write-CocoLog "Fallo descarga con curl.exe: $($_.Exception.Message). Reintentando con fallback..."
+                        Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
+                    }
+                }
+                if(-not$curlSuccess){
+                    if(Get-Command Download-VerifiedFile -ErrorAction SilentlyContinue){
+                        Download-VerifiedFile $sourceUrl $archive $itemSha
+                    }else{
+                        $webClient=New-Object System.Net.WebClient
+                        try{
+                            $lastStepReport=[DateTime]::MinValue
+                            $webClient.add_DownloadProgressChanged({
+                                param($sender, $e)
+                                if((Get-Date)-gt$lastStepReport.AddMilliseconds(200)){
+                                    $pct=$e.ProgressPercentage
+                                    $receivedMb=$e.BytesReceived / 1MB
+                                    $totalMb=$e.TotalBytesToReceive / 1MB
+                                    if($totalMb-le0){$totalMb=$itemSize / 1MB}
+                                    Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: {2:N1} MB / {3:N1} MB ({4}%) | {5}"-f $partIndex, $archiveItems.Count, $receivedMb, $totalMb, $pct, $Experience.name) (30 + [int]($pct * 0.35))
+                                    $lastStepReport=Get-Date
+                                }
+                            })
+                            $asyncTask=$webClient.DownloadFileTaskAsync([Uri]$sourceUrl, $archive)
+                            while(-not$asyncTask.IsCompleted){
+                                [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
+                            }
+                            if($asyncTask.IsFaulted){
+                                throw $asyncTask.Exception.InnerException
+                            }
+                        }finally{
+                            $webClient.Dispose()
+                        }
                     }
                 }
             }
