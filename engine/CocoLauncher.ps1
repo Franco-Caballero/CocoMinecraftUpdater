@@ -1514,27 +1514,49 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Extrayendo parte {0}/{1} de {2}..." -f $partIndex, $archiveItems.Count, $Experience.name) 65
         Write-CocoLog "Extrayendo paquete standalone '$archive' en '$instanceRoot'..."
 
-        $zip=[IO.Compression.ZipFile]::OpenRead($archive)
+        $extractedSuccessfully = $false
         try{
-            $entries=@($zip.Entries|Where-Object{-not$_.FullName.EndsWith('/')})
-            $totalEntries=[Math]::Max(1, $entries.Count)
-            $extractedCount=0
-            foreach($entry in $entries){
-                $extractedCount++
-                $targetPath=Join-Path $instanceRoot ($entry.FullName -replace '/','\')
-                $targetDir=Split-Path $targetPath -Parent
-                if(-not(Test-Path -LiteralPath $targetDir)){
-                    New-Item -ItemType Directory -Path $targetDir -Force|Out-Null
+            $zip=[IO.Compression.ZipFile]::OpenRead($archive)
+            try{
+                $entries=@($zip.Entries|Where-Object{-not$_.FullName.EndsWith('/')})
+                $totalEntries=[Math]::Max(1, $entries.Count)
+                $extractedCount=0
+                foreach($entry in $entries){
+                    $extractedCount++
+                    $targetPath=Join-Path $instanceRoot ($entry.FullName -replace '/','\')
+                    $targetDir=Split-Path $targetPath -Parent
+                    if(-not(Test-Path -LiteralPath $targetDir)){
+                        New-Item -ItemType Directory -Path $targetDir -Force|Out-Null
+                    }
+                    [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
+                    if($extractedCount%25-eq0 -or $extractedCount-eq$totalEntries){
+                        $pct=[int](($extractedCount / $totalEntries) * 30)
+                        Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Parte {0}/{1}: {2}/{3} archivos extraidos ({4}%) | {5}" -f $partIndex, $archiveItems.Count, $extractedCount, $totalEntries, [int](($extractedCount/$totalEntries)*100), $Experience.name) (65 + $pct)
+                        [Windows.Forms.Application]::DoEvents()
+                    }
                 }
-                [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
-                if($extractedCount%25-eq0 -or $extractedCount-eq$totalEntries){
-                    $pct=[int](($extractedCount / $totalEntries) * 30)
-                    Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Parte {0}/{1}: {2}/{3} archivos extraidos ({4}%) | {5}" -f $partIndex, $archiveItems.Count, $extractedCount, $totalEntries, [int](($extractedCount/$totalEntries)*100), $Experience.name) (65 + $pct)
-                    [Windows.Forms.Application]::DoEvents()
-                }
+                $extractedSuccessfully = $true
+            }finally{
+                $zip.Dispose()
             }
-        }finally{
-            $zip.Dispose()
+        }catch{
+            Write-CocoLog "Extraccion con .NET ZipFile fallo ($($_.Exception.Message)). Probando fallback con tar.exe / Expand-Archive..."
+        }
+
+        if(-not $extractedSuccessfully){
+            $tarPath = Join-Path $env:SystemRoot "System32\tar.exe"
+            if((Test-Path -LiteralPath $tarPath) -or (Get-Command tar.exe -ErrorAction SilentlyContinue)){
+                Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Extrayendo parte {0}/{1} con tar.exe..." -f $partIndex, $archiveItems.Count) 75
+                $proc = Start-Process -FilePath "tar.exe" -ArgumentList @('-xf', $archive, '-C', $instanceRoot) -WindowStyle Hidden -Wait -PassThru
+                if($proc.ExitCode -ne 0){
+                    throw "La extraccion de '$archive' con tar.exe fallo con codigo $($proc.ExitCode)."
+                }
+                Write-CocoLog "Extraccion de parte $partIndex completada con tar.exe."
+            }else{
+                Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Extrayendo parte {0}/{1} con Expand-Archive..." -f $partIndex, $archiveItems.Count) 75
+                Expand-Archive -LiteralPath $archive -DestinationPath $instanceRoot -Force
+                Write-CocoLog "Extraccion de parte $partIndex completada con Expand-Archive."
+            }
         }
     }
 
