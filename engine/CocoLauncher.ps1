@@ -831,9 +831,13 @@ function Read-CocoLauncherCatalog([string]$Path){
         }
         if($experience.managementMode-eq'managed'){
             if([string]$experience.launch.workflow-eq'coco-standalone'){
-                if([string]$experience.pack.sha256-notmatch'^[a-fA-F0-9]{64}$'){throw "pack.sha256 invalido para '$id'."}
-                if([int64]$experience.pack.size-le0){throw "pack.size invalido para '$id'."}
-                if([string]$experience.pack.archiveUrl-notmatch'^(https://|file://)'){throw "archiveUrl invalido para '$id'."}
+                $archives = if($experience.pack.archives){@($experience.pack.archives)}else{@($experience.pack)}
+                if($archives.Count-le0){throw "Standalone pack vacio para '$id'."}
+                foreach($item in $archives){
+                    if([string]$item.sha256-notmatch'^[a-fA-F0-9]{64}$'){throw "pack.sha256 invalido para '$id'."}
+                    if([int64]$item.size-le0){throw "pack.size invalido para '$id'."}
+                    if([string]$item.archiveUrl-notmatch'^(https://|file://)'){throw "archiveUrl invalido para '$id'."}
+                }
             }else{
                 $lanAdapter=if($experience.hosting.adapter){[string]$experience.hosting.adapter}else{'mcwifipnp'}
                 if($lanAdapter-notin@('mcwifipnp','lan-server-properties-v1')){throw "Adaptador LAN invalido para '$id'."}
@@ -1379,11 +1383,8 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
 
     if(Test-Path -LiteralPath $statePath){
         try{
-            $state=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
-            $execPath=Join-Path $instanceRoot ($execName -replace '/','\')
-            if([string]$state.sha256-eq$expectedSha-and(Test-Path -LiteralPath $execPath)){
-                Write-CocoLog "Instancia standalone '$($Experience.id)' ya esta al dia. Omitiendo descarga."
-                Set-CocoLauncherStep 4 'PAQUETE STANDALONE VERIFICADO' ("{0} v{1} ya esta instalado y verificado."-f $Experience.name, $Experience.pack.version) 65
+            $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
+            if([string]$state.sha256 -eq $expectedSha){
                 return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$false}
             }
         }catch{
@@ -1394,96 +1395,104 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
     Set-CocoLauncherStep 4 'DESCARGANDO JUEGO STANDALONE' ("{0} | {1:N1} MB totales"-f $Experience.name, ($expectedSize / 1MB)) 30
     $downloadsDir=Join-Path $CacheRoot 'downloads\standalone-packs'
     New-Item -ItemType Directory -Path $downloadsDir -Force|Out-Null
-    $archive=Join-Path $downloadsDir ("$expectedSha.zip")
-
-    $archiveValid=$false
-    if(Test-Path -LiteralPath $archive){
-        Set-CocoLauncherStep 4 'VERIFICANDO HASH DEL ARCHIVO DESCARGADO' ("Calculando SHA-256 de {0:N1} MB..."-f ((Get-Item -LiteralPath $archive).Length / 1MB)) 32
-        $actualSha=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-        if($actualSha-eq$expectedSha){
-            $archiveValid=$true
-            Write-CocoLog "Archivo en cache verificado con exito: $archive"
-        }else{
-            Write-CocoLog "Hash en cache no coincide (Encontrado: $actualSha, Esperado: $expectedSha). Eliminando archivo corrupto."
-            Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
-        }
-    }
-
-    if(-not$archiveValid){
-        $sourceUrl=[string]$Experience.pack.archiveUrl
-        if([string]::IsNullOrWhiteSpace($sourceUrl)-and$Experience.pack.manifestUrl){
-            $sourceUrl=[string]$Experience.pack.manifestUrl
-        }
-        Write-CocoLog "Iniciando descarga/copia de paquete standalone desde: $sourceUrl -> $archive"
-
-        if(Test-Path -LiteralPath $sourceUrl){
-            Write-CocoLog "Copiando paquete standalone desde origen local: $sourceUrl"
-            Copy-Item -LiteralPath $sourceUrl -Destination $archive -Force
-        }else{
-            if(Get-Command Download-VerifiedFile -ErrorAction SilentlyContinue){
-                Download-VerifiedFile $sourceUrl $archive $expectedSha
-            }else{
-                $webClient=New-Object System.Net.WebClient
-                try{
-                    $lastStepReport=[DateTime]::MinValue
-                    $webClient.add_DownloadProgressChanged({
-                        param($sender, $e)
-                        if((Get-Date)-gt$lastStepReport.AddMilliseconds(200)){
-                            $pct=$e.ProgressPercentage
-                            $receivedMb=$e.BytesReceived / 1MB
-                            $totalMb=$e.TotalBytesToReceive / 1MB
-                            if($totalMb-le0){$totalMb=$expectedSize / 1MB}
-                            Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("{0:N1} MB / {1:N1} MB ({2}%) | {3}"-f $receivedMb, $totalMb, $pct, $Experience.name) (30 + [int]($pct * 0.35))
-                            $lastStepReport=Get-Date
-                        }
-                    })
-                    $asyncTask=$webClient.DownloadFileTaskAsync([Uri]$sourceUrl, $archive)
-                    while(-not$asyncTask.IsCompleted){
-                        [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
-                    }
-                    if($asyncTask.IsFaulted){
-                        throw $asyncTask.Exception.InnerException
-                    }
-                }finally{
-                    $webClient.Dispose()
-                }
-            }
-        }
-
-        Set-CocoLauncherStep 4 'VERIFICANDO INTEGRIDAD DEL PAQUETE' ("Comprobando hash SHA-256..."-f $Experience.name) 62
-        $downloadedSha=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-        if($downloadedSha-ne$expectedSha){
-            throw "El paquete descargado de '$($Experience.name)' no coincide con el SHA-256 esperado (Obtenido: $downloadedSha, Esperado: $expectedSha)."
-        }
-        Write-CocoLog "Descarga de paquete standalone completada y verificada: SHA256=$downloadedSha"
-    }
-
-    Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Instalando {0} en una carpeta aislada..." -f $Experience.name) 65
-    Write-CocoLog "Extrayendo paquete standalone '$archive' en '$instanceRoot'..."
-    New-Item -ItemType Directory -Path $instanceRoot -Force|Out-Null
 
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $zip=[IO.Compression.ZipFile]::OpenRead($archive)
-    try{
-        $entries=@($zip.Entries|Where-Object{-not$_.FullName.EndsWith('/')})
-        $totalEntries=[Math]::Max(1, $entries.Count)
-        $extractedCount=0
-        foreach($entry in $entries){
-            $extractedCount++
-            $targetPath=Join-Path $instanceRoot ($entry.FullName -replace '/','\')
-            $targetDir=Split-Path $targetPath -Parent
-            if(-not(Test-Path -LiteralPath $targetDir)){
-                New-Item -ItemType Directory -Path $targetDir -Force|Out-Null
-            }
-            [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
-            if($extractedCount%25-eq0 -or $extractedCount-eq$totalEntries){
-                $pct=[int](($extractedCount / $totalEntries) * 30)
-                Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("{0}/{1} archivos extraidos ({2}%) | {3}" -f $extractedCount, $totalEntries, [int](($extractedCount/$totalEntries)*100), $Experience.name) (65 + $pct)
-                [Windows.Forms.Application]::DoEvents()
+    New-Item -ItemType Directory -Path $instanceRoot -Force|Out-Null
+
+    $partIndex = 0
+    foreach($packItem in $archiveItems){
+        $partIndex++
+        $itemSha = [string]$packItem.sha256
+        $itemSize = [int64]$packItem.size
+        $archive = Join-Path $downloadsDir ("$itemSha.zip")
+        $archiveValid = $false
+
+        if(Test-Path -LiteralPath $archive){
+            Set-CocoLauncherStep 4 'VERIFICANDO HASH DEL ARCHIVO DESCARGADO' ("Calculando SHA-256 parte {0}/{1} ({2:N1} MB)..."-f $partIndex, $archiveItems.Count, ((Get-Item -LiteralPath $archive).Length / 1MB)) 32
+            $actualSha=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            if($actualSha-eq$itemSha){
+                $archiveValid=$true
+                Write-CocoLog "Archivo en cache verificado con exito: $archive"
+            }else{
+                Write-CocoLog "Hash en cache no coincide (Encontrado: $actualSha, Esperado: $itemSha). Eliminando archivo corrupto."
+                Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
             }
         }
-    }finally{
-        $zip.Dispose()
+
+        if(-not$archiveValid){
+            $sourceUrl=[string]$packItem.archiveUrl
+            if([string]::IsNullOrWhiteSpace($sourceUrl)-and$packItem.manifestUrl){
+                $sourceUrl=[string]$packItem.manifestUrl
+            }
+            Write-CocoLog "Iniciando descarga/copia de paquete standalone desde: $sourceUrl -> $archive"
+
+            if(Test-Path -LiteralPath $sourceUrl){
+                Write-CocoLog "Copiando paquete standalone desde origen local: $sourceUrl"
+                Copy-Item -LiteralPath $sourceUrl -Destination $archive -Force
+            }else{
+                if(Get-Command Download-VerifiedFile -ErrorAction SilentlyContinue){
+                    Download-VerifiedFile $sourceUrl $archive $itemSha
+                }else{
+                    $webClient=New-Object System.Net.WebClient
+                    try{
+                        $lastStepReport=[DateTime]::MinValue
+                        $webClient.add_DownloadProgressChanged({
+                            param($sender, $e)
+                            if((Get-Date)-gt$lastStepReport.AddMilliseconds(200)){
+                                $pct=$e.ProgressPercentage
+                                $receivedMb=$e.BytesReceived / 1MB
+                                $totalMb=$e.TotalBytesToReceive / 1MB
+                                if($totalMb-le0){$totalMb=$itemSize / 1MB}
+                                Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: {2:N1} MB / {3:N1} MB ({4}%) | {5}"-f $partIndex, $archiveItems.Count, $receivedMb, $totalMb, $pct, $Experience.name) (30 + [int]($pct * 0.35))
+                                $lastStepReport=Get-Date
+                            }
+                        })
+                        $asyncTask=$webClient.DownloadFileTaskAsync([Uri]$sourceUrl, $archive)
+                        while(-not$asyncTask.IsCompleted){
+                            [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
+                        }
+                        if($asyncTask.IsFaulted){
+                            throw $asyncTask.Exception.InnerException
+                        }
+                    }finally{
+                        $webClient.Dispose()
+                    }
+                }
+            }
+
+            Set-CocoLauncherStep 4 'VERIFICANDO INTEGRIDAD DEL PAQUETE' ("Comprobando hash SHA-256 parte {0}/{1}..."-f $partIndex, $archiveItems.Count) 62
+            $downloadedSha=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            if($downloadedSha-ne$itemSha){
+                throw "El paquete descargado de '$($Experience.name)' (parte $partIndex) no coincide con el SHA-256 esperado (Obtenido: $downloadedSha, Esperado: $itemSha)."
+            }
+            Write-CocoLog "Descarga de paquete standalone parte $partIndex completada y verificada: SHA256=$downloadedSha"
+        }
+
+        Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Extrayendo parte {0}/{1} de {2}..." -f $partIndex, $archiveItems.Count, $Experience.name) 65
+        Write-CocoLog "Extrayendo paquete standalone '$archive' en '$instanceRoot'..."
+
+        $zip=[IO.Compression.ZipFile]::OpenRead($archive)
+        try{
+            $entries=@($zip.Entries|Where-Object{-not$_.FullName.EndsWith('/')})
+            $totalEntries=[Math]::Max(1, $entries.Count)
+            $extractedCount=0
+            foreach($entry in $entries){
+                $extractedCount++
+                $targetPath=Join-Path $instanceRoot ($entry.FullName -replace '/','\')
+                $targetDir=Split-Path $targetPath -Parent
+                if(-not(Test-Path -LiteralPath $targetDir)){
+                    New-Item -ItemType Directory -Path $targetDir -Force|Out-Null
+                }
+                [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
+                if($extractedCount%25-eq0 -or $extractedCount-eq$totalEntries){
+                    $pct=[int](($extractedCount / $totalEntries) * 30)
+                    Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Parte {0}/{1}: {2}/{3} archivos extraidos ({4}%) | {5}" -f $partIndex, $archiveItems.Count, $extractedCount, $totalEntries, [int](($extractedCount/$totalEntries)*100), $Experience.name) (65 + $pct)
+                    [Windows.Forms.Application]::DoEvents()
+                }
+            }
+        }finally{
+            $zip.Dispose()
+        }
     }
 
     $metaDir=Join-Path $instanceRoot '.coco'
