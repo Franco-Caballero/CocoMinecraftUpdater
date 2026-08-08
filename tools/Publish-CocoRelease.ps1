@@ -36,8 +36,10 @@ foreach($jar in @(Get-ChildItem -LiteralPath (Join-Path $MinecraftRoot 'mods') -
     if($fabricId-and$fabricId-in$blockedModIds){throw "Publicacion bloqueada: $($jar.Name) usa el Fabric ID prohibido $fabricId."}
 }
 
-$publishedManifestUrl="https://github.com/$Repository/releases/latest/download/latest.json"
-$publishedManifest=Invoke-RestMethod -Uri $publishedManifestUrl -UseBasicParsing -TimeoutSec 30
+$publishedManifest=try{Invoke-RestMethod -Uri "https://github.com/$Repository/releases/latest/download/latest.json" -UseBasicParsing -TimeoutSec 30}catch{
+    $latestRel=Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases/latest" -Headers $headers -UseBasicParsing
+    Invoke-RestMethod -Uri "https://github.com/$Repository/releases/download/$($latestRel.tag_name)/latest.json" -UseBasicParsing -TimeoutSec 30
+}
 $publishedVersion=[version]$publishedManifest.version
 $requestedVersion=[version]$Version
 $expectedVersion=[version]::new($publishedVersion.Major,$publishedVersion.Minor,$publishedVersion.Build+1)
