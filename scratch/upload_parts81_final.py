@@ -19,35 +19,19 @@ headers = {
     "X-GitHub-Api-Version": "2022-11-28"
 }
 
-req = urllib.request.Request("https://api.github.com/repos/Franco-Caballero/CocoMinecraftUpdater/releases?per_page=10", headers=headers)
+rel_id = 367314696 # v0.5.81
+req = urllib.request.Request(f"https://api.github.com/repos/Franco-Caballero/CocoMinecraftUpdater/releases/{rel_id}", headers=headers)
 with urllib.request.urlopen(req) as resp:
-    releases = json.loads(resp.read().decode('utf-8'))
+    rel81 = json.loads(resp.read().decode('utf-8'))
 
-rel81 = None
-for r in releases:
-    if r.get("tag_name") == "v0.5.81" or r.get("name") == "Coco Pack 0.5.81":
-        rel81 = r
-        break
-
-if not rel81:
-    raise Exception("v0.5.81 release not found on GitHub.")
-
-print(f"Found v0.5.81 release ID: {rel81['id']}, Draft: {rel81['draft']}")
-
-# Publish draft first if it's draft
-if rel81['draft']:
-    pub_url = f"https://api.github.com/repos/Franco-Caballero/CocoMinecraftUpdater/releases/{rel81['id']}"
-    pub_data = json.dumps({"draft": False, "prerelease": False}).encode('utf-8')
-    pub_req = urllib.request.Request(pub_url, data=pub_data, headers={**headers, "Content-Type": "application/json"}, method="PATCH")
-    with urllib.request.urlopen(pub_req) as p_resp:
-        rel81 = json.loads(p_resp.read().decode('utf-8'))
-        print(f"v0.5.81 is now PUBLIC! URL: {rel81['html_url']}")
+print(f"Found v0.5.81 release ID: {rel81['id']}, Tag: {rel81['tag_name']}")
 
 upload_base = rel81["upload_url"].split("{")[0]
 
 parts = [
     ("Big-Walk-Part1.zip", r"C:\Users\smol\Desktop\random\CocoMinecraftUpdater\release\Big-Walk-Part1.zip"),
-    ("Big-Walk-Part2.zip", r"C:\Users\smol\Desktop\random\CocoMinecraftUpdater\release\Big-Walk-Part2.zip")
+    ("Big-Walk-Part2.zip", r"C:\Users\smol\Desktop\random\CocoMinecraftUpdater\release\Big-Walk-Part2.zip"),
+    ("Big-Walk-Part3.zip", r"C:\Users\smol\Desktop\random\CocoMinecraftUpdater\release\Big-Walk-Part3.zip")
 ]
 
 existing_names = [a.get("name") for a in rel81.get("assets", [])]
