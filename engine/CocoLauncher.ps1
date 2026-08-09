@@ -1457,7 +1457,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                                     Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: {2:N1} MB / {3:N1} MB ({4}%) | {5}"-f $partIndex, $archiveItems.Count, $curMb, $totalMb, $pct, $Experience.name) (30 + [int]($pct * 0.35))
                                 }
                             }
-                            if(Get-Command [Windows.Forms.Application] -ErrorAction SilentlyContinue){[Windows.Forms.Application]::DoEvents()}
+                            if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
                             Start-Sleep -Milliseconds 100
                         }
                         if($proc.ExitCode -eq 0){
@@ -1491,7 +1491,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                             })
                             $asyncTask=$webClient.DownloadFileTaskAsync([Uri]$sourceUrl, $archive)
                             while(-not$asyncTask.IsCompleted){
-                                [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
+                                if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()};Start-Sleep -Milliseconds 50
                             }
                             if($asyncTask.IsFaulted){
                                 throw $asyncTask.Exception.InnerException
