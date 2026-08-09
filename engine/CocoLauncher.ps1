@@ -2207,6 +2207,7 @@ function Invoke-CocoManagedExperienceLaunch(
         # Self-repair OnlineFix DLLs & add Defender exclusion if needed
         $winmmPath = Join-Path $installed.InstanceRoot 'winmm.dll'
         $of64Path = Join-Path $installed.InstanceRoot 'OnlineFix64.dll'
+        $eossdkPath = Join-Path $installed.InstanceRoot 'Big Walk_Data\Plugins\x86_64\EOSSDK-Win64-Shipping.dll'
         $diagLog = Join-Path $installed.InstanceRoot 'logs\standalone-diagnostics.log'
         New-Item -ItemType Directory -Path (Split-Path $diagLog -Parent) -Force -ErrorAction SilentlyContinue | Out-Null
         
@@ -2216,9 +2217,10 @@ function Invoke-CocoManagedExperienceLaunch(
         $diagLines.Add("InstanceRoot: $($installed.InstanceRoot)")
         $diagLines.Add("winmm.dll exists: $(Test-Path $winmmPath)")
         $diagLines.Add("OnlineFix64.dll exists: $(Test-Path $of64Path)")
+        $diagLines.Add("EOSSDK-Win64-Shipping.dll exists: $(Test-Path $eossdkPath)")
         
-        if ((-not (Test-Path $winmmPath)) -or (-not (Test-Path $of64Path))) {
-            Write-CocoLog "DETECTADO DLL ONLINEFIX FALTANTE. Aplicando exclusion Windows Defender y restaurando DLLs..."
+        if ((-not (Test-Path $winmmPath)) -or (-not (Test-Path $of64Path)) -or (-not (Test-Path $eossdkPath))) {
+            Write-CocoLog "DETECTADO DLL ONLINEFIX / EOSSDK FALTANTE. Aplicando exclusion Windows Defender y restaurando DLLs..."
             $diagLines.Add("REPAIR: DLL faltante detectado. Aplicando exclusion Windows Defender...")
             try { Add-MpPreference -ExclusionPath $installed.InstanceRoot -ErrorAction SilentlyContinue } catch {}
             
@@ -2230,11 +2232,13 @@ function Invoke-CocoManagedExperienceLaunch(
                     $zipObj = [System.IO.Compression.ZipFile]::OpenRead($z.FullName)
                     try {
                         foreach ($entry in $zipObj.Entries) {
-                            if ($entry.Name -ieq 'winmm.dll' -or $entry.Name -ieq 'OnlineFix64.dll' -or $entry.Name -ieq 'SteamOverlay64.dll') {
-                                $destFile = Join-Path $installed.InstanceRoot $entry.Name
+                            $targetRel = $entry.FullName -replace '/','\'
+                            if ($entry.Name -ieq 'winmm.dll' -or $entry.Name -ieq 'OnlineFix64.dll' -or $entry.Name -ieq 'SteamOverlay64.dll' -or $entry.Name -ieq 'EOSSDK-Win64-Shipping.dll') {
+                                $destFile = Join-Path $installed.InstanceRoot $targetRel
+                                New-Item -ItemType Directory -Path (Split-Path $destFile -Parent) -Force -ErrorAction SilentlyContinue | Out-Null
                                 [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $destFile, $true)
                                 Write-CocoLog "Restaurado archivo '$($entry.Name)' en '$destFile'."
-                                $diagLines.Add("REPAIR: Restaurado $($entry.Name) desde $($z.Name)")
+                                $diagLines.Add("REPAIR: Restaurado $($entry.Name) en $destFile desde $($z.Name)")
                             }
                         }
                     } finally { $zipObj.Dispose() }
