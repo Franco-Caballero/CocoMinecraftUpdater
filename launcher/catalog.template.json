@@ -539,17 +539,22 @@
                 "packId": "standalone-big-walk",
                 "version": "1.0.0",
                 "sha256": "59df85754b90bfc67afd0afe9faa29706630ffd7ca12f4900edefc118e57eca4",
-                "size": 2376429757,
+                "size": 3772277024,
                 "archives": [
                     {
-                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.87/Big-Walk-Part1.zip",
-                        "sha256": "d46d84f8ee96f4e150db61b8fbf79326e0be5a1a1ebca1a8d052beecfe2f9b89",
-                        "size": 1319517926
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.88/Big-Walk-Part1.zip",
+                        "sha256": "d6faf6d43b37e9d8162c3f9479704266c49f7abf4016a03484dc6a62d4b032c8",
+                        "size": 1348039110
                     },
                     {
-                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.87/Big-Walk-Part2.zip",
-                        "sha256": "de23a54d326f53e6b2089408e08d5aa24bf8b2a1a8df9813c9e6bb0760fa0dcf",
-                        "size": 1056911831
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.88/Big-Walk-Part2.zip",
+                        "sha256": "2c9f0f740fdd06a000489481146c60a860ab3187de0f7d12b687358f749ba9a7",
+                        "size": 1217176391
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.88/Big-Walk-Part3.zip",
+                        "sha256": "7eabd93d02932d1d8a0712cbefae7b26cc0c2187726ac92a234427649a400b92",
+                        "size": 1207061523
                     }
                 ]
             },
