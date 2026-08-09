@@ -1514,6 +1514,11 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Extrayendo parte {0}/{1} de {2}..." -f $partIndex, $archiveItems.Count, $Experience.name) 65
         Write-CocoLog "Extrayendo paquete standalone '$archive' en '$instanceRoot'..."
 
+        if(-not (Test-Path -LiteralPath $instanceRoot)){
+            New-Item -ItemType Directory -Path $instanceRoot -Force | Out-Null
+            Write-CocoLog "Creado directorio de la experiencia: '$instanceRoot'"
+        }
+
         $extractedSuccessfully = $false
         try{
             $zip=[IO.Compression.ZipFile]::OpenRead($archive)
@@ -1536,26 +1541,34 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                     }
                 }
                 $extractedSuccessfully = $true
+                Write-CocoLog "Extraccion con .NET ZipFile completada exitosamente: $totalEntries archivos extraidos."
             }finally{
                 $zip.Dispose()
             }
         }catch{
-            Write-CocoLog "Extraccion con .NET ZipFile fallo ($($_.Exception.Message)). Probando fallback con tar.exe / Expand-Archive..."
+            Write-CocoLog "Extraccion con .NET ZipFile aviso ($($_.Exception.Message)). Probando fallback con tar.exe / Expand-Archive..."
         }
 
         if(-not $extractedSuccessfully){
             $tarPath = Join-Path $env:SystemRoot "System32\tar.exe"
             if((Test-Path -LiteralPath $tarPath) -or (Get-Command tar.exe -ErrorAction SilentlyContinue)){
                 Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Extrayendo parte {0}/{1} con tar.exe..." -f $partIndex, $archiveItems.Count) 75
+                Write-CocoLog "Ejecutando tar.exe -xf '$archive' -C '$instanceRoot'..."
                 $proc = Start-Process -FilePath "tar.exe" -ArgumentList @('-xf', $archive, '-C', $instanceRoot) -WindowStyle Hidden -Wait -PassThru
+                Write-CocoLog "tar.exe finalizo con codigo $($proc.ExitCode)."
                 if($proc.ExitCode -ne 0){
-                    throw "La extraccion de '$archive' con tar.exe fallo con codigo $($proc.ExitCode)."
+                    Write-CocoLog "tar.exe devolvio codigo $($proc.ExitCode). Ejecutando Expand-Archive como salvaguarda..."
+                    Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Extrayendo parte {0}/{1} con Expand-Archive..." -f $partIndex, $archiveItems.Count) 80
+                    Expand-Archive -LiteralPath $archive -DestinationPath $instanceRoot -Force
                 }
-                Write-CocoLog "Extraccion de parte $partIndex completada con tar.exe."
+                $filesExtracted = (Get-ChildItem -Path $instanceRoot -Recurse -File -ErrorAction SilentlyContinue).Count
+                Write-CocoLog "Extraccion de parte $partIndex completada: $filesExtracted archivos presentes en '$instanceRoot'."
             }else{
                 Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Extrayendo parte {0}/{1} con Expand-Archive..." -f $partIndex, $archiveItems.Count) 75
+                Write-CocoLog "Ejecutando Expand-Archive -LiteralPath '$archive' -DestinationPath '$instanceRoot'..."
                 Expand-Archive -LiteralPath $archive -DestinationPath $instanceRoot -Force
-                Write-CocoLog "Extraccion de parte $partIndex completada con Expand-Archive."
+                $filesExtracted = (Get-ChildItem -Path $instanceRoot -Recurse -File -ErrorAction SilentlyContinue).Count
+                Write-CocoLog "Extraccion de parte $partIndex completada con Expand-Archive: $filesExtracted archivos en total."
             }
         }
     }
@@ -2923,6 +2936,7 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
         $instanceRoot=if($launch.Installation){[string]$launch.Installation.InstanceRoot}elseif($launch.InstanceRoot){[string]$launch.InstanceRoot}else{$LegacyMinecraftRoot}
         if($Experience.managementMode-eq'managed'-and$Experience.launch.workflow-eq'coco-managed'){[void](Set-CocoManagedLanWorldConfigurations $instanceRoot $Experience)}
         if($Experience.launch.workflow-eq'coco-standalone'){
+            Write-CocoLog "Proceso standalone iniciado (PID: $($launch.Process.Id)). Supervisando ejecucion..."
             Set-CocoLauncherStep 9 'JUEGO STANDALONE ABIERTO' ("{0} esta ejecutandose. Tus amigos entraran al detectar tu sesion."-f$Experience.name) 95
             try{$script:CocoForm.TopMost=$false}catch{}
             $ready=$true;$lastPublish=[DateTime]::MinValue
@@ -2934,6 +2948,7 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
                     Set-CocoLauncherStep 10 'PARTIDA ONLINE' ("{0} esta lista; tus amigos entraran automaticamente."-f$Experience.name) 100
                 }
             }
+            Write-CocoLog "Proceso standalone (PID: $($launch.Process.Id)) ha finalizado con codigo de salida $($launch.Process.ExitCode)."
         }else{
             [void](Wait-CocoManagedMinecraftWindow $instanceRoot $launch.Process 90)
             $lanInstruction=if([string]$Experience.hosting.adapter-eq'lan-server-properties-v1'){
