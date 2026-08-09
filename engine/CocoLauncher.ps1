@@ -2247,7 +2247,7 @@ function Invoke-CocoManagedExperienceLaunch(
                     try {
                         foreach ($entry in $zipObj.Entries) {
                             $targetRel = $entry.FullName -replace '/','\'
-                            if ($entry.Name -ieq 'winmm.dll' -or $entry.Name -ieq 'OnlineFix64.dll' -or $entry.Name -ieq 'SteamOverlay64.dll' -or $entry.Name -ieq 'EOSSDK-Win64-Shipping.dll' -or $entry.Name -ieq 'winhttp.dll' -or $entry.Name -ieq 'BigVoice.dll') {
+                            if ($entry.Name -ieq 'winmm.dll' -or $entry.Name -ieq 'OnlineFix64.dll' -or $entry.Name -ieq 'SteamOverlay64.dll' -or $entry.Name -ieq 'EOSSDK-Win64-Shipping.dll' -or $entry.Name -ieq 'winhttp.dll' -or $entry.Name -ieq 'BigVoice.dll' -or $entry.Name -ieq 'EnhancedControls.dll' -or $entry.Name -ieq 'FlipOff.dll') {
                                 $destFile = Join-Path $installed.InstanceRoot $targetRel
                                 New-Item -ItemType Directory -Path (Split-Path $destFile -Parent) -Force -ErrorAction SilentlyContinue | Out-Null
                                 [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $destFile, $true)
