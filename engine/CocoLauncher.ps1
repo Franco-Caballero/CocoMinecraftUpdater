@@ -2980,6 +2980,7 @@ function Get-CocoLauncherPaths([string]$EngineRoot=$script:CocoEngineRoot,[strin
 }
 
 function Get-CocoLauncherRole([string]$LegacyMinecraftRoot){
+    if($script:CocoUiDevRoleOverride){return [string]$script:CocoUiDevRoleOverride}
     if(Test-Path -LiteralPath (Join-Path $LegacyMinecraftRoot 'config\coco-host.json') -PathType Leaf){return 'host'}
     return 'client'
 }

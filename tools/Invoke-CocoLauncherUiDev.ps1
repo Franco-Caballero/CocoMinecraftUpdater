@@ -48,8 +48,7 @@ $launcherPath = Join-Path $engineRoot 'CocoLauncher.ps1'
 . $updaterPath -ManifestPath $manifestJson -DetectOnly
 . $launcherPath
 
-function Get-CocoLauncherRole([string]$LegacyMinecraftRoot) { return $Role }
-
+$script:CocoUiDevRoleOverride = $Role
 $script:CocoEngineRoot = $engineRoot
 
 if ($TestLocationPrompt) {
