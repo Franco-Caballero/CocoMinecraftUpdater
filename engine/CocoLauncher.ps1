@@ -2204,7 +2204,7 @@ function Invoke-CocoManagedExperienceLaunch(
             return [pscustomobject]@{Status='prepared';Experience=$experience;Installation=$installed}
         }
 
-        # Self-repair OnlineFix DLLs & add Defender exclusion if needed
+        # Self-repair OnlineFix DLLs & add Defender exclusion unconditionally
         $winmmPath = Join-Path $installed.InstanceRoot 'winmm.dll'
         $of64Path = Join-Path $installed.InstanceRoot 'OnlineFix64.dll'
         $eossdkPath = Join-Path $installed.InstanceRoot 'Big Walk_Data\Plugins\x86_64\EOSSDK-Win64-Shipping.dll'
@@ -2219,10 +2219,24 @@ function Invoke-CocoManagedExperienceLaunch(
         $diagLines.Add("OnlineFix64.dll exists: $(Test-Path $of64Path)")
         $diagLines.Add("EOSSDK-Win64-Shipping.dll exists: $(Test-Path $eossdkPath)")
         
+        # Always attempt to set Windows Defender Exclusion for instance folder
+        try {
+            Add-MpPreference -ExclusionPath $installed.InstanceRoot -ErrorAction Stop
+            $diagLines.Add("DEFENDER EXCLUSION: Aplicada con exito.")
+        } catch {
+            try {
+                $argList = "-NoProfile -ExecutionPolicy Bypass -Command Add-MpPreference -ExclusionPath '$($installed.InstanceRoot)'"
+                $p = Start-Process powershell -Verb RunAs -ArgumentList $argList -WindowStyle Hidden -PassThru -ErrorAction SilentlyContinue
+                if ($p) { $p.WaitForExit(5000) }
+                $diagLines.Add("DEFENDER EXCLUSION: Ejecutado proceso de elevacion.")
+            } catch {
+                $diagLines.Add("DEFENDER EXCLUSION: No se pudo elevar ($($_.Exception.Message))")
+            }
+        }
+        
         if ((-not (Test-Path $winmmPath)) -or (-not (Test-Path $of64Path)) -or (-not (Test-Path $eossdkPath))) {
-            Write-CocoLog "DETECTADO DLL ONLINEFIX / EOSSDK FALTANTE. Aplicando exclusion Windows Defender y restaurando DLLs..."
-            $diagLines.Add("REPAIR: DLL faltante detectado. Aplicando exclusion Windows Defender...")
-            try { Add-MpPreference -ExclusionPath $installed.InstanceRoot -ErrorAction SilentlyContinue } catch {}
+            Write-CocoLog "DETECTADO DLL ONLINEFIX / EOSSDK FALTANTE. Restaurando DLLs..."
+            $diagLines.Add("REPAIR: DLL faltante detectado. Restaurando...")
             
             $downloadsDir = Join-Path $CacheRoot 'downloads\standalone-packs'
             $zips = Get-ChildItem -Path $downloadsDir -Filter '*.zip' -ErrorAction SilentlyContinue

@@ -74,6 +74,17 @@ try{
     if($authorizationTimeout-lt30-or$authorizationTimeout-gt300){throw 'Timeout de autorizacion ZeroTier invalido.'}
     Write-NetworkProgress 'Configurando red Coco' 'Comprobando ZeroTier con permisos de administrador...' 15
 
+    $service = Get-Service -Name 'ZeroTierOneService' -ErrorAction SilentlyContinue
+    if ($service) {
+        if ($service.StartType -eq 'Disabled') {
+            Set-Service -Name 'ZeroTierOneService' -StartupType Automatic -ErrorAction SilentlyContinue
+        }
+        if ($service.Status -ne 'Running') {
+            Start-Service -Name 'ZeroTierOneService' -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 2
+        }
+    }
+
     $installer=$null
     $cli=Get-CliPath
     $needsInstall=-not$cli
