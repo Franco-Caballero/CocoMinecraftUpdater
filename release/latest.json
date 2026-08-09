@@ -2,17 +2,17 @@
     "schemaVersion":  2,
     "packId":  "coco-fabric-26.1.2",
     "version":  "0.5.98",
-    "publishedAt":  "2026-08-09T16:22:32.3105321Z",
+    "publishedAt":  "2026-08-09T16:28:25.0335373Z",
     "engine":  {
                    "version":  "0.5.98",
                    "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.98/coco-engine-0.5.98.zip",
-                   "sha256":  "2e526a6f25963fe3d29b94d59802e0a89992cc8b17550182df339603a22c0949",
-                   "size":  634829
+                   "sha256":  "e65799e19cc4ee7ab8858f4048421e94fd23adc09d6cfa4d555a43949390c865",
+                   "size":  634849
                },
     "bootstrap":  {
                       "version":  "0.5.98",
                       "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.98/CocoUpdater.exe",
-                      "sha256":  "a13c195e29e8da7e88da0a5664389f9328aa0c345cb1577373b6cda95644b58e",
+                      "sha256":  "588f84148ef8aeb23f533b0ed2bdf3df3da0c002720eaa32ad07243e8b614d90",
                       "size":  652288
                   },
     "network":  {

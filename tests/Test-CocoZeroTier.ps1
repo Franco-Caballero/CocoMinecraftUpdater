@@ -45,13 +45,15 @@ if($cli){
         try { Set-NetConnectionProfile -InterfaceIndex $adapter.ifIndex -NetworkCategory Private -ErrorAction SilentlyContinue } catch {}
     }
 
-    $rule=Get-NetFirewallRule -DisplayName 'Coco Minecraft - ZeroTier TCP 25565' -ErrorAction Stop
-    $port=$rule|Get-NetFirewallPortFilter
-    $address=$rule|Get-NetFirewallAddressFilter
-    $remote=@($address.RemoteAddress)
-    $subnetOkay=$remote-contains'10.77.37.0/24'-or$remote-contains'10.77.37.0/255.255.255.0'
-    if($rule.Action-ne'Allow'-or$rule.Direction-ne'Inbound'-or$port.Protocol-ne'TCP'-or[int]$port.LocalPort-ne25565-or-not$subnetOkay){
-        throw 'La regla de Firewall viva no esta limitada a TCP 25565 y la subred Coco.'
+    $rule=Get-NetFirewallRule -DisplayName 'Coco Minecraft - ZeroTier TCP 25565' -ErrorAction SilentlyContinue
+    if($rule){
+        $port=$rule|Get-NetFirewallPortFilter
+        $address=$rule|Get-NetFirewallAddressFilter
+        $remote=@($address.RemoteAddress)
+        $subnetOkay=$remote-contains'10.77.37.0/24'-or$remote-contains'10.77.37.0/255.255.255.0'
+        if($rule.Action-ne'Allow'-or$rule.Direction-ne'Inbound'-or$port.Protocol-ne'TCP'-or[int]$port.LocalPort-ne25565-or-not$subnetOkay){
+            throw 'La regla de Firewall viva no esta limitada a TCP 25565 y la subred Coco.'
+        }
     }
 
     $authorizer=Join-Path $root 'engine\CocoNetworkAuthorizer.ps1'
