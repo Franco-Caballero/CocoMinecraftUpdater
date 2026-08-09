@@ -3099,7 +3099,11 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     $oldMinecraftPid=$script:MinecraftPid;$script:MinecraftPid=$PID
     try{
         if($Manifest.network){
-            [void](Invoke-CocoLauncherNetworkSerialized {Ensure-CocoNetwork $LegacyMinecraftRoot $role $Manifest})
+            try {
+                [void](Invoke-CocoLauncherNetworkSerialized {Ensure-CocoNetwork $LegacyMinecraftRoot $role $Manifest})
+            } catch {
+                Write-CocoLog "ADVERTENCIA: Red ZeroTier no lista al inicio ($($_.Exception.Message))"
+            }
         }
     }finally{$script:MinecraftPid=$oldMinecraftPid}
     $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point(46,272);$dynamic.Size=New-Object Drawing.Size(570,100);$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic)
