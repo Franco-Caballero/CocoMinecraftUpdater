@@ -307,7 +307,7 @@ function Test-CocoEngineExtraction([string]$Destination){
         $managed=@($catalog.experiences|Where-Object managementMode -eq 'managed')
         if(-not$managed.Count){return $false}
         foreach($experience in $managed){
-            if([string]$experience.launch.workflow-eq'coco-standalone'-or[string]$experience.runtime.type-eq'standalone'){ continue }
+            if([string]$experience.launch.workflow -match 'standalone'-or[string]$experience.runtime.type-eq'standalone'-or(-not[string]$experience.pack.lockPath)){ continue }
             $lockPaths=@([string]$experience.pack.lockPath)
             if($experience.worldTemplate){$lockPaths+=([string]$experience.worldTemplate.lockPath)}
             foreach($declaredPath in $lockPaths){
