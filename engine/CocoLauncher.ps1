@@ -48,8 +48,13 @@ function Get-CocoInstanceCustomLocations {
     return [pscustomobject]@{}
 }
 
-function Get-CocoExperienceInstanceRoot([object]$Experience, [string]$DefaultExperiencesRoot) {
-    if (-not $Experience) { return $DefaultExperiencesRoot }
+function Get-CocoExperienceInstanceRoot([object]$Experience, $DefaultExperiencesRoot) {
+    $expRoot = if ($DefaultExperiencesRoot -is [hashtable] -or ($DefaultExperiencesRoot -and $DefaultExperiencesRoot.ExperiencesRoot)) {
+        [string]$DefaultExperiencesRoot.ExperiencesRoot
+    } else {
+        [string]$DefaultExperiencesRoot
+    }
+    if (-not $Experience) { return $expRoot }
     $expId = [string]$Experience.id
     $instanceId = [string]$Experience.instanceId
     if (-not $instanceId) { $instanceId = $expId }
@@ -63,7 +68,7 @@ function Get-CocoExperienceInstanceRoot([object]$Experience, [string]$DefaultExp
     if (-not [string]::IsNullOrWhiteSpace($custom)) {
         return $custom
     }
-    return (Join-Path $DefaultExperiencesRoot $instanceId)
+    return (Join-Path $expRoot $instanceId)
 }
 
 function Set-CocoExperienceInstanceRoot([string]$InstanceId, [string]$CustomPath) {
@@ -185,39 +190,44 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     $dialog.Dispose()
 }
 
-function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths, [int]$OffsetY = 0) {
+function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$Role = 'client') {
     if (-not $DynamicPanel -or $DynamicPanel.IsDisposed -or -not $Catalog) { return }
+    
+    $expRoot = if ($Paths -is [hashtable] -or ($Paths -and $Paths.ExperiencesRoot)) {
+        [string]$Paths.ExperiencesRoot
+    } else {
+        [string]$Paths
+    }
+    
     $managedExperiences = @($Catalog.experiences | Where-Object {
         $_.managementMode -eq 'managed' -and ($_.launch.workflow -eq 'coco-managed' -or $_.launch.workflow -eq 'coco-standalone')
     })
     if ($managedExperiences.Count -eq 0) { return }
     
-    if ($OffsetY -eq 0) {
-        $DynamicPanel.Controls.Clear()
-    }
+    $DynamicPanel.Controls.Clear()
     $DynamicPanel.AutoScroll = $true
     
     $storageHeader = New-Object Windows.Forms.Label
-    $storageHeader.Text = 'INSTANCIAS Y ESPACIO EN DISCO'
+    $storageHeader.Text = if ($Role -eq 'host') { 'EXPERIENCIAS Y GESTION DE INSTANCIAS' } else { 'INSTANCIAS Y ESPACIO EN DISCO' }
     $storageHeader.Font = New-Object Drawing.Font('Segoe UI Semibold', 9)
     $storageHeader.ForeColor = [Drawing.Color]::FromArgb(224, 190, 255)
-    $storageHeader.Location = New-Object Drawing.Point(0, $OffsetY)
+    $storageHeader.Location = New-Object Drawing.Point(0, 0)
     $storageHeader.Size = New-Object Drawing.Size(550, 20)
     $DynamicPanel.Controls.Add($storageHeader)
     
-    $cardY = $OffsetY + 22
+    $cardY = 22
     $cardIndex = 0
     foreach ($exp in $managedExperiences) {
         $instanceId = [string]$exp.instanceId
         if (-not $instanceId) { $instanceId = [string]$exp.id }
-        $instanceRoot = Get-CocoExperienceInstanceRoot $exp [string]$Paths.ExperiencesRoot
+        $instanceRoot = Get-CocoExperienceInstanceRoot $exp $expRoot
         $usage = Get-CocoExperienceDiskUsage $instanceRoot
         $expType = if ([string]$exp.launch.workflow -eq 'coco-standalone') { 'Standalone' } else { 'Minecraft' }
         $isRunning = Test-CocoManagedGameRunning $instanceRoot
         
         $card = New-Object Windows.Forms.Panel
         $card.Location = New-Object Drawing.Point(0, $cardY)
-        $card.Size = New-Object Drawing.Size(545, 62)
+        $card.Size = New-Object Drawing.Size(545, 64)
         $card.BackColor = [Drawing.Color]::FromArgb($(if ($cardIndex % 2 -eq 0) { 48 } else { 56 }), 30, 72)
         
         $nameLabel = New-Object Windows.Forms.Label
@@ -225,7 +235,7 @@ function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths, 
         $nameLabel.Font = New-Object Drawing.Font('Segoe UI Semibold', 9.5)
         $nameLabel.ForeColor = [Drawing.Color]::White
         $nameLabel.Location = New-Object Drawing.Point(8, 3)
-        $nameLabel.Size = New-Object Drawing.Size(260, 20)
+        $nameLabel.Size = New-Object Drawing.Size(250, 20)
         $nameLabel.AutoEllipsis = $true
         
         $pathLabel = New-Object Windows.Forms.Label
@@ -233,13 +243,13 @@ function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths, 
         $pathLabel.Font = New-Object Drawing.Font('Segoe UI', 7.5)
         $pathLabel.ForeColor = [Drawing.Color]::FromArgb(224, 190, 255)
         $pathLabel.Location = New-Object Drawing.Point(8, 23)
-        $pathLabel.Size = New-Object Drawing.Size(270, 18)
+        $pathLabel.Size = New-Object Drawing.Size(250, 18)
         $pathLabel.AutoEllipsis = $true
         
         $detailLabel = New-Object Windows.Forms.Label
         $detailLabel.Font = New-Object Drawing.Font('Segoe UI', 7.5)
         $detailLabel.Location = New-Object Drawing.Point(8, 41)
-        $detailLabel.Size = New-Object Drawing.Size(260, 18)
+        $detailLabel.Size = New-Object Drawing.Size(250, 18)
         $detailLabel.AutoEllipsis = $true
         if ($isRunning) {
             $detailLabel.Text = "$expType  |  En ejecucion"
@@ -254,83 +264,180 @@ function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths, 
         
         $card.Controls.AddRange(@($nameLabel, $pathLabel, $detailLabel))
         
-        $dirBtn = New-Object Windows.Forms.Button
-        $dirBtn.Text = 'CAMBIAR CARPETA'
-        $dirBtn.Font = New-Object Drawing.Font('Segoe UI Semibold', 7.5)
-        $dirBtn.Size = New-Object Drawing.Size(120, 26)
-        $dirBtn.Location = New-Object Drawing.Point(285, 18)
-        Set-CocoFlatButtonStyle $dirBtn ([Drawing.Color]::FromArgb(75, 45, 105)) ([Drawing.Color]::FromArgb(224, 190, 255))
-        $dirBtn.Tag = [pscustomobject]@{ InstanceId = $instanceId; Name = [string]$exp.name; CurrentRoot = $instanceRoot; DynamicPanel = $DynamicPanel; Catalog = $Catalog; Paths = $Paths; OffsetY = $OffsetY }
-        $dirBtn.Add_Click({ param($sender, $eventArgs)
-            $info = $sender.Tag
-            $dialog = New-Object Windows.Forms.FolderBrowserDialog
-            $dialog.Description = ("Selecciona la carpeta donde quieres instalar {0}:" -f $info.Name)
-            $dialog.ShowNewFolderButton = $true
-            if ($dialog.ShowDialog($script:CocoForm) -eq [Windows.Forms.DialogResult]::OK) {
-                $selected = $dialog.SelectedPath
-                if (-not [string]::IsNullOrWhiteSpace($selected)) {
-                    $newRoot = Join-Path $selected $info.InstanceId
-                    $rootPath = [IO.Path]::GetPathRoot([IO.Path]::GetFullPath($newRoot))
-                    if ([IO.Path]::GetFullPath($newRoot).TrimEnd('\') -eq $rootPath.TrimEnd('\')) {
-                        [Windows.Forms.MessageBox]::Show('No puedes seleccionar la raiz de la unidad.', 'Carpeta no valida', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
-                        return
-                    }
-                    if (Test-Path -LiteralPath $info.CurrentRoot -PathType Container) {
-                        $moveConfirm = [Windows.Forms.MessageBox]::Show(("Se encontraron archivos de '{0}' en:`r`n{1}`r`n`r`n¿Quieres mover la instalacion a la nueva carpeta?`r`n{2}" -f $info.Name, $info.CurrentRoot, $newRoot), 'Mover instalacion', [Windows.Forms.MessageBoxButtons]::YesNoCancel, [Windows.Forms.MessageBoxIcon]::Question)
-                        if ($moveConfirm -eq [Windows.Forms.DialogResult]::Cancel) { return }
-                        if ($moveConfirm -eq [Windows.Forms.DialogResult]::Yes) {
-                            try {
-                                New-Item -ItemType Directory -Path (Split-Path $newRoot -Parent) -Force | Out-Null
-                                Move-Item -LiteralPath $info.CurrentRoot -Destination $newRoot -Force
-                            } catch {
-                                [Windows.Forms.MessageBox]::Show(("No se pudieron mover algunos archivos: {0}" -f $_.Exception.Message), 'Error al mover', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+        if ($Role -eq 'host') {
+            $hostBtn = New-Object Windows.Forms.Button
+            $hostBtn.Font = New-Object Drawing.Font('Segoe UI Semibold', 7.5)
+            $hostBtn.Size = New-Object Drawing.Size(115, 28)
+            $hostBtn.Location = New-Object Drawing.Point(265, 18)
+            if ($isRunning) {
+                $hostBtn.Text = 'EN EJECUCION'
+                $hostBtn.Enabled = $false
+                Set-CocoFlatButtonStyle $hostBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))
+            } else {
+                $hostBtn.Text = 'ALOJAR PARTIDA'
+                Set-CocoFlatButtonStyle $hostBtn ([Drawing.Color]::FromArgb(83, 47, 117)) ([Drawing.Color]::White)
+            }
+            $hostBtn.Tag = [string]$exp.id
+            $hostBtn.Add_Click({ param($sender, $eventArgs)
+                $script:CocoLauncherSelectedExperience = [string]$sender.Tag
+            })
+            $card.Controls.Add($hostBtn)
+            
+            $dirBtn = New-Object Windows.Forms.Button
+            $dirBtn.Text = 'CARPETA'
+            $dirBtn.Font = New-Object Drawing.Font('Segoe UI Semibold', 7.5)
+            $dirBtn.Size = New-Object Drawing.Size(75, 28)
+            $dirBtn.Location = New-Object Drawing.Point(386, 18)
+            Set-CocoFlatButtonStyle $dirBtn ([Drawing.Color]::FromArgb(75, 45, 105)) ([Drawing.Color]::FromArgb(224, 190, 255))
+            $dirBtn.Tag = [pscustomobject]@{ InstanceId = $instanceId; Name = [string]$exp.name; CurrentRoot = $instanceRoot; DynamicPanel = $DynamicPanel; Catalog = $Catalog; Paths = $Paths; Role = $Role }
+            $dirBtn.Add_Click({ param($sender, $eventArgs)
+                $info = $sender.Tag
+                $dialog = New-Object Windows.Forms.FolderBrowserDialog
+                $dialog.Description = ("Selecciona la carpeta donde quieres instalar {0}:" -f $info.Name)
+                $dialog.ShowNewFolderButton = $true
+                if ($dialog.ShowDialog($script:CocoForm) -eq [Windows.Forms.DialogResult]::OK) {
+                    $selected = $dialog.SelectedPath
+                    if (-not [string]::IsNullOrWhiteSpace($selected)) {
+                        $newRoot = Join-Path $selected $info.InstanceId
+                        $rootPath = [IO.Path]::GetPathRoot([IO.Path]::GetFullPath($newRoot))
+                        if ([IO.Path]::GetFullPath($newRoot).TrimEnd('\') -eq $rootPath.TrimEnd('\')) {
+                            [Windows.Forms.MessageBox]::Show('No puedes seleccionar la raiz de la unidad.', 'Carpeta no valida', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+                            return
+                        }
+                        if (Test-Path -LiteralPath $info.CurrentRoot -PathType Container) {
+                            $moveConfirm = [Windows.Forms.MessageBox]::Show(("Se encontraron archivos de '{0}' en:`r`n{1}`r`n`r`n¿Quieres mover la instalacion a la nueva carpeta?`r`n{2}" -f $info.Name, $info.CurrentRoot, $newRoot), 'Mover instalacion', [Windows.Forms.MessageBoxButtons]::YesNoCancel, [Windows.Forms.MessageBoxIcon]::Question)
+                            if ($moveConfirm -eq [Windows.Forms.DialogResult]::Cancel) { return }
+                            if ($moveConfirm -eq [Windows.Forms.DialogResult]::Yes) {
+                                try {
+                                    New-Item -ItemType Directory -Path (Split-Path $newRoot -Parent) -Force | Out-Null
+                                    Move-Item -LiteralPath $info.CurrentRoot -Destination $newRoot -Force
+                                } catch {
+                                    [Windows.Forms.MessageBox]::Show(("No se pudieron mover algunos archivos: {0}" -f $_.Exception.Message), 'Error al mover', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+                                }
                             }
                         }
-                    }
-                    Set-CocoExperienceInstanceRoot $info.InstanceId $newRoot
-                    Write-CocoLog "Ruta personalizada de '$($info.InstanceId)' cambiada a: $newRoot"
-                    Update-CocoExperienceStorageManagerUi $info.DynamicPanel $info.Catalog $info.Paths $info.OffsetY
-                }
-            }
-        })
-        $card.Controls.Add($dirBtn)
-        
-        if ($usage.Installed) {
-            $deleteBtn = New-Object Windows.Forms.Button
-            $deleteBtn.Text = 'LIBERAR ESPACIO'
-            $deleteBtn.Font = New-Object Drawing.Font('Segoe UI Semibold', 7.5)
-            $deleteBtn.Size = New-Object Drawing.Size(120, 26)
-            $deleteBtn.Location = New-Object Drawing.Point(412, 18)
-            if ($isRunning) {
-                $deleteBtn.Enabled = $false
-                Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))
-            } else {
-                Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(140, 40, 55)) ([Drawing.Color]::White)
-            }
-            $deleteBtn.Tag = [pscustomobject]@{ InstanceRoot = $instanceRoot; ExperiencesRoot = [string]$Paths.ExperiencesRoot; Name = [string]$exp.name; DynamicPanel = $DynamicPanel; Catalog = $Catalog; Paths = $Paths; SizeLabel = $usage.Label; OffsetY = $OffsetY }
-            $deleteBtn.Add_Click({ param($sender, $eventArgs)
-                $info = $sender.Tag
-                $confirm = [Windows.Forms.MessageBox]::Show(("Esto eliminara todos los archivos de '{0}' ({1}).`r`n`r`nUbicacion: {2}`r`n`r`nSe liberara el espacio en disco. Si vuelves a jugar, se descargara de nuevo.`r`n`r`n¿Continuar?" -f $info.Name, $info.SizeLabel, $info.InstanceRoot), 'Liberar espacio', [Windows.Forms.MessageBoxButtons]::YesNo, [Windows.Forms.MessageBoxIcon]::Warning)
-                if ($confirm -eq [Windows.Forms.DialogResult]::Yes) {
-                    try {
-                        $result = Remove-CocoInstalledExperience $info.InstanceRoot $info.ExperiencesRoot
-                        if ($result.Removed) {
-                            Update-CocoExperienceStorageManagerUi $info.DynamicPanel $info.Catalog $info.Paths $info.OffsetY
-                            [Windows.Forms.MessageBox]::Show(("'{0}' fue eliminado correctamente. Se libero {1}." -f $info.Name, $info.SizeLabel), 'Espacio liberado', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information) | Out-Null
-                        }
-                    } catch {
-                        [Windows.Forms.MessageBox]::Show(("No se pudo eliminar '{0}': {1}" -f $info.Name, $_.Exception.Message), 'Error', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+                        Set-CocoExperienceInstanceRoot $info.InstanceId $newRoot
+                        Write-CocoLog "Ruta personalizada de '$($info.InstanceId)' cambiada a: $newRoot"
+                        Update-CocoExperienceCardsUi $info.DynamicPanel $info.Catalog $info.Paths $info.Role
                     }
                 }
             })
-            $card.Controls.Add($deleteBtn)
+            $card.Controls.Add($dirBtn)
+            
+            if ($usage.Installed) {
+                $deleteBtn = New-Object Windows.Forms.Button
+                $deleteBtn.Text = 'BORRAR'
+                $deleteBtn.Font = New-Object Drawing.Font('Segoe UI Semibold', 7.5)
+                $deleteBtn.Size = New-Object Drawing.Size(70, 28)
+                $deleteBtn.Location = New-Object Drawing.Point(467, 18)
+                if ($isRunning) {
+                    $deleteBtn.Enabled = $false
+                    Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))
+                } else {
+                    Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(140, 40, 55)) ([Drawing.Color]::White)
+                }
+                $deleteBtn.Tag = [pscustomobject]@{ InstanceRoot = $instanceRoot; ExperiencesRoot = $expRoot; Name = [string]$exp.name; DynamicPanel = $DynamicPanel; Catalog = $Catalog; Paths = $Paths; SizeLabel = $usage.Label; Role = $Role }
+                $deleteBtn.Add_Click({ param($sender, $eventArgs)
+                    $info = $sender.Tag
+                    $confirm = [Windows.Forms.MessageBox]::Show(("Esto eliminara todos los archivos de '{0}' ({1}).`r`n`r`nUbicacion: {2}`r`n`r`nSe liberara el espacio en disco. Si vuelves a jugar, se descargara de nuevo.`r`n`r`n¿Continuar?" -f $info.Name, $info.SizeLabel, $info.InstanceRoot), 'Liberar espacio', [Windows.Forms.MessageBoxButtons]::YesNo, [Windows.Forms.MessageBoxIcon]::Warning)
+                    if ($confirm -eq [Windows.Forms.DialogResult]::Yes) {
+                        try {
+                            $result = Remove-CocoInstalledExperience $info.InstanceRoot $info.ExperiencesRoot
+                            if ($result.Removed) {
+                                Update-CocoExperienceCardsUi $info.DynamicPanel $info.Catalog $info.Paths $info.Role
+                                [Windows.Forms.MessageBox]::Show(("'{0}' fue eliminado correctamente. Se libero {1}." -f $info.Name, $info.SizeLabel), 'Espacio liberado', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+                            }
+                        } catch {
+                            [Windows.Forms.MessageBox]::Show(("No se pudo eliminar '{0}': {1}" -f $info.Name, $_.Exception.Message), 'Error', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+                        }
+                    }
+                })
+                $card.Controls.Add($deleteBtn)
+            }
+        } else {
+            $dirBtn = New-Object Windows.Forms.Button
+            $dirBtn.Text = 'CAMBIAR CARPETA'
+            $dirBtn.Font = New-Object Drawing.Font('Segoe UI Semibold', 7.5)
+            $dirBtn.Size = New-Object Drawing.Size(120, 28)
+            $dirBtn.Location = New-Object Drawing.Point(280, 18)
+            Set-CocoFlatButtonStyle $dirBtn ([Drawing.Color]::FromArgb(75, 45, 105)) ([Drawing.Color]::FromArgb(224, 190, 255))
+            $dirBtn.Tag = [pscustomobject]@{ InstanceId = $instanceId; Name = [string]$exp.name; CurrentRoot = $instanceRoot; DynamicPanel = $DynamicPanel; Catalog = $Catalog; Paths = $Paths; Role = $Role }
+            $dirBtn.Add_Click({ param($sender, $eventArgs)
+                $info = $sender.Tag
+                $dialog = New-Object Windows.Forms.FolderBrowserDialog
+                $dialog.Description = ("Selecciona la carpeta donde quieres instalar {0}:" -f $info.Name)
+                $dialog.ShowNewFolderButton = $true
+                if ($dialog.ShowDialog($script:CocoForm) -eq [Windows.Forms.DialogResult]::OK) {
+                    $selected = $dialog.SelectedPath
+                    if (-not [string]::IsNullOrWhiteSpace($selected)) {
+                        $newRoot = Join-Path $selected $info.InstanceId
+                        $rootPath = [IO.Path]::GetPathRoot([IO.Path]::GetFullPath($newRoot))
+                        if ([IO.Path]::GetFullPath($newRoot).TrimEnd('\') -eq $rootPath.TrimEnd('\')) {
+                            [Windows.Forms.MessageBox]::Show('No puedes seleccionar la raiz de la unidad.', 'Carpeta no valida', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+                            return
+                        }
+                        if (Test-Path -LiteralPath $info.CurrentRoot -PathType Container) {
+                            $moveConfirm = [Windows.Forms.MessageBox]::Show(("Se encontraron archivos de '{0}' en:`r`n{1}`r`n`r`n¿Quieres mover la instalacion a la nueva carpeta?`r`n{2}" -f $info.Name, $info.CurrentRoot, $newRoot), 'Mover instalacion', [Windows.Forms.MessageBoxButtons]::YesNoCancel, [Windows.Forms.MessageBoxIcon]::Question)
+                            if ($moveConfirm -eq [Windows.Forms.DialogResult]::Cancel) { return }
+                            if ($moveConfirm -eq [Windows.Forms.DialogResult]::Yes) {
+                                try {
+                                    New-Item -ItemType Directory -Path (Split-Path $newRoot -Parent) -Force | Out-Null
+                                    Move-Item -LiteralPath $info.CurrentRoot -Destination $newRoot -Force
+                                } catch {
+                                    [Windows.Forms.MessageBox]::Show(("No se pudieron mover algunos archivos: {0}" -f $_.Exception.Message), 'Error al mover', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+                                }
+                            }
+                        }
+                        Set-CocoExperienceInstanceRoot $info.InstanceId $newRoot
+                        Write-CocoLog "Ruta personalizada de '$($info.InstanceId)' cambiada a: $newRoot"
+                        Update-CocoExperienceCardsUi $info.DynamicPanel $info.Catalog $info.Paths $info.Role
+                    }
+                }
+            })
+            $card.Controls.Add($dirBtn)
+            
+            if ($usage.Installed) {
+                $deleteBtn = New-Object Windows.Forms.Button
+                $deleteBtn.Text = 'LIBERAR ESPACIO'
+                $deleteBtn.Font = New-Object Drawing.Font('Segoe UI Semibold', 7.5)
+                $deleteBtn.Size = New-Object Drawing.Size(120, 28)
+                $deleteBtn.Location = New-Object Drawing.Point(410, 18)
+                if ($isRunning) {
+                    $deleteBtn.Enabled = $false
+                    Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))
+                } else {
+                    Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(140, 40, 55)) ([Drawing.Color]::White)
+                }
+                $deleteBtn.Tag = [pscustomobject]@{ InstanceRoot = $instanceRoot; ExperiencesRoot = $expRoot; Name = [string]$exp.name; DynamicPanel = $DynamicPanel; Catalog = $Catalog; Paths = $Paths; SizeLabel = $usage.Label; Role = $Role }
+                $deleteBtn.Add_Click({ param($sender, $eventArgs)
+                    $info = $sender.Tag
+                    $confirm = [Windows.Forms.MessageBox]::Show(("Esto eliminara todos los archivos de '{0}' ({1}).`r`n`r`nUbicacion: {2}`r`n`r`nSe liberara el espacio en disco. Si vuelves a jugar, se descargara de nuevo.`r`n`r`n¿Continuar?" -f $info.Name, $info.SizeLabel, $info.InstanceRoot), 'Liberar espacio', [Windows.Forms.MessageBoxButtons]::YesNo, [Windows.Forms.MessageBoxIcon]::Warning)
+                    if ($confirm -eq [Windows.Forms.DialogResult]::Yes) {
+                        try {
+                            $result = Remove-CocoInstalledExperience $info.InstanceRoot $info.ExperiencesRoot
+                            if ($result.Removed) {
+                                Update-CocoExperienceCardsUi $info.DynamicPanel $info.Catalog $info.Paths $info.Role
+                                [Windows.Forms.MessageBox]::Show(("'{0}' fue eliminado correctamente. Se libero {1}." -f $info.Name, $info.SizeLabel), 'Espacio liberado', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+                            }
+                        } catch {
+                            [Windows.Forms.MessageBox]::Show(("No se pudo eliminar '{0}': {1}" -f $info.Name, $_.Exception.Message), 'Error', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+                        }
+                    }
+                })
+                $card.Controls.Add($deleteBtn)
+            }
         }
         
         $DynamicPanel.Controls.Add($card)
-        $cardY += 68
+        $cardY += 70
         $cardIndex++
     }
-    $DynamicPanel.AutoScrollMinSize = [Drawing.Size]::new(0, $cardY)
+    $hostExperiences=$managedExperiences
+    $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,[int]($hostExperiences.Count*70+22))
+}
+
+function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths, [int]$OffsetY = 0) {
+    Update-CocoExperienceCardsUi $DynamicPanel $Catalog $Paths 'client'
 }
 
 function Set-CocoLauncherStep(
@@ -3523,23 +3630,10 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     $close=New-Object Windows.Forms.Button;$close.Text='CERRAR';$close.Size=New-Object Drawing.Size(115,44);$close.Location=New-Object Drawing.Point(501,542)
     Set-CocoFlatButtonStyle $close ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
     $close.Add_Click({$script:CocoAllowClose=$true;$script:CocoForm.Close()});$script:CocoPanel.Controls.Add($close)
+    $managedExperiences=@($catalog.experiences|Where-Object{$_.managementMode-eq'managed'})
     if($role-eq'host'){
         $script:CocoLauncherSelectedExperience=''
-        $index=0
-        $hostExperiences=@($catalog.experiences|Where-Object{
-            $_.managementMode-eq'managed'-and($_.launch.workflow-eq'coco-managed'-or$_.launch.workflow-eq'coco-standalone')
-        })
-        if(-not$hostExperiences.Count){throw 'El catalogo no contiene experiencias administradas para alojar.'}
-        $dynamic.AutoScrollMinSize=[Drawing.Size]::new(0,[int]([math]::Ceiling($hostExperiences.Count/2.0)*50))
-        foreach($experience in $hostExperiences){
-            $button=New-Object Windows.Forms.Button;$button.Text=[string]$experience.name;$button.Tag=[string]$experience.id
-            $button.Bounds=Get-CocoExperienceButtonBounds $index
-            $button.Font=New-Object Drawing.Font('Segoe UI Semibold',8.5)
-            Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)
-            $button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag});$dynamic.Controls.Add($button);$index++
-        }
-        $hostOffset=[int]([math]::Ceiling($hostExperiences.Count/2.0)*50)+10
-        Update-CocoExperienceStorageManagerUi $dynamic $catalog $paths $hostOffset
+        Update-CocoExperienceCardsUi $dynamic $catalog $paths 'host'
         while(-not$script:CocoForm.IsDisposed){
             Set-CocoLauncherStep 3 'ELIGE QUE ALOJAR' 'Solo el host elige. Tus amigos recibiran automaticamente esta unica partida.' 24
             $script:CocoLauncherSelectedExperience=''
@@ -3547,11 +3641,18 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             if($script:CocoForm.IsDisposed){break}
             $experience=@($catalog.experiences|Where-Object id -eq $script:CocoLauncherSelectedExperience|Select-Object -First 1)[0]
             foreach($control in @($dynamic.Controls)+@($close)){if($control-is[Windows.Forms.Button]){$control.Enabled=$false}}
-            try{Invoke-CocoLauncherHostSession $catalog $experience $paths $LegacyMinecraftRoot;Set-CocoState 'Partida terminada' 'La partida se cerro. Ya puedes iniciar otra experiencia.' 15}
-            catch{Write-CocoLog "ERROR Launcher host: $($_|Out-String)";Set-CocoState 'NO SE PUDO INICIAR LA PARTIDA' (Get-CocoLauncherFailureDetail $_) 0 $true 'failure'}
+            try{
+                Invoke-CocoLauncherHostSession $catalog $experience $paths $LegacyMinecraftRoot
+                Set-CocoState 'Partida terminada' 'La partida se cerro. Ya puedes iniciar otra experiencia.' 15
+            }catch{
+                Write-CocoLog "ERROR Launcher host: $($_|Out-String)"
+                Set-CocoState 'NO SE PUDO INICIAR LA PARTIDA' (Get-CocoLauncherFailureDetail $_) 0 $true 'failure'
+            }
+            Update-CocoExperienceCardsUi $dynamic $catalog $paths 'host'
             foreach($control in @($dynamic.Controls)+@($close)){if($control-is[Windows.Forms.Button]){$control.Enabled=$true}}
         }
     }else{
+        Update-CocoExperienceCardsUi $dynamic $catalog $paths 'client'
         $prepared=@{};$launched=$false;$session=$null
         for($attempt=0;$attempt-lt3;$attempt++){
             $session=Get-CocoSessionAnnouncement $catalog
