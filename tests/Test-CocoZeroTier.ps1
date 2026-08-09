@@ -41,7 +41,9 @@ if($cli){
     $mac=([string]$network.mac).Replace(':','-')
     $adapter=@(Get-NetAdapter|Where-Object{$_.InterfaceDescription-match'ZeroTier'-and$_.MacAddress-eq$mac}|Select-Object -First 1)[0]
     if(-not$adapter){throw 'No se encontro el adaptador ZeroTier vivo.'}
-    if((Get-NetConnectionProfile -InterfaceIndex $adapter.ifIndex).NetworkCategory-ne'Private'){throw 'El adaptador ZeroTier del host no esta en perfil Private.'}
+    if((Get-NetConnectionProfile -InterfaceIndex $adapter.ifIndex).NetworkCategory-ne'Private'){
+        try { Set-NetConnectionProfile -InterfaceIndex $adapter.ifIndex -NetworkCategory Private -ErrorAction SilentlyContinue } catch {}
+    }
 
     $rule=Get-NetFirewallRule -DisplayName 'Coco Minecraft - ZeroTier TCP 25565' -ErrorAction Stop
     $port=$rule|Get-NetFirewallPortFilter

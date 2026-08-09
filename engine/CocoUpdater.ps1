@@ -344,16 +344,16 @@ function Show-CocoWindow {
     Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing
     [Windows.Forms.Application]::EnableVisualStyles()
     $key=[Drawing.Color]::FromArgb(1,2,3)
-    $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1080,800)
+    $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1080,830)
     $f.StartPosition='CenterScreen'; $f.FormBorderStyle='None'; $f.MaximizeBox=$false; $f.ShowInTaskbar=$true
     $f.AutoScaleMode='None'; $f.TopMost=$false
     $f.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
     $f.BackColor=$key; $f.TransparencyKey=$key; $f.ForeColor=[Drawing.Color]::White
     $iconPath=Join-Path $script:CocoEngineRoot 'assets\reynaico.ico'
     if(Test-Path $iconPath){$f.Icon=New-Object Drawing.Icon($iconPath)}
-    $panel=New-Object Windows.Forms.Panel; $panel.Location=New-Object Drawing.Point(25,190); $panel.Size=New-Object Drawing.Size(640,520)
+    $panel=New-Object Windows.Forms.Panel; $panel.Location=New-Object Drawing.Point(25,190); $panel.Size=New-Object Drawing.Size(640,550)
     $panel.BackColor=[Drawing.Color]::FromArgb(22,13,37)
-    $accent=New-Object Windows.Forms.Panel; $accent.Location=New-Object Drawing.Point(0,0); $accent.Size=New-Object Drawing.Size(9,520)
+    $accent=New-Object Windows.Forms.Panel; $accent.Location=New-Object Drawing.Point(0,0); $accent.Size=New-Object Drawing.Size(9,550)
     $accent.BackColor=[Drawing.Color]::FromArgb(177,92,255); $panel.Controls.Add($accent)
     $t=New-Object Windows.Forms.Label; $t.Location=New-Object Drawing.Point(43,30); $t.Size=New-Object Drawing.Size(570,72)
     $t.Font=New-Object Drawing.Font('Segoe UI Semibold',18); $t.ForeColor=[Drawing.Color]::FromArgb(224,190,255)

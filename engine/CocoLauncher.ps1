@@ -185,25 +185,27 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     $dialog.Dispose()
 }
 
-function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths) {
+function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths, [int]$OffsetY = 0) {
     if (-not $DynamicPanel -or $DynamicPanel.IsDisposed -or -not $Catalog) { return }
     $managedExperiences = @($Catalog.experiences | Where-Object {
         $_.managementMode -eq 'managed' -and ($_.launch.workflow -eq 'coco-managed' -or $_.launch.workflow -eq 'coco-standalone')
     })
     if ($managedExperiences.Count -eq 0) { return }
     
-    $DynamicPanel.Controls.Clear()
+    if ($OffsetY -eq 0) {
+        $DynamicPanel.Controls.Clear()
+    }
     $DynamicPanel.AutoScroll = $true
     
     $storageHeader = New-Object Windows.Forms.Label
     $storageHeader.Text = 'INSTANCIAS Y ESPACIO EN DISCO'
     $storageHeader.Font = New-Object Drawing.Font('Segoe UI Semibold', 9)
     $storageHeader.ForeColor = [Drawing.Color]::FromArgb(224, 190, 255)
-    $storageHeader.Location = New-Object Drawing.Point(0, 0)
+    $storageHeader.Location = New-Object Drawing.Point(0, $OffsetY)
     $storageHeader.Size = New-Object Drawing.Size(550, 20)
     $DynamicPanel.Controls.Add($storageHeader)
     
-    $cardY = 22
+    $cardY = $OffsetY + 22
     $cardIndex = 0
     foreach ($exp in $managedExperiences) {
         $instanceId = [string]$exp.instanceId
@@ -258,7 +260,7 @@ function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths) 
         $dirBtn.Size = New-Object Drawing.Size(120, 26)
         $dirBtn.Location = New-Object Drawing.Point(285, 18)
         Set-CocoFlatButtonStyle $dirBtn ([Drawing.Color]::FromArgb(75, 45, 105)) ([Drawing.Color]::FromArgb(224, 190, 255))
-        $dirBtn.Tag = [pscustomobject]@{ InstanceId = $instanceId; Name = [string]$exp.name; CurrentRoot = $instanceRoot; DynamicPanel = $DynamicPanel; Catalog = $Catalog; Paths = $Paths }
+        $dirBtn.Tag = [pscustomobject]@{ InstanceId = $instanceId; Name = [string]$exp.name; CurrentRoot = $instanceRoot; DynamicPanel = $DynamicPanel; Catalog = $Catalog; Paths = $Paths; OffsetY = $OffsetY }
         $dirBtn.Add_Click({ param($sender, $eventArgs)
             $info = $sender.Tag
             $dialog = New-Object Windows.Forms.FolderBrowserDialog
@@ -287,7 +289,7 @@ function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths) 
                     }
                     Set-CocoExperienceInstanceRoot $info.InstanceId $newRoot
                     Write-CocoLog "Ruta personalizada de '$($info.InstanceId)' cambiada a: $newRoot"
-                    Update-CocoExperienceStorageManagerUi $info.DynamicPanel $info.Catalog $info.Paths
+                    Update-CocoExperienceStorageManagerUi $info.DynamicPanel $info.Catalog $info.Paths $info.OffsetY
                 }
             }
         })
@@ -305,7 +307,7 @@ function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths) 
             } else {
                 Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(140, 40, 55)) ([Drawing.Color]::White)
             }
-            $deleteBtn.Tag = [pscustomobject]@{ InstanceRoot = $instanceRoot; ExperiencesRoot = [string]$Paths.ExperiencesRoot; Name = [string]$exp.name; DynamicPanel = $DynamicPanel; Catalog = $Catalog; Paths = $Paths; SizeLabel = $usage.Label }
+            $deleteBtn.Tag = [pscustomobject]@{ InstanceRoot = $instanceRoot; ExperiencesRoot = [string]$Paths.ExperiencesRoot; Name = [string]$exp.name; DynamicPanel = $DynamicPanel; Catalog = $Catalog; Paths = $Paths; SizeLabel = $usage.Label; OffsetY = $OffsetY }
             $deleteBtn.Add_Click({ param($sender, $eventArgs)
                 $info = $sender.Tag
                 $confirm = [Windows.Forms.MessageBox]::Show(("Esto eliminara todos los archivos de '{0}' ({1}).`r`n`r`nUbicacion: {2}`r`n`r`nSe liberara el espacio en disco. Si vuelves a jugar, se descargara de nuevo.`r`n`r`n¿Continuar?" -f $info.Name, $info.SizeLabel, $info.InstanceRoot), 'Liberar espacio', [Windows.Forms.MessageBoxButtons]::YesNo, [Windows.Forms.MessageBoxIcon]::Warning)
@@ -313,7 +315,7 @@ function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths) 
                     try {
                         $result = Remove-CocoInstalledExperience $info.InstanceRoot $info.ExperiencesRoot
                         if ($result.Removed) {
-                            Update-CocoExperienceStorageManagerUi $info.DynamicPanel $info.Catalog $info.Paths
+                            Update-CocoExperienceStorageManagerUi $info.DynamicPanel $info.Catalog $info.Paths $info.OffsetY
                             [Windows.Forms.MessageBox]::Show(("'{0}' fue eliminado correctamente. Se libero {1}." -f $info.Name, $info.SizeLabel), 'Espacio liberado', [Windows.Forms.MessageBoxButtons]::OK, [Windows.Forms.MessageBoxIcon]::Information) | Out-Null
                         }
                     } catch {
@@ -3403,7 +3405,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     if(-not$original-or[string]$original.pack.version-ne[string]$Manifest.version){throw 'El catalogo Coco Launcher no coincide con la version publicada del engine.'}
     Show-CocoWindow
     $script:CocoForm.Text='Coco Launcher';$script:CocoBrand.Text='COCO LAUNCHER  |  UNA PARTIDA ACTIVA'
-    $script:CocoPanel.Height=520
+    $script:CocoPanel.Height=550
     if($script:CocoAccent){$script:CocoAccent.Height=$script:CocoPanel.Height}
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{component='launcher';mode='launcher';role='detecting';stage='start'}}
     $runLabel=if(-not[string]::IsNullOrWhiteSpace([string]$script:CocoRunId)){([string]$script:CocoRunId).Substring(0,[Math]::Min(8,([string]$script:CocoRunId).Length))}else{'test/local'}
@@ -3413,7 +3415,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     Set-CocoLauncherStep 2 'PREPARANDO LA RED PRIVADA' 'Verificando ZeroTier, adaptador, autorizacion y rutas Coco...' 16
     $oldMinecraftPid=$script:MinecraftPid;$script:MinecraftPid=$PID
     try{
-        if($Manifest.network){
+        if($Manifest.network-and-not$paths.IsTest){
             try {
                 [void](Invoke-CocoLauncherNetworkSerialized {Ensure-CocoNetwork $LegacyMinecraftRoot $role $Manifest})
             } catch {
@@ -3421,27 +3423,23 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             }
         }
     }finally{$script:MinecraftPid=$oldMinecraftPid}
-    $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point(46,260);$dynamic.Size=New-Object Drawing.Size(570,185);$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic)
+    $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point(46,172);$dynamic.Size=New-Object Drawing.Size(570,265);$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic)
     $identityResolution=try{Resolve-CocoLauncherIdentity $paths.IdentityPath $LegacyMinecraftRoot}catch{$null}
     $savedIdentity=if($identityResolution-and$identityResolution.Status-eq'configured'){$identityResolution.Identity}else{try{Read-CocoLauncherIdentityState $paths.IdentityPath}catch{$null}}
-    $identityCard=New-Object Windows.Forms.Panel;$identityCard.Location=New-Object Drawing.Point(46,452);$identityCard.Size=New-Object Drawing.Size(315,60)
+    $identityCard=New-Object Windows.Forms.Panel;$identityCard.Location=New-Object Drawing.Point(46,448);$identityCard.Size=New-Object Drawing.Size(315,85)
     $identityCard.BackColor=[Drawing.Color]::FromArgb(58,36,81);$identityCard.AllowDrop=$true
-    $skinPicture=New-Object Windows.Forms.PictureBox;$skinPicture.Location=New-Object Drawing.Point(6,6);$skinPicture.Size=New-Object Drawing.Size(58,58)
+    $skinPicture=New-Object Windows.Forms.PictureBox;$skinPicture.Location=New-Object Drawing.Point(6,6);$skinPicture.Size=New-Object Drawing.Size(72,72)
     $skinPicture.SizeMode='Zoom';$skinPicture.BackColor=[Drawing.Color]::FromArgb(36,22,57);$skinPicture.Cursor=[Windows.Forms.Cursors]::Hand;$skinPicture.AllowDrop=$true
-    $identityHeading=New-Object Windows.Forms.Label;$identityHeading.Text='TU IDENTIDAD COCO';$identityHeading.Location=New-Object Drawing.Point(76,5);$identityHeading.Size=New-Object Drawing.Size(195,18)
+    $identityHeading=New-Object Windows.Forms.Label;$identityHeading.Text='TU IDENTIDAD COCO';$identityHeading.Location=New-Object Drawing.Point(84,4);$identityHeading.Size=New-Object Drawing.Size(225,18)
     $identityHeading.Font=New-Object Drawing.Font('Segoe UI Semibold',8.5);$identityHeading.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
-    $identityText=New-Object Windows.Forms.TextBox;$identityText.Location=New-Object Drawing.Point(76,25);$identityText.Size=New-Object Drawing.Size(195,25)
+    $identityText=New-Object Windows.Forms.TextBox;$identityText.Location=New-Object Drawing.Point(84,24);$identityText.Size=New-Object Drawing.Size(220,25)
     $identityText.MaxLength=16;$identityText.Font=New-Object Drawing.Font('Segoe UI',10);$identityText.BorderStyle='FixedSingle'
     $identityText.Text=if($savedIdentity){[string]$savedIdentity.username}else{''}
-    $identityStatus=New-Object Windows.Forms.Label;$identityStatus.Location=New-Object Drawing.Point(76,52);$identityStatus.Size=New-Object Drawing.Size(195,15)
+    $identityStatus=New-Object Windows.Forms.Label;$identityStatus.Location=New-Object Drawing.Point(84,51);$identityStatus.Size=New-Object Drawing.Size(220,30)
     $identityStatus.Font=New-Object Drawing.Font('Segoe UI',7.5)
-    $skinHeading=New-Object Windows.Forms.Label;$skinHeading.Text='TU SKIN';$skinHeading.Location=New-Object Drawing.Point(286,7);$skinHeading.Size=New-Object Drawing.Size(145,17)
-    $skinHeading.Font=New-Object Drawing.Font('Segoe UI Semibold',8.5);$skinHeading.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$skinHeading.Cursor=[Windows.Forms.Cursors]::Hand;$skinHeading.AllowDrop=$true
-    $skinLabel=New-Object Windows.Forms.Label;$skinLabel.Location=New-Object Drawing.Point(286,26);$skinLabel.Size=New-Object Drawing.Size(150,38)
-    $skinLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',7.5);$skinLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
-    $skinLabel.UseCompatibleTextRendering=$true;$skinLabel.Cursor=[Windows.Forms.Cursors]::Hand;$skinLabel.AllowDrop=$true
-    $identityCard.Controls.AddRange(@($skinPicture,$identityHeading,$identityText,$identityStatus,$skinHeading,$skinLabel));$script:CocoPanel.Controls.Add($identityCard)
+    $identityCard.Controls.AddRange(@($skinPicture,$identityHeading,$identityText,$identityStatus));$script:CocoPanel.Controls.Add($identityCard)
     $skinTile=$identityCard
+    $skinLabel=$identityStatus
     $script:CocoSkinTile=$identityCard;$script:CocoSkinPicture=$skinPicture;$script:CocoSkinLabel=$skinLabel
     $script:CocoIdentityButton=$null;$script:CocoIdentityTextBox=$identityText;$script:CocoIdentityStatus=$identityStatus
     $script:CocoIdentityConfirmedName=if($savedIdentity){[string]$savedIdentity.username}else{''}
@@ -3515,14 +3513,14 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         $files=@($eventArgs.Data.GetData([Windows.Forms.DataFormats]::FileDrop))
         if($files.Count-eq1){&$applySkin ([string]$files[0])}
     }
-    foreach($control in @($identityCard,$skinPicture,$skinHeading,$skinLabel)){
+    foreach($control in @($identityCard,$skinPicture,$identityHeading,$identityStatus)){
         $control.Add_Click($chooseSkin);$control.Add_DragEnter($dragEnter);$control.Add_DragDrop($dragDrop)
     }
-    $minimize=New-Object Windows.Forms.Button;$minimize.Text='MINIMIZAR';$minimize.Size=New-Object Drawing.Size(115,36);$minimize.Location=New-Object Drawing.Point(375,464)
+    $minimize=New-Object Windows.Forms.Button;$minimize.Text='MINIMIZAR';$minimize.Size=New-Object Drawing.Size(115,44);$minimize.Location=New-Object Drawing.Point(375,488)
     Set-CocoFlatButtonStyle $minimize ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
     $minimize.Add_Click({try{$script:CocoForm.WindowState=[Windows.Forms.FormWindowState]::Minimized}catch{}})
     $script:CocoPanel.Controls.Add($minimize)
-    $close=New-Object Windows.Forms.Button;$close.Text='CERRAR';$close.Size=New-Object Drawing.Size(115,36);$close.Location=New-Object Drawing.Point(501,464)
+    $close=New-Object Windows.Forms.Button;$close.Text='CERRAR';$close.Size=New-Object Drawing.Size(115,44);$close.Location=New-Object Drawing.Point(501,488)
     Set-CocoFlatButtonStyle $close ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
     $close.Add_Click({$script:CocoAllowClose=$true;$script:CocoForm.Close()});$script:CocoPanel.Controls.Add($close)
     if($role-eq'host'){
@@ -3540,6 +3538,8 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)
             $button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag});$dynamic.Controls.Add($button);$index++
         }
+        $hostOffset=[int]([math]::Ceiling($hostExperiences.Count/2.0)*50)+10
+        Update-CocoExperienceStorageManagerUi $dynamic $catalog $paths $hostOffset
         while(-not$script:CocoForm.IsDisposed){
             Set-CocoLauncherStep 3 'ELIGE QUE ALOJAR' 'Solo el host elige. Tus amigos recibiran automaticamente esta unica partida.' 24
             $script:CocoLauncherSelectedExperience=''
