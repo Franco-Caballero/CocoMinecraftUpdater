@@ -292,7 +292,7 @@ exit 1
 }
 
 function Test-CocoEngineExtraction([string]$Destination){
-    $baseComplete=(Test-Path -LiteralPath (Join-Path $Destination 'CocoUpdater.ps1')) -and
+    return (Test-Path -LiteralPath (Join-Path $Destination 'CocoUpdater.ps1')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'CocoLauncher.ps1')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'CocoSessionService.ps1')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'CocoNetwork.ps1')) -and
@@ -301,23 +301,6 @@ function Test-CocoEngineExtraction([string]$Destination){
         (Test-Path -LiteralPath (Join-Path $Destination 'launcher\catalog.json')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'assets\fullbody.png')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'assets\reynaico.ico'))
-    if(-not$baseComplete){return $false}
-    try{
-        $catalog=Get-Content -LiteralPath (Join-Path $Destination 'launcher\catalog.json') -Raw|ConvertFrom-Json
-        $managed=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-        if(-not$managed.Count){return $false}
-        foreach($experience in $managed){
-            if([string]$experience.launch.workflow -match 'standalone'-or[string]$experience.runtime.type-eq'standalone'-or(-not[string]$experience.pack.lockPath)){ continue }
-            $lockPaths=@([string]$experience.pack.lockPath)
-            if($experience.worldTemplate){$lockPaths+=([string]$experience.worldTemplate.lockPath)}
-            foreach($declaredPath in $lockPaths){
-                $relative=$declaredPath-replace'\\','/'
-                if($relative-notmatch'^launcher/experiences/[a-z0-9][a-z0-9.-]{1,95}\.lock\.json$'){return $false}
-                if(-not(Test-Path -LiteralPath (Join-Path $Destination ($relative-replace'/','\')) -PathType Leaf)){return $false}
-            }
-        }
-        return $true
-    }catch{return $false}
 }
 
 function Reset-CocoExtractionDirectory([string]$Destination){

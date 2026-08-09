@@ -537,6 +537,7 @@
             },
             "pack": {
                 "packId": "standalone-big-walk",
+                "lockPath": "launcher/experiences/big-walk.lock.json",
                 "version": "1.0.0",
                 "sha256": "59df85754b90bfc67afd0afe9faa29706630ffd7ca12f4900edefc118e57eca4",
                 "size": 3772277024,
@@ -559,9 +560,7 @@
                 ]
             },
             "hosting": {
-                "mode": "lan",
-                "host": "10.77.37.1",
-                "port": 25564,
+                "mode": "p2p",
                 "networkId": "58997fc5f3c0c001"
             },
             "launch": {

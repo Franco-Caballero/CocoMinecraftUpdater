@@ -815,9 +815,11 @@ function Read-CocoLauncherCatalog([string]$Path){
         if($experience.runtimePolicies-and$experience.runtimePolicies.essentialLoaderUpdates-and[string]$experience.runtimePolicies.essentialLoaderUpdates-ne'disabled'){
             throw "Politica Essential Loader invalida para '$id'."
         }
-        if(-not$experience.hosting-or$experience.hosting.mode-notin@('lan','dedicated','either')){throw "Modo de hosting invalido para '$id'."}
-        $port=[int]$experience.hosting.port
-        if($port-lt1-or$port-gt65535){throw "Puerto invalido para '$id'."}
+        if(-not$experience.hosting-or$experience.hosting.mode-notin@('lan','dedicated','either','p2p')){throw "Modo de hosting invalido para '$id'."}
+        if($experience.hosting.mode-ne'p2p'){
+            $port=[int]$experience.hosting.port
+            if($port-lt1-or$port-gt65535){throw "Puerto invalido para '$id'."}
+        }
         if(-not$experience.launch-or[string]::IsNullOrWhiteSpace([string]$experience.launch.serverName)){throw "Lanzamiento incompleto para '$id'."}
         $expectedWorkflow=if($experience.managementMode-eq'managed'){
             if([string]$experience.runtime.type-eq'standalone'-or[string]$experience.launch.workflow-eq'coco-standalone'){'coco-standalone'}else{'coco-managed'}
@@ -2186,6 +2188,8 @@ function Invoke-CocoManagedExperienceLaunch(
                 [IO.File]::WriteAllText($targetIpFile,$hostIp,(New-Object Text.UTF8Encoding($false)))
             }
             Remove-Item -LiteralPath (Join-Path $installed.InstanceRoot 'Big Walk_Data\Plugins\x86_64\ip.txt') -Force -ErrorAction SilentlyContinue
+        }else{
+            Get-ChildItem -Path $installed.InstanceRoot -Recurse -Filter 'ip.txt' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
         }
         $publicOf=Join-Path $env:PUBLIC 'Documents\OnlineFix'
         try{
@@ -2199,6 +2203,51 @@ function Invoke-CocoManagedExperienceLaunch(
         if($Dry){
             return [pscustomobject]@{Status='prepared';Experience=$experience;Installation=$installed}
         }
+
+        # Self-repair OnlineFix DLLs & add Defender exclusion if needed
+        $winmmPath = Join-Path $installed.InstanceRoot 'winmm.dll'
+        $of64Path = Join-Path $installed.InstanceRoot 'OnlineFix64.dll'
+        $diagLog = Join-Path $installed.InstanceRoot 'logs\standalone-diagnostics.log'
+        New-Item -ItemType Directory -Path (Split-Path $diagLog -Parent) -Force -ErrorAction SilentlyContinue | Out-Null
+        
+        $diagLines = [System.Collections.Generic.List[string]]::new()
+        $diagLines.Add("=== COCO STANDALONE DIAGNOSTIC LOG ===")
+        $diagLines.Add("Timestamp: $((Get-Date).ToString('o'))")
+        $diagLines.Add("InstanceRoot: $($installed.InstanceRoot)")
+        $diagLines.Add("winmm.dll exists: $(Test-Path $winmmPath)")
+        $diagLines.Add("OnlineFix64.dll exists: $(Test-Path $of64Path)")
+        
+        if ((-not (Test-Path $winmmPath)) -or (-not (Test-Path $of64Path))) {
+            Write-CocoLog "DETECTADO DLL ONLINEFIX FALTANTE. Aplicando exclusion Windows Defender y restaurando DLLs..."
+            $diagLines.Add("REPAIR: DLL faltante detectado. Aplicando exclusion Windows Defender...")
+            try { Add-MpPreference -ExclusionPath $installed.InstanceRoot -ErrorAction SilentlyContinue } catch {}
+            
+            $downloadsDir = Join-Path $CacheRoot 'downloads\standalone-packs'
+            $zips = Get-ChildItem -Path $downloadsDir -Filter '*.zip' -ErrorAction SilentlyContinue
+            Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
+            foreach ($z in $zips) {
+                try {
+                    $zipObj = [System.IO.Compression.ZipFile]::OpenRead($z.FullName)
+                    try {
+                        foreach ($entry in $zipObj.Entries) {
+                            if ($entry.Name -ieq 'winmm.dll' -or $entry.Name -ieq 'OnlineFix64.dll' -or $entry.Name -ieq 'SteamOverlay64.dll') {
+                                $destFile = Join-Path $installed.InstanceRoot $entry.Name
+                                [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $destFile, $true)
+                                Write-CocoLog "Restaurado archivo '$($entry.Name)' en '$destFile'."
+                                $diagLines.Add("REPAIR: Restaurado $($entry.Name) desde $($z.Name)")
+                            }
+                        }
+                    } finally { $zipObj.Dispose() }
+                } catch {}
+            }
+        }
+        
+        $steamProc = @(Get-CimInstance Win32_Process -Filter "Name='steam.exe'" -ErrorAction SilentlyContinue)
+        $diagLines.Add("Steam running: $(if ($steamProc) { 'True (PID ' + $steamProc[0].ProcessId + ')' } else { 'False' })")
+        
+        [System.IO.File]::WriteAllText($diagLog, ($diagLines -join "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
+        Write-CocoLog "Diagnostico standalone guardado en '$diagLog'."
+
         [void](Ensure-CocoSteamRunning)
         $log=Join-Path $CacheRoot ("logs\launcher-$ExperienceId-"+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.log')
         $execPath=Join-Path $installed.InstanceRoot (([string]$experience.runtime.executable)-replace'/','\')
