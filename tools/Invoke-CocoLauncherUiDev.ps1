@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [ValidateSet('client','host')][string]$Role = 'client',
-    [switch]$CreateDummyInstances
+    [switch]$CreateDummyInstances,
+    [switch]$TestLocationPrompt
 )
 
 $ErrorActionPreference = 'Stop'
@@ -50,6 +51,12 @@ $launcherPath = Join-Path $engineRoot 'CocoLauncher.ps1'
 function Get-CocoLauncherRole([string]$LegacyMinecraftRoot) { return $Role }
 
 $script:CocoEngineRoot = $engineRoot
+
+if ($TestLocationPrompt) {
+    $catalog = Read-CocoLauncherCatalog (Join-Path $engineRoot 'launcher\catalog.json')
+    $sampleExp = @($catalog.experiences | Where-Object managementMode -eq 'managed')[0]
+    Prompt-CocoExperienceLocationChoice $sampleExp $testExperiencesRoot
+}
 
 Write-Host "Abriendo Coco Launcher en modo de prueba ($Role)..." -ForegroundColor Cyan
 Start-CocoLauncherUi -Manifest $release -LegacyMinecraftRoot $testMinecraftRoot -LauncherTestRoot $devRoot

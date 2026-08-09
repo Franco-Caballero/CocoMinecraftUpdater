@@ -344,31 +344,31 @@ function Show-CocoWindow {
     Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing
     [Windows.Forms.Application]::EnableVisualStyles()
     $key=[Drawing.Color]::FromArgb(1,2,3)
-    $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1080,830)
+    $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1080,840)
     $f.StartPosition='CenterScreen'; $f.FormBorderStyle='None'; $f.MaximizeBox=$false; $f.ShowInTaskbar=$true
     $f.AutoScaleMode='None'; $f.TopMost=$false
     $f.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
     $f.BackColor=$key; $f.TransparencyKey=$key; $f.ForeColor=[Drawing.Color]::White
     $iconPath=Join-Path $script:CocoEngineRoot 'assets\reynaico.ico'
     if(Test-Path $iconPath){$f.Icon=New-Object Drawing.Icon($iconPath)}
-    $panel=New-Object Windows.Forms.Panel; $panel.Location=New-Object Drawing.Point(25,190); $panel.Size=New-Object Drawing.Size(640,550)
+    $panel=New-Object Windows.Forms.Panel; $panel.Location=New-Object Drawing.Point(25,190); $panel.Size=New-Object Drawing.Size(640,600)
     $panel.BackColor=[Drawing.Color]::FromArgb(22,13,37)
-    $accent=New-Object Windows.Forms.Panel; $accent.Location=New-Object Drawing.Point(0,0); $accent.Size=New-Object Drawing.Size(9,550)
+    $accent=New-Object Windows.Forms.Panel; $accent.Location=New-Object Drawing.Point(0,0); $accent.Size=New-Object Drawing.Size(9,600)
     $accent.BackColor=[Drawing.Color]::FromArgb(177,92,255); $panel.Controls.Add($accent)
-    $t=New-Object Windows.Forms.Label; $t.Location=New-Object Drawing.Point(43,30); $t.Size=New-Object Drawing.Size(570,72)
-    $t.Font=New-Object Drawing.Font('Segoe UI Semibold',18); $t.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
-    $d=New-Object Windows.Forms.Label; $d.Location=New-Object Drawing.Point(46,106); $d.Size=New-Object Drawing.Size(570,76)
-    $d.Font=New-Object Drawing.Font('Segoe UI',12); $d.ForeColor=[Drawing.Color]::FromArgb(218,210,229)
-    $track=New-Object Windows.Forms.Panel; $track.Location=New-Object Drawing.Point(46,190); $track.Size=New-Object Drawing.Size(570,30)
+    $t=New-Object Windows.Forms.Label; $t.Location=New-Object Drawing.Point(43,16); $t.Size=New-Object Drawing.Size(570,40)
+    $t.Font=New-Object Drawing.Font('Segoe UI Semibold',16); $t.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
+    $d=New-Object Windows.Forms.Label; $d.Location=New-Object Drawing.Point(46,58); $d.Size=New-Object Drawing.Size(570,36)
+    $d.Font=New-Object Drawing.Font('Segoe UI',10.5); $d.ForeColor=[Drawing.Color]::FromArgb(218,210,229)
+    $track=New-Object Windows.Forms.Panel; $track.Location=New-Object Drawing.Point(46,98); $track.Size=New-Object Drawing.Size(570,20)
     $track.BackColor=[Drawing.Color]::FromArgb(58,36,81)
-    $p=New-Object Windows.Forms.Panel; $p.Location=New-Object Drawing.Point(0,0); $p.Size=New-Object Drawing.Size(4,30)
+    $p=New-Object Windows.Forms.Panel; $p.Location=New-Object Drawing.Point(0,0); $p.Size=New-Object Drawing.Size(4,20)
     $p.BackColor=[Drawing.Color]::FromArgb(177,92,255); $track.Controls.Add($p)
     $sparkle=[char]0x2726
-    $b=New-Object Windows.Forms.Label; $b.Text="$sparkle  COCO PACK  |  FABRIC 26.1.2"; $b.Location=New-Object Drawing.Point(46,240)
-    $b.Size=New-Object Drawing.Size(570,25); $b.Font=New-Object Drawing.Font('Segoe UI Semibold',10); $b.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
+    $b=New-Object Windows.Forms.Label; $b.Text="$sparkle  COCO PACK  |  FABRIC 26.1.2"; $b.Location=New-Object Drawing.Point(46,122)
+    $b.Size=New-Object Drawing.Size(570,20); $b.Font=New-Object Drawing.Font('Segoe UI Semibold',9); $b.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
     $panel.Controls.AddRange(@($t,$d,$track,$b))
     $artPath=Join-Path $script:CocoEngineRoot 'assets\fullbody.png'
-    $art=New-Object Windows.Forms.PictureBox; $art.Location=New-Object Drawing.Point(675,5); $art.Size=New-Object Drawing.Size(380,720)
+    $art=New-Object Windows.Forms.PictureBox; $art.Location=New-Object Drawing.Point(675,5); $art.Size=New-Object Drawing.Size(380,810)
     $art.SizeMode='Zoom'; $art.BackColor=[Drawing.Color]::Transparent
     if(Test-Path $artPath){
         try{
