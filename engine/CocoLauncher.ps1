@@ -1573,6 +1573,25 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         }
     }
 
+    $splitParts = Get-ChildItem -Path $instanceRoot -Recurse -Filter '*.part1' -ErrorAction SilentlyContinue
+    foreach($p1 in $splitParts){
+        $baseName = $p1.Name.Substring(0, $p1.Name.Length - 6)
+        $targetFile = Join-Path $p1.DirectoryName $baseName
+        $parts = Get-ChildItem -Path $p1.DirectoryName -Filter "$baseName.part*" | Sort-Object Name
+        if($parts.Count -gt 1){
+            Write-CocoLog "Reensamblando archivo dividido '$baseName' ($($parts.Count) partes)..."
+            $outFs = [System.IO.File]::Create($targetFile)
+            try{
+                foreach($pt in $parts){
+                    $inFs = [System.IO.File]::OpenRead($pt.FullName)
+                    try{ $inFs.CopyTo($outFs) }finally{ $inFs.Dispose() }
+                }
+            }finally{ $outFs.Dispose() }
+            $parts | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
+            Write-CocoLog "Archivo '$baseName' reensamblado con exito en '$targetFile'."
+        }
+    }
+
     $metaDir=Join-Path $instanceRoot '.coco'
     New-Item -ItemType Directory -Path $metaDir -Force|Out-Null
     $stateObj=[ordered]@{
@@ -2162,10 +2181,11 @@ function Invoke-CocoManagedExperienceLaunch(
         if($experience.hosting.host){
             $hostIp=[string]$experience.hosting.host
             [IO.File]::WriteAllText((Join-Path $installed.InstanceRoot 'ip.txt'),$hostIp,(New-Object Text.UTF8Encoding($false)))
-            Get-ChildItem -Path $installed.InstanceRoot -Recurse -Filter 'steam_api64.dll' -ErrorAction SilentlyContinue|ForEach-Object{
+            Get-ChildItem -Path $installed.InstanceRoot -Recurse -Filter 'steam_api64.dll' -ErrorAction SilentlyContinue|Where-Object{$_.DirectoryName -notmatch '(?i)[\\/]Plugins([\\/]|$)'}|ForEach-Object{
                 $targetIpFile=Join-Path $_.DirectoryName 'ip.txt'
                 [IO.File]::WriteAllText($targetIpFile,$hostIp,(New-Object Text.UTF8Encoding($false)))
             }
+            Remove-Item -LiteralPath (Join-Path $installed.InstanceRoot 'Big Walk_Data\Plugins\x86_64\ip.txt') -Force -ErrorAction SilentlyContinue
         }
         $publicOf=Join-Path $env:PUBLIC 'Documents\OnlineFix'
         try{
