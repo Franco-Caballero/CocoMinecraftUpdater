@@ -3772,7 +3772,10 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     # imponer 600 px sin escalar: eso dejaba el panel y el selector de skin
     # fuera de la ventana en pantallas con poca altura.
     $uiScale=if($script:CocoUiScale){[double]$script:CocoUiScale}else{1.0}
-    $script:CocoPanel.Height=[int][Math]::Round(600*$uiScale)
+    # El lienzo anterior de 600 px aun podia quedar cortado en escritorios
+    # con escala/DPI alto aunque las tarjetas ya estuvieran escaladas. Este
+    # alto deja margen para la barra de tareas y conserva el scroll interno.
+    $script:CocoPanel.Height=[int][Math]::Round(560*$uiScale)
     if($script:CocoAccent){$script:CocoAccent.Height=$script:CocoPanel.ClientSize.Height}
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{component='launcher';mode='launcher';role='detecting';stage='start'}}
     $runLabel=if(-not[string]::IsNullOrWhiteSpace([string]$script:CocoRunId)){([string]$script:CocoRunId).Substring(0,[Math]::Min(8,([string]$script:CocoRunId).Length))}else{'test/local'}
@@ -3790,19 +3793,19 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             }
         }
     }finally{$script:MinecraftPid=$oldMinecraftPid}
-    $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 146));$dynamic.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 570),(Get-CocoLauncherUiMetric 340));$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic)
+    $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 146));$dynamic.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 570),(Get-CocoLauncherUiMetric 280));$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic)
     $identityResolution=try{Resolve-CocoLauncherIdentity $paths.IdentityPath $LegacyMinecraftRoot}catch{$null}
     $savedIdentity=if($identityResolution-and$identityResolution.Status-eq'configured'){$identityResolution.Identity}else{try{Read-CocoLauncherIdentityState $paths.IdentityPath}catch{$null}}
-    $identityCard=New-Object Windows.Forms.Panel;$identityCard.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 498));$identityCard.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 315),(Get-CocoLauncherUiMetric 88))
+    $identityCard=New-Object Windows.Forms.Panel;$identityCard.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 438));$identityCard.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 315),(Get-CocoLauncherUiMetric 80))
     $identityCard.BackColor=[Drawing.Color]::FromArgb(58,36,81);$identityCard.AllowDrop=$true
-    $skinPicture=New-Object Windows.Forms.PictureBox;$skinPicture.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 6),(Get-CocoLauncherUiMetric 6));$skinPicture.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 72),(Get-CocoLauncherUiMetric 72))
+    $skinPicture=New-Object Windows.Forms.PictureBox;$skinPicture.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 6),(Get-CocoLauncherUiMetric 6));$skinPicture.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 64),(Get-CocoLauncherUiMetric 64))
     $skinPicture.SizeMode='Zoom';$skinPicture.BackColor=[Drawing.Color]::FromArgb(36,22,57);$skinPicture.Cursor=[Windows.Forms.Cursors]::Hand;$skinPicture.AllowDrop=$true
-    $identityHeading=New-Object Windows.Forms.Label;$identityHeading.Text='TU IDENTIDAD COCO';$identityHeading.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 84),(Get-CocoLauncherUiMetric 4));$identityHeading.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 225),(Get-CocoLauncherUiMetric 18))
+    $identityHeading=New-Object Windows.Forms.Label;$identityHeading.Text='TU IDENTIDAD COCO';$identityHeading.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 76),(Get-CocoLauncherUiMetric 4));$identityHeading.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 233),(Get-CocoLauncherUiMetric 18))
     $identityHeading.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 7));$identityHeading.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
-    $identityText=New-Object Windows.Forms.TextBox;$identityText.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 84),(Get-CocoLauncherUiMetric 24));$identityText.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 220),(Get-CocoLauncherUiMetric 25))
+    $identityText=New-Object Windows.Forms.TextBox;$identityText.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 76),(Get-CocoLauncherUiMetric 24));$identityText.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 233),(Get-CocoLauncherUiMetric 25))
     $identityText.MaxLength=16;$identityText.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 10 7));$identityText.BorderStyle='FixedSingle'
     $identityText.Text=if($savedIdentity){[string]$savedIdentity.username}else{''}
-    $identityStatus=New-Object Windows.Forms.Label;$identityStatus.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 84),(Get-CocoLauncherUiMetric 51));$identityStatus.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 220),(Get-CocoLauncherUiMetric 30))
+    $identityStatus=New-Object Windows.Forms.Label;$identityStatus.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 76),(Get-CocoLauncherUiMetric 51));$identityStatus.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 233),(Get-CocoLauncherUiMetric 24))
     $identityStatus.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6))
     $identityCard.Controls.AddRange(@($skinPicture,$identityHeading,$identityText,$identityStatus));$script:CocoPanel.Controls.Add($identityCard)
     $skinTile=$identityCard
@@ -3883,11 +3886,11 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     foreach($control in @($identityCard,$skinPicture,$identityHeading,$identityStatus)){
         $control.Add_Click($chooseSkin);$control.Add_DragEnter($dragEnter);$control.Add_DragDrop($dragDrop)
     }
-    $minimize=New-Object Windows.Forms.Button;$minimize.Text='MINIMIZAR';$minimize.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 44));$minimize.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 375),(Get-CocoLauncherUiMetric 542))
+    $minimize=New-Object Windows.Forms.Button;$minimize.Text='MINIMIZAR';$minimize.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 40));$minimize.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 375),(Get-CocoLauncherUiMetric 502))
     Set-CocoFlatButtonStyle $minimize ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
     $minimize.Add_Click({try{$script:CocoForm.WindowState=[Windows.Forms.FormWindowState]::Minimized}catch{}})
     $script:CocoPanel.Controls.Add($minimize)
-    $close=New-Object Windows.Forms.Button;$close.Text='CERRAR';$close.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 44));$close.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 501),(Get-CocoLauncherUiMetric 542))
+    $close=New-Object Windows.Forms.Button;$close.Text='CERRAR';$close.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 40));$close.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 501),(Get-CocoLauncherUiMetric 502))
     Set-CocoFlatButtonStyle $close ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
     $close.Add_Click({$script:CocoAllowClose=$true;$script:CocoForm.Close()});$script:CocoPanel.Controls.Add($close)
     $managedExperiences=@($catalog.experiences|Where-Object{$_.managementMode-eq'managed'})

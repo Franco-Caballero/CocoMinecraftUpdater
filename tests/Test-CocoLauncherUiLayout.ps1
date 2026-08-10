@@ -37,10 +37,10 @@ try{
         if($panel.AutoScrollMinSize.Height-ne(Get-CocoLauncherUiMetric (7*70+22))){throw "FAIL: $role no conserva el scroll de la lista."}
     }
 
-    $panelHeight=Get-CocoLauncherUiMetric 600
-    $dynamicBottom=(Get-CocoLauncherUiMetric 146)+(Get-CocoLauncherUiMetric 340)
-    $identityTop=Get-CocoLauncherUiMetric 498
-    $footerBottom=(Get-CocoLauncherUiMetric 542)+(Get-CocoLauncherUiMetric 44)
+    $panelHeight=Get-CocoLauncherUiMetric 560
+    $dynamicBottom=(Get-CocoLauncherUiMetric 146)+(Get-CocoLauncherUiMetric 280)
+    $identityTop=Get-CocoLauncherUiMetric 438
+    $footerBottom=(Get-CocoLauncherUiMetric 502)+(Get-CocoLauncherUiMetric 40)
     if($dynamicBottom-ge$identityTop-or$identityTop-ge$panelHeight-or$footerBottom-gt$panelHeight){throw 'FAIL: el layout escalado deja zonas fuera de la ventana.'}
     'PASS: layout host/cliente escalado, scroll, identidad y selector de skin caben sin solaparse.'
 }finally{
