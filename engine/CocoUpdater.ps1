@@ -387,6 +387,10 @@ function Show-CocoWindow {
     $f.Controls.Add($panel); $f.Controls.Add($art); $art.BringToFront()
     $work=[Windows.Forms.Screen]::PrimaryScreen.WorkingArea
     $scale=[Math]::Min(1.0,[Math]::Min($work.Width/1080.0,$work.Height/740.0))
+    # El launcher agrega controles despues de crear esta ventana. Conserva la
+    # escala usada aqui para que esos controles nuevos usen las mismas
+    # coordenadas y no terminen fuera del lienzo en pantallas pequenas.
+    $script:CocoUiScale=$scale
     if($scale-lt1.0){$f.Scale((New-Object Drawing.SizeF($scale,$scale)))}
     $f.Show(); $f.BringToFront(); $f.Activate(); [Windows.Forms.Application]::DoEvents()
     $script:CocoForm=$f; $script:CocoPanel=$panel; $script:CocoAccent=$accent; $script:CocoTitle=$t; $script:CocoDetail=$d
