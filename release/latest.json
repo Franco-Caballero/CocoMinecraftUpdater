@@ -2,17 +2,17 @@
     "schemaVersion":  2,
     "packId":  "coco-fabric-26.1.2",
     "version":  "0.5.98",
-    "publishedAt":  "2026-08-09T16:44:41.9520983Z",
+    "publishedAt":  "2026-08-10T00:10:51.0312631Z",
     "engine":  {
                    "version":  "0.5.98",
                    "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.98/coco-engine-0.5.98.zip",
-                   "sha256":  "5f230554b9c56ef98a0e56241d7be0ecb0e08124801f8b34b613aca768a6b744",
-                   "size":  635159
+                   "sha256":  "417306cb9832855cfddbeb2e85ed1e418c8ac42cb3344108e433b1e03770dd7d",
+                   "size":  639379
                },
     "bootstrap":  {
                       "version":  "0.5.98",
                       "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.98/CocoUpdater.exe",
-                      "sha256":  "4d9b8d5cf8094da625adcfd2adbd6d8d716dc243b9dabb5bf279ac18c574cebc",
+                      "sha256":  "b8e3eccd58cf9e55fb821e77e7ddb6b6770e1804fecb5073157e32d8ba85239b",
                       "size":  652288
                   },
     "network":  {
@@ -1992,7 +1992,7 @@
                                          "ZoeSokolov88"
                                      ],
                      "knownE4mcDomains":  [
-
+                                              "rebuff-ashy.cl.e4mc.link"
                                           ],
                      "modRules":  [
                                       {
