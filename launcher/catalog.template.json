@@ -540,7 +540,7 @@
                 "lockPath": "launcher/experiences/big-walk.lock.json",
                 "version": "1.0.0",
                 "sha256": "59df85754b90bfc67afd0afe9faa29706630ffd7ca12f4900edefc118e57eca4",
-                "size": 3772277024,
+                "size": 3848005742,
                 "archives": [
                     {
                         "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.88/Big-Walk-Part1.zip",
@@ -554,8 +554,8 @@
                     },
                     {
                         "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.88/Big-Walk-Part3.zip",
-                        "sha256": "7eabd93d02932d1d8a0712cbefae7b26cc0c2187726ac92a234427649a400b92",
-                        "size": 1207061523
+                        "sha256": "7da9186a60f61e643030c1f2a2925ff7de0d2299160e5f030b2d056b4e4ad96a",
+                        "size": 1282790241
                     }
                 ]
             },

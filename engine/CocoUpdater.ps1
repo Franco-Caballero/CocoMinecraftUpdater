@@ -110,7 +110,7 @@ function Write-CocoEngineDiagnostic([Management.Automation.ErrorRecord]$Record){
         $contextJson=try{$script:CocoDiagnosticContext|ConvertTo-Json -Depth 6}catch{'Unavailable'}
         $timeline=Get-CocoDiagnosticTail $script:CocoTimelinePath 300
         $bootstrapTimeline=Get-CocoDiagnosticTail (Join-Path $script:CocoLogDirectory "bootstrap-run-$($script:CocoRunId).log") 250
-        $updaterLog=Get-CocoDiagnosticTail $script:CocoLogPath 300
+        $updaterLog=Get-CocoDiagnosticTail $script:CocoLogPath 1000
         $networkStatePath=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\network\state.json'
         $networkState=Get-CocoDiagnosticTail $networkStatePath 120
         $serviceState=try{Get-Service -Name 'ZeroTierOneService' -ErrorAction Stop|Select-Object Name,Status,StartType|Format-List|Out-String}catch{"Unavailable: $($_.Exception.Message)"}
@@ -136,6 +136,16 @@ function Write-CocoEngineDiagnostic([Management.Automation.ErrorRecord]$Record){
             if(-not$recentLauncherLogs){$recentLauncherLogs='No launcher logs found.'}
             if($standaloneIpText){$recentLauncherLogs+="`r`n--- STANDALONE IP CONFIG (ip.txt) ---`r`n$standaloneIpText`r`n"}
         }catch{$recentLauncherLogs="Unavailable: $($_.Exception.Message)"}
+        $sessionServiceLog=Get-CocoDiagnosticTail (Join-Path $script:CocoLogDirectory 'launcher-session-service.log') 250
+        $locationStoreLog=Get-CocoDiagnosticTail (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\instance-locations.json') 120
+        $standaloneDiagnosticsLog='';$bepInExLog='';$bepInExErrorLog='';$instanceStateLog=''
+        if($selectedRoot-ne'Unknown'){
+            $standaloneDiagnosticsLog=Get-CocoDiagnosticTail (Join-Path $selectedRoot 'logs\standalone-diagnostics.log') 300
+            $bepInExLog=Get-CocoDiagnosticTail (Join-Path $selectedRoot 'BepInEx\LogOutput.log') 300
+            $bepInExErrorLog=Get-CocoDiagnosticTail (Join-Path $selectedRoot 'BepInEx\ErrorLog.log') 300
+            $instanceStateLog=Get-CocoDiagnosticTail (Join-Path $selectedRoot '.coco\standalone-state.json') 120
+            if([string]::IsNullOrWhiteSpace($standaloneDiagnosticsLog)){$standaloneDiagnosticsLog=Get-CocoDiagnosticTail (Join-Path $selectedRoot 'logs\latest.log') 300}
+        }
         $cacheSummary=try{
             $cacheRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater'
             $downloads=Get-ChildItem -LiteralPath (Join-Path $cacheRoot 'downloads') -Recurse -File -ErrorAction SilentlyContinue
@@ -191,6 +201,26 @@ $updaterLog
 LOGS PORTABLEMC/MINECRAFT RECIENTES
 ----------------------------------
 $recentLauncherLogs
+
+LOGS AUXILIARES RELEVANTES (INCLUIDOS PARA NO BUSCAR OTRAS RUTAS)
+------------------------------------------------------------------
+--- launcher-session-service.log ---
+$sessionServiceLog
+
+--- instance-locations.json ---
+$locationStoreLog
+
+--- standalone-diagnostics.log / latest.log ---
+$standaloneDiagnosticsLog
+
+--- BepInEx/LogOutput.log ---
+$bepInExLog
+
+--- BepInEx/ErrorLog.log ---
+$bepInExErrorLog
+
+--- .coco/standalone-state.json ---
+$instanceStateLog
 
 ULTIMO latest.log DE LA INSTANCIA
 ---------------------------------
@@ -706,14 +736,25 @@ function Download-VerifiedFile(
 ) {
     $partial = "$Destination.partial"
     for ($attempt=1; $attempt -le 4; $attempt++) {
-        Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
+        $resumeBytes=if(Test-Path -LiteralPath $partial -PathType Leaf){[int64](Get-Item -LiteralPath $partial).Length}else{[int64]0}
+        $hashMismatch=$false
         try {
             $request=$null;$response=$null;$input=$null;$output=$null
             $request=[Net.HttpWebRequest]::Create($Url); $request.UserAgent='CocoMinecraftUpdater/1.0'
             $request.Timeout=30000; $request.ReadWriteTimeout=30000; $request.AutomaticDecompression=[Net.DecompressionMethods]::GZip -bor [Net.DecompressionMethods]::Deflate
-            $response=$request.GetResponse(); $total=[int64]$response.ContentLength
-            $input=$response.GetResponseStream(); $output=[IO.File]::Create($partial)
-            $buffer=New-Object byte[] (1MB); $received=[int64]0; $watch=[Diagnostics.Stopwatch]::StartNew(); $lastUi=[DateTime]::MinValue
+            if($resumeBytes-gt0){$request.AddRange($resumeBytes)}
+            $response=$request.GetResponse()
+            $resumed=($resumeBytes-gt0-and$response.StatusCode-eq[Net.HttpStatusCode]::PartialContent)
+            if($resumeBytes-gt0-and-not$resumed){
+                Write-CocoLog "El servidor no acepto reanudar '$Url'; reiniciando el archivo parcial de $resumeBytes bytes."
+                $resumeBytes=0
+            }
+            $total=[int64]$response.ContentLength
+            if($resumed){$total+=$resumeBytes}
+            $input=$response.GetResponseStream()
+            $output=if($resumed){[IO.File]::Open($partial,[IO.FileMode]::Append,[IO.FileAccess]::Write,[IO.FileShare]::Read)}else{[IO.File]::Create($partial)}
+            $buffer=New-Object byte[] (1MB); $received=[int64]$resumeBytes; $watch=[Diagnostics.Stopwatch]::StartNew(); $lastUi=[DateTime]::MinValue
+            Write-CocoLog "Descarga verificada: intento=$attempt; reanudada=$resumed; bytesIniciales=$resumeBytes; total=$total; destino=$Destination"
             try {
                 while (($read=$input.Read($buffer,0,$buffer.Length)) -gt 0) {
                     $output.Write($buffer,0,$read); $received += $read
@@ -731,13 +772,14 @@ function Download-VerifiedFile(
                     }
                 }
             } finally { if($output){$output.Dispose()}; if($input){$input.Dispose()}; if($response){$response.Dispose()} }
-            if ((Get-Sha256 $partial) -ne $ExpectedHash.ToLowerInvariant()) { throw 'La descarga no coincide con el SHA-256 publicado.' }
+            if ((Get-Sha256 $partial) -ne $ExpectedHash.ToLowerInvariant()) { $hashMismatch=$true; throw 'La descarga no coincide con el SHA-256 publicado.' }
             Move-Item -LiteralPath $partial -Destination $Destination -Force
             return
         } catch {
-            Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
+            if($hashMismatch){Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue}
+            $partialBytes=if(Test-Path -LiteralPath $partial -PathType Leaf){(Get-Item -LiteralPath $partial).Length}else{0}
             if($attempt -eq 4){throw}
-            Write-CocoLog "Descarga fallida (intento $attempt): $($_.Exception.Message)"
+            Write-CocoLog "Descarga fallida (intento $attempt): $($_.Exception.Message) | Parcial conservado: $partialBytes bytes"
             $retryPrefix=if($DetailPrefix){$DetailPrefix+' | '}else{''}
             Set-CocoState 'Reintentando descarga' ("{0}Intento {1} de 4; se conserva todo archivo ya verificado."-f$retryPrefix,($attempt+1)) ([Math]::Max($ProgressStart,$script:CocoCurrentProgress))
             Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))

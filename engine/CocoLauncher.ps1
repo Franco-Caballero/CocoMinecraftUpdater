@@ -2133,14 +2133,15 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                     try{
                         Write-CocoLog "Iniciando descarga a alta velocidad con curl.exe: $sourceUrl -> $archive"
                         Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: Conectando descarga a alta velocidad... | {2}"-f $partIndex, $archiveItems.Count, $Experience.name) (30 + [int]((($partIndex - 1)/$archiveItems.Count)*35))
-                        $proc = Start-Process -FilePath "curl.exe" -ArgumentList @("-L", "-s", "--retry", "3", "-o", $archive, $sourceUrl) -PassThru -NoNewWindow
+                        $partialArchive="$archive.partial"
+                        $proc = Start-Process -FilePath "curl.exe" -ArgumentList @("-L", "-s", "--retry", "3", "--continue-at", "-", "-o", $partialArchive, $sourceUrl) -PassThru -NoNewWindow
                         $lastUi = [DateTime]::MinValue
                         while(-not $proc.HasExited){
-                            if(Test-Path -LiteralPath $archive){
+                            if(Test-Path -LiteralPath $partialArchive){
                                 $now = [DateTime]::UtcNow
                                 if(($now - $lastUi).TotalMilliseconds -ge 150){
                                     $lastUi = $now
-                                    $curBytes = (Get-Item -LiteralPath $archive).Length
+                                    $curBytes = (Get-Item -LiteralPath $partialArchive).Length
                                     $curMb = $curBytes / 1MB
                                     $totalMb = if($itemSize -gt 0){$itemSize / 1MB}else{1}
                                     $pct = [Math]::Min(99, [int](($curBytes / [Math]::Max(1, $itemSize)) * 100))
@@ -2151,14 +2152,15 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                             Start-Sleep -Milliseconds 100
                         }
                         if($proc.ExitCode -eq 0){
-                            $curlSuccess = $true
+                            if(Test-Path -LiteralPath $partialArchive){
+                                Move-Item -LiteralPath $partialArchive -Destination $archive -Force
+                                $curlSuccess = $true
+                            }
                         }else{
-                            Write-CocoLog "curl.exe finalizo con codigo $($proc.ExitCode). Reintentando con fallback..."
-                            Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
+                            Write-CocoLog "curl.exe finalizo con codigo $($proc.ExitCode). Se conserva el parcial para reanudar con fallback..."
                         }
                     }catch{
-                        Write-CocoLog "Fallo descarga con curl.exe: $($_.Exception.Message). Reintentando con fallback..."
-                        Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
+                        Write-CocoLog "Fallo descarga con curl.exe: $($_.Exception.Message). Se conserva el parcial para reanudar con fallback..."
                     }
                 }
                 if(-not$curlSuccess){
@@ -4009,7 +4011,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         }
     }else{
         Update-CocoExperienceCardsUi $dynamic $catalog $paths 'client'
-        $prepared=@{};$launched=$false;$session=$null
+        $prepared=@{};$launched=$false;$session=$null;$clientFailureCount=0
         for($attempt=0;$attempt-lt3;$attempt++){
             $session=Get-CocoSessionAnnouncement $catalog
             if($session.State-ne'offline'){break}
@@ -4088,7 +4090,17 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                 }
             }catch{
                 if(-not$script:CocoForm.IsDisposed){$identityText.Enabled=$true;$skinTile.Enabled=$true;$close.Enabled=$true}
-                Write-CocoLog "ERROR Launcher client: $($_|Out-String)";Set-CocoState 'COCO DETECTO UN PROBLEMA' (Get-CocoLauncherFailureDetail $_) 0 $true 'failure'
+                $clientFailureCount++
+                $failureText=Get-CocoLauncherFailureDetail $_
+                $integrityFailure=([string]$_.Exception.Message)-match'(?i)sha-?256|integridad|no coincide|archivo descargado|paquete descargado|pack-inte?rity'
+                $terminalFailure=$integrityFailure-or$clientFailureCount-ge3
+                Write-CocoLog "ERROR Launcher client (attempt=$clientFailureCount; terminal=$terminalFailure; integrity=$integrityFailure): $($_|Out-String)"
+                if($terminalFailure){
+                    $launched=$true
+                    $message=if($integrityFailure){'La descarga verificada no coincide con el paquete publicado.'}else{'Coco no pudo completar la preparacion despues de varios intentos.'}
+                    $detail="$message`r`nCierra y vuelve a abrir Coco Launcher para reintentar.`r`n$failureText"
+                    Set-CocoState $message $detail 0 $true 'failure'
+                }else{Set-CocoState 'COCO DETECTO UN PROBLEMA' $failureText 0 $true 'failure'}
             }
             $until=(Get-Date).AddSeconds(3);while((Get-Date)-lt$until-and-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
             if(-not$script:CocoForm.IsDisposed){$session=Get-CocoSessionAnnouncement $catalog}

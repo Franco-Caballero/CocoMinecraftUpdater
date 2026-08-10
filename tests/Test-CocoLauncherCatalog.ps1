@@ -184,6 +184,9 @@ if($zombieLan.Count-ne1-or$zombieLan[0].role-ne'host'-or$zombieLan[0].sha256-ne'
 }
 $bigWalk=@($catalog.experiences|Where-Object id -eq 'big-walk'|Select-Object -First 1)[0]
 if(-not$bigWalk-or$bigWalk.runtime.type-ne'standalone'-or$bigWalk.runtime.executable-ne'Big Walk.exe'){throw 'Big Walk no esta fijado como experiencia standalone.'}
+$bigWalkPart3=@($bigWalk.pack.archives|Where-Object archiveUrl -match 'Big-Walk-Part3\.zip'|Select-Object -First 1)[0]
+if(-not$bigWalkPart3-or[int64]$bigWalkPart3.size-ne1282790241-or[string]$bigWalkPart3.sha256-ne'7da9186a60f61e643030c1f2a2925ff7de0d2299160e5f030b2d056b4e4ad96a'){throw 'Big Walk Part3 no coincide con el asset oficial vigente de GitHub.'}
+if([int64]$bigWalk.pack.size-ne3848005742){throw 'Big Walk no conserva el tamano total vigente de sus tres partes.'}
 $bigWalkMods=@($bigWalk.files|Where-Object path -eq 'BepInEx/mods/big-walk-mods.zip')
 if($bigWalkMods.Count-ne1-or$bigWalkMods[0].role-ne'all'-or
     $bigWalkMods[0].sourceUrl-notmatch'^https://github\.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v\d+\.\d+\.\d+/[^/?#]+$'-or
