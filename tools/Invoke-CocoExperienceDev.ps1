@@ -17,7 +17,12 @@ if(-not$sourceExperience-or$sourceExperience.managementMode-ne'managed'){
     throw "No existe una experiencia administrada '$ExperienceId' en el catalogo."
 }
 $liveExperiencesRoot=Join-Path $env:APPDATA 'CocoMinecraft\experiences'
-$liveInstance=Join-Path $liveExperiencesRoot ([string]$sourceExperience.instanceId)
+$instanceLocationsPath=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\instance-locations.json'
+Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
+$launcherPath=Join-Path $repoRoot 'engine\CocoLauncher.ps1'
+. $launcherPath
+$liveInstance=Get-CocoExperienceInstanceRoot $sourceExperience $liveExperiencesRoot $instanceLocationsPath
 if(-not$Live-and(Test-Path -LiteralPath $liveInstance)){
     throw "Ya existe una instancia viva en '$liveInstance'. Usa -Live para probarla; Coco no crea una copia temporal paralela."
 }
@@ -35,16 +40,24 @@ $release=Get-Content -LiteralPath (Join-Path $repoRoot 'release\latest.json') -R
 $built=& (Join-Path $repoRoot 'tools\New-CocoEngine.ps1') -Version ([string]$release.version) -OutputDirectory $buildRoot|ConvertFrom-Json
 Expand-Archive -LiteralPath $built.path -DestinationPath $engineRoot
 
-$launcherPath=Join-Path $engineRoot 'CocoLauncher.ps1'
-. ([ScriptBlock]::Create([IO.File]::ReadAllText($launcherPath)))
 $script:CocoEngineRoot=$engineRoot
+. ([ScriptBlock]::Create([IO.File]::ReadAllText((Join-Path $engineRoot 'CocoLauncher.ps1'))))
 $catalog=Read-CocoLauncherCatalog (Join-Path $engineRoot 'launcher\catalog.json')
 $identity=[pscustomobject]@{mode='offline';username=$Username;uuid=''}
-$cacheRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater'
+$cacheRoot=if($Live){
+    Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater'
+}else{
+    Join-Path $devRoot 'cache'
+}
 $experiencesRoot=if($Live){
     $liveExperiencesRoot
 }else{
     Join-Path $devRoot 'experiences'
+}
+$instanceLocationsPath=if($Live){
+    Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\instance-locations.json'
+}else{
+    Join-Path $devRoot 'instance-locations.json'
 }
 
 $common=@(
@@ -57,7 +70,7 @@ $common=@(
     $experiencesRoot
 )
 if($Action-eq'Prepare'){
-    $result=Invoke-CocoManagedExperienceLaunch @common -Dry -DisableAutoJoin
+    $result=Invoke-CocoManagedExperienceLaunch @common -Dry -DisableAutoJoin -SkipLocationPrompt -InstanceLocationsPath $instanceLocationsPath
     [pscustomobject]@{
         Status=$result.Status
         Experience=$ExperienceId
@@ -71,9 +84,9 @@ if($Action-eq'Prepare'){
 }
 
 $result=if($EnableAutoJoin){
-    Invoke-CocoManagedExperienceLaunch @common
+    Invoke-CocoManagedExperienceLaunch @common -SkipLocationPrompt -InstanceLocationsPath $instanceLocationsPath
 }else{
-    Invoke-CocoManagedExperienceLaunch @common -DisableAutoJoin
+    Invoke-CocoManagedExperienceLaunch @common -DisableAutoJoin -SkipLocationPrompt -InstanceLocationsPath $instanceLocationsPath
 }
 [pscustomobject]@{
     Status=$result.Status

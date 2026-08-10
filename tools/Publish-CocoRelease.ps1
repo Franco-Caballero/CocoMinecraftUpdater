@@ -374,7 +374,8 @@ if(Test-Path -LiteralPath $experienceAssetDir -PathType Container){
 $assets=@(
     (Get-Item (Join-Path $releaseDir "coco-engine-$Version.zip")),
     (Get-Item (Join-Path $releaseDir 'latest.json')),
-    (Get-Item $bootstrapExe)
+    (Get-Item $bootstrapExe),
+    (Get-Item (Join-Path $releaseDir 'big-walk-bepinex-mods.zip'))
 )+$experienceAssets
 $index=0
 foreach($asset in $assets){

@@ -8,6 +8,9 @@ New-Item -ItemType Directory -Path $testRoot -Force|Out-Null
 try{
     $launcherText=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoLauncher.ps1'))
     . ([ScriptBlock]::Create($launcherText))
+    if($launcherText-notmatch"RoleOverride=''"){
+        throw 'Start-CocoLauncherUi no acepta un rol de prueba explicito.'
+    }
     $catalog=Read-CocoLauncherCatalog (Join-Path $root 'launcher\catalog.template.json')
     $original=@($catalog.experiences|Where-Object id -eq 'coco-original'|Select-Object -First 1)[0]
     $iron=@($catalog.experiences|Where-Object id -eq 'into-the-backrooms'|Select-Object -First 1)[0]

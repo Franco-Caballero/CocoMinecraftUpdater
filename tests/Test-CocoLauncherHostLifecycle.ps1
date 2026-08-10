@@ -60,6 +60,8 @@ exit 3
         SkinStatePath=(Join-Path $testRoot 'skins\selection.json')
         MainDir=(Join-Path $testRoot 'shared')
         AccountDb=(Join-Path $testRoot 'accounts.json')
+        InstanceLocationsPath=(Join-Path $testRoot 'instance-locations.json')
+        ExperienceBackupRoot=(Join-Path $testRoot 'backups\experiences')
     }
     Invoke-CocoLauncherHostSession $catalog $experience $paths (Join-Path $env:APPDATA '.minecraft')
     if($watcher-and-not$watcher.HasExited){$watcher.WaitForExit(5000)|Out-Null}

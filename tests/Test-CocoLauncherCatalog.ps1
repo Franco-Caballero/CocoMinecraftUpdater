@@ -182,6 +182,15 @@ $zombieLan=@($zombieLock.assets|Where-Object path -eq 'mods/lanserverproperties-
 if($zombieLan.Count-ne1-or$zombieLan[0].role-ne'host'-or$zombieLan[0].sha256-ne'15577c28814cda5ce0d6c0e9039a093a6227e2c9ec3716dae9c840ec0a99e263'){
     throw 'Zombie no fija Lan Server Properties 1.0 exclusivamente para el host.'
 }
+$bigWalk=@($catalog.experiences|Where-Object id -eq 'big-walk'|Select-Object -First 1)[0]
+if(-not$bigWalk-or$bigWalk.runtime.type-ne'standalone'-or$bigWalk.runtime.executable-ne'Big Walk.exe'){throw 'Big Walk no esta fijado como experiencia standalone.'}
+$bigWalkMods=@($bigWalk.files|Where-Object path -eq 'BepInEx/mods/big-walk-mods.zip')
+if($bigWalkMods.Count-ne1-or$bigWalkMods[0].role-ne'all'-or
+    $bigWalkMods[0].sourceUrl-notmatch'^https://github\.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v\d+\.\d+\.\d+/[^/?#]+$'-or
+    $bigWalkMods[0].sha256-notmatch'^[a-fA-F0-9]{64}$'-or
+    ([string]$bigWalkMods[0].policy-ne'replace')){
+    throw 'Big Walk no declara su paquete de mods BepInEx como asset first-party para ambos roles.'
+}
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){
     throw 'La skin global de smolbird no esta fijada por hash.'

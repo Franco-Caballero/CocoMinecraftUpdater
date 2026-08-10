@@ -89,11 +89,16 @@ Fuente oficial: [MCWiFiPnP en Modrinth](https://modrinth.com/mod/mcwifipnp) y [c
 
 - Producción: `%APPDATA%\CocoMinecraft\experiences\<instanceId>`.
 - Backend, cachés y logs: `%LOCALAPPDATA%\CocoMinecraftUpdater`.
+- Ubicaciones personalizadas: `%LOCALAPPDATA%\CocoMinecraftUpdater\instance-locations.json`; cada valor ya contiene la carpeta final de una instancia y conserva el `<instanceId>` elegido por Coco.
+- El probador `Invoke-CocoLauncherUiDev.ps1` redirige ese JSON a su `LauncherTestRoot`; nunca comparte ubicaciones con la instalación real.
+- `LIBERAR ESPACIO` exige que el juego esté cerrado y respalda `saves`, `playerdata`, `stats` y `advancements` bajo `%LOCALAPPDATA%\CocoMinecraftUpdater\backups\experiences` antes de eliminar la instancia.
 - Identidad: bajo la raíz privada de Coco Launcher.
 - La instancia de la primera sesión Backrooms fue consolidada en `%APPDATA%\CocoMinecraft\experiences\into-the-backrooms`; ésa es la instalación que se seguirá usando.
 - No existe una copia de respaldo del mundo Backrooms ni una segunda instalación temporal.
 
 Los locks administran mods, configs, resource packs y shaders. `saves`, `playerdata`, avances, estadísticas y bases DH no se reemplazan. Las preferencias especiales de cada experiencia viven en `catalog.template.json`, mientras que las decisiones deliberadamente universales viven en `globalPolicies`. `preferences.managedFiles` permite fijar texto completo bajo `config/` o `shaderpacks/` para todos los jugadores de una sola experiencia; por defecto reemplaza el archivo y `writeMode: "initialize"` permite crear una configuración base una sola vez para que una experiencia pueda persistir sus propios cambios. Los mods adicionales viven en `experiences[].files` y los retiros explícitos en `pack.excludedPaths`.
+
+Las experiencias standalone (Big Walk) reciben sus archivos adicionales por el mismo `experiences[].files`: un archivo cuyo `path` termina en `.zip` se descarga verificado y se extrae en la raíz de la instancia, como paquete de mods BepInEx, sin re-descargar las partes del juego. El estado `.coco\standalone-state.json` registra `filesSha` para re-aplicar sólo el paquete cuando cambia. Los paquetes deben excluir las carpetas generadas por la máquina al primer arranque (`interop`, `unity-libs`, `cache`) y los logs. Big Walk declara un paquete (2,6 MB) con BepInEx 6.0.0, Big Voice 1.0.0 (volumen VOIP por jugador, menú F10), Enhanced Controls 1.0.1 (auto-run, salto asistido, salida rápida) y Big Disrespect 1.0.1 (FlipOff); sus fuentes oficiales son Nexus (mods 5, 4 y 19) y la licencia declarada es All Rights Reserved.
 
 Políticas universales:
 

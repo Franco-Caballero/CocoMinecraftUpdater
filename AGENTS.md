@@ -72,6 +72,7 @@ Usa `-Action Launch` para abrir la instancia temporal. Agrega `-Live` únicament
 ### Mods adicionales o retirados
 
 - Mod adicional fuera del manifiesto: `experiences[].files` con URL oficial permitida, tamaño, SHA-256, licencia, `policy: "replace"` y rol.
+- En experiencias standalone, un archivo de `experiences[].files` cuyo `path` termine en `.zip` se descarga verificado y se extrae en la raíz de la instancia (paquetes de mods BepInEx u otros); el estado `.coco\standalone-state.json` registra `filesSha` y aplica el paquete sin re-descargar el juego. Los archivos `.zip` generados por la máquina en el primer arranque (`interop`, `unity-libs`, `cache`) nunca viajan en el paquete.
 - Usa `all` para contenido/protocolo; `host` para adaptadores exclusivos del anfitrión; `client` sólo con evidencia de que es puramente cliente.
 - Retiro solicitado para una experiencia: ruta exacta en `pack.excludedPaths`, después de revisar dependencias.
 - No edites el lock para ocultar archivos y no copies JAR manualmente a la instancia como solución final.

@@ -568,7 +568,17 @@
                 "autoJoin": true,
                 "serverName": "Coco - Big Walk"
             },
-            "files": []
+            "files": [
+                {
+                    "path": "BepInEx/mods/big-walk-mods.zip",
+                    "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.99/big-walk-bepinex-mods.zip",
+                    "sha256": "3fea51a77d6b793c6dc9b5c4af933a669f030c8517a98012ba4c0d2984363cea",
+                    "size": 2628289,
+                    "policy": "replace",
+                    "role": "all",
+                    "license": "All Rights Reserved"
+                }
+            ]
         }
     ]
 }

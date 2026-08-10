@@ -1,13 +1,24 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Ascent', 'Haven')][string]$Map = 'Ascent',
-    [string]$InstanceRoot = (Join-Path ([Environment]::GetFolderPath('ApplicationData')) 'CocoMinecraft\experiences\valorant-craft'),
+    [string]$InstanceRoot = '',
+    [string]$InstanceLocationsPath = '',
     [switch]$Apply
 )
 
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
+. (Join-Path $repoRoot 'engine\CocoLauncher.ps1')
+$catalog = Get-Content -LiteralPath (Join-Path $repoRoot 'launcher\catalog.template.json') -Raw | ConvertFrom-Json
+$valorantExperience = @($catalog.experiences | Where-Object id -eq 'valorant-craft' | Select-Object -First 1)[0]
+if (-not $valorantExperience) { throw 'El catalogo no contiene VALORANTCraft.' }
+if ([string]::IsNullOrWhiteSpace($InstanceRoot)) {
+    $defaultExperiencesRoot = Join-Path ([Environment]::GetFolderPath('ApplicationData')) 'CocoMinecraft\experiences'
+    $InstanceRoot = Get-CocoExperienceInstanceRoot $valorantExperience $defaultExperiencesRoot $InstanceLocationsPath
+}
 $mapDefinitions = @{
     Ascent = [pscustomobject]@{
         WorldName = 'VALORANT - Ascent'

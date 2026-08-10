@@ -8,7 +8,9 @@ $launcherText=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoLauncher.ps1')
 $testRoot=Join-Path $env:TEMP "coco-launcher-client-$([guid]::NewGuid().ToString('N'))"
 $engineRoot=Join-Path $testRoot 'engine'
 $logPath=Join-Path $testRoot 'client-child.log'
-New-Item -ItemType Directory -Path (Join-Path $engineRoot 'launcher'),(Join-Path $testRoot 'legacy') -Force|Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $engineRoot 'launcher'),(Join-Path $testRoot 'legacy') -Force|Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $testRoot 'legacy\config') -Force|Out-Null
+    '{}'|Set-Content -LiteralPath (Join-Path $testRoot 'legacy\config\coco-host.json') -Encoding UTF8
 Copy-Item -LiteralPath (Join-Path $root 'launcher\catalog.template.json') -Destination (Join-Path $engineRoot 'launcher\catalog.json')
 $skinPath=Join-Path $engineRoot 'assets\skins\smolbird.png';New-Item -ItemType Directory -Path (Split-Path $skinPath -Parent) -Force|Out-Null
 [IO.File]::WriteAllBytes($skinPath,[Convert]::FromBase64String(([IO.File]::ReadAllText((Join-Path $root 'launcher\assets\skins\smolbird.png.base64'))).Trim()))
@@ -44,7 +46,7 @@ try{
     # El catalogo plantilla se versiona durante New-CocoEngine; esta prueba
     # directa usa deliberadamente el placeholder actual de la plantilla.
     $manifest=[pscustomobject]@{version='0.5.47';network=$null}
-    Start-CocoLauncherUi $manifest (Join-Path $testRoot 'legacy')
+    Start-CocoLauncherUi $manifest (Join-Path $testRoot 'legacy') $testRoot 'client'
     if($script:managedCalls-ne2){throw "El cliente hizo $script:managedCalls preparaciones/lanzamientos; se esperaban dry + launch."}
     if(-not$script:CocoForm.IsDisposed){throw 'La UI cliente no se cerro despues de terminar el juego.'}
     $text=Get-Content -LiteralPath $logPath -Raw

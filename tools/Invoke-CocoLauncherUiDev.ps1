@@ -2,10 +2,12 @@
 param(
     [ValidateSet('client','host')][string]$Role = 'client',
     [switch]$CreateDummyInstances,
-    [switch]$TestLocationPrompt
+    [switch]$TestLocationPrompt,
+    [switch]$NoUi
 )
 
 $ErrorActionPreference = 'Stop'
+$CocoUiDevRequestedRole = [string]$Role
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $devRoot = Join-Path $env:TEMP ("coco-launcher-ui-dev-" + [guid]::NewGuid().ToString('N').Substring(0,8))
 $buildRoot = Join-Path $devRoot "build"
@@ -15,7 +17,7 @@ $testMinecraftRoot = Join-Path $devRoot "minecraft"
 
 New-Item -ItemType Directory -Path $buildRoot,$engineRoot,$testExperiencesRoot,$testMinecraftRoot -Force | Out-Null
 
-if ($Role -eq 'host') {
+if ($CocoUiDevRequestedRole -eq 'host') {
     New-Item -ItemType Directory -Path (Join-Path $testMinecraftRoot 'config') -Force | Out-Null
     Set-Content -LiteralPath (Join-Path $testMinecraftRoot 'config\coco-host.json') -Value '{"role":"host"}' -Encoding UTF8
 }
@@ -45,17 +47,42 @@ Expand-Archive -LiteralPath $built.path -DestinationPath $engineRoot
 $manifestJson = Join-Path $repoRoot 'release\latest.json'
 $updaterPath = Join-Path $engineRoot 'CocoUpdater.ps1'
 $launcherPath = Join-Path $engineRoot 'CocoLauncher.ps1'
-. $updaterPath -ManifestPath $manifestJson -DetectOnly
+$global:CocoUiDevRoleOverride = $CocoUiDevRequestedRole
+$null = . $updaterPath -ManifestPath $manifestJson -DetectOnly
 . $launcherPath
 
-$script:CocoUiDevRoleOverride = $Role
 $script:CocoEngineRoot = $engineRoot
-
-if ($TestLocationPrompt) {
-    $catalog = Read-CocoLauncherCatalog (Join-Path $engineRoot 'launcher\catalog.json')
-    $sampleExp = @($catalog.experiences | Where-Object managementMode -eq 'managed')[0]
-    Prompt-CocoExperienceLocationChoice $sampleExp $testExperiencesRoot
+$global:CocoUiDevTestLocationPrompt = $TestLocationPrompt
+$global:CocoUiDevDummyInstaller = {
+    param($Experience,[string]$InstanceRoot,$Paths)
+    New-Item -ItemType Directory -Path $InstanceRoot -Force | Out-Null
+    $marker = Join-Path $InstanceRoot '.coco-ui-dev-dummy.json'
+    $payload = [ordered]@{
+        experienceId = [string]$Experience.id
+        name = [string]$Experience.name
+        installedAtUtc = [DateTime]::UtcNow.ToString('o')
+        testOnly = $true
+    }
+    [IO.File]::WriteAllText($marker, ($payload | ConvertTo-Json -Depth 4), (New-Object Text.UTF8Encoding($false)))
+    $data = Join-Path $InstanceRoot 'dummy-game-data.bin'
+    $stream = [IO.File]::Create($data)
+    try { $stream.SetLength(4MB) } finally { $stream.Dispose() }
+    [pscustomobject]@{ InstanceRoot = $InstanceRoot; Updated = $true; TestDummy = $true }
 }
 
-Write-Host "Abriendo Coco Launcher en modo de prueba ($Role)..." -ForegroundColor Cyan
-Start-CocoLauncherUi -Manifest $release -LegacyMinecraftRoot $testMinecraftRoot -LauncherTestRoot $devRoot
+if($NoUi){
+    try{
+        [pscustomobject]@{Role=$CocoUiDevRequestedRole;EngineRoot=$engineRoot;ExperiencesRoot=$testExperiencesRoot;StorePath=(Join-Path $devRoot 'cache\instance-locations.json')}
+    }finally{
+        Remove-Variable -Name CocoUiDevRoleOverride,CocoUiDevTestLocationPrompt,CocoUiDevDummyInstaller -Scope Global -ErrorAction SilentlyContinue
+    }
+    return
+}
+
+Write-Host "Abriendo Coco Launcher en modo de prueba ($CocoUiDevRequestedRole)..." -ForegroundColor Cyan
+Write-Host "Rol de prueba forzado: $CocoUiDevRequestedRole | Engine: $engineRoot" -ForegroundColor Green
+try {
+    Start-CocoLauncherUi -Manifest $release -LegacyMinecraftRoot $testMinecraftRoot -LauncherTestRoot $devRoot -RoleOverride $CocoUiDevRequestedRole
+} finally {
+    Remove-Variable -Name CocoUiDevRoleOverride,CocoUiDevTestLocationPrompt,CocoUiDevDummyInstaller -Scope Global -ErrorAction SilentlyContinue
+}
