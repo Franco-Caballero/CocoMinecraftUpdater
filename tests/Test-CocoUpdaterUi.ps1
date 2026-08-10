@@ -25,7 +25,7 @@ if($engine-notmatch'\.AcceptButton=\$accept'-or$engine-notmatch'\.Add_Click'-or
 if($engine-notmatch'\[void\]\$accept\.Focus\(\)'){
     throw 'Focus() puede filtrar True al pipeline y ps2exe lo convertiria en un cuadro de mensaje.'
 }
-if($engine-notmatch'Drawing\.Size\(640,460\)'-or
+if($engine-notmatch'Drawing\.Size\(640,790\)'-or
    $engine-notmatch'function Set-CocoFittedLabelText'-or
    $bootstrap-notmatch'Drawing\.Size\(640,460\)'-or
    $bootstrap-notmatch'function Set-CocoBootstrapLabelText'-or

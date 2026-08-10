@@ -262,15 +262,15 @@ if($global:CocoSharedUi){
     if(-not$script:CocoPanel){$script:CocoPanel=@($script:CocoForm.Controls|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Controls.Count-ge4}|Select-Object -First 1)[0]}
     if($script:CocoPanel-and-not$script:CocoAccent){$script:CocoAccent=@($script:CocoPanel.Controls|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Width-lt20}|Select-Object -First 1)[0]}
     if($script:CocoPanel-and-not$script:CocoBrand){$script:CocoBrand=@($script:CocoPanel.Controls|Where-Object{$_-is[Windows.Forms.Label]-and$_.Text-match'COCO PACK'}|Select-Object -First 1)[0]}
-    # Bootstrap y engine deben compartir exactamente el mismo lienzo. Versiones
-    # anteriores entregaban un panel de 780x350, pero el launcher agregaba
-    # controles hasta y=438: en el EXE publicado quedaban fuera de pantalla.
-    if($script:CocoPanel){$script:CocoPanel.Size=New-Object Drawing.Size(640,460)}
-    if($script:CocoAccent){$script:CocoAccent.Size=New-Object Drawing.Size(9,460)}
-    if($script:CocoTitle){$script:CocoTitle.Location=New-Object Drawing.Point(43,30);$script:CocoTitle.Size=New-Object Drawing.Size(570,72)}
-    if($script:CocoDetail){$script:CocoDetail.Location=New-Object Drawing.Point(46,106);$script:CocoDetail.Size=New-Object Drawing.Size(570,76)}
-    if($script:CocoTrack){$script:CocoTrack.Location=New-Object Drawing.Point(46,190);$script:CocoTrack.Size=New-Object Drawing.Size(570,30)}
-    if($script:CocoBrand){$script:CocoBrand.Location=New-Object Drawing.Point(46,240);$script:CocoBrand.Size=New-Object Drawing.Size(570,25)}
+    # El launcher agrega una lista desplazable debajo del estado. Conserva
+    # exactamente ese mismo lienzo desde el primer frame para que el progreso
+    # y el texto de estado nunca caigan encima de las tarjetas host/cliente.
+    if($script:CocoPanel){$script:CocoPanel.Size=New-Object Drawing.Size(640,790)}
+    if($script:CocoAccent){$script:CocoAccent.Size=New-Object Drawing.Size(9,790)}
+    if($script:CocoTitle){$script:CocoTitle.Location=New-Object Drawing.Point(43,24);$script:CocoTitle.Size=New-Object Drawing.Size(570,42)}
+    if($script:CocoDetail){$script:CocoDetail.Location=New-Object Drawing.Point(46,70);$script:CocoDetail.Size=New-Object Drawing.Size(570,48)}
+    if($script:CocoTrack){$script:CocoTrack.Location=New-Object Drawing.Point(46,126);$script:CocoTrack.Size=New-Object Drawing.Size(570,20)}
+    if($script:CocoBrand){$script:CocoBrand.Location=New-Object Drawing.Point(46,151);$script:CocoBrand.Size=New-Object Drawing.Size(570,20)}
     $script:CocoVisualWorkStarted=$global:CocoSharedUi.Started
 }
 
