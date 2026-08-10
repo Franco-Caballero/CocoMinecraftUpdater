@@ -11,6 +11,9 @@ $checklist=Join-Path $root 'docs\ModpackCompatibilityChecklist.md'
 foreach($pattern in 'function Set-CocoLauncherStep','Archivo \$\(\$ProgressContext\.Index\)/\$\(\$ProgressContext\.Count\)','Verificado y reutilizado desde la cache','INSTALANDO LA INSTANCIA AISLADA','Tiempo transcurrido','function Wait-CocoManagedMinecraftWindow','CONECTANDO AUTOMATICAMENTE'){
     if($launcher-notmatch$pattern){throw "Falta observabilidad launcher: $pattern"}
 }
+foreach($pattern in 'function Write-CocoStorageDiagnostic',"Write-CocoStorageDiagnostic 'location\.prompt","Write-CocoStorageDiagnostic 'move\.ui","Write-CocoStorageDiagnostic 'delete\.ui","Write-CocoStorageDiagnostic 'install\.ui"){
+    if($launcher-notmatch$pattern){throw "Falta diagnostico de almacenamiento launcher: $pattern"}
+}
 foreach($pattern in 'function Write-CocoTimelineEvent','Failure ID:','Get-CocoFailureClassification','COCO DETECTO UN PROBLEMA'){
     if(($engine+$launcher)-notmatch$pattern){throw "Falta observabilidad/diagnostico: $pattern"}
 }

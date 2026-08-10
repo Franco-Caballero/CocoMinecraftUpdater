@@ -6,6 +6,22 @@ if(-not(Get-Command Write-CocoLog -ErrorAction SilentlyContinue)){
     }
 }
 
+function Write-CocoStorageDiagnostic([string]$Event,[hashtable]$Data=@{}){
+    # Diagnostico de soporte para instalaciones y rutas. Solo recibe datos de
+    # experiencia/filesystem; nunca registrar credenciales, tokens ni archivos.
+    try{
+        $fields=[Collections.Generic.List[string]]::new()
+        foreach($key in @($Data.Keys|Sort-Object)){
+            $value=[string]$Data[$key]
+            if($null-eq$value){$value=''}
+            $value=$value-replace'[\r\n|]',' '
+            $fields.Add(('{0}={1}'-f$key,$value))
+        }
+        $suffix=if($fields.Count){' | '+($fields-join' | ')}else{''}
+        Write-CocoLog ("STORAGE {0}{1}"-f$Event,$suffix)
+    }catch{}
+}
+
 function Test-CocoPathWithin([string]$Path,[string]$Root){
     if([string]::IsNullOrWhiteSpace($Path)-or[string]::IsNullOrWhiteSpace($Root)){return $false}
     try{
@@ -105,7 +121,12 @@ function Test-CocoExperienceLocationConflict([string]$InstanceId,[string]$Instan
 function Set-CocoExperienceInstanceRoot([string]$InstanceId, [string]$CustomPath, [string]$StorePath='') {
     if ([string]::IsNullOrWhiteSpace($InstanceId)) { return }
     $storePath = Get-CocoInstanceLocationsStorePath $StorePath
-    if(-not[string]::IsNullOrWhiteSpace($CustomPath)-and(Test-CocoExperienceLocationConflict $InstanceId ([IO.Path]::GetFullPath($CustomPath)) $storePath)){throw 'La ubicacion ya esta asignada a otra experiencia.'}
+    $normalizedPath=if([string]::IsNullOrWhiteSpace($CustomPath)){''}else{[IO.Path]::GetFullPath($CustomPath)}
+    Write-CocoStorageDiagnostic 'location.store.request' @{instanceId=$InstanceId;customPath=$normalizedPath;storePath=$storePath}
+    if(-not[string]::IsNullOrWhiteSpace($CustomPath)-and(Test-CocoExperienceLocationConflict $InstanceId $normalizedPath $storePath)){
+        Write-CocoStorageDiagnostic 'location.store.conflict' @{instanceId=$InstanceId;customPath=$normalizedPath;storePath=$storePath}
+        throw 'La ubicacion ya esta asignada a otra experiencia.'
+    }
     $locations = Get-CocoInstanceCustomLocations $storePath
     $dict = [ordered]@{}
     if ($locations) {
@@ -123,6 +144,10 @@ function Set-CocoExperienceInstanceRoot([string]$InstanceId, [string]$CustomPath
     try{
         [IO.File]::WriteAllText($temporary, $json, (New-Object Text.UTF8Encoding($false)))
         Move-Item -LiteralPath $temporary -Destination $storePath -Force
+        Write-CocoStorageDiagnostic 'location.store.saved' @{instanceId=$InstanceId;customPath=$normalizedPath;storePath=$storePath;entryCount=$dict.Count}
+    }catch{
+        Write-CocoStorageDiagnostic 'location.store.error' @{instanceId=$InstanceId;customPath=$normalizedPath;storePath=$storePath;error=$_.Exception.Message}
+        throw
     }finally{
         Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
     }
@@ -156,8 +181,9 @@ function Remove-CocoInstalledExperience([string]$InstanceRoot, [string]$Experien
     if(-not$InstanceRoot-or-not$ExperiencesRoot){throw 'La ruta de la instancia o la raiz de experiencias no fue proporcionada.'}
     $fullInstance = [IO.Path]::GetFullPath($InstanceRoot)
     $fullExperiences = [IO.Path]::GetFullPath($ExperiencesRoot)
+    Write-CocoStorageDiagnostic 'delete.start' @{instanceId=$InstanceId;instanceRoot=$fullInstance;experiencesRoot=$fullExperiences;storePath=$StorePath;backupRoot=$BackupRoot}
     $rootPath = [IO.Path]::GetPathRoot($fullInstance)
-    if ($fullInstance.TrimEnd('\') -eq $rootPath.TrimEnd('\')) { throw 'No se puede eliminar un directorio raiz del sistema.' }
+    if ($fullInstance.TrimEnd('\') -eq $rootPath.TrimEnd('\')) { Write-CocoStorageDiagnostic 'delete.rejected.root' @{instanceId=$InstanceId;instanceRoot=$fullInstance};throw 'No se puede eliminar un directorio raiz del sistema.' }
     if(-not(Test-CocoPathWithin $InstanceRoot $ExperiencesRoot)) {
         $locations = Get-CocoInstanceCustomLocations $StorePath
         $isCustom = $false
@@ -169,13 +195,17 @@ function Remove-CocoInstalledExperience([string]$InstanceRoot, [string]$Experien
                 }
             }
         }
-        if (-not $isCustom) { throw 'La ruta de la instancia escapa del directorio de experiencias.' }
+        if (-not $isCustom) { Write-CocoStorageDiagnostic 'delete.rejected.outside-root' @{instanceId=$InstanceId;instanceRoot=$fullInstance;experiencesRoot=$fullExperiences};throw 'La ruta de la instancia escapa del directorio de experiencias.' }
     }
-    if(-not(Test-Path -LiteralPath $InstanceRoot -PathType Container)){return [pscustomobject]@{Removed=$false;Reason='not-installed'}}
-    if(Test-CocoManagedGameRunning $InstanceRoot){throw 'La experiencia esta abierta. Cierrala antes de eliminarla.'}
+    if(-not(Test-Path -LiteralPath $InstanceRoot -PathType Container)){Write-CocoStorageDiagnostic 'delete.not-installed' @{instanceId=$InstanceId;instanceRoot=$fullInstance};return [pscustomobject]@{Removed=$false;Reason='not-installed'}}
+    $running=Test-CocoManagedGameRunning $InstanceRoot
+    Write-CocoStorageDiagnostic 'delete.preflight' @{instanceId=$InstanceId;instanceRoot=$fullInstance;running=$running}
+    if($running){Write-CocoStorageDiagnostic 'delete.rejected.running' @{instanceId=$InstanceId;instanceRoot=$fullInstance};throw 'La experiencia esta abierta. Cierrala antes de eliminarla.'}
     $backup=Backup-CocoExperienceUserData $InstanceRoot $InstanceId $BackupRoot
+    Write-CocoStorageDiagnostic 'delete.backup.complete' @{instanceId=$InstanceId;instanceRoot=$fullInstance;backupRoot=$backup}
     Remove-Item -LiteralPath $InstanceRoot -Recurse -Force
     Write-CocoLog "Experiencia eliminada para liberar espacio: $InstanceRoot"
+    Write-CocoStorageDiagnostic 'delete.complete' @{instanceId=$InstanceId;instanceRoot=$fullInstance;backupRoot=$backup}
     [pscustomobject]@{Removed=$true;Reason='deleted';BackupRoot=$backup}
 }
 
@@ -184,18 +214,22 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     $expId = [string]$Experience.id
     $instanceId = [string]$Experience.instanceId
     if (-not $instanceId) { $instanceId = $expId }
+    Write-CocoStorageDiagnostic 'location.prompt.start' @{experienceId=$expId;instanceId=$instanceId;defaultRoot=$DefaultExperiencesRoot;storePath=$StorePath}
     
     $store = Get-CocoInstanceCustomLocations $StorePath
     if ($store -and ($store.PSObject.Properties[$instanceId] -or $store.PSObject.Properties[$expId])) {
-        return [pscustomobject]@{Confirmed=$true;Cancelled=$false;Choice='existing';Root=(Get-CocoExperienceInstanceRoot $Experience $DefaultExperiencesRoot $StorePath)}
+        $mappedRoot=Get-CocoExperienceInstanceRoot $Experience $DefaultExperiencesRoot $StorePath
+        Write-CocoStorageDiagnostic 'location.prompt.existing-mapping' @{experienceId=$expId;instanceId=$instanceId;root=$mappedRoot;storePath=$StorePath}
+        return [pscustomobject]@{Confirmed=$true;Cancelled=$false;Choice='existing';Root=$mappedRoot}
     }
     
     $instanceRoot = Join-Path $DefaultExperiencesRoot $instanceId
     if ((Get-CocoExperienceDiskUsage $instanceRoot).Installed) {
+        Write-CocoStorageDiagnostic 'location.prompt.existing-default' @{experienceId=$expId;instanceId=$instanceId;root=$instanceRoot}
         return [pscustomobject]@{Confirmed=$true;Cancelled=$false;Choice='existing';Root=$instanceRoot}
     }
     
-    if (-not $script:CocoForm -or $script:CocoForm.IsDisposed) { throw 'No se puede elegir la ubicacion: la ventana de Coco Launcher no esta disponible.' }
+    if (-not $script:CocoForm -or $script:CocoForm.IsDisposed) { Write-CocoStorageDiagnostic 'location.prompt.rejected.no-window' @{experienceId=$expId;instanceId=$instanceId};throw 'No se puede elegir la ubicacion: la ventana de Coco Launcher no esta disponible.' }
     
     $dialog = New-Object Windows.Forms.Form
     $dialog.Text = 'Ubicacion de instalacion'
@@ -236,6 +270,7 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     $customBtn.Size = New-Object Drawing.Size(210, 42)
     Set-CocoFlatButtonStyle $customBtn ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
     $customBtn.Add_Click({
+        Write-CocoStorageDiagnostic 'location.prompt.custom-dialog.open' @{experienceId=$expId;instanceId=$instanceId;defaultRoot=$instanceRoot}
         $fbd = New-Object Windows.Forms.FolderBrowserDialog
         $fbd.Description = ("Selecciona la carpeta donde quieres instalar {0}:" -f $Experience.name)
         $fbd.ShowNewFolderButton = $true
@@ -244,6 +279,7 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
                 $chosenRoot = Join-Path $fbd.SelectedPath $instanceId
                 try{
                     $fullChosen=[IO.Path]::GetFullPath($chosenRoot)
+                    Write-CocoStorageDiagnostic 'location.prompt.custom-selected' @{experienceId=$expId;instanceId=$instanceId;parentPath=$fbd.SelectedPath;chosenRoot=$fullChosen}
                     $rootPath=[IO.Path]::GetPathRoot($fullChosen)
                     if($fullChosen.TrimEnd('\') -eq $rootPath.TrimEnd('\')){throw 'No puedes seleccionar la raiz de la unidad.'}
                     if(Test-CocoExperienceLocationConflict $instanceId $fullChosen $StorePath){throw 'Esa carpeta ya esta asignada a otra experiencia.'}
@@ -252,10 +288,11 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
                     $dialog.DialogResult = [Windows.Forms.DialogResult]::OK
                     $dialog.Close()
                 }catch{
+                    Write-CocoStorageDiagnostic 'location.prompt.custom-rejected' @{experienceId=$expId;instanceId=$instanceId;parentPath=$fbd.SelectedPath;chosenRoot=$chosenRoot;error=$_.Exception.Message}
                     [Windows.Forms.MessageBox]::Show($_.Exception.Message,'Carpeta no valida',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Warning)|Out-Null
                 }
-            }
-        }
+            }else{Write-CocoStorageDiagnostic 'location.prompt.custom-empty' @{experienceId=$expId;instanceId=$instanceId}}
+        }else{Write-CocoStorageDiagnostic 'location.prompt.custom-cancelled' @{experienceId=$expId;instanceId=$instanceId}}
     })
     
     $dialog.Controls.AddRange(@($label, $subLabel, $defaultBtn, $customBtn))
@@ -263,10 +300,12 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     $result=$dialog.ShowDialog($script:CocoForm)
     $choice=[string]$dialog.Tag
     $dialog.Dispose()
-    if($result-ne[Windows.Forms.DialogResult]::OK){return [pscustomobject]@{Confirmed=$false;Cancelled=$true;Choice='cancelled';Root=$instanceRoot}}
-    if($choice-eq'default'){return [pscustomobject]@{Confirmed=$true;Cancelled=$false;Choice='default';Root=$instanceRoot}}
-    if([string]::IsNullOrWhiteSpace($choice)){throw 'La ventana de ubicacion termino sin una seleccion valida.'}
+    Write-CocoStorageDiagnostic 'location.prompt.closed' @{experienceId=$expId;instanceId=$instanceId;dialogResult=$result;choice=$choice}
+    if($result-ne[Windows.Forms.DialogResult]::OK){Write-CocoStorageDiagnostic 'location.prompt.cancelled' @{experienceId=$expId;instanceId=$instanceId};return [pscustomobject]@{Confirmed=$false;Cancelled=$true;Choice='cancelled';Root=$instanceRoot}}
+    if($choice-eq'default'){Write-CocoStorageDiagnostic 'location.prompt.default-selected' @{experienceId=$expId;instanceId=$instanceId;root=$instanceRoot};return [pscustomobject]@{Confirmed=$true;Cancelled=$false;Choice='default';Root=$instanceRoot}}
+    if([string]::IsNullOrWhiteSpace($choice)){Write-CocoStorageDiagnostic 'location.prompt.invalid-result' @{experienceId=$expId;instanceId=$instanceId;dialogResult=$result};throw 'La ventana de ubicacion termino sin una seleccion valida.'}
     Set-CocoExperienceInstanceRoot $instanceId $choice $StorePath
+    Write-CocoStorageDiagnostic 'location.prompt.custom-confirmed' @{experienceId=$expId;instanceId=$instanceId;root=$choice;storePath=$StorePath}
     [pscustomobject]@{Confirmed=$true;Cancelled=$false;Choice='custom';Root=$choice}
 }
 
@@ -293,26 +332,30 @@ function Move-CocoInstalledExperience([string]$InstanceId,[string]$CurrentRoot,[
     if([string]::IsNullOrWhiteSpace($InstanceId)-or[string]::IsNullOrWhiteSpace($CurrentRoot)-or[string]::IsNullOrWhiteSpace($NewRoot)){throw 'Faltan datos para cambiar la carpeta de la instancia.'}
     $currentFull=[IO.Path]::GetFullPath($CurrentRoot).TrimEnd('\')
     $newFull=[IO.Path]::GetFullPath($NewRoot).TrimEnd('\')
+    Write-CocoStorageDiagnostic 'move.start' @{instanceId=$InstanceId;currentRoot=$currentFull;newRoot=$newFull;experiencesRoot=$ExperiencesRoot;storePath=$StorePath}
     $rootPath=[IO.Path]::GetPathRoot($newFull)
-    if($newFull-eq$rootPath.TrimEnd('\')){throw 'No puedes seleccionar la raiz de la unidad.'}
+    if($newFull-eq$rootPath.TrimEnd('\')){Write-CocoStorageDiagnostic 'move.rejected.root' @{instanceId=$InstanceId;newRoot=$newFull};throw 'No puedes seleccionar la raiz de la unidad.'}
     if(-not(Test-CocoPathWithin $currentFull $ExperiencesRoot)){
         $knownLocations=Get-CocoInstanceCustomLocations $StorePath
         $known=$false
         foreach($property in $knownLocations.PSObject.Properties){
             if([string]$property.Value-and[IO.Path]::GetFullPath([string]$property.Value).TrimEnd('\').Equals($currentFull,[StringComparison]::OrdinalIgnoreCase)){$known=$true;break}
         }
-        if(-not$known){throw 'La instalacion actual no pertenece a la raiz de experiencias ni a una ubicacion personalizada conocida.'}
+        if(-not$known){Write-CocoStorageDiagnostic 'move.rejected.unknown-current' @{instanceId=$InstanceId;currentRoot=$currentFull;experiencesRoot=$ExperiencesRoot};throw 'La instalacion actual no pertenece a la raiz de experiencias ni a una ubicacion personalizada conocida.'}
     }
-    if($currentFull.Equals($newFull,[StringComparison]::OrdinalIgnoreCase)){return [pscustomobject]@{Moved=$false;Root=$newFull;Reason='same-path'}}
-    if(Test-CocoPathWithin $newFull $currentFull-or Test-CocoPathWithin $currentFull $newFull){throw 'La nueva carpeta no puede estar dentro o contener la instalacion actual.'}
-    if(Test-CocoExperienceLocationConflict $InstanceId $newFull $StorePath){throw 'La nueva carpeta ya esta asignada a otra experiencia.'}
-    if(Test-CocoManagedGameRunning $currentFull){throw 'La experiencia esta abierta. Cierrala antes de cambiarla de carpeta.'}
+    if($currentFull.Equals($newFull,[StringComparison]::OrdinalIgnoreCase)){Write-CocoStorageDiagnostic 'move.same-path' @{instanceId=$InstanceId;root=$newFull};return [pscustomobject]@{Moved=$false;Root=$newFull;Reason='same-path'}}
+    if(Test-CocoPathWithin $newFull $currentFull-or Test-CocoPathWithin $currentFull $newFull){Write-CocoStorageDiagnostic 'move.rejected.nested-path' @{instanceId=$InstanceId;currentRoot=$currentFull;newRoot=$newFull};throw 'La nueva carpeta no puede estar dentro o contener la instalacion actual.'}
+    if(Test-CocoExperienceLocationConflict $InstanceId $newFull $StorePath){Write-CocoStorageDiagnostic 'move.rejected.conflict' @{instanceId=$InstanceId;newRoot=$newFull;storePath=$StorePath};throw 'La nueva carpeta ya esta asignada a otra experiencia.'}
+    $running=Test-CocoManagedGameRunning $currentFull
+    Write-CocoStorageDiagnostic 'move.preflight' @{instanceId=$InstanceId;currentRoot=$currentFull;newRoot=$newFull;running=$running}
+    if($running){Write-CocoStorageDiagnostic 'move.rejected.running' @{instanceId=$InstanceId;currentRoot=$currentFull};throw 'La experiencia esta abierta. Cierrala antes de cambiarla de carpeta.'}
     $currentExists=Test-Path -LiteralPath $currentFull -PathType Container
     $newExists=Test-Path -LiteralPath $newFull
-    if($newExists){throw "La nueva carpeta ya existe: $newFull. Elige una carpeta vacia que aun no use otra experiencia."}
+    if($newExists){Write-CocoStorageDiagnostic 'move.rejected.destination-exists' @{instanceId=$InstanceId;newRoot=$newFull};throw "La nueva carpeta ya existe: $newFull. Elige una carpeta vacia que aun no use otra experiencia."}
     New-Item -ItemType Directory -Path (Split-Path $newFull -Parent) -Force|Out-Null
     if(-not$currentExists){
         Set-CocoExperienceInstanceRoot $InstanceId $newFull $StorePath
+        Write-CocoStorageDiagnostic 'move.location-only' @{instanceId=$InstanceId;newRoot=$newFull}
         return [pscustomobject]@{Moved=$false;Root=$newFull;Reason='location-only'}
     }
 
@@ -331,9 +374,11 @@ function Move-CocoInstalledExperience([string]$InstanceId,[string]$CurrentRoot,[
         }
         Set-CocoExperienceInstanceRoot $InstanceId $newFull $StorePath
         Write-CocoLog "Instalacion '$InstanceId' movida a: $newFull"
+        Write-CocoStorageDiagnostic 'move.complete' @{instanceId=$InstanceId;currentRoot=$currentFull;newRoot=$newFull;mode=$movedMode}
         return [pscustomobject]@{Moved=$true;Root=$newFull;Reason='moved'}
     }catch{
         $failure=$_.Exception.Message
+        Write-CocoStorageDiagnostic 'move.error' @{instanceId=$InstanceId;currentRoot=$currentFull;newRoot=$newFull;mode=$movedMode;error=$failure}
         try{
             if($movedMode-eq'same-volume'-and(Test-Path -LiteralPath $newFull -PathType Container)-and-not(Test-Path -LiteralPath $currentFull -PathType Container)){
                 Move-Item -LiteralPath $newFull -Destination $currentFull -Force -ErrorAction Stop
@@ -346,7 +391,7 @@ function Move-CocoInstalledExperience([string]$InstanceId,[string]$CurrentRoot,[
             }elseif((Test-Path -LiteralPath $newFull -PathType Container)-and(Test-Path -LiteralPath $currentFull -PathType Container)){
                 Remove-Item -LiteralPath $newFull -Recurse -Force -ErrorAction SilentlyContinue
             }
-        }catch{Write-CocoLog "No se pudo revertir completamente el cambio de carpeta de '$InstanceId': $($_.Exception.Message)"}
+        }catch{Write-CocoLog "No se pudo revertir completamente el cambio de carpeta de '$InstanceId': $($_.Exception.Message)";Write-CocoStorageDiagnostic 'move.rollback-error' @{instanceId=$InstanceId;currentRoot=$currentFull;newRoot=$newFull;error=$_.Exception.Message}}
         throw "No se pudo mover la instalacion: $failure"
     }
 }
@@ -368,12 +413,15 @@ function Set-CocoExperienceCardsEnabled($DynamicPanel,[bool]$Enabled){
 function Invoke-CocoExperienceStorageInstallUi($Info){
     if(-not$Info-or$script:CocoStorageInstallInProgress){return}
     $script:CocoStorageInstallInProgress=$true
+    Write-CocoStorageDiagnostic 'install.ui.start' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;name=$Info.Name;role=$Info.Role;currentRoot=$Info.CurrentRoot;experiencesRoot=$Info.ExperiencesRoot;locationPath=(Get-CocoLauncherInstanceLocationsPath $Info.Paths)}
     try{
         $locationPath=Get-CocoLauncherInstanceLocationsPath $Info.Paths
         $dummy=[pscustomobject]@{mode='offline';username='CocoPrepare';uuid=''}
         [void](Invoke-CocoManagedExperienceLaunch $Info.Catalog $Info.ExperienceId $dummy $Info.Role $Info.Paths.CatalogRoot $Info.Paths.CacheRoot $Info.Paths.ExperiencesRoot -Dry -InstanceLocationsPath $locationPath)
+        Write-CocoStorageDiagnostic 'install.ui.complete' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;role=$Info.Role;locationPath=$locationPath}
         Update-CocoExperienceCardsUi $Info.DynamicPanel $Info.Catalog $Info.Paths $Info.Role
     }catch{
+        Write-CocoStorageDiagnostic 'install.ui.error' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;role=$Info.Role;error=$_.Exception.Message;detail=($_|Out-String)}
         if([string]$_.Exception.Message -match 'fue cancelada'){return}
         if($script:CocoForm-and-not$script:CocoForm.IsDisposed){
             [Windows.Forms.MessageBox]::Show(("No se pudo instalar '{0}': {1}"-f$Info.Name,$_.Exception.Message),'Error',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Error)|Out-Null
@@ -383,21 +431,27 @@ function Invoke-CocoExperienceStorageInstallUi($Info){
 
 function Invoke-CocoExperienceChangeLocationUi($Info){
     if(-not$Info-or$Info.IsRunning){return}
+    Write-CocoStorageDiagnostic 'move.ui.start' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;name=$Info.Name;role=$Info.Role;currentRoot=$Info.CurrentRoot;installed=$Info.Usage.Installed;running=$Info.IsRunning}
     $dialog=New-Object Windows.Forms.FolderBrowserDialog
     try{
         $dialog.Description=("Selecciona la carpeta donde quieres instalar {0}:"-f$Info.Name)
         $dialog.ShowNewFolderButton=$true
-        if($dialog.ShowDialog($script:CocoForm)-ne[Windows.Forms.DialogResult]::OK){return}
+        $dialogResult=$dialog.ShowDialog($script:CocoForm)
+        Write-CocoStorageDiagnostic 'move.ui.folder-dialog' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;dialogResult=$dialogResult;selectedPath=$dialog.SelectedPath}
+        if($dialogResult-ne[Windows.Forms.DialogResult]::OK){Write-CocoStorageDiagnostic 'move.ui.cancelled' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId};return}
         $selected=[string]$dialog.SelectedPath
-        if([string]::IsNullOrWhiteSpace($selected)){return}
+        if([string]::IsNullOrWhiteSpace($selected)){Write-CocoStorageDiagnostic 'move.ui.empty-selection' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId};return}
         $newRoot=Join-Path $selected $Info.InstanceId
         if($Info.Usage.Installed){
             $moveConfirm=[Windows.Forms.MessageBox]::Show(("Se encontraron archivos de '{0}' en:`r`n{1}`r`n`r`nPara cambiar la carpeta debes mover la instalacion a:`r`n{2}`r`n`r`nMover ahora?"-f$Info.Name,$Info.CurrentRoot,$newRoot),'Mover instalacion',[Windows.Forms.MessageBoxButtons]::YesNoCancel,[Windows.Forms.MessageBoxIcon]::Question)
-            if($moveConfirm-ne[Windows.Forms.DialogResult]::Yes){return}
+            Write-CocoStorageDiagnostic 'move.ui.confirmation' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;confirmation=$moveConfirm;newRoot=$newRoot}
+            if($moveConfirm-ne[Windows.Forms.DialogResult]::Yes){Write-CocoStorageDiagnostic 'move.ui.confirmation-denied' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId};return}
         }
         try{
             [void](Move-CocoInstalledExperience $Info.InstanceId $Info.CurrentRoot $newRoot $Info.ExperiencesRoot (Get-CocoLauncherInstanceLocationsPath $Info.Paths))
+            Write-CocoStorageDiagnostic 'move.ui.complete' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;newRoot=$newRoot}
         }catch{
+            Write-CocoStorageDiagnostic 'move.ui.error' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;newRoot=$newRoot;error=$_.Exception.Message;detail=($_|Out-String)}
             [Windows.Forms.MessageBox]::Show($_.Exception.Message,'Error al mover',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Error)|Out-Null
             return
         }
@@ -407,17 +461,21 @@ function Invoke-CocoExperienceChangeLocationUi($Info){
 
 function Invoke-CocoExperienceFreeSpaceUi($Info){
     if(-not$Info-or-not$Info.Usage.Installed-or$Info.IsRunning){return}
+    Write-CocoStorageDiagnostic 'delete.ui.start' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;name=$Info.Name;role=$Info.Role;instanceRoot=$Info.InstanceRoot;usage=$Info.Usage.Label;running=$Info.IsRunning}
     $confirm=[Windows.Forms.MessageBox]::Show(("Esto eliminara la instalacion de '{0}' ({1}).`r`n`r`nUbicacion: {2}`r`n`r`nLos mundos, playerdata, estadisticas y avances se respaldaran antes de liberar el espacio.`r`n`r`nContinuar?"-f$Info.Name,$Info.Usage.Label,$Info.InstanceRoot),'Liberar espacio',[Windows.Forms.MessageBoxButtons]::YesNo,[Windows.Forms.MessageBoxIcon]::Warning)
-    if($confirm-ne[Windows.Forms.DialogResult]::Yes){return}
+    Write-CocoStorageDiagnostic 'delete.ui.confirmation' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;confirmation=$confirm}
+    if($confirm-ne[Windows.Forms.DialogResult]::Yes){Write-CocoStorageDiagnostic 'delete.ui.cancelled' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId};return}
     try{
         $backupRoot=if($Info.Paths.ExperienceBackupRoot){[string]$Info.Paths.ExperienceBackupRoot}elseif($Info.Paths.CacheRoot){Join-Path ([string]$Info.Paths.CacheRoot) 'backups\experiences'}else{''}
         $result=Remove-CocoInstalledExperience $Info.InstanceRoot $Info.ExperiencesRoot $Info.InstanceId (Get-CocoLauncherInstanceLocationsPath $Info.Paths) $backupRoot
         if($result.Removed){
+            Write-CocoStorageDiagnostic 'delete.ui.complete' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;instanceRoot=$Info.InstanceRoot;backupRoot=$result.BackupRoot;freedLabel=$Info.Usage.Label}
             Update-CocoExperienceCardsUi $Info.DynamicPanel $Info.Catalog $Info.Paths $Info.Role
             $backupText=if($result.BackupRoot){"`r`nRespaldo: $($result.BackupRoot)"}else{''}
             [Windows.Forms.MessageBox]::Show(("'{0}' fue eliminado correctamente. Se libero {1}.{2}"-f$Info.Name,$Info.Usage.Label,$backupText),'Espacio liberado',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Information)|Out-Null
         }
     }catch{
+        Write-CocoStorageDiagnostic 'delete.ui.error' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;instanceRoot=$Info.InstanceRoot;error=$_.Exception.Message;detail=($_|Out-String)}
         [Windows.Forms.MessageBox]::Show(("No se pudo eliminar '{0}': {1}"-f$Info.Name,$_.Exception.Message),'Error',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Error)|Out-Null
     }
 }
@@ -438,6 +496,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
         $_.managementMode -eq 'managed' -and ($_.launch.workflow -eq 'coco-managed' -or $_.launch.workflow -eq 'coco-standalone')
     })
     if ($managedExperiences.Count -eq 0) { return }
+    Write-CocoStorageDiagnostic 'cards.refresh' @{role=$Role;experienceCount=$managedExperiences.Count;experiencesRoot=$expRoot;locationPath=$locationPath;panelSize=$DynamicPanel.Size}
     
     $DynamicPanel.Controls.Clear()
     $DynamicPanel.AutoScroll = $true
@@ -459,6 +518,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
         $usage = Get-CocoExperienceDiskUsage $instanceRoot
         $expType = if ([string]$exp.launch.workflow -eq 'coco-standalone') { 'Standalone' } else { 'Minecraft' }
         $isRunning = Test-CocoManagedGameRunning $instanceRoot
+        Write-CocoStorageDiagnostic 'card.state' @{role=$Role;experienceId=$exp.id;instanceId=$instanceId;root=$instanceRoot;installed=$usage.Installed;usage=$usage.Label;running=$isRunning}
         
         $card = New-Object Windows.Forms.Panel
         $card.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric $cardY))
@@ -2825,18 +2885,21 @@ function Invoke-CocoManagedExperienceLaunch(
 ){
     $experience=@($Catalog.experiences|Where-Object id -eq $ExperienceId|Select-Object -First 1)[0]
     if(-not$experience-or$experience.managementMode-ne'managed'){throw "La experiencia administrada '$ExperienceId' no existe."}
+    Write-CocoStorageDiagnostic 'install.start' @{experienceId=$ExperienceId;instanceId=$experience.instanceId;name=$experience.name;role=$Role;dry=$Dry;skipLocationPrompt=$SkipLocationPrompt;experiencesRoot=$ExperiencesRoot;cacheRoot=$CacheRoot;locationPath=$InstanceLocationsPath}
     $location=if($SkipLocationPrompt){
         [pscustomobject]@{Confirmed=$true;Cancelled=$false;Choice='headless-default';Root=(Get-CocoExperienceInstanceRoot $experience $ExperiencesRoot $InstanceLocationsPath)}
     }else{
         Prompt-CocoExperienceLocationChoice $experience $ExperiencesRoot $InstanceLocationsPath
     }
-    if(-not$location.Confirmed){throw "La instalacion de '$($experience.name)' fue cancelada."}
+    Write-CocoStorageDiagnostic 'install.location-result' @{experienceId=$ExperienceId;instanceId=$experience.instanceId;choice=$location.Choice;confirmed=$location.Confirmed;cancelled=$location.Cancelled;root=$location.Root;role=$Role}
+    if(-not$location.Confirmed){Write-CocoStorageDiagnostic 'install.cancelled' @{experienceId=$ExperienceId;instanceId=$experience.instanceId;choice=$location.Choice};throw "La instalacion de '$($experience.name)' fue cancelada."}
     $dummyInstaller=$global:CocoUiDevDummyInstaller
     if(-not$dummyInstaller){$dummyInstaller=$script:CocoUiDevDummyInstaller}
     if($Dry-and$dummyInstaller){
         $testPaths=[pscustomobject]@{ExperiencesRoot=$ExperiencesRoot;CacheRoot=$CacheRoot;InstanceLocationsPath=$InstanceLocationsPath}
         $testInstallation=& $dummyInstaller $experience ([string]$location.Root) $testPaths
         if(-not$testInstallation){$testInstallation=[pscustomobject]@{InstanceRoot=[string]$location.Root;Updated=$true}}
+        Write-CocoStorageDiagnostic 'install.dry-complete' @{experienceId=$ExperienceId;instanceId=$experience.instanceId;root=$location.Root;role=$Role}
         return [pscustomobject]@{Status='prepared';Experience=$experience;Installation=$testInstallation;TestDummy=$true}
     }
 
