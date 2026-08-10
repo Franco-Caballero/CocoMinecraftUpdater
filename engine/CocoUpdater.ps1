@@ -89,7 +89,7 @@ function Get-CocoDiagnosticTail([string]$Path,[int]$Lines=120){
 }
 function Get-CocoFailureClassification([string]$Message){
     $value=([string]$Message).ToLowerInvariant()
-    if($value-match'hash|sha-?256|tamano fijado|integridad|zip slip'){return [pscustomobject]@{Code='PACK-INTEGRITY';Action='No reutilices el archivo manualmente. Reabre Coco para que elimine/reintente la descarga verificada.'}}
+    if($value-match'416|range not satisfiable|parcial invalido|hash|sha-?256|tamano fijado|integridad|zip slip'){return [pscustomobject]@{Code='PACK-INTEGRITY';Action='Coco descarto el fragmento incompatible y reintentara una descarga limpia verificada. Si vuelve a fallar, envia este TXT del Escritorio.'}}
     if($value-match'espacio|disk|disco|no space'){return [pscustomobject]@{Code='DISK-SPACE';Action='Libera espacio en C: y vuelve a abrir Coco; las descargas verificadas ya completas se reutilizan.'}}
     if($value-match'identidad|identity|username|nombre local|jugador'){return [pscustomobject]@{Code='IDENTITY';Action='Reabre Coco, revisa el nombre del jugador y usa siempre la misma identidad local.'}}
     if($value-match'zerotier|adaptador|network id|autoriz|25564|red coco'){return [pscustomobject]@{Code='ZEROTIER';Action='Comprueba que el host tenga Coco/Minecraft abierto y vuelve a ejecutar; adjunta este informe si vuelve a fallar.'}}
@@ -776,10 +776,16 @@ function Download-VerifiedFile(
             Move-Item -LiteralPath $partial -Destination $Destination -Force
             return
         } catch {
-            if($hashMismatch){Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue}
+            $responseStatus=0
+            foreach($candidate in @($_.Exception,$_.Exception.InnerException,$_.Exception.InnerException.InnerException)){
+                try{if($candidate-and$candidate.Response){$responseStatus=[int]$candidate.Response.StatusCode;break}}catch{}
+            }
+            $rangeRejected=($responseStatus-eq416)
+            if($hashMismatch-or$rangeRejected){Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue}
             $partialBytes=if(Test-Path -LiteralPath $partial -PathType Leaf){(Get-Item -LiteralPath $partial).Length}else{0}
             if($attempt -eq 4){throw}
-            Write-CocoLog "Descarga fallida (intento $attempt): $($_.Exception.Message) | Parcial conservado: $partialBytes bytes"
+            $retryMode=if($rangeRejected){'partial-invalid-restart-clean'}elseif($hashMismatch){'hash-mismatch-discard'}else{'partial-preserved'}
+            Write-CocoLog "Descarga fallida (intento $attempt): $($_.Exception.Message) | mode=$retryMode | Parcial conservado: $partialBytes bytes"
             $retryPrefix=if($DetailPrefix){$DetailPrefix+' | '}else{''}
             Set-CocoState 'Reintentando descarga' ("{0}Intento {1} de 4; se conserva todo archivo ya verificado."-f$retryPrefix,($attempt+1)) ([Math]::Max($ProgressStart,$script:CocoCurrentProgress))
             Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))

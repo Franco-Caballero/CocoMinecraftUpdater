@@ -8,8 +8,11 @@ $engine=[IO.File]::ReadAllText((Join-Path $root 'engine\CocoUpdater.ps1'))
 $bootstrap=[IO.File]::ReadAllText((Join-Path $root 'bootstrap\CocoBootstrapper.ps1'))
 $checklist=Join-Path $root 'docs\ModpackCompatibilityChecklist.md'
 
-foreach($pattern in 'function Set-CocoLauncherStep','Archivo \$\(\$ProgressContext\.Index\)/\$\(\$ProgressContext\.Count\)','Verificado y reutilizado desde la cache','INSTALANDO LA INSTANCIA AISLADA','Tiempo transcurrido','function Wait-CocoManagedMinecraftWindow','CONECTANDO AUTOMATICAMENTE','--continue-at','clientFailureCount','terminalFailure','Cierra y vuelve a abrir Coco Launcher'){
+foreach($pattern in 'function Set-CocoLauncherStep','Archivo \$\(\$ProgressContext\.Index\)/\$\(\$ProgressContext\.Count\)','Verificado y reutilizado desde la cache','INSTALANDO LA INSTANCIA AISLADA','Tiempo transcurrido','function Wait-CocoManagedMinecraftWindow','CONECTANDO AUTOMATICAMENTE','--continue-at','clientFailureCount','terminalFailure','Cierra y vuelve a abrir Coco Launcher','Parcial completo verificado','solicitar rango'){
     if($launcher-notmatch$pattern){throw "Falta observabilidad launcher: $pattern"}
+}
+foreach($pattern in 'range not satisfiable','responseStatus','partial-invalid-restart-clean'){
+    if($engine-notmatch$pattern){throw "Falta observabilidad del descargador: $pattern"}
 }
 foreach($pattern in 'function Write-CocoStorageDiagnostic',"Write-CocoStorageDiagnostic 'location\.prompt","Write-CocoStorageDiagnostic 'move\.ui","Write-CocoStorageDiagnostic 'delete\.ui","Write-CocoStorageDiagnostic 'install\.ui"){
     if($launcher-notmatch$pattern){throw "Falta diagnostico de almacenamiento launcher: $pattern"}

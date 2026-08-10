@@ -2134,30 +2134,61 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                         Write-CocoLog "Iniciando descarga a alta velocidad con curl.exe: $sourceUrl -> $archive"
                         Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: Conectando descarga a alta velocidad... | {2}"-f $partIndex, $archiveItems.Count, $Experience.name) (30 + [int]((($partIndex - 1)/$archiveItems.Count)*35))
                         $partialArchive="$archive.partial"
-                        $proc = Start-Process -FilePath "curl.exe" -ArgumentList @("-L", "-s", "--retry", "3", "--continue-at", "-", "-o", $partialArchive, $sourceUrl) -PassThru -NoNewWindow
-                        $lastUi = [DateTime]::MinValue
-                        while(-not $proc.HasExited){
-                            if(Test-Path -LiteralPath $partialArchive){
-                                $now = [DateTime]::UtcNow
-                                if(($now - $lastUi).TotalMilliseconds -ge 150){
-                                    $lastUi = $now
-                                    $curBytes = (Get-Item -LiteralPath $partialArchive).Length
-                                    $curMb = $curBytes / 1MB
-                                    $totalMb = if($itemSize -gt 0){$itemSize / 1MB}else{1}
-                                    $pct = [Math]::Min(99, [int](($curBytes / [Math]::Max(1, $itemSize)) * 100))
-                                    Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: {2:N1} MB / {3:N1} MB ({4}%) | {5}"-f $partIndex, $archiveItems.Count, $curMb, $totalMb, $pct, $Experience.name) (30 + [int]($pct * 0.35))
+                        if(Test-Path -LiteralPath $partialArchive -PathType Leaf){
+                            $partialSize=[int64](Get-Item -LiteralPath $partialArchive).Length
+                            if($partialSize -eq [int64]$itemSize){
+                                $partialHash=(Get-FileHash -LiteralPath $partialArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+                                if($partialHash -eq $itemSha){
+                                    Move-Item -LiteralPath $partialArchive -Destination $archive -Force
+                                    $curlSuccess=$true
+                                    Write-CocoLog "Parcial completo verificado y reutilizado sin solicitar rango: $partialArchive"
+                                }else{
+                                    Remove-Item -LiteralPath $partialArchive -Force -ErrorAction SilentlyContinue
+                                    Write-CocoLog "Parcial completo con hash incorrecto; se descarta antes de reanudar: $partialArchive"
+                                }
+                            }elseif($partialSize -gt [int64]$itemSize){
+                                Remove-Item -LiteralPath $partialArchive -Force -ErrorAction SilentlyContinue
+                                Write-CocoLog "Parcial mayor que el tamano esperado; se descarta antes de reanudar: $partialSize bytes > $itemSize bytes"
+                            }
+                        }
+                        if(-not$curlSuccess){
+                            $proc = Start-Process -FilePath "curl.exe" -ArgumentList @("-L", "-s", "--retry", "3", "--continue-at", "-", "-o", $partialArchive, $sourceUrl) -PassThru -NoNewWindow
+                            $lastUi = [DateTime]::MinValue
+                            while(-not $proc.HasExited){
+                                if(Test-Path -LiteralPath $partialArchive){
+                                    $now = [DateTime]::UtcNow
+                                    if(($now - $lastUi).TotalMilliseconds -ge 150){
+                                        $lastUi = $now
+                                        $curBytes = (Get-Item -LiteralPath $partialArchive).Length
+                                        $curMb = $curBytes / 1MB
+                                        $totalMb = if($itemSize -gt 0){$itemSize / 1MB}else{1}
+                                        $pct = [Math]::Min(99, [int](($curBytes / [Math]::Max(1, $itemSize)) * 100))
+                                        Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Parte {0}/{1}: {2:N1} MB / {3:N1} MB ({4}%) | {5}"-f $partIndex, $archiveItems.Count, $curMb, $totalMb, $pct, $Experience.name) (30 + [int]($pct * 0.35))
+                                    }
+                                }
+                                if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+                                Start-Sleep -Milliseconds 100
+                            }
+                            if(Test-Path -LiteralPath $partialArchive -PathType Leaf){
+                                $partialSize=[int64](Get-Item -LiteralPath $partialArchive).Length
+                                if($partialSize -eq [int64]$itemSize){
+                                    $partialHash=(Get-FileHash -LiteralPath $partialArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+                                    if($partialHash -eq $itemSha){
+                                        Move-Item -LiteralPath $partialArchive -Destination $archive -Force
+                                        $curlSuccess=$true
+                                        Write-CocoLog "curl.exe dejo el parcial completo y verificado: $partialArchive"
+                                    }else{
+                                        Remove-Item -LiteralPath $partialArchive -Force -ErrorAction SilentlyContinue
+                                        Write-CocoLog "curl.exe dejo un parcial completo con hash incorrecto; se descarta para descarga limpia."
+                                    }
+                                }elseif($partialSize -gt [int64]$itemSize){
+                                    Remove-Item -LiteralPath $partialArchive -Force -ErrorAction SilentlyContinue
+                                    Write-CocoLog "curl.exe dejo un parcial mayor que el tamano esperado; se descarta."
                                 }
                             }
-                            if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
-                            Start-Sleep -Milliseconds 100
-                        }
-                        if($proc.ExitCode -eq 0){
-                            if(Test-Path -LiteralPath $partialArchive){
-                                Move-Item -LiteralPath $partialArchive -Destination $archive -Force
-                                $curlSuccess = $true
+                            if(-not$curlSuccess-and$proc.ExitCode-ne0){
+                                Write-CocoLog "curl.exe finalizo con codigo $($proc.ExitCode). Se conserva el parcial valido para reanudar con fallback..."
                             }
-                        }else{
-                            Write-CocoLog "curl.exe finalizo con codigo $($proc.ExitCode). Se conserva el parcial para reanudar con fallback..."
                         }
                     }catch{
                         Write-CocoLog "Fallo descarga con curl.exe: $($_.Exception.Message). Se conserva el parcial para reanudar con fallback..."
@@ -4092,7 +4123,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                 if(-not$script:CocoForm.IsDisposed){$identityText.Enabled=$true;$skinTile.Enabled=$true;$close.Enabled=$true}
                 $clientFailureCount++
                 $failureText=Get-CocoLauncherFailureDetail $_
-                $integrityFailure=([string]$_.Exception.Message)-match'(?i)sha-?256|integridad|no coincide|archivo descargado|paquete descargado|pack-inte?rity'
+                $integrityFailure=([string]$_.Exception.Message)-match'(?i)416|range not satisfiable|sha-?256|integridad|no coincide|archivo descargado|paquete descargado|pack-inte?rity'
                 $terminalFailure=$integrityFailure-or$clientFailureCount-ge3
                 Write-CocoLog "ERROR Launcher client (attempt=$clientFailureCount; terminal=$terminalFailure; integrity=$integrityFailure): $($_|Out-String)"
                 if($terminalFailure){
