@@ -533,7 +533,37 @@
             "managementMode": "managed",
             "runtime": {
                 "type": "standalone",
-                "executable": "Big Walk.exe"
+                "executable": "Big Walk.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Big Walk.exe",
+                        "sha256": "0a028a824131983558d0bec7fc7dfd89981894672263778d8e26bd3f76f308a6",
+                        "size": 667136,
+                        "archiveSha256": "d6faf6d43b37e9d8162c3f9479704266c49f7abf4016a03484dc6a62d4b032c8"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "ae23f76254fbcd88d36ff5d15f958708638cb63e6cebdc1d30247aa559c2340f",
+                        "size": 13401600,
+                        "archiveSha256": "d6faf6d43b37e9d8162c3f9479704266c49f7abf4016a03484dc6a62d4b032c8"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+                        "size": 502272,
+                        "archiveSha256": "d6faf6d43b37e9d8162c3f9479704266c49f7abf4016a03484dc6a62d4b032c8"
+                    },
+                    {
+                        "path": "Big Walk_Data/Plugins/x86_64/EOSSDK-Win64-Shipping.dll",
+                        "sha256": "7cd18fdb679a3e603eb9689957ecd3178b8456cbb1a6937fdf56925d48c50a1f",
+                        "size": 8600576,
+                        "archiveSha256": "7da9186a60f61e643030c1f2a2925ff7de0d2299160e5f030b2d056b4e4ad96a"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "3527290"
             },
             "pack": {
                 "packId": "standalone-big-walk",

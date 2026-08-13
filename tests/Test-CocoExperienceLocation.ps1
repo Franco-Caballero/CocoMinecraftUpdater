@@ -30,6 +30,13 @@ try{
     $stored=Get-CocoInstanceCustomLocations $storePath
     if([string]$stored.'location-test'-ne[IO.Path]::GetFullPath($customRoot)){throw 'La ubicacion personalizada no se persistio en el store de prueba.'}
 
+    $staleStage="$customRoot.coco-stage-0123456789abcdef0123456789abcdef"
+    $lookalikeStage="$customRoot.coco-stage-no-borrar"
+    New-Item -ItemType Directory -Path $staleStage,$lookalikeStage -Force|Out-Null
+    if((Remove-CocoStaleExperienceStages $customRoot)-ne1-or(Test-Path -LiteralPath $staleStage)){throw 'El staging obsoleto de una ubicacion personalizada no fue retirado.'}
+    if(-not(Test-Path -LiteralPath $lookalikeStage -PathType Container)){throw 'La limpieza de staging retiro una carpeta que no coincide con el contrato seguro.'}
+    Remove-Item -LiteralPath $lookalikeStage -Recurse -Force
+
     $sourceFile=Join-Path $customRoot 'saves\world\level.dat'
     New-Item -ItemType Directory -Path (Split-Path $sourceFile -Parent) -Force|Out-Null
     [IO.File]::WriteAllText($sourceFile,'world-data',(New-Object Text.UTF8Encoding($false)))

@@ -41,11 +41,19 @@ Los JARs se almacenan como assets con nombre derivado de SHA-256. Un cliente reu
 
 ## Publicación oficial
 
-La publicación se realiza desde el host mediante:
+La publicación se realiza desde el host mediante la interfaz:
 
 ```text
 dist\CocoPublisher.exe
 ```
+
+También puede ejecutarse directamente, sin abrir la ventana del Publisher:
+
+```powershell
+.\tools\Publish-CocoRelease.ps1 -Version <siguiente-version>
+```
+
+La ruta directa usa la misma transacción y aplica su propio preflight: bloquea Minecraft, experiencias administradas, Coco Launcher/Updater, otra instancia del Publisher y listeners LAN en 25564/25565. No omite pruebas ni verificaciones del host.
 
 El Publisher obtiene acceso a GitHub mediante Git Credential Manager y ejecuta una transacción:
 

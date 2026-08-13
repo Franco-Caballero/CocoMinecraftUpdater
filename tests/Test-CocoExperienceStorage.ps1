@@ -80,12 +80,12 @@ try{
     # --- Test 7: Remove running experience throws ---
     $runningTarget=Join-Path $experiencesRoot 'running-game'
     New-Item -ItemType Directory -Path $runningTarget -Force|Out-Null
-    function global:Test-CocoManagedGameRunning([string]$InstanceRoot){return $InstanceRoot-eq$runningTarget}
+    function script:Test-CocoManagedGameRunning([string]$InstanceRoot,[string]$ExecutableName=''){return $InstanceRoot-eq$runningTarget}
     $threw=$false
     try{Remove-CocoInstalledExperience $runningTarget $experiencesRoot}catch{$threw=$true}
     if(-not$threw){throw 'FAIL: Removing a running experience should throw.'}
     # Restore stub
-    function global:Test-CocoManagedGameRunning([string]$InstanceRoot){return $false}
+    function script:Test-CocoManagedGameRunning([string]$InstanceRoot,[string]$ExecutableName=''){return $false}
 
     Write-Host 'PASS: Get-CocoExperienceDiskUsage y Remove-CocoInstalledExperience validados.'
 }finally{

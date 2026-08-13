@@ -52,6 +52,39 @@ function Get-CocoExperienceDiskUsage([string]$InstanceRoot){
     [pscustomobject]@{Bytes=$totalBytes;Label=$label;Installed=$true;FileCount=$fileCount}
 }
 
+function Test-CocoExperienceStagePath([string]$StagePath,[string]$InstanceRoot){
+    if([string]::IsNullOrWhiteSpace($StagePath)-or[string]::IsNullOrWhiteSpace($InstanceRoot)){return $false}
+    try{
+        $fullStage=[IO.Path]::GetFullPath($StagePath).TrimEnd('\')
+        $fullInstance=[IO.Path]::GetFullPath($InstanceRoot).TrimEnd('\')
+        $prefix=$fullInstance+'.coco-stage-'
+        if(-not$fullStage.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)){return $false}
+        $suffix=$fullStage.Substring($prefix.Length)
+        return $suffix-match'^[a-fA-F0-9]{32}$'-and
+            [string]::Equals((Split-Path $fullStage -Parent),(Split-Path $fullInstance -Parent),[StringComparison]::OrdinalIgnoreCase)
+    }catch{return $false}
+}
+
+function Remove-CocoStaleExperienceStages([string]$InstanceRoot){
+    if([string]::IsNullOrWhiteSpace($InstanceRoot)){return 0}
+    $fullInstance=[IO.Path]::GetFullPath($InstanceRoot).TrimEnd('\')
+    $parent=Split-Path $fullInstance -Parent
+    $leaf=Split-Path $fullInstance -Leaf
+    if(-not(Test-Path -LiteralPath $parent -PathType Container)){return 0}
+    $removed=0
+    foreach($candidate in @(Get-ChildItem -LiteralPath $parent -Directory -Filter "$leaf.coco-stage-*" -Force -ErrorAction SilentlyContinue)){
+        if(-not(Test-CocoExperienceStagePath $candidate.FullName $fullInstance)){continue}
+        try{
+            Remove-Item -LiteralPath $candidate.FullName -Recurse -Force -ErrorAction Stop
+            $removed++
+            Write-CocoLog "Staging obsoleto de experiencia eliminado: $($candidate.FullName)"
+        }catch{
+            Write-CocoLog "No se pudo eliminar staging obsoleto '$($candidate.FullName)': $($_.Exception.Message)"
+        }
+    }
+    return $removed
+}
+
 function Get-CocoInstanceLocationsStorePath([string]$StorePath='') {
     if([string]::IsNullOrWhiteSpace($StorePath)-and-not[string]::IsNullOrWhiteSpace([string]$script:CocoInstanceLocationsPath)){
         $StorePath=[string]$script:CocoInstanceLocationsPath
@@ -1437,6 +1470,12 @@ function Read-CocoLauncherCatalog([string]$Path){
         if($experience.runtimePolicies-and$experience.runtimePolicies.essentialLoaderUpdates-and[string]$experience.runtimePolicies.essentialLoaderUpdates-ne'disabled'){
             throw "Politica Essential Loader invalida para '$id'."
         }
+        if($experience.runtimePolicies-and$experience.runtimePolicies.defenderExclusion-and[string]$experience.runtimePolicies.defenderExclusion-ne'required'){
+            throw "Politica de exclusion de Defender invalida para '$id'."
+        }
+        if($experience.runtimePolicies-and$experience.runtimePolicies.onlineFixAppId-and[string]$experience.runtimePolicies.onlineFixAppId-notmatch'^\d{1,10}$'){
+            throw "Identificador OnlineFix invalido para '$id'."
+        }
         if(-not$experience.hosting-or$experience.hosting.mode-notin@('lan','dedicated','either','p2p')){throw "Modo de hosting invalido para '$id'."}
         if($experience.hosting.mode-ne'p2p'){
             $port=[int]$experience.hosting.port
@@ -1461,6 +1500,23 @@ function Read-CocoLauncherCatalog([string]$Path){
                     if([string]$item.sha256-notmatch'^[a-fA-F0-9]{64}$'){throw "pack.sha256 invalido para '$id'."}
                     if([int64]$item.size-le0){throw "pack.size invalido para '$id'."}
                     if([string]$item.archiveUrl-notmatch'^(https://|file://)'){throw "archiveUrl invalido para '$id'."}
+                }
+                $requiredPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+                foreach($requiredFile in @($experience.runtime.requiredFiles)){
+                    $requiredPath=([string]$requiredFile.path)-replace'\\','/'
+                    $archiveSha=([string]$requiredFile.archiveSha256).ToLowerInvariant()
+                    if(-not(Test-CocoSafeRelativePath $requiredPath)-or-not$requiredPaths.Add($requiredPath)-or
+                       [string]$requiredFile.sha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$requiredFile.size-le0-or
+                       $archiveSha-notmatch'^[a-f0-9]{64}$'-or@($archives|Where-Object{([string]$_.sha256).ToLowerInvariant()-eq$archiveSha}).Count-ne1){
+                        throw "Archivo requerido standalone invalido para '$id': '$requiredPath'."
+                    }
+                }
+                if(@($experience.runtime.requiredFiles).Count-and-not@($experience.runtime.requiredFiles|Where-Object{
+                    $requiredExecutablePath=([string]$_.path)-replace'\\','/'
+                    $declaredExecutablePath=([string]$experience.runtime.executable)-replace'\\','/'
+                    [string]::Equals($requiredExecutablePath,$declaredExecutablePath,[StringComparison]::OrdinalIgnoreCase)
+                }).Count){
+                    throw "Los archivos requeridos standalone de '$id' no incluyen su ejecutable."
                 }
             }else{
                 $lanAdapter=if($experience.hosting.adapter){[string]$experience.hosting.adapter}else{'mcwifipnp'}
@@ -1986,67 +2042,135 @@ function Ensure-CocoSteamRunning(){
     return $true
 }
 
-function Install-CocoStandaloneExperienceFiles($Experience,[string]$InstanceRoot,[string]$CacheRoot,[object[]]$Files){
-    if(-not$Files-or$Files.Count-eq0){return @()}
+function Test-CocoStandaloneMutableExtraPath([string]$RelativePath){
+    $normalized=([string]$RelativePath)-replace'\\','/'
+    return $normalized-match'(?i)^BepInEx/config/'
+}
+
+function Install-CocoStandaloneExperienceFiles($Experience,[string]$InstanceRoot,[string]$CacheRoot,[object[]]$Files,[object[]]$PreviousManifest=@()){
     $filesDir=Join-Path $CacheRoot 'downloads\standalone-files'
     New-Item -ItemType Directory -Path $filesDir -Force|Out-Null
     Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $workRoot=Join-Path $CacheRoot ("downloads\standalone-files-stage\$($Experience.id)-$([guid]::NewGuid().ToString('N'))")
+    $stageRoot=Join-Path $workRoot 'files'
+    $backupRoot=Join-Path $workRoot 'backup'
+    New-Item -ItemType Directory -Path $stageRoot,$backupRoot -Force|Out-Null
+    $staged=[Collections.Generic.List[object]]::new()
     $manifest=[Collections.Generic.List[object]]::new()
-    foreach($file in $Files){
-        $sha=([string]$file.sha256).ToLowerInvariant()
-        $cached=Join-Path $filesDir $sha
-        if(-not(Test-Path -LiteralPath $cached -PathType Leaf)){
-            $sourceUrl=[string]$file.sourceUrl
-            Write-CocoLog "Descargando archivo adicional de '$($Experience.id)': $sourceUrl -> $cached"
-            $temporary="$cached.downloading"
-            if(Test-Path -LiteralPath $sourceUrl){
-                Copy-Item -LiteralPath $sourceUrl -Destination $temporary -Force
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    try{
+        foreach($file in @($Files)){
+            $sha=([string]$file.sha256).ToLowerInvariant()
+            $cached=Join-Path $filesDir $sha
+            $cacheValid=$false
+            if(Test-Path -LiteralPath $cached -PathType Leaf){
+                $cachedInfo=Get-Item -LiteralPath $cached -Force
+                $cacheValid=([int64]$file.size-le0-or$cachedInfo.Length-eq[int64]$file.size)-and
+                    (Get-FileHash -LiteralPath $cached -Algorithm SHA256).Hash.ToLowerInvariant()-eq$sha
+                if(-not$cacheValid){Remove-Item -LiteralPath $cached -Force}
+            }
+            if(-not$cacheValid){
+                $sourceUrl=[string]$file.sourceUrl
+                Write-CocoLog "Descargando archivo adicional de '$($Experience.id)': $sourceUrl -> $cached"
+                $temporary="$cached.downloading-$PID"
+                try{
+                    if(Test-Path -LiteralPath $sourceUrl){
+                        Copy-Item -LiteralPath $sourceUrl -Destination $temporary -Force
+                    }elseif(Get-Command Download-VerifiedFile -ErrorAction SilentlyContinue){
+                        Download-VerifiedFile $sourceUrl $temporary $sha
+                    }else{
+                        $webClient=New-Object System.Net.WebClient
+                        try{$webClient.DownloadFile([Uri]$sourceUrl,$temporary)}finally{$webClient.Dispose()}
+                    }
+                    $temporaryInfo=Get-Item -LiteralPath $temporary -Force
+                    if(([int64]$file.size-gt0-and$temporaryInfo.Length-ne[int64]$file.size)-or
+                       (Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash.ToLowerInvariant()-ne$sha){
+                        throw "El archivo adicional '$($file.path)' de '$($Experience.id)' no coincide con su tamano o SHA-256 esperado."
+                    }
+                    Move-Item -LiteralPath $temporary -Destination $cached -Force
+                }finally{Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}
+            }
+            $relative=([string]$file.path)-replace'\\','/'
+            if(-not(Test-CocoSafeRelativePath $relative)){throw "Ruta administrada insegura en '$($Experience.id)': '$($file.path)'."}
+            if([IO.Path]::GetExtension($relative)-ieq'.zip'){
+                $zip=[IO.Compression.ZipFile]::OpenRead($cached)
+                try{
+                    foreach($entry in @($zip.Entries|Where-Object{-not$_.FullName.EndsWith('/')-and-not$_.FullName.EndsWith('\')})){
+                        $entryRelative=([string]$entry.FullName)-replace'\\','/'
+                        if(-not(Test-CocoSafeRelativePath $entryRelative)){throw "Ruta insegura dentro del paquete '$relative': '$entryRelative'."}
+                        if(-not$seen.Add($entryRelative)){throw "Ruta duplicada dentro de archivos adicionales de '$($Experience.id)': '$entryRelative'."}
+                        $stagedPath=Join-Path $stageRoot ($entryRelative-replace'/','\')
+                        New-Item -ItemType Directory -Path (Split-Path $stagedPath -Parent) -Force|Out-Null
+                        [IO.Compression.ZipFileExtensions]::ExtractToFile($entry,$stagedPath,$true)
+                        $stagedInfo=Get-Item -LiteralPath $stagedPath -Force
+                        $record=[pscustomobject]@{path=$entryRelative;sha256=(Get-FileHash -LiteralPath $stagedPath -Algorithm SHA256).Hash.ToLowerInvariant();size=[int64]$stagedInfo.Length;mutable=(Test-CocoStandaloneMutableExtraPath $entryRelative);stagedPath=$stagedPath}
+                        $staged.Add($record)
+                        if(-not$record.mutable){$manifest.Add([pscustomobject]@{path=$record.path;sha256=$record.sha256;size=$record.size})}
+                    }
+                }finally{$zip.Dispose()}
             }else{
-                $webClient=New-Object System.Net.WebClient
-                try{$webClient.DownloadFile([Uri]$sourceUrl,$temporary)}finally{$webClient.Dispose()}
+                if(-not$seen.Add($relative)){throw "Ruta duplicada dentro de archivos adicionales de '$($Experience.id)': '$relative'."}
+                $stagedPath=Join-Path $stageRoot ($relative-replace'/','\')
+                New-Item -ItemType Directory -Path (Split-Path $stagedPath -Parent) -Force|Out-Null
+                Copy-Item -LiteralPath $cached -Destination $stagedPath -Force
+                $stagedInfo=Get-Item -LiteralPath $stagedPath -Force
+                $record=[pscustomobject]@{path=$relative;sha256=$sha;size=[int64]$stagedInfo.Length;mutable=(Test-CocoStandaloneMutableExtraPath $relative);stagedPath=$stagedPath}
+                $staged.Add($record)
+                if(-not$record.mutable){$manifest.Add([pscustomobject]@{path=$record.path;sha256=$record.sha256;size=$record.size})}
             }
-            if((Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash.ToLowerInvariant()-ne$sha){
-                throw "El archivo adicional '$($file.path)' de '$($Experience.id)' no coincide con su SHA-256 esperado."
-            }
-            Move-Item -LiteralPath $temporary -Destination $cached -Force
         }
-        $relative=([string]$file.path)-replace'\\','/'
-        if(-not(Test-CocoSafeRelativePath $relative)){throw "Ruta administrada insegura en '$($Experience.id)': '$($file.path)'."}
-        if([IO.Path]::GetExtension($relative)-ieq'.zip'){
-            $zip=[IO.Compression.ZipFile]::OpenRead($cached)
-            try{
-                foreach($entry in @($zip.Entries|Where-Object{-not$_.FullName.EndsWith('/')})){
-                    $entryRelative=([string]$entry.FullName)-replace'\\','/'
-                    if(-not(Test-CocoSafeRelativePath $entryRelative)){throw "Ruta insegura dentro del paquete '$relative': '$entryRelative'."}
-                    $target=Join-Path $InstanceRoot ($entryRelative-replace'/','\')
-                    New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force|Out-Null
-                    [IO.Compression.ZipFileExtensions]::ExtractToFile($entry,$target,$true)
-                    $targetInfo=Get-Item -LiteralPath $target -Force
-                    $manifest.Add([pscustomobject]@{
-                        path=$entryRelative
-                        sha256=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
-                        size=[int64]$targetInfo.Length
-                    })
+
+        $newPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        foreach($item in $manifest){[void]$newPaths.Add([string]$item.path)}
+        $journal=[Collections.Generic.List[object]]::new()
+        try{
+            foreach($old in @($PreviousManifest)){
+                $oldRelative=([string]$old.path)-replace'\\','/'
+                if(-not(Test-CocoSafeRelativePath $oldRelative)-or$newPaths.Contains($oldRelative)){continue}
+                $destination=Join-Path $InstanceRoot ($oldRelative-replace'/','\')
+                if(Test-Path -LiteralPath $destination -PathType Leaf){
+                    $backup=Join-Path $backupRoot ($oldRelative-replace'/','\')
+                    New-Item -ItemType Directory -Path (Split-Path $backup -Parent) -Force|Out-Null
+                    Move-Item -LiteralPath $destination -Destination $backup -Force
+                    $journal.Add([pscustomobject]@{Destination=$destination;Backup=$backup;NewInstalled=$false})
                 }
-            }finally{$zip.Dispose()}
-            Write-CocoLog "Paquete de archivos adicionales '$relative' aplicado en '$InstanceRoot'."
-        }else{
-            $target=Join-Path $InstanceRoot ($relative-replace'/','\')
-            New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force|Out-Null
-            Copy-Item -LiteralPath $cached -Destination $target -Force
-            $targetInfo=Get-Item -LiteralPath $target -Force
-            $manifest.Add([pscustomobject]@{
-                path=$relative
-                sha256=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
-                size=[int64]$targetInfo.Length
-            })
+            }
+            foreach($item in $staged){
+                $destination=Join-Path $InstanceRoot (([string]$item.path)-replace'/','\')
+                if($item.mutable-and(Test-Path -LiteralPath $destination -PathType Leaf)){
+                    Write-CocoLog "Configuracion standalone preservada: $($item.path)"
+                    continue
+                }
+                if((Test-Path -LiteralPath $destination -PathType Leaf)-and
+                   (Get-Item -LiteralPath $destination -Force).Length-eq[int64]$item.size-and
+                   (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq[string]$item.sha256){continue}
+                if(Test-Path -LiteralPath $destination -PathType Container){throw "Una carpeta impide instalar el archivo standalone '$($item.path)'."}
+                $backup=$null
+                if(Test-Path -LiteralPath $destination -PathType Leaf){
+                    $backup=Join-Path $backupRoot (([string]$item.path)-replace'/','\')
+                    New-Item -ItemType Directory -Path (Split-Path $backup -Parent) -Force|Out-Null
+                    Move-Item -LiteralPath $destination -Destination $backup -Force
+                }
+                New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force|Out-Null
+                Copy-Item -LiteralPath $item.stagedPath -Destination $destination -Force
+                $journal.Add([pscustomobject]@{Destination=$destination;Backup=$backup;NewInstalled=$true})
+            }
+        }catch{
+            $original=$_
+            $rollback=@($journal.ToArray());[array]::Reverse($rollback)
+            foreach($entry in $rollback){
+                if($entry.NewInstalled-and(Test-Path -LiteralPath $entry.Destination -PathType Leaf)){Remove-Item -LiteralPath $entry.Destination -Force -ErrorAction SilentlyContinue}
+                if($entry.Backup-and(Test-Path -LiteralPath $entry.Backup -PathType Leaf)){New-Item -ItemType Directory -Path (Split-Path $entry.Destination -Parent) -Force|Out-Null;Move-Item -LiteralPath $entry.Backup -Destination $entry.Destination -Force}
+            }
+            throw $original
         }
-    }
-    return @($manifest.ToArray())
+        Write-CocoLog "Archivos adicionales de '$($Experience.id)' aplicados transaccionalmente en '$InstanceRoot'."
+        return @($manifest.ToArray())
+    }finally{Remove-Item -LiteralPath $workRoot -Recurse -Force -ErrorAction SilentlyContinue}
 }
 
 function Test-CocoStandaloneExtraManifest([string]$InstanceRoot,[object[]]$Manifest){
-    if(-not$Manifest-or$Manifest.Count-eq0){return $false}
+    if($null-eq$Manifest){return $false}
     try{
         foreach($item in $Manifest){
             $relative=([string]$item.path)-replace'\\','/'
@@ -2065,7 +2189,7 @@ function Test-CocoStandaloneExtraManifest([string]$InstanceRoot,[object[]]$Manif
     }
 }
 
-function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot, [string]$CacheRoot, [string]$InstanceLocationsPath=''){
+function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot, [string]$CacheRoot, [string]$InstanceLocationsPath='',[ValidateSet('client','host')][string]$Role='client'){
     if($Experience.managementMode-ne'managed'){throw 'La experiencia no esta marcada como administrada.'}
     $instanceRoot=Get-CocoExperienceInstanceRoot $Experience $ExperiencesRoot $InstanceLocationsPath
     $fullInstance=[IO.Path]::GetFullPath($instanceRoot)
@@ -2103,7 +2227,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
     $expectedSize = if([int64]$Experience.pack.size-gt0){[int64]$Experience.pack.size}else{
         $sum=0;foreach($item in $archiveItems){$sum+=[int64]$item.size};$sum
     }
-    $expectedExtrasArray=@($Experience.files|Where-Object{[string]$_.role-ne'host'})
+    $expectedExtrasArray=@($Experience.files|Where-Object{[string]$_.role-in@('all',$Role)})
     $expectedExtrasSha=if($expectedExtrasArray.Count-gt0){($expectedExtrasArray|ForEach-Object{([string]$_.sha256).ToLowerInvariant()}|Sort-Object)-join';'}else{'none'}
 
     Write-CocoLog "Comprobando instalacion standalone de '$($Experience.id)': Hash esperado=$expectedSha, Tamano=$expectedSize bytes, Extras=$expectedExtrasSha"
@@ -2117,13 +2241,15 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
             Write-CocoLog "No se pudo leer el estado anterior de la instancia standalone: $($_.Exception.Message)"
         }
     }
-    $extraManifest=@()
-    $extraManifestValid=$expectedExtrasArray.Count-eq0
-    if($expectedExtrasArray.Count-gt0-and$existingState-and$existingState.PSObject.Properties['extraFiles']){
-        $extraManifest=@($existingState.extraFiles)
+    $previousExtraManifest=if($existingState-and$existingState.PSObject.Properties['extraFiles']){@($existingState.extraFiles)}else{@()}
+    $extraManifest=@($previousExtraManifest)
+    $extraManifestValid=$false
+    $extraStateCurrent=$false
+    if($existingState-and[int]$existingState.schemaVersion-ge2-and$existingState.PSObject.Properties['extraFiles']){
         $extraManifestValid=Test-CocoStandaloneExtraManifest $instanceRoot $extraManifest
+        $extraStateCurrent=$extraManifestValid-and[string]$existingState.filesSha-eq$expectedExtrasSha-and[string]$existingState.role-eq$Role
     }
-    if($existingState-and[string]$existingState.sha256-eq$expectedSha-and(Test-Path -LiteralPath $execPath)-and([string]$existingState.filesSha-eq$expectedExtrasSha)-and$extraManifestValid){
+    if($existingState-and[string]$existingState.sha256-eq$expectedSha-and(Test-Path -LiteralPath $execPath)-and$extraStateCurrent){
         return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$false}
     }
     $archivesUpToDate=$false
@@ -2277,6 +2403,19 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Extrayendo parte {0}/{1} de {2}..." -f $partIndex, $archiveItems.Count, $Experience.name) 65
         Write-CocoLog "Extrayendo paquete standalone '$archive' en '$instanceRoot'..."
 
+        $validationZip=[IO.Compression.ZipFile]::OpenRead($archive)
+        try{
+            $archivePaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+            foreach($candidateEntry in @($validationZip.Entries|Where-Object{-not$_.FullName.EndsWith('/')})){
+                $candidatePath=($candidateEntry.FullName-replace'\\','/').TrimStart('/')
+                $candidateTarget=Join-Path $instanceRoot ($candidatePath-replace'/','\')
+                if($candidatePath-ne($candidateEntry.FullName-replace'\\','/')-or-not(Test-CocoSafeRelativePath $candidatePath)-or
+                   -not(Test-CocoPathWithin $candidateTarget $instanceRoot)-or-not$archivePaths.Add($candidatePath)){
+                    throw "El paquete standalone contiene una ruta insegura o duplicada: '$($candidateEntry.FullName)'."
+                }
+            }
+        }finally{$validationZip.Dispose()}
+
         if(-not (Test-Path -LiteralPath $instanceRoot)){
             New-Item -ItemType Directory -Path $instanceRoot -Force | Out-Null
             Write-CocoLog "Creado directorio de la experiencia: '$instanceRoot'"
@@ -2358,14 +2497,15 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
 $metaDir=Join-Path $instanceRoot '.coco'
     New-Item -ItemType Directory -Path $metaDir -Force|Out-Null
     }
-    $extrasChanged=$expectedExtrasArray.Count-gt0-and(-not$extraManifestValid-or-not$existingState-or[string]$existingState.filesSha-ne$expectedExtrasSha)
-    if($extrasChanged){$extraManifest=@(Install-CocoStandaloneExperienceFiles $Experience $instanceRoot $CacheRoot $expectedExtrasArray)}
+    $extrasChanged=-not$extraStateCurrent
+    if($extrasChanged){$extraManifest=@(Install-CocoStandaloneExperienceFiles $Experience $instanceRoot $CacheRoot $expectedExtrasArray $previousExtraManifest)}
     $stateObj=[ordered]@{
-        schemaVersion=1
+        schemaVersion=2
         experienceId=[string]$Experience.id
         sha256=$expectedSha
         size=$expectedSize
         version=[string]$Experience.pack.version
+        role=$Role
         filesSha=$expectedExtrasSha
         extraFiles=@($extraManifest)
         installedAtUtc=[DateTime]::UtcNow.ToString('o')
@@ -2373,6 +2513,128 @@ $metaDir=Join-Path $instanceRoot '.coco'
     [IO.File]::WriteAllText($statePath,($stateObj|ConvertTo-Json -Depth 4),(New-Object Text.UTF8Encoding($false)))
     Write-CocoLog "Instalacion standalone de '$($Experience.id)' completada en '$instanceRoot'."
     return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$true}
+}
+
+function Test-CocoStandaloneRequiredFile([string]$InstanceRoot,$RequiredFile){
+    try{
+        $relative=([string]$RequiredFile.path)-replace'/','\'
+        $target=Join-Path $InstanceRoot $relative
+        if(-not(Test-CocoPathWithin $target $InstanceRoot)-or-not(Test-Path -LiteralPath $target -PathType Leaf)){return $false}
+        $item=Get-Item -LiteralPath $target -Force
+        if($item.Length-ne[int64]$RequiredFile.size){return $false}
+        return (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()-eq([string]$RequiredFile.sha256).ToLowerInvariant()
+    }catch{return $false}
+}
+
+function Get-CocoStandaloneRepairArchive($Experience,$ArchiveItem,[string]$CacheRoot){
+    $archiveSha=([string]$ArchiveItem.sha256).ToLowerInvariant()
+    $archiveSize=[int64]$ArchiveItem.size
+    $downloadsDir=Join-Path $CacheRoot 'downloads\standalone-packs'
+    New-Item -ItemType Directory -Path $downloadsDir -Force|Out-Null
+    $archive=Join-Path $downloadsDir "$archiveSha.zip"
+    if(Test-Path -LiteralPath $archive -PathType Leaf){
+        $cached=Get-Item -LiteralPath $archive -Force
+        if($cached.Length-eq$archiveSize-and(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()-eq$archiveSha){return $archive}
+        Remove-Item -LiteralPath $archive -Force
+    }
+
+    $source=[string]$ArchiveItem.archiveUrl
+    if([string]::IsNullOrWhiteSpace($source)-and$ArchiveItem.manifestUrl){$source=[string]$ArchiveItem.manifestUrl}
+    if([string]::IsNullOrWhiteSpace($source)){throw "El archivo base de '$($Experience.name)' no declara un origen de reparacion."}
+    $partial="$archive.repair.partial"
+    Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
+    try{
+        Write-CocoLog "Recuperando archivo base desde el paquete fijado $archiveSha..."
+        if(Test-Path -LiteralPath $source -PathType Leaf){
+            Copy-Item -LiteralPath $source -Destination $partial -Force
+        }elseif(Get-Command curl.exe -ErrorAction SilentlyContinue){
+            $download=Start-Process -FilePath 'curl.exe' -ArgumentList @('-L','--fail','--retry','3','--silent','--show-error','-o',$partial,$source) -NoNewWindow -Wait -PassThru
+            if($download.ExitCode-ne0){throw "curl.exe devolvio codigo $($download.ExitCode)."}
+        }else{
+            $client=New-Object Net.WebClient
+            try{$client.DownloadFile([Uri]$source,$partial)}finally{$client.Dispose()}
+        }
+        if(-not(Test-Path -LiteralPath $partial -PathType Leaf)-or(Get-Item -LiteralPath $partial -Force).Length-ne$archiveSize){
+            throw 'El paquete de reparacion no tiene el tamano esperado.'
+        }
+        $actual=(Get-FileHash -LiteralPath $partial -Algorithm SHA256).Hash.ToLowerInvariant()
+        if($actual-ne$archiveSha){throw "El paquete de reparacion no coincide con su SHA-256 fijado (obtenido $actual)."}
+        Move-Item -LiteralPath $partial -Destination $archive -Force
+        return $archive
+    }finally{
+        Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Repair-CocoStandaloneRequiredFiles($Experience,[string]$InstanceRoot,[string]$CacheRoot){
+    $required=@($Experience.runtime.requiredFiles)
+    if(-not$required.Count){return @()}
+    $invalid=@($required|Where-Object{-not(Test-CocoStandaloneRequiredFile $InstanceRoot $_)})
+    if(-not$invalid.Count){return @($required|ForEach-Object{[pscustomobject]@{path=[string]$_.path;status='ok'}})}
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archives=if($Experience.pack.archives){@($Experience.pack.archives)}else{@($Experience.pack)}
+    foreach($group in @($invalid|Group-Object{([string]$_.archiveSha256).ToLowerInvariant()})){
+        $archiveItem=@($archives|Where-Object{([string]$_.sha256).ToLowerInvariant()-eq[string]$group.Name})
+        if($archiveItem.Count-ne1){throw "No existe un paquete unico para reparar '$($group.Name)'."}
+        $archive=Get-CocoStandaloneRepairArchive $Experience $archiveItem[0] $CacheRoot
+        $zip=[IO.Compression.ZipFile]::OpenRead($archive)
+        try{
+            foreach($requiredFile in @($group.Group)){
+                $entryName=([string]$requiredFile.path)-replace'\\','/'
+                $entries=@($zip.Entries|Where-Object{[string]::Equals(($_.FullName-replace'\\','/'),$entryName,[StringComparison]::OrdinalIgnoreCase)})
+                if($entries.Count-ne1-or$entries[0].FullName.EndsWith('/')){throw "El paquete fijado no contiene exactamente '$entryName'."}
+                $target=Join-Path $InstanceRoot ($entryName-replace'/','\')
+                if(-not(Test-CocoPathWithin $target $InstanceRoot)){throw "La reparacion intento escapar de la instancia: '$entryName'."}
+                $staging="$target.coco-repair-$([guid]::NewGuid().ToString('N'))"
+                $backup="$target.coco-repair-backup-$([guid]::NewGuid().ToString('N'))"
+                New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force|Out-Null
+                try{
+                    [IO.Compression.ZipFileExtensions]::ExtractToFile($entries[0],$staging,$false)
+                    if((Get-Item -LiteralPath $staging -Force).Length-ne[int64]$requiredFile.size-or
+                       (Get-FileHash -LiteralPath $staging -Algorithm SHA256).Hash.ToLowerInvariant()-ne([string]$requiredFile.sha256).ToLowerInvariant()){
+                        throw "El archivo extraido '$entryName' no coincide con su contrato."
+                    }
+                    if(Test-Path -LiteralPath $target -PathType Leaf){Move-Item -LiteralPath $target -Destination $backup -Force}
+                    Move-Item -LiteralPath $staging -Destination $target -Force
+                    if(-not(Test-CocoStandaloneRequiredFile $InstanceRoot $requiredFile)){throw "La reparacion final de '$entryName' no se pudo verificar."}
+                    Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
+                    Write-CocoLog "Archivo base standalone reparado y verificado: $entryName"
+                }catch{
+                    Remove-Item -LiteralPath $staging -Force -ErrorAction SilentlyContinue
+                    if(Test-Path -LiteralPath $backup -PathType Leaf){
+                        Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
+                        Move-Item -LiteralPath $backup -Destination $target -Force
+                    }
+                    throw
+                }finally{Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue}
+            }
+        }finally{$zip.Dispose()}
+    }
+    $remaining=@($required|Where-Object{-not(Test-CocoStandaloneRequiredFile $InstanceRoot $_)})
+    if($remaining.Count){throw "La instalacion de '$($Experience.name)' conserva archivos base ausentes o corruptos: $((@($remaining.path)-join', '))."}
+    return @($required|ForEach-Object{[pscustomobject]@{path=[string]$_.path;status='ok'}})
+}
+
+function Ensure-CocoDefenderExclusion($Experience,[string]$InstanceRoot){
+    if([string]$Experience.runtimePolicies.defenderExclusion-ne'required'){return 'not-required'}
+    $full=[IO.Path]::GetFullPath($InstanceRoot).TrimEnd('\')
+    $getPreference=Get-Command Get-MpPreference -ErrorAction SilentlyContinue
+    $addPreference=Get-Command Add-MpPreference -ErrorAction SilentlyContinue
+    if(-not$getPreference-or-not$addPreference){Write-CocoLog 'Windows Defender no expone cmdlets de exclusion en este equipo.';return 'unavailable'}
+    $isPresent={
+        try{return @((Get-MpPreference -ErrorAction Stop).ExclusionPath|Where-Object{[string]$_-and[IO.Path]::GetFullPath([string]$_).TrimEnd('\').Equals($full,[StringComparison]::OrdinalIgnoreCase)}).Count-gt0}catch{return $false}
+    }
+    if(& $isPresent){return 'present'}
+    try{Add-MpPreference -ExclusionPath $full -ErrorAction Stop}catch{
+        $escaped=$full.Replace("'","''")
+        $command="Add-MpPreference -ExclusionPath '$escaped' -ErrorAction Stop"
+        $elevated=Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',$command) -WindowStyle Hidden -Wait -PassThru -ErrorAction Stop
+        if($elevated.ExitCode-ne0){throw "El proceso elevado devolvio codigo $($elevated.ExitCode)."}
+    }
+    if(-not(& $isPresent)){throw "Windows Defender no confirmo la exclusion requerida para '$full'."}
+    Write-CocoLog "Exclusion de Windows Defender confirmada para '$full'."
+    return 'present'
 }
 
 function Install-CocoManagedExperience(
@@ -2401,6 +2663,7 @@ function Install-CocoManagedExperience(
         if(-not$isCustom){throw 'La raiz de instancia escapa del directorio de experiencias.'}
     }
     if(Test-CocoManagedGameRunning $instanceRoot){throw "La instancia '$($Experience.name)' ya esta abierta. Cierrala antes de verificar sus archivos."}
+    [void](Remove-CocoStaleExperienceStages $instanceRoot)
     if([int64]$Experience.launch.minimumFreeBytes-gt0){
         $drive=[IO.DriveInfo]::new([IO.Path]::GetPathRoot([IO.Path]::GetFullPath($instanceRoot)))
         if($drive.AvailableFreeSpace-lt[int64]$Experience.launch.minimumFreeBytes){
@@ -2537,7 +2800,7 @@ function Install-CocoManagedExperience(
             throw $originalError
         }
         [pscustomobject]@{InstanceRoot=$instanceRoot;StatePath=$statePath;Files=$desired.Count;BackupRoot=''}
-    }finally{if((Test-Path -LiteralPath $stage)-and(Test-CocoPathWithin $stage $ExperiencesRoot)){Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue}}
+    }finally{if((Test-Path -LiteralPath $stage)-and(Test-CocoExperienceStagePath $stage $instanceRoot)){Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue}}
 }
 
 function Set-CocoManagedRuntimePolicies($Experience,[string]$InstanceRoot){
@@ -2978,7 +3241,7 @@ function Invoke-CocoManagedExperienceLaunch(
     }
 
     if([string]$experience.launch.workflow-eq'coco-standalone'-or[string]$experience.runtime.type-eq'standalone'){
-        $installed=Install-CocoStandaloneExperience $experience $ExperiencesRoot $CacheRoot $InstanceLocationsPath
+        $installed=Install-CocoStandaloneExperience $experience $ExperiencesRoot $CacheRoot $InstanceLocationsPath $Role
         if($experience.hosting.host){
             $hostIp=[string]$experience.hosting.host
             [IO.File]::WriteAllText((Join-Path $installed.InstanceRoot 'ip.txt'),$hostIp,(New-Object Text.UTF8Encoding($false)))
@@ -2990,75 +3253,32 @@ function Invoke-CocoManagedExperienceLaunch(
         }else{
             Get-ChildItem -Path $installed.InstanceRoot -Recurse -Filter 'ip.txt' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
         }
-        $publicOf=Join-Path $env:PUBLIC 'Documents\OnlineFix'
-        try{
-            $of3527=Join-Path $publicOf '3527290\Stats'
-            if(-not(Test-Path -LiteralPath $of3527)){New-Item -ItemType Directory -Path $of3527 -Force -ErrorAction SilentlyContinue|Out-Null}
-            $statsFile=Join-Path $of3527 'Stats.ini'
-            if(-not(Test-Path -LiteralPath $statsFile)){[IO.File]::WriteAllText($statsFile,"[Stats]`r`nLoadedCosmeticsPreviously=1`r`n",(New-Object Text.UTF8Encoding($false)))}
-            $achFile=Join-Path $of3527 'Achievements.ini'
-            if(-not(Test-Path -LiteralPath $achFile)){[IO.File]::WriteAllText($achFile,'',(New-Object Text.UTF8Encoding($false)))}
-        }catch{}
+        $onlineFixAppId=[string]$experience.runtimePolicies.onlineFixAppId
+        if($onlineFixAppId){
+            $publicOf=Join-Path $env:PUBLIC 'Documents\OnlineFix'
+            try{
+                $onlineFixStats=Join-Path $publicOf "$onlineFixAppId\Stats"
+                if(-not(Test-Path -LiteralPath $onlineFixStats)){New-Item -ItemType Directory -Path $onlineFixStats -Force -ErrorAction SilentlyContinue|Out-Null}
+                $statsFile=Join-Path $onlineFixStats 'Stats.ini'
+                if(-not(Test-Path -LiteralPath $statsFile)){[IO.File]::WriteAllText($statsFile,"[Stats]`r`nLoadedCosmeticsPreviously=1`r`n",(New-Object Text.UTF8Encoding($false)))}
+                $achFile=Join-Path $onlineFixStats 'Achievements.ini'
+                if(-not(Test-Path -LiteralPath $achFile)){[IO.File]::WriteAllText($achFile,'',(New-Object Text.UTF8Encoding($false)))}
+            }catch{Write-CocoLog "No se pudo inicializar el estado OnlineFix ${onlineFixAppId}: $($_.Exception.Message)"}
+        }
+        $requiredStatus=@(Repair-CocoStandaloneRequiredFiles $experience $installed.InstanceRoot $CacheRoot)
         if($Dry){
             return [pscustomobject]@{Status='prepared';Experience=$experience;Installation=$installed}
         }
 
-        # Self-repair OnlineFix DLLs & add Defender exclusion unconditionally
-        $winmmPath = Join-Path $installed.InstanceRoot 'winmm.dll'
-        $of64Path = Join-Path $installed.InstanceRoot 'OnlineFix64.dll'
-        $eossdkPath = Join-Path $installed.InstanceRoot 'Big Walk_Data\Plugins\x86_64\EOSSDK-Win64-Shipping.dll'
         $diagLog = Join-Path $installed.InstanceRoot 'logs\standalone-diagnostics.log'
         New-Item -ItemType Directory -Path (Split-Path $diagLog -Parent) -Force -ErrorAction SilentlyContinue | Out-Null
-        
         $diagLines = [System.Collections.Generic.List[string]]::new()
         $diagLines.Add("=== COCO STANDALONE DIAGNOSTIC LOG ===")
         $diagLines.Add("Timestamp: $((Get-Date).ToString('o'))")
         $diagLines.Add("InstanceRoot: $($installed.InstanceRoot)")
-        $diagLines.Add("winmm.dll exists: $(Test-Path $winmmPath)")
-        $diagLines.Add("OnlineFix64.dll exists: $(Test-Path $of64Path)")
-        $diagLines.Add("EOSSDK-Win64-Shipping.dll exists: $(Test-Path $eossdkPath)")
-        
-        # Always attempt to set Windows Defender Exclusion for instance folder
-        try {
-            Add-MpPreference -ExclusionPath $installed.InstanceRoot -ErrorAction Stop
-            $diagLines.Add("DEFENDER EXCLUSION: Aplicada con exito.")
-        } catch {
-            try {
-                $argList = "-NoProfile -ExecutionPolicy Bypass -Command Add-MpPreference -ExclusionPath '$($installed.InstanceRoot)'"
-                $p = Start-Process powershell -Verb RunAs -ArgumentList $argList -WindowStyle Hidden -PassThru -ErrorAction SilentlyContinue
-                if ($p) { $p.WaitForExit(5000) }
-                $diagLines.Add("DEFENDER EXCLUSION: Ejecutado proceso de elevacion.")
-            } catch {
-                $diagLines.Add("DEFENDER EXCLUSION: No se pudo elevar ($($_.Exception.Message))")
-            }
-        }
-        
-        if ((-not (Test-Path $winmmPath)) -or (-not (Test-Path $of64Path)) -or (-not (Test-Path $eossdkPath))) {
-            Write-CocoLog "DETECTADO DLL ONLINEFIX / EOSSDK FALTANTE. Restaurando DLLs..."
-            $diagLines.Add("REPAIR: DLL faltante detectado. Restaurando...")
-            
-            $downloadsDir = Join-Path $CacheRoot 'downloads\standalone-packs'
-            $zips = Get-ChildItem -Path $downloadsDir -Filter '*.zip' -ErrorAction SilentlyContinue
-            Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
-            foreach ($z in $zips) {
-                try {
-                    $zipObj = [System.IO.Compression.ZipFile]::OpenRead($z.FullName)
-                    try {
-                        foreach ($entry in $zipObj.Entries) {
-                            $targetRel = $entry.FullName -replace '/','\'
-                            if ($entry.Name -ieq 'winmm.dll' -or $entry.Name -ieq 'OnlineFix64.dll' -or $entry.Name -ieq 'SteamOverlay64.dll' -or $entry.Name -ieq 'EOSSDK-Win64-Shipping.dll' -or $entry.Name -ieq 'winhttp.dll' -or $entry.Name -ieq 'BigVoice.dll' -or $entry.Name -ieq 'EnhancedControls.dll' -or $entry.Name -ieq 'FlipOff.dll') {
-                                $destFile = Join-Path $installed.InstanceRoot $targetRel
-                                New-Item -ItemType Directory -Path (Split-Path $destFile -Parent) -Force -ErrorAction SilentlyContinue | Out-Null
-                                [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $destFile, $true)
-                                Write-CocoLog "Restaurado archivo '$($entry.Name)' en '$destFile'."
-                                $diagLines.Add("REPAIR: Restaurado $($entry.Name) en $destFile desde $($z.Name)")
-                            }
-                        }
-                    } finally { $zipObj.Dispose() }
-                } catch {}
-            }
-        }
-        
+        foreach($requiredItem in $requiredStatus){$diagLines.Add("REQUIRED FILE: $($requiredItem.path) = $($requiredItem.status)")}
+        $defenderStatus=Ensure-CocoDefenderExclusion $experience $installed.InstanceRoot
+        $diagLines.Add("DEFENDER EXCLUSION: $defenderStatus")
         $steamProc = @(Get-CimInstance Win32_Process -Filter "Name='steam.exe'" -ErrorAction SilentlyContinue)
         $diagLines.Add("Steam running: $(if ($steamProc) { 'True (PID ' + $steamProc[0].ProcessId + ')' } else { 'False' })")
         

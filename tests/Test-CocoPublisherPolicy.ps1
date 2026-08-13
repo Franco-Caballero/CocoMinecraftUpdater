@@ -21,6 +21,14 @@ try{
     if($publisherText-notmatch"releaseStatus-ne'approved'"-or$publisherText-notmatch'Publicacion launcher bloqueada'){
         throw 'El Publisher no impide publicar accidentalmente un catalogo launcher en desarrollo.'
     }
+    if($publisherText-notmatch'Assert-CocoPublicationPreflight\s+\$PublisherPid'-or
+       $publisherText-notmatch'Get-NetTCPConnection -State Listen -LocalPort 25564,25565'-or
+       $publisherText-notmatch'Minecraft/Java PID'-or$publisherText-notmatch'\$name-in\$standaloneNames'){
+        throw 'La publicacion directa no aplica el preflight de procesos Minecraft, LAN y Publisher.'
+    }
+    if($publisherText-notmatch"\$env:COCO_BOOTSTRAP_UPDATE_PENDING='1'"-or$publisherText-notmatch'previousBootstrapPending'){
+        throw 'El Publisher permite que el updater solicite el bootstrap de un release aun oculto.'
+    }
 
     $ErrorActionPreference='Continue'
     $output=& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $publisher -Version $PublishedVersion -MinecraftRoot $testRoot 2>&1|Out-String

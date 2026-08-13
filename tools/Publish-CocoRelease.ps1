@@ -16,6 +16,41 @@ $distDir=Join-Path $root 'dist'
 $KnownE4mcDomains=@($KnownE4mcDomainsCsv-split','|Where-Object{$_})
 Write-Output "Contexto: Repository=$Repository MinecraftRoot=$MinecraftRoot Domains=$($KnownE4mcDomains.Count)"
 
+function Assert-CocoPublicationPreflight([int64]$AllowedPublisherPid=0){
+    $blocked=[Collections.Generic.List[string]]::new()
+    $standaloneNames=@()
+    $preflightCatalogPath=Join-Path $root 'launcher\catalog.template.json'
+    if(Test-Path -LiteralPath $preflightCatalogPath -PathType Leaf){
+        try{
+            $preflightCatalog=Get-Content -LiteralPath $preflightCatalogPath -Raw|ConvertFrom-Json
+            $standaloneNames=@($preflightCatalog.experiences|Where-Object{[string]$_.runtime.type-eq'standalone'}|ForEach-Object{[IO.Path]::GetFileName([string]$_.runtime.executable)}|Where-Object{$_}|Select-Object -Unique)
+        }catch{throw "No se pudo validar el catalogo durante el preflight de publicacion: $($_.Exception.Message)"}
+    }
+    foreach($process in @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue)){
+        $name=[string]$process.Name
+        $command=[string]$process.CommandLine
+        $path=[string]$process.ExecutablePath
+        $pidValue=[int64]$process.ProcessId
+        if($pidValue-eq$PID-or($AllowedPublisherPid-gt0-and$pidValue-eq$AllowedPublisherPid)){continue}
+        if($name-match'(?i)^CocoPublisher(?:\.exe)?$'){$blocked.Add("CocoPublisher PID $pidValue") ;continue}
+        if($name-match'(?i)^CocoUpdater(?:\.exe)?$'-or(($name-match'(?i)^powershell(?:\.exe)?$')-and$command-match'(?i)Coco(?:Updater|Launcher)\.ps1')){
+            $blocked.Add("Coco Launcher/Updater PID $pidValue");continue
+        }
+        if($name-match'(?i)^javaw?\.exe$'-and$command-match'(?i)(net\.minecraft|fabric-loader|forge(?:-|\.)|neoforge|minecraft_server)'){
+            $blocked.Add("Minecraft/Java PID $pidValue");continue
+        }
+        if($name-in$standaloneNames){$blocked.Add("experiencia standalone PID $pidValue ($name)");continue}
+        if($path-and$path-match'(?i)[\\/]CocoMinecraft[\\/]experiences[\\/]'){
+            $blocked.Add("experiencia administrada PID $pidValue ($name)")
+        }
+    }
+    $listeners=@(Get-NetTCPConnection -State Listen -LocalPort 25564,25565 -ErrorAction SilentlyContinue)
+    foreach($listener in $listeners){$blocked.Add("LAN Coco puerto $($listener.LocalPort), PID $($listener.OwningProcess)")}
+    if($blocked.Count){throw "Publicacion bloqueada: cierra Minecraft, Coco Launcher/Updater, LAN y otros Publisher. Detectado: $((@($blocked|Select-Object -Unique))-join'; ')."}
+}
+
+Assert-CocoPublicationPreflight $PublisherPid
+
 $blockedModIdsPath=Join-Path $root 'policy\blocked-mod-ids.txt'
 if(-not(Test-Path -LiteralPath $blockedModIdsPath)){throw 'Falta policy\blocked-mod-ids.txt.'}
 $blockedModIds=@(Get-Content -LiteralPath $blockedModIdsPath|ForEach-Object{$_.Trim()}|Where-Object{$_-and-not$_.StartsWith('#')}|Select-Object -Unique)
@@ -409,7 +444,13 @@ foreach($mod in $hostPackage.mods){
 $engineScript='"'+((Join-Path $root 'engine\CocoUpdater.ps1')-replace'"','\"')+'"'
 $manifestArgument='"'+((Join-Path $releaseDir 'latest.json')-replace'"','\"')+'"'
 $gameArgument='"'+($MinecraftRoot-replace'"','\"')+'"'
-$install=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$engineScript,'-ManifestPath',$manifestArgument,'-GameDir',$gameArgument,'-Silent') -Wait -PassThru
+$previousBootstrapPending=$env:COCO_BOOTSTRAP_UPDATE_PENDING
+$env:COCO_BOOTSTRAP_UPDATE_PENDING='1'
+try{
+    $install=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$engineScript,'-ManifestPath',$manifestArgument,'-GameDir',$gameArgument,'-Silent') -Wait -PassThru
+}finally{
+    if($null-eq$previousBootstrapPending){Remove-Item Env:COCO_BOOTSTRAP_UPDATE_PENDING -ErrorAction SilentlyContinue}else{$env:COCO_BOOTSTRAP_UPDATE_PENDING=$previousBootstrapPending}
+}
 if($install.ExitCode-ne0){throw 'No se pudo actualizar la instalacion host; el release seguira oculto como borrador.'}
 $candidateEngineZip=Join-Path $releaseDir "coco-engine-$Version.zip"
 Install-CocoPublishedEngineCacheLocally (Join-Path $releaseDir 'latest.json') $candidateEngineZip
