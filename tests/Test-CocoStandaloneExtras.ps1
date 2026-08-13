@@ -47,9 +47,30 @@ try{
     if((Get-Content -LiteralPath (Join-Path $instance 'BepInEx\plugins\BigVoice.dll') -Raw)-ne'voice-mod'){throw 'El contenido del mod no coincide.'}
     $state1=Get-Content -LiteralPath (Join-Path $instance '.coco\standalone-state.json') -Raw|ConvertFrom-Json
     if([string]$state1.filesSha-ne$modsSha1){throw "El estado no registro los extras (filesSha=$($state1.filesSha))."}
+    if(@($state1.extraFiles).Count-ne2){throw 'El estado no registro todos los archivos extraidos de los mods.'}
 
     $install2=Install-CocoStandaloneExperience $experience $experiencesRoot $cacheRoot
     if($install2.Updated){throw 'Una instalacion idempotente informo actualizacion.'}
+
+    Remove-Item -LiteralPath (Join-Path $instance 'BepInEx\plugins\BigVoice.dll') -Force
+    $installRepair=Install-CocoStandaloneExperience $experience $experiencesRoot $cacheRoot
+    if(-not$installRepair.Updated){throw 'La instalacion no reparo un mod extraido faltante.'}
+    if(-not(Test-Path -LiteralPath (Join-Path $instance 'BepInEx\plugins\BigVoice.dll') -PathType Leaf)){throw 'El mod faltante no fue restaurado.'}
+
+    $legacyState=[ordered]@{
+        schemaVersion=1
+        experienceId='standalone-extras-test'
+        sha256=$gameSha
+        size=$gameSize
+        version='1.0.0'
+        filesSha=$modsSha1
+        installedAtUtc=[DateTime]::UtcNow.ToString('o')
+    }
+    [IO.File]::WriteAllText((Join-Path $instance '.coco\standalone-state.json'),($legacyState|ConvertTo-Json -Depth 4),(New-Object Text.UTF8Encoding($false)))
+    Remove-Item -LiteralPath (Join-Path $instance 'BepInEx\plugins\EnhancedControls.dll') -Force
+    $legacyRepair=Install-CocoStandaloneExperience $experience $experiencesRoot $cacheRoot
+    if(-not$legacyRepair.Updated){throw 'Un estado legacy sin manifiesto no activo la reparacion de mods.'}
+    if(-not(Test-Path -LiteralPath (Join-Path $instance 'BepInEx\plugins\EnhancedControls.dll') -PathType Leaf)){throw 'El mod faltante de un estado legacy no fue restaurado.'}
 
     [IO.File]::WriteAllText((Join-Path $modsStage 'BepInEx\plugins\BigVoice.dll'),'voice-mod-v2',(New-Object Text.UTF8Encoding($false)))
     $modsZipV2=Join-Path $testRoot 'big-walk-mods-v2.zip'

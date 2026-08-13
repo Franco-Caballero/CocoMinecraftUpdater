@@ -1987,10 +1987,11 @@ function Ensure-CocoSteamRunning(){
 }
 
 function Install-CocoStandaloneExperienceFiles($Experience,[string]$InstanceRoot,[string]$CacheRoot,[object[]]$Files){
-    if(-not$Files-or$Files.Count-eq0){return}
+    if(-not$Files-or$Files.Count-eq0){return @()}
     $filesDir=Join-Path $CacheRoot 'downloads\standalone-files'
     New-Item -ItemType Directory -Path $filesDir -Force|Out-Null
     Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $manifest=[Collections.Generic.List[object]]::new()
     foreach($file in $Files){
         $sha=([string]$file.sha256).ToLowerInvariant()
         $cached=Join-Path $filesDir $sha
@@ -2020,6 +2021,12 @@ function Install-CocoStandaloneExperienceFiles($Experience,[string]$InstanceRoot
                     $target=Join-Path $InstanceRoot ($entryRelative-replace'/','\')
                     New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force|Out-Null
                     [IO.Compression.ZipFileExtensions]::ExtractToFile($entry,$target,$true)
+                    $targetInfo=Get-Item -LiteralPath $target -Force
+                    $manifest.Add([pscustomobject]@{
+                        path=$entryRelative
+                        sha256=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+                        size=[int64]$targetInfo.Length
+                    })
                 }
             }finally{$zip.Dispose()}
             Write-CocoLog "Paquete de archivos adicionales '$relative' aplicado en '$InstanceRoot'."
@@ -2027,7 +2034,34 @@ function Install-CocoStandaloneExperienceFiles($Experience,[string]$InstanceRoot
             $target=Join-Path $InstanceRoot ($relative-replace'/','\')
             New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force|Out-Null
             Copy-Item -LiteralPath $cached -Destination $target -Force
+            $targetInfo=Get-Item -LiteralPath $target -Force
+            $manifest.Add([pscustomobject]@{
+                path=$relative
+                sha256=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+                size=[int64]$targetInfo.Length
+            })
         }
+    }
+    return @($manifest.ToArray())
+}
+
+function Test-CocoStandaloneExtraManifest([string]$InstanceRoot,[object[]]$Manifest){
+    if(-not$Manifest-or$Manifest.Count-eq0){return $false}
+    try{
+        foreach($item in $Manifest){
+            $relative=([string]$item.path)-replace'\\','/'
+            if(-not(Test-CocoSafeRelativePath $relative)){return $false}
+            $target=Join-Path $InstanceRoot ($relative-replace'/','\')
+            if(-not(Test-Path -LiteralPath $target -PathType Leaf)){return $false}
+            $targetInfo=Get-Item -LiteralPath $target -Force
+            if([int64]$targetInfo.Length-ne[int64]$item.size){return $false}
+            $actual=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+            if($actual-ne([string]$item.sha256).ToLowerInvariant()){return $false}
+        }
+        return $true
+    }catch{
+        Write-CocoLog "No se pudo validar el manifiesto de archivos adicionales: $($_.Exception.Message)"
+        return $false
     }
 }
 
@@ -2083,7 +2117,13 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
             Write-CocoLog "No se pudo leer el estado anterior de la instancia standalone: $($_.Exception.Message)"
         }
     }
-    if($existingState-and[string]$existingState.sha256-eq$expectedSha-and(Test-Path -LiteralPath $execPath)-and([string]$existingState.filesSha-eq$expectedExtrasSha)){
+    $extraManifest=@()
+    $extraManifestValid=$expectedExtrasArray.Count-eq0
+    if($expectedExtrasArray.Count-gt0-and$existingState-and$existingState.PSObject.Properties['extraFiles']){
+        $extraManifest=@($existingState.extraFiles)
+        $extraManifestValid=Test-CocoStandaloneExtraManifest $instanceRoot $extraManifest
+    }
+    if($existingState-and[string]$existingState.sha256-eq$expectedSha-and(Test-Path -LiteralPath $execPath)-and([string]$existingState.filesSha-eq$expectedExtrasSha)-and$extraManifestValid){
         return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$false}
     }
     $archivesUpToDate=$false
@@ -2318,8 +2358,8 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
 $metaDir=Join-Path $instanceRoot '.coco'
     New-Item -ItemType Directory -Path $metaDir -Force|Out-Null
     }
-    $extrasChanged=if($existingState-and$existingState.filesSha){[string]$existingState.filesSha-ne$expectedExtrasSha}else{$expectedExtrasSha-ne'none'}
-    if($extrasChanged){Install-CocoStandaloneExperienceFiles $Experience $instanceRoot $CacheRoot $expectedExtrasArray}
+    $extrasChanged=$expectedExtrasArray.Count-gt0-and(-not$extraManifestValid-or-not$existingState-or[string]$existingState.filesSha-ne$expectedExtrasSha)
+    if($extrasChanged){$extraManifest=@(Install-CocoStandaloneExperienceFiles $Experience $instanceRoot $CacheRoot $expectedExtrasArray)}
     $stateObj=[ordered]@{
         schemaVersion=1
         experienceId=[string]$Experience.id
@@ -2327,6 +2367,7 @@ $metaDir=Join-Path $instanceRoot '.coco'
         size=$expectedSize
         version=[string]$Experience.pack.version
         filesSha=$expectedExtrasSha
+        extraFiles=@($extraManifest)
         installedAtUtc=[DateTime]::UtcNow.ToString('o')
     }
     [IO.File]::WriteAllText($statePath,($stateObj|ConvertTo-Json -Depth 4),(New-Object Text.UTF8Encoding($false)))

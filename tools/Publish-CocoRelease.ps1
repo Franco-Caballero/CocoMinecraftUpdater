@@ -277,6 +277,7 @@ if($removedModIds.Count){
 .\tests\Test-CocoLauncherHostLifecycle.ps1
 .\tests\Test-CocoLauncherClientLifecycle.ps1
 .\tests\Test-CocoLauncherInstance.ps1
+.\tests\Test-CocoStandaloneExtras.ps1
 .\tests\Test-CocoLauncherIntegration.ps1
 .\tests\Test-CocoLauncherObservability.ps1
 .\tests\Test-CocoSkinSync.ps1
