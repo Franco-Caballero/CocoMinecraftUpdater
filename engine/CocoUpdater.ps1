@@ -338,19 +338,25 @@ function Set-CocoFittedLabelText(
     [string]$Family,
     [single]$MaximumSize,
     [single]$MinimumSize,
-    [Drawing.FontStyle]$Style=[Drawing.FontStyle]::Regular
+    [Drawing.FontStyle]$Style=[Drawing.FontStyle]::Regular,
+    [bool]$SingleLine=$false
 ){
     if(-not$Label){return}
     $Label.AutoSize=$false
     if($Label.PSObject.Properties.Name-contains'AutoEllipsis'){$Label.AutoEllipsis=$false}
     if($Label.PSObject.Properties.Name-contains'UseCompatibleTextRendering'){$Label.UseCompatibleTextRendering=$true}
     $chosen=$MinimumSize
+    $flags=if($SingleLine){[Windows.Forms.TextFormatFlags]::SingleLine-bor[Windows.Forms.TextFormatFlags]::NoPadding}else{[Windows.Forms.TextFormatFlags]::WordBreak-bor[Windows.Forms.TextFormatFlags]::NoPadding}
     for($size=$MaximumSize;$size-ge$MinimumSize;$size-=0.5){
         $candidate=New-Object Drawing.Font($Family,[single]$size,$Style)
         try{
-            $flags=[Windows.Forms.TextFormatFlags]::WordBreak-bor[Windows.Forms.TextFormatFlags]::NoPadding
-            $measured=[Windows.Forms.TextRenderer]::MeasureText($Text,$candidate,(New-Object Drawing.Size($Label.ClientSize.Width,4096)),$flags)
-            if($measured.Height-le$Label.ClientSize.Height){$chosen=$size;break}
+            $targetSize=if($SingleLine){[Drawing.Size]::new(4096,4096)}else{[Drawing.Size]::new($Label.ClientSize.Width,4096)}
+            $measured=[Windows.Forms.TextRenderer]::MeasureText($Text,$candidate,$targetSize,$flags)
+            if($SingleLine){
+                if($measured.Width-le$Label.ClientSize.Width-and$measured.Height-le$Label.ClientSize.Height){$chosen=$size;break}
+            }else{
+                if($measured.Height-le$Label.ClientSize.Height){$chosen=$size;break}
+            }
         }finally{$candidate.Dispose()}
     }
     $old=$Label.Font
@@ -387,7 +393,7 @@ function Set-CocoState([string]$Message, [string]$Detail, [int]$Progress, [bool]
         }
         $uiProgress=$Progress
         if($global:CocoSharedUi){$uiProgress=[Math]::Min(100,[int]($global:CocoSharedUi.BaseProgress+(100-$global:CocoSharedUi.BaseProgress)*$Progress/100))}
-        Set-CocoFittedLabelText $script:CocoTitle $Message 'Segoe UI Semibold' 22 11 ([Drawing.FontStyle]::Bold)
+        Set-CocoFittedLabelText $script:CocoTitle $Message 'Segoe UI Semibold' 22 11 ([Drawing.FontStyle]::Bold) $true
         Set-CocoFittedLabelText $script:CocoDetail $Detail 'Segoe UI' 12 8 ([Drawing.FontStyle]::Regular)
         $trackWidth=if($script:CocoTrack){$script:CocoTrack.ClientSize.Width}else{570}
         $script:CocoProgress.Width=[Math]::Max(4,[int]($trackWidth*$uiProgress/100))
