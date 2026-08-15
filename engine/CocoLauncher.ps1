@@ -4231,7 +4231,6 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     Show-CocoWindow
     $script:CocoForm.Text='Coco Launcher';$script:CocoBrand.Text='COCO LAUNCHER  |  UNA PARTIDA ACTIVA'
     try {
-        if ('CocoNativeWindow' -as [type]) { [CocoNativeWindow]::EnableMinimize($script:CocoForm.Handle) }
         $script:CocoForm.Add_Activated({
             try {
                 if ($script:CocoForm.WindowState -eq [Windows.Forms.FormWindowState]::Minimized) {
