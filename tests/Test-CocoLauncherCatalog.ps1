@@ -233,6 +233,10 @@ if($peakRequired.Count-ne$expectedPeakRequired.Count-or@($expectedPeakRequired|W
 if([string]$peak.runtimePolicies.defenderExclusion-ne'required'-or[string]$peak.runtimePolicies.onlineFixAppId-ne'3527290'){
     throw 'PEAK no declara sus politicas standalone de Defender y OnlineFix.'
 }
+$peakMods=@($peak.files|Where-Object path -eq 'BepInEx/mods/peak-bepinex-mods.zip'|Select-Object -First 1)[0]
+if(-not$peakMods-or[int64]$peakMods.size-ne671806-or[string]$peakMods.sha256-ne'e7a02a0d4a8da268778d552fda5379bd632ef1ab78fd7d55c66cce5a4d95cd2f'-or[string]$peakMods.role-ne'all'){
+    throw 'PEAK no fija su paquete de mods BepInEx (Backpack Viewer + SmoreSkinColors + PassportPagination) con rol all.'
+}
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){
     throw 'La skin global de smolbird no esta fijada por hash.'
