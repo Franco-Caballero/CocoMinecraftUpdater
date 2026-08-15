@@ -2540,13 +2540,24 @@ $metaDir=Join-Path $instanceRoot '.coco'
 function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
     if([string]::IsNullOrWhiteSpace($InstanceRoot)-or-not(Test-Path -LiteralPath $InstanceRoot -PathType Container)){return}
     try{
-        # 1. Eliminar cualquier acceso directo OnlineFix.url
+        # 1. Eliminar cualquier acceso directo OnlineFix.url y mods BepInEx obsoletos
         Get-ChildItem -Path $InstanceRoot -Recurse -Filter 'OnlineFix.url' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
         
-        # 2. Si OnlineFix.ini no existe en la raiz, crearlo completo
-        $rootIni = Join-Path $InstanceRoot 'OnlineFix.ini'
         $expId = if($Experience){[string]$Experience.id}else{''}
         $appId = if($Experience-and$Experience.runtimePolicies){[string]$Experience.runtimePolicies.onlineFixAppId}else{''}
+        $hasFiles = if($Experience-and$Experience.files){$Experience.files.Count -gt 0}else{$false}
+        
+        if($expId -eq 'peak' -and -not $hasFiles){
+            $bepDir = Join-Path $InstanceRoot 'BepInEx'
+            if(Test-Path -LiteralPath $bepDir){
+                Remove-Item -LiteralPath $bepDir -Recurse -Force -ErrorAction SilentlyContinue
+                Write-CocoLog "Carpeta BepInEx obsoleta eliminada de '$InstanceRoot' para asegurar modo vanilla."
+            }
+            $doorstopCfg = Join-Path $InstanceRoot 'doorstop_config.ini'
+            if(Test-Path -LiteralPath $doorstopCfg){
+                Remove-Item -LiteralPath $doorstopCfg -Force -ErrorAction SilentlyContinue
+            }
+        }
         
         $hash0 = ''
         $hash1337 = ''
