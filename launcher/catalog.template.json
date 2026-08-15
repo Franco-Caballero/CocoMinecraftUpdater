@@ -609,6 +609,71 @@
                     "license": "All Rights Reserved"
                 }
             ]
+        },
+        {
+            "id": "shift-at-midnight",
+            "name": "Shift at Midnight",
+            "description": "Juego cooperativo de terror en el turno nocturno de una tienda. Sobrevivan el turno juntos.",
+            "instanceId": "shift-at-midnight",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "ShiftAtMidnight.exe",
+                "requiredFiles": [
+                    {
+                        "path": "ShiftAtMidnight.exe",
+                        "sha256": "037fcf50fe2b6468cc23297058610f189e13459e68121ec4b7c5bb7b44f3bb37",
+                        "size": 672256,
+                        "archiveSha256": "92f88cd2ba472591b4029802271c3195e373f220566ff75f4516fdfa43b41669"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "27a1c596c4b1de1e6672cb7e7fba2ba3d3124999493ff82a504beb6f6145e88f",
+                        "size": 13820928,
+                        "archiveSha256": "92f88cd2ba472591b4029802271c3195e373f220566ff75f4516fdfa43b41669"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+                        "size": 502272,
+                        "archiveSha256": "92f88cd2ba472591b4029802271c3195e373f220566ff75f4516fdfa43b41669"
+                    },
+                    {
+                        "path": "ShiftAtMidnight_Data/Plugins/x86_64/steam_api64.dll",
+                        "sha256": "670d654aa3255c5061cf0236a1cdbb2f5076cbd5ae44f613b6f4921558e83e2d",
+                        "size": 319584,
+                        "archiveSha256": "92f88cd2ba472591b4029802271c3195e373f220566ff75f4516fdfa43b41669"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "3722330"
+            },
+            "pack": {
+                "packId": "standalone-shift-at-midnight",
+                "lockPath": "launcher/experiences/shift-at-midnight.lock.json",
+                "version": "1.0.3",
+                "sha256": "92f88cd2ba472591b4029802271c3195e373f220566ff75f4516fdfa43b41669",
+                "size": 417406156,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.107/Shift-At-Midnight.zip",
+                        "sha256": "92f88cd2ba472591b4029802271c3195e373f220566ff75f4516fdfa43b41669",
+                        "size": 417406156
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Shift at Midnight"
+            },
+            "files": []
         }
     ]
 }

@@ -138,13 +138,27 @@ function Write-CocoEngineDiagnostic([Management.Automation.ErrorRecord]$Record){
         }catch{$recentLauncherLogs="Unavailable: $($_.Exception.Message)"}
         $sessionServiceLog=Get-CocoDiagnosticTail (Join-Path $script:CocoLogDirectory 'launcher-session-service.log') 250
         $locationStoreLog=Get-CocoDiagnosticTail (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\instance-locations.json') 120
-        $standaloneDiagnosticsLog='';$bepInExLog='';$bepInExErrorLog='';$instanceStateLog=''
+        $standaloneDiagnosticsLog='';$bepInExLog='';$bepInExErrorLog='';$instanceStateLog='';$unityPlayerLog=''
         if($selectedRoot-ne'Unknown'){
             $standaloneDiagnosticsLog=Get-CocoDiagnosticTail (Join-Path $selectedRoot 'logs\standalone-diagnostics.log') 300
             $bepInExLog=Get-CocoDiagnosticTail (Join-Path $selectedRoot 'BepInEx\LogOutput.log') 300
             $bepInExErrorLog=Get-CocoDiagnosticTail (Join-Path $selectedRoot 'BepInEx\ErrorLog.log') 300
             $instanceStateLog=Get-CocoDiagnosticTail (Join-Path $selectedRoot '.coco\standalone-state.json') 120
             if([string]::IsNullOrWhiteSpace($standaloneDiagnosticsLog)){$standaloneDiagnosticsLog=Get-CocoDiagnosticTail (Join-Path $selectedRoot 'logs\latest.log') 300}
+            $appInfoFiles=@(Get-ChildItem -LiteralPath $selectedRoot -Filter 'app.info' -Recurse -File -ErrorAction SilentlyContinue)
+            foreach($appInfo in $appInfoFiles){
+                try{
+                    $lines=@(Get-Content -LiteralPath $appInfo.FullName|ForEach-Object{$_.Trim()}|Where-Object{$_})
+                    if($lines.Count-ge2){
+                        $company=$lines[0];$product=$lines[1]
+                        $candidatePlayerLog=Join-Path ([Environment]::GetFolderPath('UserProfile')) "AppData\LocalLow\$company\$product\Player.log"
+                        if(Test-Path -LiteralPath $candidatePlayerLog -PathType Leaf){
+                            $unityPlayerLog=Get-CocoDiagnosticTail $candidatePlayerLog 350
+                            break
+                        }
+                    }
+                }catch{}
+            }
         }
         $cacheSummary=try{
             $cacheRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater'
@@ -221,6 +235,9 @@ $bepInExErrorLog
 
 --- .coco/standalone-state.json ---
 $instanceStateLog
+
+--- Unity Player.log ---
+$unityPlayerLog
 
 ULTIMO latest.log DE LA INSTANCIA
 ---------------------------------

@@ -1494,7 +1494,7 @@ function Read-CocoLauncherCatalog([string]$Path){
         }
         if($experience.managementMode-eq'managed'){
             if([string]$experience.launch.workflow-eq'coco-standalone'){
-                $archives = if($experience.pack.archives){@($experience.pack.archives)}else{@($experience.pack)}
+                $archives = @(if($experience.pack.archives){$experience.pack.archives}else{$experience.pack})
                 if($archives.Count-le0){throw "Standalone pack vacio para '$id'."}
                 foreach($item in $archives){
                     if([string]$item.sha256-notmatch'^[a-fA-F0-9]{64}$'){throw "pack.sha256 invalido para '$id'."}
@@ -1955,7 +1955,7 @@ function Set-CocoGlobalSkinAssets($GlobalPolicies,$Experience,[string]$InstanceR
     }
 }
 
-function Ensure-CocoSteamRunning(){
+function Ensure-CocoSteamRunning([switch]$Quiet){
     Write-CocoLog "Verificando ejecucion de Steam..."
     $running=@(Get-CimInstance Win32_Process -Filter "Name='steam.exe'" -ErrorAction SilentlyContinue)
     if($running.Count-gt0){
@@ -1963,20 +1963,33 @@ function Ensure-CocoSteamRunning(){
         return $true
     }
 
-    Set-CocoLauncherStep 4 'VERIFICANDO STEAM' 'Buscando Steam para habilitar la red multijugador P2P en segundo plano...' 31
+    if(-not$Quiet){
+        Set-CocoLauncherStep 4 'VERIFICANDO STEAM' 'Buscando Steam para habilitar la red multijugador P2P en segundo plano...' 31
+    }
     $steamExe=''
 
-    # 1. Registry HKCU
+    # 1. HKCR URI handler
     try{
-        $regVal=Get-ItemProperty -Path 'HKCU:\Software\Valve\Steam' -ErrorAction SilentlyContinue
-        if($regVal-and$regVal.SteamExe-and(Test-Path -LiteralPath $regVal.SteamExe -PathType Leaf)){
-            $steamExe=[string]$regVal.SteamExe
-        }elseif($regVal-and$regVal.SteamPath-and(Test-Path -LiteralPath (Join-Path $regVal.SteamPath 'steam.exe') -PathType Leaf)){
-            $steamExe=Join-Path $regVal.SteamPath 'steam.exe'
+        $cmd=(Get-ItemProperty -Path 'Registry::HKEY_CLASSES_ROOT\steam\Shell\Open\Command' -ErrorAction Stop).'(default)'
+        if($cmd -match '^"([^"]+)"'){
+            $cand=$matches[1]
+            if(Test-Path -LiteralPath $cand -PathType Leaf){$steamExe=$cand}
         }
     }catch{}
 
-    # 2. Registry HKLM WOW6432Node & 64-bit
+    # 2. Registry HKCU
+    if([string]::IsNullOrWhiteSpace($steamExe)){
+        try{
+            $regVal=Get-ItemProperty -Path 'HKCU:\Software\Valve\Steam' -ErrorAction SilentlyContinue
+            if($regVal-and$regVal.SteamExe-and(Test-Path -LiteralPath $regVal.SteamExe -PathType Leaf)){
+                $steamExe=[string]$regVal.SteamExe
+            }elseif($regVal-and$regVal.SteamPath-and(Test-Path -LiteralPath (Join-Path $regVal.SteamPath 'steam.exe') -PathType Leaf)){
+                $steamExe=Join-Path $regVal.SteamPath 'steam.exe'
+            }
+        }catch{}
+    }
+
+    # 3. Registry HKLM WOW6432Node & 64-bit
     if([string]::IsNullOrWhiteSpace($steamExe)){
         foreach($regKey in 'HKLM:\SOFTWARE\WOW6432Node\Valve\Steam','HKLM:\SOFTWARE\Valve\Steam'){
             try{
@@ -1989,7 +2002,7 @@ function Ensure-CocoSteamRunning(){
         }
     }
 
-    # 3. Known disk locations across all available fixed drives
+    # 4. Known disk locations across all available fixed drives
     if([string]::IsNullOrWhiteSpace($steamExe)){
         $candidateSubPaths=@(
             'Program Files (x86)\Steam\steam.exe',
@@ -2016,7 +2029,9 @@ function Ensure-CocoSteamRunning(){
     }
 
     Write-CocoLog "Iniciando Steam minimizado a la bandeja desde '$steamExe'..."
-    Set-CocoLauncherStep 4 'INICIANDO STEAM' 'Steam se iniciara minimizado en la bandeja del sistema (0 friccion)...' 33
+    if(-not$Quiet){
+        Set-CocoLauncherStep 4 'INICIANDO STEAM' 'Steam se iniciara minimizado en la bandeja del sistema (0 friccion)...' 33
+    }
 
     try{
         Start-Process -FilePath $steamExe -ArgumentList '-silent' -ErrorAction Stop
@@ -2027,6 +2042,7 @@ function Ensure-CocoSteamRunning(){
     $started=$false
     for($i=0; $i-lt30; $i++){
         Start-Sleep -Milliseconds 500
+        if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
         $running=@(Get-CimInstance Win32_Process -Filter "Name='steam.exe'" -ErrorAction SilentlyContinue)
         if($running.Count-gt0){
             $started=$true
@@ -2037,7 +2053,11 @@ function Ensure-CocoSteamRunning(){
     if(-not$started){
         Write-CocoLog "Steam fue iniciado pero tardo mas de 15s en registrar su proceso."
     }else{
-        Write-CocoLog "Steam iniciado con exito minimizado en la bandeja."
+        Write-CocoLog "Steam iniciado con exito minimizado en la bandeja. Esperando estabilizacion de IPC..."
+        for($j=0; $j-lt5; $j++){
+            Start-Sleep -Milliseconds 500
+            if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+        }
     }
     return $true
 }
@@ -2218,7 +2238,8 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         }
     }
     $statePath=Join-Path $instanceRoot '.coco\standalone-state.json'
-    $archiveItems = if($Experience.pack.archives){@($Experience.pack.archives)}else{@($Experience.pack)}
+    try { [void](Ensure-CocoSteamRunning -Quiet) } catch {}
+    $archiveItems = @(if($Experience.pack.archives){$Experience.pack.archives}else{$Experience.pack})
     $expectedSha = [string]$Experience.pack.sha256
     if(-not$expectedSha -and $archiveItems.Count-gt0){
         $expectedSha = [string]$archiveItems[0].sha256
@@ -2573,7 +2594,7 @@ function Repair-CocoStandaloneRequiredFiles($Experience,[string]$InstanceRoot,[s
     if(-not$invalid.Count){return @($required|ForEach-Object{[pscustomobject]@{path=[string]$_.path;status='ok'}})}
 
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $archives=if($Experience.pack.archives){@($Experience.pack.archives)}else{@($Experience.pack)}
+    $archives=@(if($Experience.pack.archives){$Experience.pack.archives}else{$Experience.pack})
     foreach($group in @($invalid|Group-Object{([string]$_.archiveSha256).ToLowerInvariant()})){
         $archiveItem=@($archives|Where-Object{([string]$_.sha256).ToLowerInvariant()-eq[string]$group.Name})
         if($archiveItem.Count-ne1){throw "No existe un paquete unico para reparar '$($group.Name)'."}

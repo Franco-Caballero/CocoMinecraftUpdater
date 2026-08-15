@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne7-or
+if($managedExperiences.Count-ne8-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -202,6 +202,20 @@ if($bigWalkMods.Count-ne1-or$bigWalkMods[0].role-ne'all'-or
     $bigWalkMods[0].sha256-notmatch'^[a-fA-F0-9]{64}$'-or
     ([string]$bigWalkMods[0].policy-ne'replace')){
     throw 'Big Walk no declara su paquete de mods BepInEx como asset first-party para ambos roles.'
+}
+$shiftAtMidnight=@($catalog.experiences|Where-Object id -eq 'shift-at-midnight'|Select-Object -First 1)[0]
+if(-not$shiftAtMidnight-or$shiftAtMidnight.runtime.type-ne'standalone'-or$shiftAtMidnight.runtime.executable-ne'ShiftAtMidnight.exe'){throw 'Shift at Midnight no esta fijado como experiencia standalone.'}
+$shiftArchive=@($shiftAtMidnight.pack.archives|Where-Object archiveUrl -match 'Shift-At-Midnight\.zip'|Select-Object -First 1)[0]
+if(-not$shiftArchive-or[int64]$shiftArchive.size-ne417406156-or[string]$shiftArchive.sha256-ne'92f88cd2ba472591b4029802271c3195e373f220566ff75f4516fdfa43b41669'){throw 'Shift at Midnight no coincide con el asset oficial de GitHub.'}
+if([int64]$shiftAtMidnight.pack.size-ne417406156){throw 'Shift at Midnight no conserva el tamano total de su paquete.'}
+$shiftRequired=@($shiftAtMidnight.runtime.requiredFiles)
+$expectedShiftRequired=@('ShiftAtMidnight.exe','OnlineFix64.dll','winmm.dll','ShiftAtMidnight_Data/Plugins/x86_64/steam_api64.dll')
+if($shiftRequired.Count-ne$expectedShiftRequired.Count-or@($expectedShiftRequired|Where-Object{$_-notin@($shiftRequired.path)}).Count-or
+   @($shiftRequired|Where-Object{[string]$_.sha256-notmatch'^[a-f0-9]{64}$'-or[int64]$_.size-le0-or[string]$_.archiveSha256-notin@($shiftAtMidnight.pack.archives.sha256)}).Count){
+    throw 'Shift at Midnight no fija todos sus archivos base reparables por ruta, hash, tamano y archive exacto.'
+}
+if([string]$shiftAtMidnight.runtimePolicies.defenderExclusion-ne'required'-or[string]$shiftAtMidnight.runtimePolicies.onlineFixAppId-ne'3722330'){
+    throw 'Shift at Midnight no declara sus politicas standalone de Defender y OnlineFix.'
 }
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){
