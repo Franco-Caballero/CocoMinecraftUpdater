@@ -2271,6 +2271,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         $extraStateCurrent=$extraManifestValid-and[string]$existingState.filesSha-eq$expectedExtrasSha-and[string]$existingState.role-eq$Role
     }
     if($existingState-and[string]$existingState.sha256-eq$expectedSha-and(Test-Path -LiteralPath $execPath)-and$extraStateCurrent){
+        Ensure-CocoOnlineFixSuppression $instanceRoot $Experience
         return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$false}
     }
     $archivesUpToDate=$false
