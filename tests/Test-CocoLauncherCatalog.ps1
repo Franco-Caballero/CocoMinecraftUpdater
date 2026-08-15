@@ -233,9 +233,8 @@ if($peakRequired.Count-ne$expectedPeakRequired.Count-or@($expectedPeakRequired|W
 if([string]$peak.runtimePolicies.defenderExclusion-ne'required'-or[string]$peak.runtimePolicies.onlineFixAppId-ne'3527290'){
     throw 'PEAK no declara sus politicas standalone de Defender y OnlineFix.'
 }
-$peakMods=@($peak.files|Where-Object path -eq 'BepInEx/mods/peak-mods.zip'|Select-Object -First 1)[0]
-if(-not$peakMods-or[int64]$peakMods.size-ne2519543-or[string]$peakMods.sha256-ne'9e623ecd27253e9d190576f859ced89fad4a359af68b2d85154521828a7c1a84'-or[string]$peakMods.role-ne'all'){
-    throw 'PEAK no fija su paquete de mods BepInEx (SmoreSkinColors + SmoreHats + PassportPagination + CampfireRespawn + OutfitUnlocker) con rol all.'
+if($peak.files.Count-ne0){
+    throw 'PEAK debe operar sin mods BepInEx desactualizados para evitar que la transicion al avion quede congelada.'
 }
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){

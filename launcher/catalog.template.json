@@ -748,17 +748,7 @@
                 "autoJoin": true,
                 "serverName": "Coco - PEAK"
             },
-            "files": [
-                {
-                    "path": "BepInEx/mods/peak-mods.zip",
-                    "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.108/peak-mods.zip",
-                    "sha256": "9e623ecd27253e9d190576f859ced89fad4a359af68b2d85154521828a7c1a84",
-                    "size": 2519543,
-                    "policy": "replace",
-                    "role": "all",
-                    "license": "All Rights Reserved"
-                }
-            ]
+            "files": []
         }
     ]
 }
