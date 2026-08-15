@@ -29,32 +29,44 @@ function Test-Java17Home {
     return $version -match 'version "17[.]'
 }
 
-$javaHomes = New-Object System.Collections.Generic.List[string]
-if ($env:JAVA_HOME) { $javaHomes.Add([string]$env:JAVA_HOME) }
-$gradleJdks = Join-Path $env:USERPROFILE '.gradle\jdks'
-if (Test-Path -LiteralPath $gradleJdks -PathType Container) {
-    foreach ($candidate in @(Get-ChildItem -LiteralPath $gradleJdks -Directory -Recurse -ErrorAction SilentlyContinue | Where-Object Name -match '^jdk-17')) {
-        $javaHomes.Add($candidate.FullName)
-    }
-}
-$java17Home = @($javaHomes | Select-Object -Unique | Where-Object { Test-Java17Home $_ } | Select-Object -First 1)
-if (-not $java17Home) {
-    throw 'No se encontro Java 17 para compilar forge-mod. Instala Java 17 o deja un JDK 17 en JAVA_HOME/.gradle/jdks.'
-}
-$env:JAVA_HOME = [string]$java17Home
-
-Push-Location $modRoot
-try {
-    & (Join-Path $modRoot 'gradlew.bat') build --no-daemon
-    if ($LASTEXITCODE) { throw "Gradle forge-mod termino con codigo $LASTEXITCODE." }
-}
-finally {
-    Pop-Location
-}
-
 $lock = Get-Content -LiteralPath $lockPath -Raw | ConvertFrom-Json
 $asset = @($lock.assets | Where-Object path -eq 'mods/coco-valorant-tools-0.1.0.jar') | Select-Object -First 1
 if (-not $asset) { throw 'El lock no declara el JAR de Coco VALORANT Tools.' }
+$existingJarPath = Join-Path $modRoot 'build\libs\coco-valorant-tools-0.1.0.jar'
+$needsBuild = $true
+if (Test-Path -LiteralPath $existingJarPath -PathType Leaf) {
+    $existingHash = (Get-FileHash -LiteralPath $existingJarPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $existingSize = (Get-Item -LiteralPath $existingJarPath).Length
+    if ($existingSize -eq [int64]$asset.size -and $existingHash -eq ([string]$asset.sha256).ToLowerInvariant()) {
+        $needsBuild = $false
+    }
+}
+
+if ($needsBuild) {
+    $javaHomes = New-Object System.Collections.Generic.List[string]
+    if ($env:JAVA_HOME) { $javaHomes.Add([string]$env:JAVA_HOME) }
+    $gradleJdks = Join-Path $env:USERPROFILE '.gradle\jdks'
+    if (Test-Path -LiteralPath $gradleJdks -PathType Container) {
+        foreach ($candidate in @(Get-ChildItem -LiteralPath $gradleJdks -Directory -Recurse -ErrorAction SilentlyContinue | Where-Object Name -match '^jdk-17')) {
+            $javaHomes.Add($candidate.FullName)
+        }
+    }
+    $java17Home = @($javaHomes | Select-Object -Unique | Where-Object { Test-Java17Home $_ } | Select-Object -First 1)
+    if (-not $java17Home) {
+        throw 'No se encontro Java 17 para compilar forge-mod. Instala Java 17 o deja un JDK 17 en JAVA_HOME/.gradle/jdks.'
+    }
+    $env:JAVA_HOME = [string]$java17Home
+
+    Push-Location $modRoot
+    try {
+        & (Join-Path $modRoot 'gradlew.bat') build --no-daemon
+        if ($LASTEXITCODE) { throw "Gradle forge-mod termino con codigo $LASTEXITCODE." }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 $jar = Get-Item -LiteralPath (Join-Path $modRoot 'build\libs\coco-valorant-tools-0.1.0.jar') -ErrorAction Stop
 $hash = (Get-FileHash -LiteralPath $jar.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($jar.Length -ne [int64]$asset.size -or $hash -ne ([string]$asset.sha256).ToLowerInvariant()) {
