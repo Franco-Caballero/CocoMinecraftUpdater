@@ -233,8 +233,9 @@ if($peakRequired.Count-ne$expectedPeakRequired.Count-or@($expectedPeakRequired|W
 if([string]$peak.runtimePolicies.defenderExclusion-ne'required'-or[string]$peak.runtimePolicies.onlineFixAppId-ne'3527290'){
     throw 'PEAK no declara sus politicas standalone de Defender y OnlineFix.'
 }
-if($peak.files.Count-ne0){
-    throw 'PEAK debe operar sin mods BepInEx desactualizados para evitar que la transicion al avion quede congelada.'
+$peakMods=@($peak.files|Where-Object path -eq 'BepInEx/mods/peak-unlimited-mods.zip'|Select-Object -First 1)[0]
+if(-not$peakMods-or[int64]$peakMods.size-ne665645-or[string]$peakMods.sha256-ne'c41e4a11c364ea3b5c5d431f96bd60148c83ad669e3bc0cf8a000451caf4ee57'-or[string]$peakMods.role-ne'all'){
+    throw 'PEAK no fija su paquete de mods BepInEx (PEAK Unlimited v4.0.1) con rol all.'
 }
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){
