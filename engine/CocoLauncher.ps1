@@ -2697,7 +2697,7 @@ function Repair-CocoStandaloneRequiredFiles($Experience,[string]$InstanceRoot,[s
 }
 
 function Ensure-CocoDefenderExclusion($Experience,[string]$InstanceRoot){
-    if([string]$Experience.runtimePolicies.defenderExclusion-ne'required'){return 'not-required'}
+    if([string]$Experience.runtimePolicies.defenderExclusion-notin@('required','optional')){return 'not-required'}
     $full=[IO.Path]::GetFullPath($InstanceRoot).TrimEnd('\')
     $getPreference=Get-Command Get-MpPreference -ErrorAction SilentlyContinue
     $addPreference=Get-Command Add-MpPreference -ErrorAction SilentlyContinue
@@ -2707,14 +2707,21 @@ function Ensure-CocoDefenderExclusion($Experience,[string]$InstanceRoot){
     }
     if(& $isPresent){return 'present'}
     try{Add-MpPreference -ExclusionPath $full -ErrorAction Stop}catch{
-        $escaped=$full.Replace("'","''")
-        $command="Add-MpPreference -ExclusionPath '$escaped' -ErrorAction Stop"
-        $elevated=Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',$command) -WindowStyle Hidden -Wait -PassThru -ErrorAction Stop
-        if($elevated.ExitCode-ne0){throw "El proceso elevado devolvio codigo $($elevated.ExitCode)."}
+        try{
+            $escaped=$full.Replace("'","''")
+            $command="Add-MpPreference -ExclusionPath '$escaped' -ErrorAction Stop"
+            $elevated=Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',$command) -WindowStyle Hidden -Wait -PassThru -ErrorAction Stop
+            if($elevated.ExitCode-ne0){Write-CocoLog "El proceso de exclusion devolvio codigo $($elevated.ExitCode)."}
+        }catch{
+            Write-CocoLog "No se pudo elevar para agregar exclusion de Defender o el usuario cancelo la operacion: $($_.Exception.Message)"
+        }
     }
-    if(-not(& $isPresent)){throw "Windows Defender no confirmo la exclusion requerida para '$full'."}
-    Write-CocoLog "Exclusion de Windows Defender confirmada para '$full'."
-    return 'present'
+    if(& $isPresent){
+        Write-CocoLog "Exclusion de Windows Defender confirmada para '$full'."
+        return 'present'
+    }
+    Write-CocoLog "Exclusion de Defender no activa para '$full'; continuando lanzamiento..."
+    return 'skipped'
 }
 
 function Install-CocoManagedExperience(
