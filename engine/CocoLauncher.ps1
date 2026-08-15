@@ -3917,12 +3917,12 @@ function Set-CocoLauncherUiLayout {
         if($art){$art.Location=New-Object Drawing.Point((&$metric 675),(&$metric 5));$art.Size=New-Object Drawing.Size((&$metric 380),(&$metric 810))}
         foreach($control in @($panel.Controls)){
             if($control.Tag-eq'CocoLauncherDynamic'){
-                $control.Location=New-Object Drawing.Point((&$metric 46),(&$metric 184));$control.Size=New-Object Drawing.Size((&$metric 570),(&$metric 360))
+                $control.Location=New-Object Drawing.Point((&$metric 46),(&$metric 184));$control.Size=New-Object Drawing.Size((&$metric 570),(&$metric 480))
             }
         }
-        if($script:CocoSkinTile){$script:CocoSkinTile.Location=New-Object Drawing.Point((&$metric 46),(&$metric 570))}
+        if($script:CocoSkinTile){$script:CocoSkinTile.Location=New-Object Drawing.Point((&$metric 46),(&$metric 680))}
     }finally{$panel.ResumeLayout();$form.ResumeLayout();$form.Refresh();[Windows.Forms.Application]::DoEvents()}
-    $script:CocoLauncherLayout=[pscustomobject]@{Scale=$scale;PanelHeight=790;DynamicTop=184;DynamicHeight=360;IdentityTop=570;FooterTop=720}
+    $script:CocoLauncherLayout=[pscustomobject]@{Scale=$scale;PanelHeight=790;DynamicTop=184;DynamicHeight=480;IdentityTop=680;FooterTop=720}
 }
 
 function Set-CocoSkinTilePreview($Picture,$Label,[string]$SkinRoot,[string]$Username,[bool]$Pending=$false){
@@ -4239,10 +4239,10 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             }
         }
     }finally{$script:MinecraftPid=$oldMinecraftPid}
-    $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 184));$dynamic.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 570),(Get-CocoLauncherUiMetric 360));$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic)
+    $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 184));$dynamic.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 570),(Get-CocoLauncherUiMetric 480));$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic)
     $identityResolution=try{Resolve-CocoLauncherIdentity $paths.IdentityPath $LegacyMinecraftRoot}catch{$null}
     $savedIdentity=if($identityResolution-and$identityResolution.Status-eq'configured'){$identityResolution.Identity}else{try{Read-CocoLauncherIdentityState $paths.IdentityPath}catch{$null}}
-    $identityCard=New-Object Windows.Forms.Panel;$identityCard.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 570));$identityCard.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 315),(Get-CocoLauncherUiMetric 80))
+    $identityCard=New-Object Windows.Forms.Panel;$identityCard.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 680));$identityCard.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 315),(Get-CocoLauncherUiMetric 80))
     $identityCard.BackColor=[Drawing.Color]::FromArgb(58,36,81);$identityCard.AllowDrop=$true
     $skinPicture=New-Object Windows.Forms.PictureBox;$skinPicture.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 6),(Get-CocoLauncherUiMetric 6));$skinPicture.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 64),(Get-CocoLauncherUiMetric 64))
     $skinPicture.SizeMode='Zoom';$skinPicture.BackColor=[Drawing.Color]::FromArgb(36,22,57);$skinPicture.Cursor=[Windows.Forms.Cursors]::Hand;$skinPicture.AllowDrop=$true

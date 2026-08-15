@@ -43,17 +43,17 @@ $panel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 570),(Get-CocoLaun
 
 try{
     $layout=$script:CocoLauncherLayout
-    if(-not$layout-or$layout.PanelHeight-ne790-or$layout.DynamicTop-ne184-or$layout.DynamicHeight-ne360-or$layout.IdentityTop-ne570-or$layout.FooterTop-ne720){throw 'FAIL: el layout base no conserva las zonas verticales nuevas.'}
+    if(-not$layout-or$layout.PanelHeight-ne790-or$layout.DynamicTop-ne184-or$layout.DynamicHeight-ne480-or$layout.IdentityTop-ne680-or$layout.FooterTop-ne720){throw 'FAIL: el layout base no conserva las zonas verticales nuevas.'}
     $stateBottom=Get-CocoLauncherUiMetric 171
     $dynamicTop=Get-CocoLauncherUiMetric 184
-    $dynamicBottom=$dynamicTop+(Get-CocoLauncherUiMetric 360)
-    $identityTop=Get-CocoLauncherUiMetric 570
+    $dynamicBottom=$dynamicTop+(Get-CocoLauncherUiMetric 480)
+    $identityTop=Get-CocoLauncherUiMetric 680
     $identityBottom=$identityTop+(Get-CocoLauncherUiMetric 80)
     $footerTop=Get-CocoLauncherUiMetric 720
     $footerBottom=$footerTop+(Get-CocoLauncherUiMetric 40)
     $panelHeight=Get-CocoLauncherUiMetric 790
-    if($stateBottom-ge$dynamicTop-or$dynamicBottom-ge$identityTop-or$identityBottom-ge$footerTop-or$footerBottom-gt$panelHeight){throw 'FAIL: el layout base deja regiones superpuestas o fuera del panel.'}
-    if($baseDynamic.Location.Y-ne$dynamicTop-or$baseDynamic.Height-ne(Get-CocoLauncherUiMetric 360)){throw 'FAIL: la zona dinamica no se recoloca con el layout base.'}
+    if($stateBottom-ge$dynamicTop-or$dynamicBottom-ge$identityTop-or$identityBottom-gt$panelHeight-or$footerBottom-gt$panelHeight){throw 'FAIL: el layout base deja regiones superpuestas o fuera del panel.'}
+    if($baseDynamic.Location.Y-ne$dynamicTop-or$baseDynamic.Height-ne(Get-CocoLauncherUiMetric 480)){throw 'FAIL: la zona dinamica no se recoloca con el layout base.'}
 
     foreach($role in 'host','client'){
         Update-CocoExperienceCardsUi $panel $catalog $paths $role
