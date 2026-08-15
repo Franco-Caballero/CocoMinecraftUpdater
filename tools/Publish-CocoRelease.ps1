@@ -413,12 +413,16 @@ $experienceAssets=@()
 if(Test-Path -LiteralPath $experienceAssetDir -PathType Container){
     $experienceAssets=@(Get-ChildItem -LiteralPath $experienceAssetDir -File)
 }
+$optionalAssets=@()
+$bigWalkModsZip=Join-Path $releaseDir 'big-walk-bepinex-mods.zip'
+if(Test-Path -LiteralPath $bigWalkModsZip -PathType Leaf){
+    $optionalAssets+=Get-Item $bigWalkModsZip
+}
 $assets=@(
     (Get-Item (Join-Path $releaseDir "coco-engine-$Version.zip")),
     (Get-Item (Join-Path $releaseDir 'latest.json')),
-    (Get-Item $bootstrapExe),
-    (Get-Item (Join-Path $releaseDir 'big-walk-bepinex-mods.zip'))
-)+$experienceAssets
+    (Get-Item $bootstrapExe)
+)+$optionalAssets+$experienceAssets
 $index=0
 foreach($asset in $assets){
     $index++;Write-Progress -Activity "Publicando Coco Pack $Version" -Status $asset.Name -PercentComplete (100*$index/$assets.Count)
