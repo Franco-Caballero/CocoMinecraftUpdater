@@ -752,8 +752,8 @@
                 {
                     "path": "BepInEx/mods/peak-mods.zip",
                     "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.108/peak-mods.zip",
-                    "sha256": "18058abb357d1e4ca772027b8528c6c83098fce69906c07b35309ab2d9e98b8a",
-                    "size": 2536101,
+                    "sha256": "f5bd03785a795f011bf1c9d4c9fe72b1aaea46ee20a6c46ea289f8157bc56f64",
+                    "size": 2536608,
                     "policy": "replace",
                     "role": "all",
                     "license": "All Rights Reserved"

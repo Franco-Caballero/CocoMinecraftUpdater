@@ -2531,9 +2531,68 @@ $metaDir=Join-Path $instanceRoot '.coco'
         extraFiles=@($extraManifest)
         installedAtUtc=[DateTime]::UtcNow.ToString('o')
     }
+    Ensure-CocoOnlineFixSuppression $instanceRoot $Experience
     [IO.File]::WriteAllText($statePath,($stateObj|ConvertTo-Json -Depth 4),(New-Object Text.UTF8Encoding($false)))
     Write-CocoLog "Instalacion standalone de '$($Experience.id)' completada en '$instanceRoot'."
     return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$true}
+}
+
+function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
+    if([string]::IsNullOrWhiteSpace($InstanceRoot)-or-not(Test-Path -LiteralPath $InstanceRoot -PathType Container)){return}
+    try{
+        # 1. Eliminar cualquier acceso directo OnlineFix.url
+        Get-ChildItem -Path $InstanceRoot -Recurse -Filter 'OnlineFix.url' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+        
+        # 2. Suprimir popup de creditos inyectando el hash exacto en OnlineFix.ini
+        $onlineFixIniFiles = @(Get-ChildItem -Path $InstanceRoot -Recurse -Filter 'OnlineFix.ini' -ErrorAction SilentlyContinue)
+        foreach($iniFile in $onlineFixIniFiles){
+            try{
+                $content = [IO.File]::ReadAllText($iniFile.FullName)
+                $expId = if($Experience){[string]$Experience.id}else{''}
+                $appId = if($Experience-and$Experience.runtimePolicies){[string]$Experience.runtimePolicies.onlineFixAppId}else{''}
+                
+                $hash0 = ''
+                $hash1337 = ''
+                if($expId -eq 'peak' -or $appId -eq '3527290' -or $content -match '(?i)RealAppId\s*=\s*3527290'){
+                    $hash0 = 'a2a18f7cea500770e045b9ba73bbeb0536dec8922b2e659142f735e6a1b86f7757ac62c67ff201281c315f98b059e0070cba544408096e8c59778bf0aa2ac71a'
+                    $hash1337 = '6a0abff57ea8e4f9d65a9353e53406bcec81504ebfdea187d3f848d6de03530b3c2a61dafeea1cc228c5a5bc868cc098ddadaada657267d1a0010205e6cc3fb6'
+                }elseif($expId -eq 'big-walk' -or $appId -eq '2670630' -or $content -match '(?i)RealAppId\s*=\s*2670630'){
+                    $hash0 = '114ac35303dfeb9c661d9a2ba336cefa1953ce35d6480fc3c46726880da672807f4339854efdf80332fb6d0e65bc430e7eaae57b6fcf0113c2f16ad754ad40ee'
+                    $hash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
+                }
+                
+                if($hash1337){
+                    if($content -match '\[Hashes\]'){
+                        $content = [regex]::Replace($content, '(?s)\[Hashes\].*$', "[Hashes]`r`n0=$hash0`r`n1337=$hash1337`r`n")
+                    }else{
+                        $content = $content.TrimEnd() + "`r`n`r`n[Hashes]`r`n0=$hash0`r`n1337=$hash1337`r`n"
+                    }
+                    [IO.File]::WriteAllText($iniFile.FullName, $content, (New-Object Text.UTF8Encoding($false)))
+                    Write-CocoLog "OnlineFix.ini suprimido y verificado en '$($iniFile.FullName)'"
+                }
+            }catch{
+                Write-CocoLog "No se pudo actualizar OnlineFix.ini en '$($iniFile.FullName)': $($_.Exception.Message)"
+            }
+        }
+        
+        # 3. Inicializar directorio publico de stats/logros
+        $onlineFixAppId = if($Experience-and$Experience.runtimePolicies){[string]$Experience.runtimePolicies.onlineFixAppId}else{''}
+        if($onlineFixAppId){
+            try{
+                $publicOf = Join-Path $env:PUBLIC 'Documents\OnlineFix'
+                $onlineFixStats = Join-Path $publicOf "$onlineFixAppId\Stats"
+                if(-not(Test-Path -LiteralPath $onlineFixStats)){New-Item -ItemType Directory -Path $onlineFixStats -Force -ErrorAction SilentlyContinue | Out-Null}
+                $statsFile = Join-Path $onlineFixStats 'Stats.ini'
+                if(-not(Test-Path -LiteralPath $statsFile)){[IO.File]::WriteAllText($statsFile, "[Stats]`r`nLoadedCosmeticsPreviously=1`r`n", (New-Object Text.UTF8Encoding($false)))}
+                $achFile = Join-Path $onlineFixStats 'Achievements.ini'
+                if(-not(Test-Path -LiteralPath $achFile)){[IO.File]::WriteAllText($achFile, '', (New-Object Text.UTF8Encoding($false)))}
+            }catch{
+                Write-CocoLog "No se pudo inicializar estado de OnlineFix en Public: $($_.Exception.Message)"
+            }
+        }
+    }catch{
+        Write-CocoLog "Error en Ensure-CocoOnlineFixSuppression: $($_.Exception.Message)"
+    }
 }
 
 function Test-CocoStandaloneRequiredFile([string]$InstanceRoot,$RequiredFile){
@@ -3273,18 +3332,7 @@ function Invoke-CocoManagedExperienceLaunch(
         }else{
             Get-ChildItem -Path $installed.InstanceRoot -Recurse -Filter 'ip.txt' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
         }
-        $onlineFixAppId=[string]$experience.runtimePolicies.onlineFixAppId
-        if($onlineFixAppId){
-            $publicOf=Join-Path $env:PUBLIC 'Documents\OnlineFix'
-            try{
-                $onlineFixStats=Join-Path $publicOf "$onlineFixAppId\Stats"
-                if(-not(Test-Path -LiteralPath $onlineFixStats)){New-Item -ItemType Directory -Path $onlineFixStats -Force -ErrorAction SilentlyContinue|Out-Null}
-                $statsFile=Join-Path $onlineFixStats 'Stats.ini'
-                if(-not(Test-Path -LiteralPath $statsFile)){[IO.File]::WriteAllText($statsFile,"[Stats]`r`nLoadedCosmeticsPreviously=1`r`n",(New-Object Text.UTF8Encoding($false)))}
-                $achFile=Join-Path $onlineFixStats 'Achievements.ini'
-                if(-not(Test-Path -LiteralPath $achFile)){[IO.File]::WriteAllText($achFile,'',(New-Object Text.UTF8Encoding($false)))}
-            }catch{Write-CocoLog "No se pudo inicializar el estado OnlineFix ${onlineFixAppId}: $($_.Exception.Message)"}
-        }
+        Ensure-CocoOnlineFixSuppression $installed.InstanceRoot $experience
         $requiredStatus=@(Repair-CocoStandaloneRequiredFiles $experience $installed.InstanceRoot $CacheRoot)
         if($Dry){
             return [pscustomobject]@{Status='prepared';Experience=$experience;Installation=$installed}
