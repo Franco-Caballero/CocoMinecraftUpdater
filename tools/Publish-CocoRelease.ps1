@@ -286,6 +286,12 @@ $removedModIds=@($previousHostModIds|Where-Object{$_-notin$candidateHostModIds})
 if($removedModIds.Count){
     Write-Output "Mods retirados porque ya no estan en la fuente viva: $($removedModIds -join ', ')."
 }
+$experienceAssetDir=Join-Path $releaseDir 'experience-assets'
+$experienceBuilder=Join-Path $root 'tools\Build-CocoValorantTools.ps1'
+if(Test-Path -LiteralPath $experienceBuilder -PathType Leaf){
+    & $experienceBuilder -OutputDirectory $experienceAssetDir
+    if($LASTEXITCODE){throw 'No se pudo compilar el asset de VALORANTCraft.'}
+}
 .\tests\Test-CocoRelease.ps1 -Version $Version
 .\tests\Test-CocoBridge.ps1
 .\tests\Test-CocoAutomaticUpdate.ps1
