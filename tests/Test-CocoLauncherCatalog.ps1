@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne8-or
+if($managedExperiences.Count-ne9-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -216,6 +216,22 @@ if($shiftRequired.Count-ne$expectedShiftRequired.Count-or@($expectedShiftRequire
 }
 if([string]$shiftAtMidnight.runtimePolicies.defenderExclusion-ne'required'-or[string]$shiftAtMidnight.runtimePolicies.onlineFixAppId-ne'3722330'){
     throw 'Shift at Midnight no declara sus politicas standalone de Defender y OnlineFix.'
+}
+$peak=@($catalog.experiences|Where-Object id -eq 'peak'|Select-Object -First 1)[0]
+if(-not$peak-or$peak.runtime.type-ne'standalone'-or$peak.runtime.executable-ne'PEAK.exe'){throw 'PEAK no esta fijado como experiencia standalone.'}
+$peakPart1=@($peak.pack.archives|Where-Object archiveUrl -match 'PEAK-Part1\.zip'|Select-Object -First 1)[0]
+$peakPart2=@($peak.pack.archives|Where-Object archiveUrl -match 'PEAK-Part2\.zip'|Select-Object -First 1)[0]
+if(-not$peakPart1-or[int64]$peakPart1.size-ne684556663-or[string]$peakPart1.sha256-ne'b777de7135b92e23a2284662d8ac1a0fc9e064d4e094fcf0b2344e6d558c399b'){throw 'PEAK Part 1 no coincide con el asset oficial de GitHub.'}
+if(-not$peakPart2-or[int64]$peakPart2.size-ne712227092-or[string]$peakPart2.sha256-ne'ccaca4e114d3cfa87305bb0416e0f352a4c673105dcebc72f39c078b7f0b9777'){throw 'PEAK Part 2 no coincide con el asset oficial de GitHub.'}
+if([int64]$peak.pack.size-ne1396783755){throw 'PEAK no conserva el tamano total de sus dos partes.'}
+$peakRequired=@($peak.runtime.requiredFiles)
+$expectedPeakRequired=@('PEAK.exe','OnlineFix64.dll','Custom.dll','winmm.dll','PEAK_Data/Plugins/x86_64/steam_api64.dll')
+if($peakRequired.Count-ne$expectedPeakRequired.Count-or@($expectedPeakRequired|Where-Object{$_-notin@($peakRequired.path)}).Count-or
+   @($peakRequired|Where-Object{[string]$_.sha256-notmatch'^[a-f0-9]{64}$'-or[int64]$_.size-le0-or[string]$_.archiveSha256-notin@($peak.pack.archives.sha256)}).Count){
+    throw 'PEAK no fija todos sus archivos base reparables por ruta, hash, tamano y archive exacto.'
+}
+if([string]$peak.runtimePolicies.defenderExclusion-ne'required'-or[string]$peak.runtimePolicies.onlineFixAppId-ne'3527290'){
+    throw 'PEAK no declara sus politicas standalone de Defender y OnlineFix.'
 }
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){

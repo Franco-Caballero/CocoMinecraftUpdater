@@ -674,6 +674,81 @@
                 "serverName": "Coco - Shift at Midnight"
             },
             "files": []
+        },
+        {
+            "id": "peak",
+            "name": "PEAK",
+            "instanceId": "peak",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "PEAK.exe",
+                "requiredFiles": [
+                    {
+                        "path": "PEAK.exe",
+                        "sha256": "94361ef7f017412e1d03038e5175bc182733fab41f5439e1421d1f24b6d47b44",
+                        "size": 667648,
+                        "archiveSha256": "b777de7135b92e23a2284662d8ac1a0fc9e064d4e094fcf0b2344e6d558c399b"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+                        "size": 11944448,
+                        "archiveSha256": "b777de7135b92e23a2284662d8ac1a0fc9e064d4e094fcf0b2344e6d558c399b"
+                    },
+                    {
+                        "path": "Custom.dll",
+                        "sha256": "8308061a7c6f18c59f36baadef297ee7ac7382ef4668238c61b2a953eeee58e7",
+                        "size": 2202624,
+                        "archiveSha256": "b777de7135b92e23a2284662d8ac1a0fc9e064d4e094fcf0b2344e6d558c399b"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+                        "size": 506368,
+                        "archiveSha256": "ccaca4e114d3cfa87305bb0416e0f352a4c673105dcebc72f39c078b7f0b9777"
+                    },
+                    {
+                        "path": "PEAK_Data/Plugins/x86_64/steam_api64.dll",
+                        "sha256": "670d654aa3255c5061cf0236a1cdbb2f5076cbd5ae44f613b6f4921558e83e2d",
+                        "size": 319584,
+                        "archiveSha256": "ccaca4e114d3cfa87305bb0416e0f352a4c673105dcebc72f39c078b7f0b9777"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "3527290"
+            },
+            "pack": {
+                "packId": "standalone-peak",
+                "lockPath": "launcher/experiences/peak.lock.json",
+                "version": "2.1.a",
+                "sha256": "b777de7135b92e23a2284662d8ac1a0fc9e064d4e094fcf0b2344e6d558c399b",
+                "size": 1396783755,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.108/PEAK-Part1.zip",
+                        "sha256": "b777de7135b92e23a2284662d8ac1a0fc9e064d4e094fcf0b2344e6d558c399b",
+                        "size": 684556663
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.108/PEAK-Part2.zip",
+                        "sha256": "ccaca4e114d3cfa87305bb0416e0f352a4c673105dcebc72f39c078b7f0b9777",
+                        "size": 712227092
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - PEAK"
+            },
+            "files": []
         }
     ]
 }
