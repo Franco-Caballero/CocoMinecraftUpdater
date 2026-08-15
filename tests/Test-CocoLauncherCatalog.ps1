@@ -234,8 +234,8 @@ if([string]$peak.runtimePolicies.defenderExclusion-ne'required'-or[string]$peak.
     throw 'PEAK no declara sus politicas standalone de Defender y OnlineFix.'
 }
 $peakMods=@($peak.files|Where-Object path -eq 'BepInEx/mods/peak-bepinex-mods.zip'|Select-Object -First 1)[0]
-if(-not$peakMods-or[int64]$peakMods.size-ne2521683-or[string]$peakMods.sha256-ne'd328517e1bab3e0a41c0a94f7659296f64aa294c2583b7168f82ffb8f4de7a41'-or[string]$peakMods.role-ne'all'){
-    throw 'PEAK no fija su paquete de mods BepInEx (Backpack Viewer + SmoreSkinColors + SmoreHats + PassportPagination) con rol all.'
+if(-not$peakMods-or[int64]$peakMods.size-ne2533770-or[string]$peakMods.sha256-ne'ba5aabf093f5799a54204433e3a8a0217b8e27c06419d6c9d0540e469d0da8cf'-or[string]$peakMods.role-ne'all'){
+    throw 'PEAK no fija su paquete de mods BepInEx (Backpack Viewer + SmoreSkinColors + SmoreHats + PassportPagination + CampfireRespawn) con rol all.'
 }
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){
