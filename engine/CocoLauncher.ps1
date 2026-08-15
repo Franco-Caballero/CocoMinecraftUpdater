@@ -4182,6 +4182,46 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     if(-not$original-or[string]$original.pack.version-ne[string]$Manifest.version){throw 'El catalogo Coco Launcher no coincide con la version publicada del engine.'}
     Show-CocoWindow
     $script:CocoForm.Text='Coco Launcher';$script:CocoBrand.Text='COCO LAUNCHER  |  UNA PARTIDA ACTIVA'
+    try {
+        if ('CocoNativeWindow' -as [type]) { [CocoNativeWindow]::EnableMinimize($script:CocoForm.Handle) }
+        $script:CocoForm.Add_Activated({
+            try {
+                if ($script:CocoForm.WindowState -eq [Windows.Forms.FormWindowState]::Minimized) {
+                    $script:CocoForm.WindowState = [Windows.Forms.FormWindowState]::Normal
+                    $script:CocoForm.BringToFront()
+                }
+            } catch {}
+        })
+    } catch {}
+    if(-not$script:CocoTrayIcon){
+        $tray=New-Object Windows.Forms.NotifyIcon
+        $tray.Text='Coco Launcher'
+        $trayIconPath=Join-Path $script:CocoEngineRoot 'assets\reynaico.ico'
+        if(Test-Path $trayIconPath){try{$tray.Icon=New-Object Drawing.Icon($trayIconPath)}catch{}}
+        $restoreFromTray={
+            try{
+                if($script:CocoForm-and-not$script:CocoForm.IsDisposed){
+                    $script:CocoForm.WindowState=[Windows.Forms.FormWindowState]::Normal
+                    $script:CocoForm.Show()
+                    $script:CocoForm.BringToFront()
+                    $script:CocoForm.Activate()
+                }
+            }catch{}
+        }
+        $tray.Add_Click($restoreFromTray)
+        $tray.Add_DoubleClick($restoreFromTray)
+        $tray.Visible=$true
+        $script:CocoTrayIcon=$tray
+        $script:CocoForm.Add_FormClosed({
+            try{
+                if($script:CocoTrayIcon){
+                    $script:CocoTrayIcon.Visible=$false
+                    $script:CocoTrayIcon.Dispose()
+                    $script:CocoTrayIcon=$null
+                }
+            }catch{}
+        })
+    }
     Set-CocoLauncherUiLayout
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{component='launcher';mode='launcher';role='detecting';stage='start'}}
     $runLabel=if(-not[string]::IsNullOrWhiteSpace([string]$script:CocoRunId)){([string]$script:CocoRunId).Substring(0,[Math]::Min(8,([string]$script:CocoRunId).Length))}else{'test/local'}

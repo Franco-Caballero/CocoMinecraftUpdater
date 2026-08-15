@@ -303,6 +303,17 @@ Puede contener nombre/UUID de Minecraft, rutas locales, IP ZeroTier y lineas de 
 Write-CocoLog "Inicio. EnginePid=$PID GameDir='$GameDir' MinecraftPid=$MinecraftPid RunningPackVersion='$RunningPackVersion' Silent=$Silent ShowOnUpdate=$ShowOnUpdate"
 if($global:CocoSharedUi){
     $script:CocoForm=$global:CocoSharedUi.Form;$script:CocoTitle=$global:CocoSharedUi.Title
+    try {
+        if ('CocoNativeWindow' -as [type]) { [CocoNativeWindow]::EnableMinimize($script:CocoForm.Handle) }
+        $script:CocoForm.Add_Activated({
+            try {
+                if ($script:CocoForm.WindowState -eq [Windows.Forms.FormWindowState]::Minimized) {
+                    $script:CocoForm.WindowState = [Windows.Forms.FormWindowState]::Normal
+                    $script:CocoForm.BringToFront()
+                }
+            } catch {}
+        })
+    } catch {}
     $script:CocoDetail=$global:CocoSharedUi.Detail;$script:CocoProgress=$global:CocoSharedUi.Progress
     $script:CocoTrack=$global:CocoSharedUi.Track
     $script:CocoPanel=$global:CocoSharedUi.Panel;$script:CocoAccent=$global:CocoSharedUi.Accent;$script:CocoBrand=$global:CocoSharedUi.Brand
@@ -389,12 +400,59 @@ function Show-CocoWindow {
     if ($script:CocoForm) { return }
     $script:CocoVisualWorkStarted = [Diagnostics.Stopwatch]::StartNew()
     Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing
+    if(-not('CocoNativeWindow'-as[type])){
+        $nativeSrc=@'
+using System;
+using System.Runtime.InteropServices;
+public static class CocoNativeWindow {
+    [DllImport("user32.dll", EntryPoint = "GetWindowLong", SetLastError = true)]
+    private static extern int GetWindowLong32(IntPtr hWnd, int nIndex);
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr", SetLastError = true)]
+    private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
+    [DllImport("user32.dll", EntryPoint = "SetWindowLong", SetLastError = true)]
+    private static extern int SetWindowLong32(IntPtr hWnd, int nIndex, int dwNewLong);
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", SetLastError = true)]
+    private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+    public const int GWL_STYLE = -16;
+    public const int WS_MINIMIZEBOX = 0x00020000;
+    public const int WS_SYSMENU = 0x00080000;
+    public static void EnableMinimize(IntPtr hWnd) {
+        if (hWnd == IntPtr.Zero) return;
+        try {
+            if (IntPtr.Size == 8) {
+                long style = GetWindowLongPtr64(hWnd, GWL_STYLE).ToInt64();
+                style |= (long)(WS_MINIMIZEBOX | WS_SYSMENU);
+                SetWindowLongPtr64(hWnd, GWL_STYLE, new IntPtr(style));
+            } else {
+                int style = GetWindowLong32(hWnd, GWL_STYLE);
+                style |= (WS_MINIMIZEBOX | WS_SYSMENU);
+                SetWindowLong32(hWnd, GWL_STYLE, style);
+            }
+        } catch {}
+    }
+}
+'@
+        Add-Type -TypeDefinition $nativeSrc -ErrorAction SilentlyContinue
+    }
     [Windows.Forms.Application]::EnableVisualStyles()
     $key=[Drawing.Color]::FromArgb(1,2,3)
     $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1080,840)
     $f.StartPosition='CenterScreen'; $f.FormBorderStyle='None'; $f.MaximizeBox=$false; $f.ShowInTaskbar=$true
     $f.AutoScaleMode='None'; $f.TopMost=$false
     $f.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
+    $f.Add_HandleCreated({
+        try {
+            if ('CocoNativeWindow' -as [type]) { [CocoNativeWindow]::EnableMinimize($f.Handle) }
+        } catch {}
+    })
+    $f.Add_Activated({
+        try {
+            if ($f.WindowState -eq [Windows.Forms.FormWindowState]::Minimized) {
+                $f.WindowState = [Windows.Forms.FormWindowState]::Normal
+                $f.BringToFront()
+            }
+        } catch {}
+    })
     $f.BackColor=$key; $f.TransparencyKey=$key; $f.ForeColor=[Drawing.Color]::White
     $iconPath=Join-Path $script:CocoEngineRoot 'assets\reynaico.ico'
     if(Test-Path $iconPath){$f.Icon=New-Object Drawing.Icon($iconPath)}
@@ -439,7 +497,11 @@ function Show-CocoWindow {
     # coordenadas y no terminen fuera del lienzo en pantallas pequenas.
     $script:CocoUiScale=$scale
     if($scale-lt1.0){$f.Scale((New-Object Drawing.SizeF($scale,$scale)))}
-    $f.Show(); $f.BringToFront(); $f.Activate(); [Windows.Forms.Application]::DoEvents()
+    $f.Show(); $f.BringToFront(); $f.Activate()
+    try {
+        if ('CocoNativeWindow' -as [type]) { [CocoNativeWindow]::EnableMinimize($f.Handle) }
+    } catch {}
+    [Windows.Forms.Application]::DoEvents()
     $script:CocoForm=$f; $script:CocoPanel=$panel; $script:CocoAccent=$accent; $script:CocoTitle=$t; $script:CocoDetail=$d
     $script:CocoProgress=$p; $script:CocoTrack=$track; $script:CocoBrand=$b
 }
