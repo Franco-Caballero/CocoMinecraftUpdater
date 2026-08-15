@@ -2543,24 +2543,42 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
         # 1. Eliminar cualquier acceso directo OnlineFix.url
         Get-ChildItem -Path $InstanceRoot -Recurse -Filter 'OnlineFix.url' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
         
-        # 2. Suprimir popup de creditos inyectando el hash exacto en OnlineFix.ini
+        # 2. Si OnlineFix.ini no existe en la raiz, crearlo completo
+        $rootIni = Join-Path $InstanceRoot 'OnlineFix.ini'
+        $expId = if($Experience){[string]$Experience.id}else{''}
+        $appId = if($Experience-and$Experience.runtimePolicies){[string]$Experience.runtimePolicies.onlineFixAppId}else{''}
+        
+        $hash0 = ''
+        $hash1337 = ''
+        $realAppId = ''
+        $fakeAppId = '480'
+        if($expId -eq 'peak' -or $appId -eq '3527290'){
+            $realAppId = '3527290'
+            $hash0 = 'a2a18f7cea500770e045b9ba73bbeb0536dec8922b2e659142f735e6a1b86f7757ac62c67ff201281c315f98b059e0070cba544408096e8c59778bf0aa2ac71a'
+            $hash1337 = '6a0abff57ea8e4f9d65a9353e53406bcec81504ebfdea187d3f848d6de03530b3c2a61dafeea1cc228c5a5bc868cc098ddadaada657267d1a0010205e6cc3fb6'
+        }elseif($expId -eq 'big-walk' -or $appId -eq '2670630'){
+            $realAppId = '2670630'
+            $hash0 = '114ac35303dfeb9c661d9a2ba336cefa1953ce35d6480fc3c46726880da672807f4339854efdf80332fb6d0e65bc430e7eaae57b6fcf0113c2f16ad754ad40ee'
+            $hash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
+        }
+        if(-not(Test-Path -LiteralPath $rootIni -PathType Leaf) -and $realAppId){
+            $defaultIni = "[Main]`r`nRealAppId=$realAppId`r`nFakeAppId=$fakeAppId`r`n`r`n#Language=english`r`nBuildId=0`r`nInstallDir=`r`nUnlockAllDLC=false`r`n`r`n`r`n[Misc]`r`nExtraProtection=false`r`nPhotonIntegration=false`r`nEmulateTicket=false`r`n`r`n`r`n[Interfaces]`r`nApps=true`r`nUser=true`r`nUtils=true`r`nStorage=true`r`nUserStats=true`r`nFriends=true`r`nUGC=true`r`nInventory=true`r`nAppTicket=true`r`n`r`n`r`n[Hashes]`r`n0=$hash0`r`n1337=$hash1337`r`n"
+            [IO.File]::WriteAllText($rootIni, $defaultIni, (New-Object Text.UTF8Encoding($false)))
+            Write-CocoLog "OnlineFix.ini restaurado y verificado en '$rootIni'"
+        }
+        
+        # 3. Suprimir popup de creditos inyectando el hash exacto en OnlineFix.ini
         $onlineFixIniFiles = @(Get-ChildItem -Path $InstanceRoot -Recurse -Filter 'OnlineFix.ini' -ErrorAction SilentlyContinue)
         foreach($iniFile in $onlineFixIniFiles){
             try{
                 $content = [IO.File]::ReadAllText($iniFile.FullName)
-                $expId = if($Experience){[string]$Experience.id}else{''}
-                $appId = if($Experience-and$Experience.runtimePolicies){[string]$Experience.runtimePolicies.onlineFixAppId}else{''}
-                
-                $hash0 = ''
-                $hash1337 = ''
-                if($expId -eq 'peak' -or $appId -eq '3527290' -or $content -match '(?i)RealAppId\s*=\s*3527290'){
+                if($content -match '(?i)RealAppId\s*=\s*3527290'){
                     $hash0 = 'a2a18f7cea500770e045b9ba73bbeb0536dec8922b2e659142f735e6a1b86f7757ac62c67ff201281c315f98b059e0070cba544408096e8c59778bf0aa2ac71a'
                     $hash1337 = '6a0abff57ea8e4f9d65a9353e53406bcec81504ebfdea187d3f848d6de03530b3c2a61dafeea1cc228c5a5bc868cc098ddadaada657267d1a0010205e6cc3fb6'
-                }elseif($expId -eq 'big-walk' -or $appId -eq '2670630' -or $content -match '(?i)RealAppId\s*=\s*2670630'){
+                }elseif($content -match '(?i)RealAppId\s*=\s*2670630'){
                     $hash0 = '114ac35303dfeb9c661d9a2ba336cefa1953ce35d6480fc3c46726880da672807f4339854efdf80332fb6d0e65bc430e7eaae57b6fcf0113c2f16ad754ad40ee'
                     $hash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
                 }
-                
                 if($hash1337){
                     if($content -match '\[Hashes\]'){
                         $content = [regex]::Replace($content, '(?s)\[Hashes\].*$', "[Hashes]`r`n0=$hash0`r`n1337=$hash1337`r`n")
@@ -2568,7 +2586,6 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                         $content = $content.TrimEnd() + "`r`n`r`n[Hashes]`r`n0=$hash0`r`n1337=$hash1337`r`n"
                     }
                     [IO.File]::WriteAllText($iniFile.FullName, $content, (New-Object Text.UTF8Encoding($false)))
-                    Write-CocoLog "OnlineFix.ini suprimido y verificado en '$($iniFile.FullName)'"
                 }
             }catch{
                 Write-CocoLog "No se pudo actualizar OnlineFix.ini en '$($iniFile.FullName)': $($_.Exception.Message)"
