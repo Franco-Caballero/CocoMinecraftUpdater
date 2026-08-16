@@ -1,3 +1,46 @@
+if(-not([System.Management.Automation.PSTypeName]'CocoWin32PopupKiller').Type){
+    try{
+        Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+public class CocoWin32PopupKiller {
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    public const uint WM_COMMAND = 0x0111;
+    public const uint WM_CLOSE = 0x0010;
+    public const int IDOK = 1;
+
+    public static bool DismissCredits(int targetPid) {
+        try {
+            IntPtr hwnd = FindWindow(null, "Credits");
+            if (hwnd == IntPtr.Zero) {
+                hwnd = FindWindow("#32770", "Credits");
+            }
+            if (hwnd != IntPtr.Zero) {
+                uint pid = 0;
+                GetWindowThreadProcessId(hwnd, out pid);
+                if (targetPid == 0 || pid == (uint)targetPid) {
+                    SendMessage(hwnd, WM_COMMAND, (IntPtr)IDOK, IntPtr.Zero);
+                    SendMessage(hwnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+                    return true;
+                }
+            }
+        } catch {}
+        return false;
+    }
+}
+"@ -ErrorAction SilentlyContinue
+    }catch{}
+}
+
 if(-not(Get-Command Write-CocoLog -ErrorAction SilentlyContinue)){
     function Write-CocoLog([string]$Text){
         if($script:CocoLogPath){
@@ -2576,6 +2619,10 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             $realAppId = '4108000'
             $hash0 = 'cb74c9a4f7c61735639239ffcb2cb8bc2f2b57d993fab02975edbb8588272d4aa0938c71c8eb3a63efe4078c7e284bfb503e5737d7fd5f7b919bf32f3100565c'
             $hash1337 = '0a77dde31976897b0f06f688ac3bf77271c84e48f1d944786134421039aec534f157422ff955db36798c2d6ced12523777b19ec6d611f6153db12faf8bc3673a'
+        }elseif($expId -eq 'content-warning' -or $appId -eq '2881650'){
+            $realAppId = '2881650'
+            $hash0 = '57016c9e2f55a2e4f25ace876241ef2e0dd1019ac7eba8b95e86e7ed0929930bd5ada56589f64bbe6e5b0b2e621b3cebbedcf556e53a857f1b4b71dd0fe48fdc'
+            $hash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
         }elseif($expId -eq 'big-walk' -or $appId -eq '1478500' -or $appId -eq '2670630'){
             $realAppId = '1478500'
             $hash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
@@ -2617,6 +2664,9 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                 }elseif($content -match '(?i)RealAppId\s*=\s*4108000'){
                     $targetHash0 = 'cb74c9a4f7c61735639239ffcb2cb8bc2f2b57d993fab02975edbb8588272d4aa0938c71c8eb3a63efe4078c7e284bfb503e5737d7fd5f7b919bf32f3100565c'
                     $targetHash1337 = '0a77dde31976897b0f06f688ac3bf77271c84e48f1d944786134421039aec534f157422ff955db36798c2d6ced12523777b19ec6d611f6153db12faf8bc3673a'
+                }elseif($content -match '(?i)RealAppId\s*=\s*2881650'){
+                    $targetHash0 = '57016c9e2f55a2e4f25ace876241ef2e0dd1019ac7eba8b95e86e7ed0929930bd5ada56589f64bbe6e5b0b2e621b3cebbedcf556e53a857f1b4b71dd0fe48fdc'
+                    $targetHash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
                 }elseif($content -match '(?i)RealAppId\s*=\s*1478500' -or $content -match '(?i)RealAppId\s*=\s*2670630'){
                     $targetHash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
                     $targetHash1337 = '3d20da45882aaf132163f28befa5b3a36522039776000a375947f30a885293d9e83cffc48624bc7f3c2636840153ad98a44fe2794064a2e4ee7ad325e8635ebb'
@@ -3442,6 +3492,9 @@ function Invoke-CocoManagedExperienceLaunch(
         }
         Write-CocoLog "Iniciando proceso standalone '$execPath' en '$($installed.InstanceRoot)'"
         $process=Start-Process -FilePath $execPath -WorkingDirectory $installed.InstanceRoot -PassThru
+        if([System.Management.Automation.PSTypeName]'CocoWin32PopupKiller'.Type){
+            [void]([CocoWin32PopupKiller]::DismissCredits($process.Id))
+        }
         return [pscustomobject]@{Status='launched';Experience=$experience;Installation=$installed;Process=$process;LogPath=$log}
     }
 
@@ -4251,6 +4304,9 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
             $ready=$true;$lastPublish=[DateTime]::MinValue
             while(-not$launch.Process.HasExited){
                 [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+                if([System.Management.Automation.PSTypeName]'CocoWin32PopupKiller'.Type){
+                    [void]([CocoWin32PopupKiller]::DismissCredits($launch.Process.Id))
+                }
                 if((Get-Date)-gt$lastPublish.AddSeconds(8)){
                     [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id 'ready' $sessionId $Paths.SessionStatePath 30)
                     $lastPublish=Get-Date
@@ -4546,6 +4602,9 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                             $script:CocoForm.Hide()
                             while(-not$launch.Process.HasExited){
                                 [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+                                if([System.Management.Automation.PSTypeName]'CocoWin32PopupKiller'.Type){
+                                    [void]([CocoWin32PopupKiller]::DismissCredits($launch.Process.Id))
+                                }
                             }
                             $exitCode=$launch.Process.ExitCode
                             if($launch.Process){$launch.Process.Dispose()}

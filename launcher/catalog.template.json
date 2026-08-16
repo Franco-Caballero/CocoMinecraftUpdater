@@ -830,6 +830,77 @@
                 "serverName": "Coco - Machine Party"
             },
             "files": []
+        },
+        {
+            "id": "content-warning",
+            "name": "Content Warning",
+            "description": "Filmen cosas aterradoras con amigos para volverse famosos en SpookTube.",
+            "instanceId": "content-warning",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "Content Warning.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Content Warning.exe",
+                        "sha256": "761b8c7163c90bf3044928a4d6749efd69058938153b3474cba95a936115f45c",
+                        "size": 672256,
+                        "archiveSha256": "ad9311cb14e3a41264d76339940687f6af9e74d78568653e70cbb3839206662d"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "27a1c596c4b1de1e6672cb7e7fba2ba3d3124999493ff82a504beb6f6145e88f",
+                        "size": 13820928,
+                        "archiveSha256": "ad9311cb14e3a41264d76339940687f6af9e74d78568653e70cbb3839206662d"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "61d071e40fb1136da66bf12213062a47eccadd7556171b97381fbc937e978b0d",
+                        "size": 502272,
+                        "archiveSha256": "ad9311cb14e3a41264d76339940687f6af9e74d78568653e70cbb3839206662d"
+                    },
+                    {
+                        "path": "Custom.dll",
+                        "sha256": "3ff601e0ad8c73ad433f158627fda8d58c52a983907f05ff0d83933230becf56",
+                        "size": 2202624,
+                        "archiveSha256": "ad9311cb14e3a41264d76339940687f6af9e74d78568653e70cbb3839206662d"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "2e781620a7fe6f238e46e6c1bd3c7b56ebbf99950e87d6e3ca93e5a18b6aad89",
+                        "size": 33752496,
+                        "archiveSha256": "ad9311cb14e3a41264d76339940687f6af9e74d78568653e70cbb3839206662d"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "2881650"
+            },
+            "pack": {
+                "packId": "standalone-content-warning",
+                "lockPath": "launcher/experiences/content-warning.lock.json",
+                "version": "1.24.0",
+                "sha256": "ad9311cb14e3a41264d76339940687f6af9e74d78568653e70cbb3839206662d",
+                "size": 296934728,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.122/Content-Warning.zip",
+                        "sha256": "ad9311cb14e3a41264d76339940687f6af9e74d78568653e70cbb3839206662d",
+                        "size": 296934728
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Content Warning"
+            },
+            "files": []
         }
     ]
 }
