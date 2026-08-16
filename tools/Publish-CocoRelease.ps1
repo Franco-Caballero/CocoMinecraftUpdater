@@ -430,7 +430,7 @@ foreach($asset in $assets){
     # Estos nombres son versionados, no content-addressed: en un reintento se reemplazan siempre.
     if($uploaded){Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($uploaded.id)" -Headers $headers|Out-Null}
     $upload="https://uploads.github.com/repos/$Repository/releases/$($release.id)/assets?name=$([Uri]::EscapeDataString($asset.Name))"
-    Invoke-WithRetry {Invoke-RestMethod -Method Post -Uri $upload -Headers $headers -ContentType 'application/octet-stream' -InFile $asset.FullName|Out-Null} $asset.Name
+    Invoke-WithRetry {Invoke-RestMethod -Method Post -Uri $upload -Headers $headers -ContentType 'application/octet-stream' -InFile $asset.FullName -TimeoutSec 3600|Out-Null} $asset.Name
 }
 $remoteAssets=@(Get-ReleaseAssets $release.id)
 $missing=[Collections.Generic.List[string]]::new()
