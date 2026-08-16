@@ -2575,7 +2575,7 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
         }elseif($expId -eq 'machine-party' -or $appId -eq '4108000'){
             $realAppId = '4108000'
             $hash0 = 'cb74c9a4f7c61735639239ffcb2cb8bc2f2b57d993fab02975edbb8588272d4aa0938c71c8eb3a63efe4078c7e284bfb503e5737d7fd5f7b919bf32f3100565c'
-            $hash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
+            $hash1337 = '0a77dde31976897b0f06f688ac3bf77271c84e48f1d944786134421039aec534f157422ff955db36798c2d6ced12523777b19ec6d611f6153db12faf8bc3673a'
         }elseif($expId -eq 'big-walk' -or $appId -eq '1478500' -or $appId -eq '2670630'){
             $realAppId = '1478500'
             $hash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
@@ -2616,7 +2616,7 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                     $targetHash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
                 }elseif($content -match '(?i)RealAppId\s*=\s*4108000'){
                     $targetHash0 = 'cb74c9a4f7c61735639239ffcb2cb8bc2f2b57d993fab02975edbb8588272d4aa0938c71c8eb3a63efe4078c7e284bfb503e5737d7fd5f7b919bf32f3100565c'
-                    $targetHash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
+                    $targetHash1337 = '0a77dde31976897b0f06f688ac3bf77271c84e48f1d944786134421039aec534f157422ff955db36798c2d6ced12523777b19ec6d611f6153db12faf8bc3673a'
                 }elseif($content -match '(?i)RealAppId\s*=\s*1478500' -or $content -match '(?i)RealAppId\s*=\s*2670630'){
                     $targetHash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
                     $targetHash1337 = '3d20da45882aaf132163f28befa5b3a36522039776000a375947f30a885293d9e83cffc48624bc7f3c2636840153ad98a44fe2794064a2e4ee7ad325e8635ebb'
