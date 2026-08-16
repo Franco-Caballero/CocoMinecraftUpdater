@@ -901,6 +901,71 @@
                 "serverName": "Coco - Content Warning"
             },
             "files": []
+        },
+        {
+            "id": "scam-line",
+            "name": "Scam Line",
+            "description": "Juego cooperativo de atracos y estafas en equipo.",
+            "instanceId": "scam-line",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "Scam Line.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Scam Line.exe",
+                        "sha256": "93320415e580924ca75ed82c7331c8d35069ce59fe32f327b2b08f42e28e27c6",
+                        "size": 667648,
+                        "archiveSha256": "1b00b63fde67542fe62305fee770b80bc5fe74397af80b7a042309e53abe692f"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "cfd01ca6bce83d110365883be797ce22ab6ee436d8bc1cbfb4f91732a24b1e3d",
+                        "size": 12387840,
+                        "archiveSha256": "1b00b63fde67542fe62305fee770b80bc5fe74397af80b7a042309e53abe692f"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+                        "size": 506368,
+                        "archiveSha256": "1b00b63fde67542fe62305fee770b80bc5fe74397af80b7a042309e53abe692f"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "0391df1b36e6b9edd3e9a5e5f67a5a3d92fa34057a22c7f9a37d827d7594ef78",
+                        "size": 35796904,
+                        "archiveSha256": "1b00b63fde67542fe62305fee770b80bc5fe74397af80b7a042309e53abe692f"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "2794590"
+            },
+            "pack": {
+                "packId": "standalone-scam-line",
+                "lockPath": "launcher/experiences/scam-line.lock.json",
+                "version": "23042026",
+                "sha256": "1b00b63fde67542fe62305fee770b80bc5fe74397af80b7a042309e53abe692f",
+                "size": 137939801,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.125/Scam-Line.zip",
+                        "sha256": "1b00b63fde67542fe62305fee770b80bc5fe74397af80b7a042309e53abe692f",
+                        "size": 137939801
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Scam Line"
+            },
+            "files": []
         }
     ]
 }

@@ -2693,6 +2693,10 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             $realAppId = '2881650'
             $hash0 = '57016c9e2f55a2e4f25ace876241ef2e0dd1019ac7eba8b95e86e7ed0929930bd5ada56589f64bbe6e5b0b2e621b3cebbedcf556e53a857f1b4b71dd0fe48fdc'
             $hash1337 = '9ca4f82237e56178f0cd917ddce7a94ceba67562393830c4cbd94067d3e2993e39fb69696fffdc05924d9b5dea02b19be48fd178486c9f08afa7da08ebdb27bc'
+        }elseif($expId -eq 'scam-line' -or $appId -eq '2794590'){
+            $realAppId = '2794590'
+            $hash0 = 'ead2731f14749bb9cd96163c64b1dc7e53b54bee4859d309028a7fec9dbfb4e9d7663b8a12ebff95c95c2bfefa0f76549e7ab62e3c9b9901120641f2de6cfbb0'
+            $hash1337 = '9774dfe661a728c4273738b90501fe2e1e5b7eaaa85483bc51611ff4451bf40a2161156bc6f3e30a4e402405c9940380cca7433379887b3cc3f4caae5558e7b9'
         }elseif($expId -eq 'big-walk' -or $appId -eq '1478500' -or $appId -eq '2670630'){
             $realAppId = '1478500'
             $hash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
@@ -2737,6 +2741,9 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                 }elseif($content -match '(?i)RealAppId\s*=\s*2881650'){
                     $targetHash0 = '57016c9e2f55a2e4f25ace876241ef2e0dd1019ac7eba8b95e86e7ed0929930bd5ada56589f64bbe6e5b0b2e621b3cebbedcf556e53a857f1b4b71dd0fe48fdc'
                     $targetHash1337 = '9ca4f82237e56178f0cd917ddce7a94ceba67562393830c4cbd94067d3e2993e39fb69696fffdc05924d9b5dea02b19be48fd178486c9f08afa7da08ebdb27bc'
+                }elseif($content -match '(?i)RealAppId\s*=\s*2794590'){
+                    $targetHash0 = 'ead2731f14749bb9cd96163c64b1dc7e53b54bee4859d309028a7fec9dbfb4e9d7663b8a12ebff95c95c2bfefa0f76549e7ab62e3c9b9901120641f2de6cfbb0'
+                    $targetHash1337 = '9774dfe661a728c4273738b90501fe2e1e5b7eaaa85483bc51611ff4451bf40a2161156bc6f3e30a4e402405c9940380cca7433379887b3cc3f4caae5558e7b9'
                 }elseif($content -match '(?i)RealAppId\s*=\s*1478500' -or $content -match '(?i)RealAppId\s*=\s*2670630'){
                     $targetHash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
                     $targetHash1337 = '3d20da45882aaf132163f28befa5b3a36522039776000a375947f30a885293d9e83cffc48624bc7f3c2636840153ad98a44fe2794064a2e4ee7ad325e8635ebb'
