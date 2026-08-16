@@ -3,38 +3,107 @@ if(-not([System.Management.Automation.PSTypeName]'CocoWin32PopupKiller').Type){
         Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
 
 public class CocoWin32PopupKiller {
-    [DllImport("user32.dll", SetLastError = true)]
-    public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
-    [DllImport("user32.dll")]
-    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
     public const uint WM_COMMAND = 0x0111;
     public const uint WM_CLOSE = 0x0010;
     public const int IDOK = 1;
 
-    public static bool DismissCredits(int targetPid) {
+    public static void StartWatcher(int targetPid, int durationMs) {
         try {
-            IntPtr hwnd = FindWindow(null, "Credits");
-            if (hwnd == IntPtr.Zero) {
-                hwnd = FindWindow("#32770", "Credits");
-            }
-            if (hwnd != IntPtr.Zero) {
-                uint pid = 0;
-                GetWindowThreadProcessId(hwnd, out pid);
-                if (targetPid == 0 || pid == (uint)targetPid) {
-                    SendMessage(hwnd, WM_COMMAND, (IntPtr)IDOK, IntPtr.Zero);
-                    SendMessage(hwnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-                    return true;
+            Thread t = new Thread(() => {
+                DateTime end = DateTime.UtcNow.AddMilliseconds(durationMs);
+                while (DateTime.UtcNow < end) {
+                    try {
+                        EnumWindows((hWnd, lParam) => {
+                            try {
+                                uint pid = 0;
+                                GetWindowThreadProcessId(hWnd, out pid);
+                                if (targetPid != 0 && pid != (uint)targetPid) return true;
+
+                                StringBuilder sbClass = new StringBuilder(256);
+                                GetClassName(hWnd, sbClass, 256);
+                                string cls = sbClass.ToString();
+
+                                StringBuilder sbTitle = new StringBuilder(256);
+                                GetWindowText(hWnd, sbTitle, 256);
+                                string title = sbTitle.ToString();
+
+                                if (cls == "#32770" || 
+                                    title.IndexOf("Credits", StringComparison.OrdinalIgnoreCase) >= 0 || 
+                                    title.IndexOf("Online-Fix", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                    title.IndexOf("onlinefix", StringComparison.OrdinalIgnoreCase) >= 0) {
+                                    
+                                    SendMessage(hWnd, WM_COMMAND, (IntPtr)IDOK, IntPtr.Zero);
+                                    PostMessage(hWnd, WM_COMMAND, (IntPtr)IDOK, IntPtr.Zero);
+                                    SendMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+                                }
+                            } catch {}
+                            return true;
+                        }, IntPtr.Zero);
+                    } catch {}
+                    Thread.Sleep(20);
                 }
-            }
+            });
+            t.IsBackground = true;
+            t.Start();
         } catch {}
-        return false;
+    }
+
+    public static bool DismissCredits(int targetPid) {
+        bool dismissed = false;
+        try {
+            EnumWindows((hWnd, lParam) => {
+                try {
+                    uint pid = 0;
+                    GetWindowThreadProcessId(hWnd, out pid);
+                    if (targetPid != 0 && pid != (uint)targetPid) return true;
+
+                    StringBuilder sbClass = new StringBuilder(256);
+                    GetClassName(hWnd, sbClass, 256);
+                    string cls = sbClass.ToString();
+
+                    StringBuilder sbTitle = new StringBuilder(256);
+                    GetWindowText(hWnd, sbTitle, 256);
+                    string title = sbTitle.ToString();
+
+                    if (cls == "#32770" || 
+                        title.IndexOf("Credits", StringComparison.OrdinalIgnoreCase) >= 0 || 
+                        title.IndexOf("Online-Fix", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        title.IndexOf("onlinefix", StringComparison.OrdinalIgnoreCase) >= 0) {
+                        
+                        SendMessage(hWnd, WM_COMMAND, (IntPtr)IDOK, IntPtr.Zero);
+                        PostMessage(hWnd, WM_COMMAND, (IntPtr)IDOK, IntPtr.Zero);
+                        SendMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+                        dismissed = true;
+                    }
+                } catch {}
+                return true;
+            }, IntPtr.Zero);
+        } catch {}
+        return dismissed;
     }
 }
 "@ -ErrorAction SilentlyContinue
@@ -2623,7 +2692,7 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
         }elseif($expId -eq 'content-warning' -or $appId -eq '2881650'){
             $realAppId = '2881650'
             $hash0 = '57016c9e2f55a2e4f25ace876241ef2e0dd1019ac7eba8b95e86e7ed0929930bd5ada56589f64bbe6e5b0b2e621b3cebbedcf556e53a857f1b4b71dd0fe48fdc'
-            $hash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
+            $hash1337 = '9ca4f82237e56178f0cd917ddce7a94ceba67562393830c4cbd94067d3e2993e39fb69696fffdc05924d9b5dea02b19be48fd178486c9f08afa7da08ebdb27bc'
         }elseif($expId -eq 'big-walk' -or $appId -eq '1478500' -or $appId -eq '2670630'){
             $realAppId = '1478500'
             $hash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
@@ -2667,13 +2736,14 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                     $targetHash1337 = '0a77dde31976897b0f06f688ac3bf77271c84e48f1d944786134421039aec534f157422ff955db36798c2d6ced12523777b19ec6d611f6153db12faf8bc3673a'
                 }elseif($content -match '(?i)RealAppId\s*=\s*2881650'){
                     $targetHash0 = '57016c9e2f55a2e4f25ace876241ef2e0dd1019ac7eba8b95e86e7ed0929930bd5ada56589f64bbe6e5b0b2e621b3cebbedcf556e53a857f1b4b71dd0fe48fdc'
-                    $targetHash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
+                    $targetHash1337 = '9ca4f82237e56178f0cd917ddce7a94ceba67562393830c4cbd94067d3e2993e39fb69696fffdc05924d9b5dea02b19be48fd178486c9f08afa7da08ebdb27bc'
                 }elseif($content -match '(?i)RealAppId\s*=\s*1478500' -or $content -match '(?i)RealAppId\s*=\s*2670630'){
                     $targetHash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
                     $targetHash1337 = '3d20da45882aaf132163f28befa5b3a36522039776000a375947f30a885293d9e83cffc48624bc7f3c2636840153ad98a44fe2794064a2e4ee7ad325e8635ebb'
                 }elseif(-not $targetHash1337){
-                    $targetHash0 = 'b4353c02359f2a29161f863d31d525227f958c269c51a920a5a6c14c37dbd0f0d9a0ede86cf0a35fa608ecccdfa1cbcc712d762d1cc62f3a64d74506c056a476'
-                    $targetHash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
+                    if($content -match '(?i)1337\s*=\s*([a-f0-9]{128})'){
+                        $targetHash1337 = $matches[1]
+                    }
                 }
                 if($targetHash1337){
                     if($content -match '\[Hashes\]'){
@@ -3494,6 +3564,7 @@ function Invoke-CocoManagedExperienceLaunch(
         Write-CocoLog "Iniciando proceso standalone '$execPath' en '$($installed.InstanceRoot)'"
         $process=Start-Process -FilePath $execPath -WorkingDirectory $installed.InstanceRoot -PassThru
         if([System.Management.Automation.PSTypeName]'CocoWin32PopupKiller'.Type){
+            [void]([CocoWin32PopupKiller]::StartWatcher($process.Id, 25000))
             [void]([CocoWin32PopupKiller]::DismissCredits($process.Id))
         }
         return [pscustomobject]@{Status='launched';Experience=$experience;Installation=$installed;Process=$process;LogPath=$log}
