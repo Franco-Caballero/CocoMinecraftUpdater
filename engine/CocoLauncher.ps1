@@ -2471,10 +2471,10 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         $validationZip=[IO.Compression.ZipFile]::OpenRead($archive)
         try{
             $archivePaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-            foreach($candidateEntry in @($validationZip.Entries|Where-Object{-not$_.FullName.EndsWith('/')})){
+            foreach($candidateEntry in @($validationZip.Entries|Where-Object{-not$_.FullName.EndsWith('/')-and-not$_.FullName.EndsWith('\')-and-not[string]::IsNullOrEmpty($_.Name)})){
                 $candidatePath=($candidateEntry.FullName-replace'\\','/').TrimStart('/')
                 $candidateTarget=Join-Path $instanceRoot ($candidatePath-replace'/','\')
-                if($candidatePath-ne($candidateEntry.FullName-replace'\\','/')-or-not(Test-CocoSafeRelativePath $candidatePath)-or
+                if(-not(Test-CocoSafeRelativePath $candidatePath)-or
                    -not(Test-CocoPathWithin $candidateTarget $instanceRoot)-or-not$archivePaths.Add($candidatePath)){
                     throw "El paquete standalone contiene una ruta insegura o duplicada: '$($candidateEntry.FullName)'."
                 }
@@ -2490,12 +2490,13 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         try{
             $zip=[IO.Compression.ZipFile]::OpenRead($archive)
             try{
-                $entries=@($zip.Entries|Where-Object{-not$_.FullName.EndsWith('/')})
+                $entries=@($zip.Entries|Where-Object{-not$_.FullName.EndsWith('/')-and-not$_.FullName.EndsWith('\')-and-not[string]::IsNullOrEmpty($_.Name)})
                 $totalEntries=[Math]::Max(1, $entries.Count)
                 $extractedCount=0
                 foreach($entry in $entries){
                     $extractedCount++
-                    $targetPath=Join-Path $instanceRoot ($entry.FullName -replace '/','\')
+                    $normEntryPath = ($entry.FullName -replace '\\','/').TrimStart('/')
+                    $targetPath=Join-Path $instanceRoot ($normEntryPath -replace '/','\')
                     $targetDir=Split-Path $targetPath -Parent
                     if(-not(Test-Path -LiteralPath $targetDir)){
                         New-Item -ItemType Directory -Path $targetDir -Force|Out-Null
