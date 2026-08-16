@@ -759,6 +759,77 @@
                     "license": "MIT"
                 }
             ]
+        },
+        {
+            "id": "machine-party",
+            "name": "Machine Party",
+            "description": "Juego multijugador cooperativo y competitivo de fiesta con robots. Compitan y sobrevivan juntos.",
+            "instanceId": "machine-party",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "Machine Party.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Machine Party.exe",
+                        "sha256": "9acf6b8a57c82a46ae28c7840ae61edcfec0ca261b10cd818f55aa0e108fdeca",
+                        "size": 96653824,
+                        "archiveSha256": "858a6e8a3dc36847d7a7e87b6fc2007818fac75b1714d10859645554b1cc48de"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "ae23f76254fbcd88d36ff5d15f958708638cb63e6cebdc1d30247aa559c2340f",
+                        "size": 13401600,
+                        "archiveSha256": "858a6e8a3dc36847d7a7e87b6fc2007818fac75b1714d10859645554b1cc48de"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+                        "size": 502272,
+                        "archiveSha256": "858a6e8a3dc36847d7a7e87b6fc2007818fac75b1714d10859645554b1cc48de"
+                    },
+                    {
+                        "path": "steam_api64.dll",
+                        "sha256": "9d6d2972c1571a2a058d79a8376e26a33d33813f29d93c3ca6e35adaddcd56de",
+                        "size": 301928,
+                        "archiveSha256": "858a6e8a3dc36847d7a7e87b6fc2007818fac75b1714d10859645554b1cc48de"
+                    },
+                    {
+                        "path": "Machine Party.pck",
+                        "sha256": "2e92b410ba2ebb82748a033a8a348cf12e820f18292a1e9f0749c27c93dd9525",
+                        "size": 635329556,
+                        "archiveSha256": "858a6e8a3dc36847d7a7e87b6fc2007818fac75b1714d10859645554b1cc48de"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "4108000"
+            },
+            "pack": {
+                "packId": "standalone-machine-party",
+                "lockPath": "launcher/experiences/machine-party.lock.json",
+                "version": "1.0.6",
+                "sha256": "858a6e8a3dc36847d7a7e87b6fc2007818fac75b1714d10859645554b1cc48de",
+                "size": 508072089,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.120/Machine-Party.zip",
+                        "sha256": "858a6e8a3dc36847d7a7e87b6fc2007818fac75b1714d10859645554b1cc48de",
+                        "size": 508072089
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Machine Party"
+            },
+            "files": []
         }
     ]
 }
