@@ -41,6 +41,7 @@ try{
     'param()'|Set-Content (Join-Path $engineSource 'CocoUpdater.ps1') -Encoding UTF8
     'param()'|Set-Content (Join-Path $engineSource 'CocoLauncher.ps1') -Encoding UTF8
     'param()'|Set-Content (Join-Path $engineSource 'CocoSessionService.ps1') -Encoding UTF8
+    'param()'|Set-Content (Join-Path $engineSource 'CocoDefenderControl.ps1') -Encoding UTF8
     New-Item -ItemType Directory -Path (Join-Path $engineSource 'launcher\experiences') -Force|Out-Null
     [ordered]@{experiences=@([ordered]@{id='test-pack';managementMode='managed';pack=[ordered]@{lockPath='launcher/experiences/test-pack.lock.json'}})}|ConvertTo-Json -Depth 6|Set-Content (Join-Path $engineSource 'launcher\catalog.json') -Encoding UTF8
     '{}'|Set-Content (Join-Path $engineSource 'launcher\experiences\test-pack.lock.json') -Encoding UTF8
@@ -53,6 +54,7 @@ try{
     Install-CocoPublishedEngineCacheLocally $manifestPath $engineZip $canonicalRoot
     if((Get-Content (Join-Path $canonicalRoot 'latest.json') -Raw|ConvertFrom-Json).version-ne'9.9.9'-or
        -not(Test-Path (Join-Path $canonicalRoot 'engine\9.9.9\CocoUpdater.ps1'))-or
+       -not(Test-Path (Join-Path $canonicalRoot 'engine\9.9.9\CocoDefenderControl.ps1'))-or
        (Test-Path (Join-Path $canonicalRoot 'engine\9.9.8'))-or(Test-Path (Join-Path $canonicalRoot 'engine-9.9.8.zip'))){
         throw 'El Publisher no dejo el manifiesto y engine nuevos como unico cache rapido.'
     }
