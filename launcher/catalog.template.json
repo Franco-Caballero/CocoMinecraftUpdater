@@ -966,6 +966,76 @@
                 "serverName": "Coco - Scam Line"
             },
             "files": []
+        },
+        {
+            "id": "lockdown-protocol",
+            "name": "LOCKDOWN Protocol",
+            "description": "Juego de deduccion social y accion cooperativa en primera persona.",
+            "instanceId": "lockdown-protocol",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "LockdownProtocol.exe",
+                "requiredFiles": [
+                    {
+                        "path": "LockdownProtocol.exe",
+                        "sha256": "e5b5c3cf097801bec4418d930b75bb9bd4908c8a2947be36e611efad9bd51cb0",
+                        "size": 183808,
+                        "archiveSha256": "4bf59171b2935497c38a70a935c0b5a0038532602b0861c6ab6c6bd8bee1b82b"
+                    },
+                    {
+                        "path": "LockdownProtocol/Binaries/Win64/LockdownProtocol-Win64-Shipping.exe",
+                        "sha256": "fde93fcd3c17a2fd64246e54f861fda9ca714e3ce39b4aa0f8748f120da9019e",
+                        "size": 148563456,
+                        "archiveSha256": "4bf59171b2935497c38a70a935c0b5a0038532602b0861c6ab6c6bd8bee1b82b"
+                    },
+                    {
+                        "path": "LockdownProtocol/Binaries/Win64/OnlineFix64.dll",
+                        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+                        "size": 11944448,
+                        "archiveSha256": "4bf59171b2935497c38a70a935c0b5a0038532602b0861c6ab6c6bd8bee1b82b"
+                    },
+                    {
+                        "path": "LockdownProtocol/Binaries/Win64/winmm.dll",
+                        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+                        "size": 524288,
+                        "archiveSha256": "4bf59171b2935497c38a70a935c0b5a0038532602b0861c6ab6c6bd8bee1b82b"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "2780980"
+            },
+            "pack": {
+                "packId": "standalone-lockdown-protocol",
+                "lockPath": "launcher/experiences/lockdown-protocol.lock.json",
+                "version": "16122025",
+                "sha256": "4bf59171b2935497c38a70a935c0b5a0038532602b0861c6ab6c6bd8bee1b82b",
+                "size": 2649717507,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.126/Lockdown-Protocol-Part1.zip",
+                        "sha256": "4bf59171b2935497c38a70a935c0b5a0038532602b0861c6ab6c6bd8bee1b82b",
+                        "size": 1527764174
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.126/Lockdown-Protocol-Part2.zip",
+                        "sha256": "65c95b6d811305129815ea96ea922278be4ad36a2b2b1e113dc10d5aeee43d2f",
+                        "size": 1121953333
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - LOCKDOWN Protocol"
+            },
+            "files": []
         }
     ]
 }

@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne12-or
+if($managedExperiences.Count-ne13-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -272,6 +272,18 @@ if($slRequired.Count-ne4-or`
 }
 if([string]$scamLine.runtimePolicies.defenderExclusion-ne'required'-or[string]$scamLine.runtimePolicies.onlineFixAppId-ne'2794590'){
     throw 'Scam Line no declara sus politicas standalone de Defender y OnlineFix.'
+}
+$lockdownProtocol=@($catalog.experiences|Where-Object id -eq 'lockdown-protocol'|Select-Object -First 1)[0]
+if(-not$lockdownProtocol-or[string]$lockdownProtocol.runtime.executable-ne'LockdownProtocol.exe'-or$lockdownProtocol.runtime.type-ne'standalone'-or$lockdownProtocol.managementMode-ne'managed'){
+    throw 'La experiencia standalone LOCKDOWN Protocol no esta declarada correctamente.'
+}
+$lpRequired=@($lockdownProtocol.runtime.requiredFiles)
+if($lpRequired.Count-ne4-or`
+   @($lpRequired|Where-Object{[string]$_.sha256-notmatch'^[a-f0-9]{64}$'-or[int64]$_.size-le0-or[string]$_.archiveSha256-notin@($lockdownProtocol.pack.archives.sha256)}).Count){
+    throw 'LOCKDOWN Protocol no fija todos sus archivos base reparables por ruta, hash, tamano y archive exacto.'
+}
+if([string]$lockdownProtocol.runtimePolicies.defenderExclusion-ne'required'-or[string]$lockdownProtocol.runtimePolicies.onlineFixAppId-ne'2780980'){
+    throw 'LOCKDOWN Protocol no declara sus politicas standalone de Defender y OnlineFix.'
 }
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){

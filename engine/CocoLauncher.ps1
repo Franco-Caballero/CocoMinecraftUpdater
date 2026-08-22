@@ -2610,11 +2610,12 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         }
     }
 
-    $splitParts = Get-ChildItem -Path $instanceRoot -Recurse -Filter '*.part1' -ErrorAction SilentlyContinue
+    $splitParts = @(Get-ChildItem -Path $instanceRoot -Recurse -Filter '*.part1' -ErrorAction SilentlyContinue) + @(Get-ChildItem -Path $instanceRoot -Recurse -Filter '*.001' -ErrorAction SilentlyContinue)
     foreach($p1 in $splitParts){
-        $baseName = $p1.Name.Substring(0, $p1.Name.Length - 6)
+        $ext = [System.IO.Path]::GetExtension($p1.Name)
+        $baseName = $p1.Name.Substring(0, $p1.Name.Length - $ext.Length)
         $targetFile = Join-Path $p1.DirectoryName $baseName
-        $parts = Get-ChildItem -Path $p1.DirectoryName -Filter "$baseName.part*" | Sort-Object Name
+        $parts = Get-ChildItem -Path $p1.DirectoryName -Filter "$baseName.*" | Where-Object { $_.Name -match "^$([regex]::Escape($baseName))\.(part\d+|\d{3})$" } | Sort-Object Name
         if($parts.Count -gt 1){
             Write-CocoLog "Reensamblando archivo dividido '$baseName' ($($parts.Count) partes)..."
             $outFs = [System.IO.File]::Create($targetFile)
@@ -2697,6 +2698,10 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             $realAppId = '2794590'
             $hash0 = 'ead2731f14749bb9cd96163c64b1dc7e53b54bee4859d309028a7fec9dbfb4e9d7663b8a12ebff95c95c2bfefa0f76549e7ab62e3c9b9901120641f2de6cfbb0'
             $hash1337 = '9774dfe661a728c4273738b90501fe2e1e5b7eaaa85483bc51611ff4451bf40a2161156bc6f3e30a4e402405c9940380cca7433379887b3cc3f4caae5558e7b9'
+        }elseif($expId -eq 'lockdown-protocol' -or $appId -eq '2780980'){
+            $realAppId = '2780980'
+            $hash0 = '35863f50c0211bda0710caba012f6f8e12c5c60ef82858aa5b9701b926ddf466a97e8c8db9851fbcb73d1bfa0f8737025a695464c0cbc79018e1d0e974ffcd47'
+            $hash1337 = '6290f76ea6dd1ff491826962246b27a0f95941c1d62069274aa067c4641a24f3b87597edbf57f2ac8f692c7563c9178ac888881b53870728901a832ae6ff82d9'
         }elseif($expId -eq 'big-walk' -or $appId -eq '1478500' -or $appId -eq '2670630'){
             $realAppId = '1478500'
             $hash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
@@ -2744,6 +2749,9 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                 }elseif($content -match '(?i)RealAppId\s*=\s*2794590'){
                     $targetHash0 = 'ead2731f14749bb9cd96163c64b1dc7e53b54bee4859d309028a7fec9dbfb4e9d7663b8a12ebff95c95c2bfefa0f76549e7ab62e3c9b9901120641f2de6cfbb0'
                     $targetHash1337 = '9774dfe661a728c4273738b90501fe2e1e5b7eaaa85483bc51611ff4451bf40a2161156bc6f3e30a4e402405c9940380cca7433379887b3cc3f4caae5558e7b9'
+                }elseif($content -match '(?i)RealAppId\s*=\s*2780980'){
+                    $targetHash0 = '35863f50c0211bda0710caba012f6f8e12c5c60ef82858aa5b9701b926ddf466a97e8c8db9851fbcb73d1bfa0f8737025a695464c0cbc79018e1d0e974ffcd47'
+                    $targetHash1337 = '6290f76ea6dd1ff491826962246b27a0f95941c1d62069274aa067c4641a24f3b87597edbf57f2ac8f692c7563c9178ac888881b53870728901a832ae6ff82d9'
                 }elseif($content -match '(?i)RealAppId\s*=\s*1478500' -or $content -match '(?i)RealAppId\s*=\s*2670630'){
                     $targetHash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
                     $targetHash1337 = '3d20da45882aaf132163f28befa5b3a36522039776000a375947f30a885293d9e83cffc48624bc7f3c2636840153ad98a44fe2794064a2e4ee7ad325e8635ebb'
