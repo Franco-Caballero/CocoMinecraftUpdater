@@ -1245,6 +1245,13 @@ if(Test-Path -LiteralPath $networkLibrary){
     . $networkBlock
 }
 
+$defenderLibrary=Join-Path $script:CocoEngineRoot 'CocoDefenderControl.ps1'
+if(Test-Path -LiteralPath $defenderLibrary){
+    $defenderSource=[IO.File]::ReadAllText($defenderLibrary,[Text.Encoding]::UTF8)
+    $defenderBlock=[ScriptBlock]::Create($defenderSource)
+    . $defenderBlock
+}
+
 $mutex=$null;$mutexAcquired=$false
 $networkMutex=$null;$networkMutexAcquired=$false
 $legacyNetworkMutex=$null;$legacyNetworkMutexAcquired=$false

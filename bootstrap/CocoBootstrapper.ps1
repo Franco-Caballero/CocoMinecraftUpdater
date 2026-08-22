@@ -298,6 +298,7 @@ function Test-CocoEngineExtraction([string]$Destination){
         (Test-Path -LiteralPath (Join-Path $Destination 'CocoNetwork.ps1')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'CocoNetworkElevated.ps1')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'CocoNetworkAuthorizer.ps1')) -and
+        (Test-Path -LiteralPath (Join-Path $Destination 'CocoDefenderControl.ps1')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'launcher\catalog.json')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'assets\fullbody.png')) -and
         (Test-Path -LiteralPath (Join-Path $Destination 'assets\reynaico.ico'))

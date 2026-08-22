@@ -145,6 +145,7 @@ El Publisher exige la siguiente versión pública exacta, compila, valida hashes
 - Experiencia: `%APPDATA%\CocoMinecraft\experiences\<instanceId>\logs\latest.log`
 - Crash: `<gameDir>\crash-reports`
 - Estado Coco original: `%APPDATA%\.minecraft\config\coco-updater-state.json`
+- Toggle Defender (online-fix): `%LOCALAPPDATA%\CocoMinecraftUpdater\tools\defender-control` y entradas `DEFENDER` en los logs del updater
 - Destino persistido: `%LOCALAPPDATA%\CocoMinecraftUpdater\target.json`
 
 ## Mantener la documentación útil

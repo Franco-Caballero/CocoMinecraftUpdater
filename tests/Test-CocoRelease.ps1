@@ -56,7 +56,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $engineArchive=[IO.Compression.ZipFile]::OpenRead((Resolve-Path $engine))
 try{
     $entryNames=@($engineArchive.Entries|ForEach-Object{$_.FullName-replace'\\','/'})
-    foreach($required in 'CocoUpdater.ps1','CocoLauncher.ps1','CocoSessionService.ps1','CocoNetwork.ps1','CocoNetworkElevated.ps1','CocoNetworkAuthorizer.ps1','launcher/catalog.json','assets/fullbody.png','assets/reynaico.ico'){
+    foreach($required in 'CocoUpdater.ps1','CocoLauncher.ps1','CocoSessionService.ps1','CocoNetwork.ps1','CocoNetworkElevated.ps1','CocoNetworkAuthorizer.ps1','CocoDefenderControl.ps1','launcher/catalog.json','assets/fullbody.png','assets/reynaico.ico'){
         if($entryNames-notcontains$required){throw "Falta $required en el engine."}
     }
     $launcherCatalog=Get-Content -LiteralPath 'launcher\catalog.template.json' -Raw|ConvertFrom-Json
@@ -104,6 +104,6 @@ $hostMods=@($manifest.packages|Where-Object role -eq host).mods.name
 if($client-match'(?i)^(e4mc|mcwifipnp|serversidehorror-|deimos-)'){throw 'El paquete cliente contiene mods exclusivos del host.'}
 if(-not($hostMods-match'(?i)^e4mc')-or-not($hostMods-match'(?i)^mcwifipnp')-or-not($hostMods-match'(?i)^serversidehorror-')-or-not($hostMods-match'(?i)^deimos-')){throw 'El paquete host no contiene todos los mods exclusivos requeridos.'}
 
-$scripts=@('bootstrap\CocoBootstrapper.ps1','engine\CocoUpdater.ps1','engine\CocoLauncher.ps1','engine\CocoSessionService.ps1','engine\CocoNetwork.ps1','engine\CocoNetworkElevated.ps1','engine\CocoNetworkAuthorizer.ps1','publisher\CocoPublisher.ps1','tools\Import-CocoCurseForgePack.ps1','tools\New-CocoJarRelease.ps1','tools\Build-CocoValorantTools.ps1','tools\Publish-CocoRelease.ps1')
+$scripts=@('bootstrap\CocoBootstrapper.ps1','engine\CocoUpdater.ps1','engine\CocoLauncher.ps1','engine\CocoSessionService.ps1','engine\CocoNetwork.ps1','engine\CocoNetworkElevated.ps1','engine\CocoNetworkAuthorizer.ps1','engine\CocoDefenderControl.ps1','publisher\CocoPublisher.ps1','tools\Import-CocoCurseForgePack.ps1','tools\New-CocoJarRelease.ps1','tools\Build-CocoValorantTools.ps1','tools\Publish-CocoRelease.ps1')
 foreach($script in $scripts){[void][scriptblock]::Create([IO.File]::ReadAllText((Resolve-Path $script)))}
 'PASS: manifiesto, hashes, assets, roles y sintaxis validados.'

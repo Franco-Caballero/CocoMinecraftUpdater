@@ -155,6 +155,10 @@ Referencias: [configuración cliente oficial de Simple Voice Chat](https://modre
 - Las selecciones declarativas admiten Iris, Oculus y OptiFine. Los archivos de opciones propios de un shader se fijan mediante `preferences.shader.companionFiles` o `preferences.managedFiles`, siempre dentro de la instancia correspondiente.
 - Las copias de rollback sólo existen durante la transacción y se eliminan al confirmar el nuevo estado.
 
+## Ventana Defender online-fix
+
+Las experiencias standalone con parches online-fix son eliminadas por la protección en tiempo real de Windows Defender. Coco Launcher alterna Defender Control v2.0 (pgkt04/defender-control, MIT) alrededor de toda la sesión del launcher: al mostrarse la ventana prepara todo en orden —exclusión de la carpeta de herramientas antes de descargar, tareas programadas con una única elevación, binarios fijados por SHA-256 (`engine\CocoDefenderControl.ps1`)— y desactiva la protección; en el `finally` de `Start-CocoLauncherUi` la restaura aunque el launcher termine por error. El toggle nunca bloquea el arranque: cualquier fallo se registra con prefijo `DEFENDER` y el juego continúa. Si «Protección contra alteraciones» impide el efecto, muestra una guía única con botón directo a Seguridad de Windows; los modos de prueba (`IsTest`) nunca tocan el sistema. Detalles operativos y recuperación manual: [OPERACION.md](OPERACION.md).
+
 ## UX y diagnóstico
 
 - Bootstrap y updater usan el panel Reina de 640×460; Coco Launcher lo extiende a 640×470 para alojar la tarjeta unificada sin superposición.

@@ -4496,6 +4496,11 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     Set-CocoLauncherUiLayout
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{component='launcher';mode='launcher';role='detecting';stage='start'}}
     $runLabel=if(-not[string]::IsNullOrWhiteSpace([string]$script:CocoRunId)){([string]$script:CocoRunId).Substring(0,[Math]::Min(8,([string]$script:CocoRunId).Length))}else{'test/local'}
+    $script:CocoDefenderPlayWindowOwned=$false
+    if(-not$paths.IsTest-and(Get-Command Invoke-CocoDefenderPlayWindowStart -ErrorAction SilentlyContinue)){
+        try{$script:CocoDefenderPlayWindowOwned=[bool](Invoke-CocoDefenderPlayWindowStart)}catch{Write-CocoLog "DEFENDER: inicio de sesion sin toggle ($($_.Exception.Message))"}
+    }
+    try{
     Set-CocoLauncherStep 1 'INICIANDO COCO LAUNCHER' ("Engine {0} | ejecucion {1}"-f$Manifest.version,$runLabel) 13
     $role=if([string]::IsNullOrWhiteSpace($RoleOverride)){Get-CocoLauncherRole $LegacyMinecraftRoot}else{$RoleOverride}
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{role=$role}}
@@ -4733,4 +4738,10 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         }
     }
     if(-not$script:CocoForm.IsDisposed){while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}}
+    }finally{
+        if($script:CocoDefenderPlayWindowOwned){
+            try{[void](Invoke-CocoDefenderPlayWindowEnd)}catch{Write-CocoLog "DEFENDER: restauracion fallo ($($_.Exception.Message))"}
+            $script:CocoDefenderPlayWindowOwned=$false
+        }
+    }
 }

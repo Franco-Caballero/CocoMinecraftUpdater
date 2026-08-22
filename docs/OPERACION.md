@@ -114,6 +114,23 @@ e4mc permanece instalado solo en el host. En operación ZeroTier se detiene con 
 - `online-mode=false` permite perfiles offline y, por tanto, suplantación de nombres si no existe whitelist.
 - SmartScreen puede advertir porque el EXE aún no posee una firma de código con reputación.
 
+## Defender Control (ventana online-fix)
+
+Los juegos standalone con parche online-fix son eliminados por Windows Defender al momento, así que Coco alterna la protección en tiempo real durante cada sesión con [Defender Control v2.0](https://github.com/pgkt04/defender-control) (MIT), binarios fijados por SHA-256 en `engine\CocoDefenderControl.ps1`.
+
+Automático en todas las sesiones:
+
+- Al abrir Coco Launcher: crea `%LOCALAPPDATA%\CocoMinecraftUpdater\tools\defender-control`, agrega esa carpeta como exclusión de Defender (antes de descargar, para que las herramientas no sean eliminadas), descarga y verifica los binarios y desactiva la protección.
+- Al cerrar Coco Launcher: restaura la protección, incluso si la sesión terminó con error.
+- La alternancia es silenciosa gracias a dos tareas manuales (`CocoDefenderDisable` y `CocoDefenderEnable`) creadas una sola vez; en sesiones ya elevadas se ejecuta directo.
+
+Los únicos pasos que Windows exige una vez por equipo —ningún programa puede evitarlos—:
+
+1. **Un clic en el aviso de permisos (UAC) la primera vez**: tocar Defender requiere administrador. No hace falta click derecho ni «ejecutar como administrador»; Coco pide el permiso él solo cuando lo necesita.
+2. **«Protección contra alteraciones»: No**: Windows bloquea por diseño ese interruptor frente a cualquier software. Si está activo, la desactivación no surte efecto; Coco lo detecta y muestra una ventana única con el paso exacto y un botón que abre Seguridad de Windows. Tras hacerlo una vez, todo queda automático para siempre.
+
+Recuperación manual (por ejemplo, un corte de luz mató a Coco sin restaurar): `schtasks /Run /TN CocoDefenderEnable` o ejecutar `enable-defender.exe` del directorio como administrador. Diagnóstico: entradas `DEFENDER` en los logs del updater.
+
 ## Recuperación y diagnóstico
 
 Si Windows se interrumpe durante el reemplazo de `mods`, el siguiente inicio restaura la transacción pendiente antes de continuar. Las descargas se verifican por SHA-256 y se reintentan. La autoactualización del EXE canónico es secundaria: si otra instancia lo mantiene bloqueado, se deja un reemplazo verificado pendiente durante hasta 12 horas y el engine continúa; esa condición no debe presentarse como fallo de mods o de conexión.
