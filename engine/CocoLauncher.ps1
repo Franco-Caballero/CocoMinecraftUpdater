@@ -2350,6 +2350,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         }
     }
     $statePath=Join-Path $instanceRoot '.coco\standalone-state.json'
+    try { [void](Ensure-CocoDefenderExclusion $Experience $instanceRoot) } catch {}
     try { [void](Ensure-CocoSteamRunning -Quiet) } catch {}
     $archiveItems = @(if($Experience.pack.archives){$Experience.pack.archives}else{$Experience.pack})
     $expectedSha = [string]$Experience.pack.sha256
@@ -2711,6 +2712,7 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             $hash0 = 'b4353c02359f2a29161f863d31d525227f958c269c51a920a5a6c14c37dbd0f0d9a0ede86cf0a35fa608ecccdfa1cbcc712d762d1cc62f3a64d74506c056a476'
             $hash1337 = '8f2db6b3b69a8abd76ac5aa9885d65ce44a423bd8d5632a1ba82e0a40019dc5ed5ca6f49e0f60ccf76902076b98fb4b09529d3b87b3aa4b859bfa3acc6d8e9bb'
         }
+        $rootIni = Join-Path $InstanceRoot 'OnlineFix.ini'
         $rootIniNeedsWrite = $true
         if(Test-Path -LiteralPath $rootIni -PathType Leaf){
             try{
@@ -2881,8 +2883,27 @@ function Repair-CocoStandaloneRequiredFiles($Experience,[string]$InstanceRoot,[s
                 New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force|Out-Null
                 try{
                     [IO.Compression.ZipFileExtensions]::ExtractToFile($entries[0],$staging,$false)
-                    if((Get-Item -LiteralPath $staging -Force).Length-ne[int64]$requiredFile.size-or
-                       (Get-FileHash -LiteralPath $staging -Algorithm SHA256).Hash.ToLowerInvariant()-ne([string]$requiredFile.sha256).ToLowerInvariant()){
+                    $stagingItem = $null
+                    $stagingHash = $null
+                    try{
+                        $stagingItem = Get-Item -LiteralPath $staging -Force
+                        $stagingHash = (Get-FileHash -LiteralPath $staging -Algorithm SHA256).Hash.ToLowerInvariant()
+                    }catch{
+                        if($_.Exception.Message -match '(?i)virus|potencialmente no deseado|operation did not complete|blocked'){
+                            Write-CocoLog "Windows Defender bloqueo '$staging'. Intentando aplicar exclusion de emergencia..."
+                            [void](Ensure-CocoDefenderExclusion $Experience $InstanceRoot)
+                            Start-Sleep -Milliseconds 600
+                            try{
+                                $stagingItem = Get-Item -LiteralPath $staging -Force
+                                $stagingHash = (Get-FileHash -LiteralPath $staging -Algorithm SHA256).Hash.ToLowerInvariant()
+                            }catch{
+                                throw "Windows Defender bloqueo la biblioteca '$entryName' en '$InstanceRoot'. Agrega la carpeta a las exclusiones de Windows Defender."
+                            }
+                        }else{
+                            throw
+                        }
+                    }
+                    if($stagingItem.Length-ne[int64]$requiredFile.size-or $stagingHash-ne([string]$requiredFile.sha256).ToLowerInvariant()){
                         throw "El archivo extraido '$entryName' no coincide con su contrato."
                     }
                     if(Test-Path -LiteralPath $target -PathType Leaf){Move-Item -LiteralPath $target -Destination $backup -Force}
@@ -3539,6 +3560,7 @@ function Invoke-CocoManagedExperienceLaunch(
 
     if([string]$experience.launch.workflow-eq'coco-standalone'-or[string]$experience.runtime.type-eq'standalone'){
         $installed=Install-CocoStandaloneExperience $experience $ExperiencesRoot $CacheRoot $InstanceLocationsPath $Role
+        $defenderStatus=Ensure-CocoDefenderExclusion $experience $installed.InstanceRoot
         if($experience.hosting.host -and [string]$experience.hosting.mode -ne 'p2p'){
             $hostIp=[string]$experience.hosting.host
             [IO.File]::WriteAllText((Join-Path $installed.InstanceRoot 'ip.txt'),$hostIp,(New-Object Text.UTF8Encoding($false)))
@@ -3562,7 +3584,6 @@ function Invoke-CocoManagedExperienceLaunch(
         $diagLines.Add("Timestamp: $((Get-Date).ToString('o'))")
         $diagLines.Add("InstanceRoot: $($installed.InstanceRoot)")
         foreach($requiredItem in $requiredStatus){$diagLines.Add("REQUIRED FILE: $($requiredItem.path) = $($requiredItem.status)")}
-        $defenderStatus=Ensure-CocoDefenderExclusion $experience $installed.InstanceRoot
         $diagLines.Add("DEFENDER EXCLUSION: $defenderStatus")
         $steamProc = @(Get-CimInstance Win32_Process -Filter "Name='steam.exe'" -ErrorAction SilentlyContinue)
         $diagLines.Add("Steam running: $(if ($steamProc) { 'True (PID ' + $steamProc[0].ProcessId + ')' } else { 'False' })")
