@@ -1,18 +1,18 @@
 {
     "schemaVersion":  2,
     "packId":  "coco-fabric-26.1.2",
-    "version":  "0.5.125",
-    "publishedAt":  "2026-08-16T18:18:56.8395302Z",
+    "version":  "0.5.126",
+    "publishedAt":  "2026-08-22T01:18:30.1807120Z",
     "engine":  {
-                   "version":  "0.5.125",
-                   "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.125/coco-engine-0.5.125.zip",
-                   "sha256":  "9d839ae62123250b734481401cbec3ac0f2455a0bcf126fece527708eec3e288",
-                   "size":  655805
+                   "version":  "0.5.126",
+                   "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.126/coco-engine-0.5.126.zip",
+                   "sha256":  "0762d546cba31150240bbf602357dbd5b93bac08c45f1a92c5a512ebbc995290",
+                   "size":  656926
                },
     "bootstrap":  {
-                      "version":  "0.5.125",
-                      "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.125/CocoUpdater.exe",
-                      "sha256":  "81ceb9e810525aac51b255ef746c934f55c8cd1bf2910a28832da7afc0f7bfa3",
+                      "version":  "0.5.126",
+                      "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.126/CocoUpdater.exe",
+                      "sha256":  "1631dda3f6ade02894ae77885dd61d164c099e46e991e23f0cab631dd8b18903",
                       "size":  652288
                   },
     "network":  {
@@ -348,11 +348,11 @@
                                           "size":  1135373
                                       },
                                       {
-                                          "name":  "coco-session-bridge-0.5.125.jar",
+                                          "name":  "coco-session-bridge-0.5.126.jar",
                                           "fabricId":  "coco_session_bridge",
-                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-f5581728ab658807c087a364d72c8344ff04fdece9bcd0e48289c194cc927dad.jar",
-                                          "sha256":  "f5581728ab658807c087a364d72c8344ff04fdece9bcd0e48289c194cc927dad",
-                                          "size":  16482
+                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a3aa6748017742662915ed06237b88a197d89bac8c9fd4c1c540db1b7af33fc9.jar",
+                                          "sha256":  "a3aa6748017742662915ed06237b88a197d89bac8c9fd4c1c540db1b7af33fc9",
+                                          "size":  16483
                                       },
                                       {
                                           "name":  "comforts-fabric-15.0.0+26.1.2.jar",
@@ -1291,11 +1291,11 @@
                                           "size":  1135373
                                       },
                                       {
-                                          "name":  "coco-session-bridge-0.5.125.jar",
+                                          "name":  "coco-session-bridge-0.5.126.jar",
                                           "fabricId":  "coco_session_bridge",
-                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-f5581728ab658807c087a364d72c8344ff04fdece9bcd0e48289c194cc927dad.jar",
-                                          "sha256":  "f5581728ab658807c087a364d72c8344ff04fdece9bcd0e48289c194cc927dad",
-                                          "size":  16482
+                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a3aa6748017742662915ed06237b88a197d89bac8c9fd4c1c540db1b7af33fc9.jar",
+                                          "sha256":  "a3aa6748017742662915ed06237b88a197d89bac8c9fd4c1c540db1b7af33fc9",
+                                          "size":  16483
                                       },
                                       {
                                           "name":  "comforts-fabric-15.0.0+26.1.2.jar",
