@@ -27,6 +27,7 @@ public class CocoPopupGate {
     [DllImport("kernel32.dll", SetLastError = true)] private static extern bool CloseHandle(IntPtr hObject);
     [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
     [DllImport("kernel32.dll", SetLastError = true)] private static extern bool GetExitCodeProcess(IntPtr hProcess, out uint lpExitCode);
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool TerminateProcess(IntPtr hProcess, uint uExitCode);
     [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     [DllImport("user32.dll")] private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc, WinEventProc pfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
     [DllImport("user32.dll")] private static extern bool UnhookWinEvent(IntPtr hWinEventHook);
@@ -52,12 +53,13 @@ public class CocoPopupGate {
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string szExeFile;
     }
 
- private const uint TH32CS_SNAPPROCESS = 0x00000002;
+    private const uint TH32CS_SNAPPROCESS = 0x00000002;
     private const uint WM_CLOSE = 0x0010;
     private const uint WM_COMMAND = 0x0111;
     private const uint BM_CLICK = 0x00F5;
     private const int IDOK = 1;
     private const int PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+    private const int PROCESS_TERMINATE = 0x0001;
     private const uint STILL_ACTIVE = 259;
 
     private static Thread worker;
@@ -258,9 +260,51 @@ public class CocoPopupGate {
         public List<string> OtherTexts = new List<string>();
     }
 
+    private static readonly string[] browserNames = new string[] {
+        "chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe", "opera_gx.exe",
+        "iexplore.exe", "browser.exe", "waterfox.exe", "vivaldi.exe"
+    };
+
+    private static readonly string[] redirectTitleMarkers = new string[] {
+        "online-fix", "onlinefix", "freesteam", "steamrip", "free steam", "credits"
+    };
+
+    private static void SuppressRedirectProcesses(HashSet<int> treePids) {
+        if (treePids == null || treePids.Count <= 1) return;
+        IntPtr snapshot = IntPtr.Zero;
+        try {
+            snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if (snapshot != IntPtr.Zero && snapshot != (IntPtr)(-1)) {
+                PROCESSENTRY32W entry = new PROCESSENTRY32W();
+                entry.dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32W));
+                if (Process32FirstW(snapshot, ref entry)) {
+                    do {
+                        int pid = unchecked((int)entry.th32ProcessID);
+                        if (pid != rootPid && treePids.Contains(pid)) {
+                            string exe = (entry.szExeFile ?? "").ToLowerInvariant();
+                            foreach (string b in browserNames) {
+                                if (exe == b || exe.EndsWith(b)) {
+                                    IntPtr hProc = OpenProcess(PROCESS_TERMINATE, false, pid);
+                                    if (hProc != IntPtr.Zero) {
+                                        try { TerminateProcess(hProc, 0); } catch {}
+                                        finally { CloseHandle(hProc); }
+                                        LastAction = "kill-redirect-proc:" + exe + "(" + pid + ")";
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    } while (Process32NextW(snapshot, ref entry));
+                }
+            }
+        } catch {}
+        finally { if (snapshot != IntPtr.Zero && snapshot != (IntPtr)(-1)) CloseHandle(snapshot); }
+    }
+
     private static void Sweep() {
         HashSet<int> pids = CollectTreePids(rootPid);
         lock (treeLock) { treeCache = pids; }
+        SuppressRedirectProcesses(pids);
         RestoreStuckWindows();
         List<WindowInfo> windows = new List<WindowInfo>();
         EnumWindows(delegate(IntPtr hWnd, IntPtr lParam) {
@@ -268,16 +312,32 @@ public class CocoPopupGate {
                 if (!IsWindow(hWnd) || !IsWindowVisible(hWnd)) return true;
                 uint pid;
                 GetWindowThreadProcessId(hWnd, out pid);
-                if (!pids.Contains(unchecked((int)pid))) return true;
+                StringBuilder title = new StringBuilder(512);
+                GetWindowText(hWnd, title, 512);
+                string titleStr = title.ToString();
+                string lowerTitle = titleStr.ToLowerInvariant();
+
+                bool inTree = pids.Contains(unchecked((int)pid));
+                if (!inTree && (DateTime.UtcNow - startedUtc).TotalSeconds < 90) {
+                    bool isRedirect = false;
+                    foreach (string rm in redirectTitleMarkers) {
+                        if (lowerTitle.Contains(rm)) { isRedirect = true; break; }
+                    }
+                    if (isRedirect) {
+                        ShowWindow(hWnd, SW_HIDE);
+                        PostMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+                        LastAction = "close-redirect-win:" + titleStr;
+                        return true;
+                    }
+                }
+                if (!inTree) return true;
                 WindowInfo info = new WindowInfo();
                 info.Handle = hWnd;
                 info.Pid = pid;
                 StringBuilder cls = new StringBuilder(256);
                 GetClassName(hWnd, cls, 256);
                 info.Class = cls.ToString();
-                StringBuilder title = new StringBuilder(512);
-                GetWindowText(hWnd, title, 512);
-                info.Title = title.ToString();
+                info.Title = titleStr;
                 RECT rect;
                 if (GetWindowRect(hWnd, out rect)) info.Area = (long)Math.Max(0, rect.Right - rect.Left) * Math.Max(0, rect.Bottom - rect.Top);
                 CollectChildren(info);
@@ -449,7 +509,7 @@ $cocoRuClose=(ConvertFrom-CocoCodePoints @(0x0437,0x0430,0x043A,0x0440,0x044B,0x
 $cocoRuOk=(ConvertFrom-CocoCodePoints @(0x043E,0x043A))
 
 $script:CocoPopupGateDefaults=[pscustomobject]@{
-    markers=@('online-fix','onlinefix','online fix')
+    markers=@('online-fix','onlinefix','online fix','credits','créditos','fix made by','freesteam','steamfix','ofme')
     buttonLabels=@('ok','accept','aceptar','play','play!','start','start game','empezar','begin','enter','entrar','continue','continuar','go','ir','jugar','join','unirse',$cocoRuPlay,($cocoRuPlay+'!'),$cocoRuEnter,$cocoRuStart,$cocoRuGo,$cocoRuAccept,$cocoRuContinue,$cocoRuClose,$cocoRuOk)
     dialogClasses=@('#32770')
 }
@@ -3088,6 +3148,10 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             $realAppId = '1478500'
             $hash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
             $hash1337 = '3d20da45882aaf132163f28befa5b3a36522039776000a375947f30a885293d9e83cffc48624bc7f3c2636840153ad98a44fe2794064a2e4ee7ad325e8635ebb'
+        }elseif($expId -eq 'cooking-simulator-2' -or $appId -eq '2455360'){
+            $realAppId = '2455360'
+            $hash0 = 'b827003fe85ecf063ff7b3f2da1646239e394da4e244f4ff42c93b3a8c4f18238dd98fb5a1080d6050ad1c0c653db9ce23eba5272cc62f426239d0954b589fad'
+            $hash1337 = '0668f8b2eb4d826f4478152a3696647fc87cd6ff53df6c860cb626c917e1b2fe90e801355c055eef936b6a159a781926d7c147031668f8ef74273fefa3477263'
         }elseif($appId){
             $realAppId = $appId
             $hash0 = 'b4353c02359f2a29161f863d31d525227f958c269c51a920a5a6c14c37dbd0f0d9a0ede86cf0a35fa608ecccdfa1cbcc712d762d1cc62f3a64d74506c056a476'

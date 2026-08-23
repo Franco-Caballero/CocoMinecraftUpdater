@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne13-or
+if($managedExperiences.Count-ne14-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -284,6 +284,18 @@ if($lpRequired.Count-ne4-or`
 }
 if([string]$lockdownProtocol.runtimePolicies.defenderExclusion-ne'required'-or[string]$lockdownProtocol.runtimePolicies.onlineFixAppId-ne'2780980'){
     throw 'LOCKDOWN Protocol no declara sus politicas standalone de Defender y OnlineFix.'
+}
+$cookingSim2=@($catalog.experiences|Where-Object id -eq 'cooking-simulator-2'|Select-Object -First 1)[0]
+if(-not$cookingSim2-or[string]$cookingSim2.runtime.executable-ne'Cooking Simulator 2.exe'-or$cookingSim2.runtime.type-ne'standalone'-or$cookingSim2.managementMode-ne'managed'){
+    throw 'La experiencia standalone Cooking Simulator 2 no esta declarada correctamente.'
+}
+$cs2Required=@($cookingSim2.runtime.requiredFiles)
+if($cs2Required.Count-ne4-or`
+   @($cs2Required|Where-Object{[string]$_.sha256-notmatch'^[a-f0-9]{64}$'-or[int64]$_.size-le0-or[string]$_.archiveSha256-notin@($cookingSim2.pack.archives.sha256)}).Count){
+    throw 'Cooking Simulator 2 no fija todos sus archivos base reparables por ruta, hash, tamano y archive exacto.'
+}
+if([string]$cookingSim2.runtimePolicies.defenderExclusion-ne'required'-or[string]$cookingSim2.runtimePolicies.onlineFixAppId-ne'2455360'){
+    throw 'Cooking Simulator 2 no declara sus politicas standalone de Defender y OnlineFix.'
 }
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){

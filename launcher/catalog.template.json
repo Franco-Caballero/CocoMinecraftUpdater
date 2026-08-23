@@ -1036,6 +1036,114 @@
                 "serverName": "Coco - LOCKDOWN Protocol"
             },
             "files": []
+        },
+        {
+            "id": "cooking-simulator-2",
+            "name": "Cooking Simulator 2",
+            "tagline": "Better Together",
+            "summary": "Cocina y gestiona tu restaurante en cooperativo multijugador.",
+            "description": "Secuela cooperativa de Cooking Simulator donde gestionas tu cocina, creas recetas y sirves platos deliciosos junto a tus amigos.",
+            "instanceId": "cooking-simulator-2",
+            "managementMode": "managed",
+            "order": 140,
+            "runtime": {
+                "type": "standalone",
+                "executable": "Cooking Simulator 2.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Cooking Simulator 2.exe",
+                        "sha256": "6d691a57f945b18fa602680a2667ca8a4b3fa85332d299662cb542f9e4907fb8",
+                        "size": 672256,
+                        "archiveSha256": "4763384c2bf28622851ba32384792c3c4e1f53d4c173a42bb00e41d4ac838ea6"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "27a1c596c4b1de1e6672cb7e7fba2ba3d3124999493ff82a504beb6f6145e88f",
+                        "size": 13820928,
+                        "archiveSha256": "4763384c2bf28622851ba32384792c3c4e1f53d4c173a42bb00e41d4ac838ea6"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+                        "size": 506368,
+                        "archiveSha256": "4763384c2bf28622851ba32384792c3c4e1f53d4c173a42bb00e41d4ac838ea6"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "76b70a79862387b45692d94cc78aa9845285a5ef68e62774367bfecb0f58d6e4",
+                        "size": 33742760,
+                        "archiveSha256": "4763384c2bf28622851ba32384792c3c4e1f53d4c173a42bb00e41d4ac838ea6"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "2455360"
+            },
+            "pack": {
+                "packId": "standalone-cooking-simulator-2",
+                "lockPath": "launcher/experiences/cooking-simulator-2.lock.json",
+                "version": "1.11.8838be4",
+                "sha256": "4763384c2bf28622851ba32384792c3c4e1f53d4c173a42bb00e41d4ac838ea6",
+                "size": 8916652201,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.129/Cooking-Simulator-2-Part1.zip",
+                        "sha256": "4763384c2bf28622851ba32384792c3c4e1f53d4c173a42bb00e41d4ac838ea6",
+                        "size": 457393922
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.129/Cooking-Simulator-2-Part2.zip",
+                        "sha256": "929d2d894702f3a1e659e6d189a6cdc2891ec86ea06613bee9a427408d92a2e9",
+                        "size": 1271680351
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.129/Cooking-Simulator-2-Part3.zip",
+                        "sha256": "7e4d15922b7d55a2f3bb93409c5c48fc7d732c42bbd6d76e6a1a7af68ab88952",
+                        "size": 1276785215
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.129/Cooking-Simulator-2-Part4.zip",
+                        "sha256": "0b33464d9dfc74a5256c5a4b5db3d5aec2e9dabf0446abe52358f50200446a11",
+                        "size": 805853359
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.129/Cooking-Simulator-2-Part5.zip",
+                        "sha256": "c3db4c62bba60fdbff8441d1ef801890247c174836a54309fba92ebe2d5eed91",
+                        "size": 785464901
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.129/Cooking-Simulator-2-Part6.zip",
+                        "sha256": "2b7e4e93f39066212e6ff151c32cac72a06267e638f912f62557921b9c80ea99",
+                        "size": 1272606504
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.129/Cooking-Simulator-2-Part7.zip",
+                        "sha256": "85aeba92fb929fe93e1dc31cd4df9696aa71a704dd84cfb9f232228489ca5ee6",
+                        "size": 1235954188
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.129/Cooking-Simulator-2-Part8.zip",
+                        "sha256": "094380a1dfe15e32f0500b1bbc940c40eae713cfcf7a17391d525a0e44543fc9",
+                        "size": 1311147074
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.129/Cooking-Simulator-2-Part9.zip",
+                        "sha256": "34eb2beaa6735c5ad575c764f1efc5cb2acdda085e48b7c2d7d89bd96bb19b35",
+                        "size": 499766687
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Cooking Simulator 2"
+            },
+            "files": []
         }
     ]
 }
