@@ -580,8 +580,16 @@ function Test-CocoPathWithin([string]$Path,[string]$Root){
     try{
         $resolvedPath=[IO.Path]::GetFullPath($Path).TrimEnd('\')
         $resolvedRoot=[IO.Path]::GetFullPath($Root).TrimEnd('\')
-        return $resolvedPath.StartsWith($resolvedRoot+'\',[StringComparison]::OrdinalIgnoreCase)
-    }catch{return $false}
+        if($resolvedPath.StartsWith($resolvedRoot+'\',[StringComparison]::OrdinalIgnoreCase)){return $true}
+    }catch{}
+    try{
+        $normP=$Path.Replace('/','\').TrimEnd('\')
+        $normR=$Root.Replace('/','\').TrimEnd('\')
+        if($normP.StartsWith($normR+'\',[StringComparison]::OrdinalIgnoreCase)-and-not$normP.Contains('..\')-and-not$normP.Contains('/..')){
+            return $true
+        }
+    }catch{}
+    return $false
 }
 
 function Get-CocoExperienceButtonBounds([ValidateRange(0,999)][int]$Index){
