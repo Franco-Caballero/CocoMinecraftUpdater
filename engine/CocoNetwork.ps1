@@ -243,6 +243,7 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
         voicePort=if($NetworkConfig.voicePort){[int]$NetworkConfig.voicePort}else{0}
         voiceFirewallRuleName=[string]$NetworkConfig.voiceFirewallRuleName
         authorizationTimeoutSeconds=if($NetworkConfig.authorizationTimeoutSeconds){[int]$NetworkConfig.authorizationTimeoutSeconds}else{120}
+        authorizerSourcePath=(Join-Path $script:CocoEngineRoot 'CocoNetworkAuthorizer.ps1')
     }
     $payload|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $configPath -Encoding UTF8
     $helper=Join-Path $script:CocoEngineRoot 'CocoNetworkElevated.ps1'

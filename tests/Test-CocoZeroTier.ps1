@@ -57,6 +57,7 @@ if($cli){
     }
 
     $authorizer=Join-Path $root 'engine\CocoNetworkAuthorizer.ps1'
+    if((Get-Content $authorizer -Raw)-notmatch'Global\\CocoZeroTierAuthorizer'){throw 'El autorizador no serializa sesiones SYSTEM y de usuario.'}
     $token=(Get-Content 'C:\ProgramData\ZeroTier\One\authtoken.secret' -Raw).Trim()
     $headers=@{'X-ZT1-Auth'=$token}
     $fakeNode=[guid]::NewGuid().ToString('N').Substring(0,10)
@@ -77,6 +78,21 @@ if($cli){
     }finally{
         try{Invoke-RestMethod -Method Delete -Uri $memberUri -Headers $headers -TimeoutSec 10|Out-Null}catch{}
     }
+
+    # Aceptacion permanente: la tarea de SYSTEM debe existir, repetirse cada
+    # minuto y apuntar a la copia estable del autorizador.
+    $taskName='Coco ZeroTier AutoAccept'
+    $task=Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+    if(-not$task){throw 'Falta la tarea permanente de autoaceptacion Coco.'}
+    if($task.State-eq'Disabled'){throw 'La tarea de autoaceptacion esta deshabilitada.'}
+    $principalUser=[string]$task.Principal.UserId
+    if($principalUser-notmatch'^(SYSTEM|S-1-5-18)$'){throw "La tarea de autoaceptacion no corre como SYSTEM: $principalUser"}
+    $actionText=(@($task.Actions)|ForEach-Object{"$($_.Execute) $($_.Arguments)"})-join' '
+    foreach($required in @($networkId,'CocoNetworkAuthorizer.ps1','-Once')){
+        if($actionText-notmatch[regex]::Escape($required)){throw ("La tarea de autoaceptacion no referencia {0}."-f$required)}
+    }
+    $taskXml=Export-ScheduledTask -TaskName $taskName
+    if($taskXml-notmatch'PT1M'){throw 'La tarea de autoaceptacion no se repite cada minuto.'}
 
     $statusPath=Join-Path $env:LOCALAPPDATA "CocoMinecraftUpdater\network\authorizer-$networkId.json"
     Remove-Item -LiteralPath $statusPath -Force -ErrorAction SilentlyContinue

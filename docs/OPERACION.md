@@ -90,11 +90,18 @@ El Publisher:
 
 ## ZeroTier
 
+- Ruta normal: ZeroTier `10.77.37.1:25565`, red `58997fc5f3c0c001`.
+- **Autoaceptación permanente**: el host instala la tarea `Coco ZeroTier AutoAccept` (SYSTEM, cada minuto) que ejecuta `C:\ProgramData\CocoMinecraftUpdater\network\CocoNetworkAuthorizer.ps1 -Once`. Cualquier amigo que se una a la red queda admitido solo, sin abrir el launcher ni Minecraft; el autorizador en vivo (mientras el host juega) acepta al instante y repite la configuración de red para entregar IP de inmediato. El Network ID viaja en `latest.json`, así que con esta política tener el launcher equivale a pertenecer; firewall sigue limitando la exposición a TCP/UDP 25565 y TCP 25564 desde `10.77.37.0/24`.
+- MCWiFiPnP moderno debe producir exactamente `OnlineMode=false`, `EnableUUIDFixer=true`, `UseUPnP=false` y puerto 25565. Los nombres kebab-case son inválidos.
+- Un adaptador alternativo necesita rol host, hash, versión compatible y prueba real; no inventes configuraciones.
+- No anuncies `ready` hasta validar configuración LAN y listener TCP 25565.
+- El instalador puede administrar pack/config, pero nunca debe administrar una partida viva bajo `saves`.
+- Diagnóstico de autoaceptación: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs\zerotier-authorizer.log` (sesión de usuario) y el historial de la tarea `Coco ZeroTier AutoAccept`; quitar la tarea elimina la admisión automática.
 - Red: `Coco Minecraft` (`58997fc5f3c0c001`).
 - Subred: `10.77.37.0/24`.
 - Endpoint: `10.77.37.1:25565`.
 - Controlador local asociado al nodo `58997fc5f3`.
-- El host autoriza nodos pendientes mientras Minecraft está abierto.
+- El host acepta nodos pendientes en todo momento: tarea SYSTEM cada minuto más el autorizador vivo durante la partida.
 - El firewall permite únicamente TCP 25565 desde la subred ZeroTier por la interfaz virtual.
 - Los clientes usan perfil Public; el host usa Private.
 
@@ -109,7 +116,7 @@ e4mc permanece instalado solo en el host. En operación ZeroTier se detiene con 
 ## Seguridad
 
 - No publicar tokens ZeroTier, credenciales GitHub ni secretos del controlador.
-- La autorización automática está limitada a la ventana en que Minecraft del host está activo.
+- La autoaceptación es permanente (tarea `Coco ZeroTier AutoAccept`): pertenecer a la red no requiere aprobación manual; revocar a alguien exige expulsarlo y desactivar la tarea.
 - Conocer el Network ID permite solicitar incorporación; firewall y whitelist siguen siendo controles independientes.
 - `online-mode=false` permite perfiles offline y, por tanto, suplantación de nombres si no existe whitelist.
 - SmartScreen puede advertir porque el EXE aún no posee una firma de código con reputación.
@@ -130,6 +137,8 @@ Los únicos pasos que Windows exige una vez por equipo —ningún programa puede
 2. **«Protección contra alteraciones»: No**: Windows bloquea por diseño ese interruptor frente a cualquier software. Si está activo, la desactivación no surte efecto; Coco lo detecta y muestra una ventana única con el paso exacto y un botón que abre Seguridad de Windows. Tras hacerlo una vez, todo queda automático para siempre.
 
 Recuperación manual (por ejemplo, un corte de luz mató a Coco sin restaurar): `schtasks /Run /TN CocoDefenderEnable` o ejecutar `enable-defender.exe` del directorio como administrador. Diagnóstico: entradas `DEFENDER` en los logs del updater.
+
+La ventana de créditos de online-fix se cierra sola en cada máquina gracias al vigilante `POPUPGATE` (árbol completo de procesos del juego, pulsación del botón real, activa durante toda la partida). Si algún juego mostrara una variante no reconocida, los logs registran sus candidatos (`cls`, `titulo`, `botones`) con prefijo `POPUPGATE candidatos no atendidos`; con esa evidencia se amplían las etiquetas en `CocoPopupGateDefaults` o en `preferences.popupGate` de esa experiencia.
 
 ## Recuperación y diagnóstico
 

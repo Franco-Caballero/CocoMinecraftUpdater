@@ -67,7 +67,7 @@ function Invoke-AuthorizationPass {
     }
 }
 
-$mutexName='Local\CocoZeroTierAuthorizer-'+$NetworkId
+$mutexName='Global\CocoZeroTierAuthorizer-'+$NetworkId
 $mutex=New-Object Threading.Mutex($false,$mutexName)
 if(-not$mutex.WaitOne(0)){exit 0}
 try{
