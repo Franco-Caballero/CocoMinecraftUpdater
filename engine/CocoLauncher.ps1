@@ -4051,7 +4051,18 @@ function Invoke-CocoManagedExperienceLaunch(
             throw "No se encontro el ejecutable '$execPath' tras la instalacion standalone."
         }
         Write-CocoLog "Iniciando proceso standalone '$execPath' en '$($installed.InstanceRoot)'"
-        $process=Start-Process -FilePath $execPath -WorkingDirectory $installed.InstanceRoot -PassThru
+        $launchArgs = @()
+        if($experience.launch -and $experience.launch.arguments){
+            $launchArgs = @($experience.launch.arguments)
+        }elseif($experience.runtime -and $experience.runtime.arguments){
+            $launchArgs = @($experience.runtime.arguments)
+        }
+        $process = if($launchArgs.Count -gt 0){
+            Write-CocoLog "Argumentos standalone: $($launchArgs -join ' ')"
+            Start-Process -FilePath $execPath -ArgumentList $launchArgs -WorkingDirectory $installed.InstanceRoot -PassThru
+        }else{
+            Start-Process -FilePath $execPath -WorkingDirectory $installed.InstanceRoot -PassThru
+        }
         Start-CocoStandalonePopupGate $process $experience
         return [pscustomobject]@{Status='launched';Experience=$experience;Installation=$installed;Process=$process;LogPath=$log}
     }

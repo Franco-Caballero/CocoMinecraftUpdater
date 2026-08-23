@@ -1140,6 +1140,9 @@
             },
             "launch": {
                 "workflow": "coco-standalone",
+                "arguments": [
+                    "-force-d3d11"
+                ],
                 "autoJoin": true,
                 "serverName": "Coco - Cooking Simulator 2"
             },
