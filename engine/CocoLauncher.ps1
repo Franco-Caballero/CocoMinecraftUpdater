@@ -83,17 +83,21 @@ public class CocoPopupGate {
     public static long ClosedCount;
     public static long HiddenCount;
     public static string LastAction = "";
+    private static readonly WinEventProc winEventHandler = new WinEventProc(OnWindowShown);
 
     private static void HookThreadLoop(int myGeneration) {
-        hookThreadId = GetCurrentThreadId();
-        WinEventProc handler = new WinEventProc(OnWindowShown);
-        eventHook = SetWinEventHook(EVENT_OBJECT_SHOW, EVENT_OBJECT_SHOW, IntPtr.Zero, handler, 0, 0, WINEVENT_OUTOFCONTEXT);
-        NativeMessage msg;
-        while (running && myGeneration == generation) {
-            int result = GetMessage(out msg, IntPtr.Zero, 0, 0);
-            if (result <= 0) break;
+        try {
+            hookThreadId = GetCurrentThreadId();
+            eventHook = SetWinEventHook(EVENT_OBJECT_SHOW, EVENT_OBJECT_SHOW, IntPtr.Zero, winEventHandler, 0, 0, WINEVENT_OUTOFCONTEXT);
+            NativeMessage msg;
+            while (running && myGeneration == generation) {
+                int result = GetMessage(out msg, IntPtr.Zero, 0, 0);
+                if (result <= 0) break;
+            }
+        } catch {}
+        finally {
+            if (eventHook != IntPtr.Zero) { try { UnhookWinEvent(eventHook); } catch {} eventHook = IntPtr.Zero; }
         }
-        if (eventHook != IntPtr.Zero) { try { UnhookWinEvent(eventHook); } catch {} eventHook = IntPtr.Zero; }
     }
 
     private static void OnWindowShown(IntPtr hHook, uint evt, IntPtr hwnd, long idObject, long idChild, uint eventThread, uint eventTimeMs) {
@@ -3160,6 +3164,10 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             $realAppId = '2455360'
             $hash0 = 'b827003fe85ecf063ff7b3f2da1646239e394da4e244f4ff42c93b3a8c4f18238dd98fb5a1080d6050ad1c0c653db9ce23eba5272cc62f426239d0954b589fad'
             $hash1337 = '0668f8b2eb4d826f4478152a3696647fc87cd6ff53df6c860cb626c917e1b2fe90e801355c055eef936b6a159a781926d7c147031668f8ef74273fefa3477263'
+        }elseif($expId -eq 'repo' -or $appId -eq '3241660'){
+            $realAppId = '3241660'
+            $hash0 = '7daf7245f816aca908330f027527253c49244e8945ed89be097da9eb110e6c88da5331f2eddd307084af4a6c39f613e51d58541028f20ecf6ea3fd84f7cb0b5d'
+            $hash1337 = '1c28dc43813c5af932d38b7b46cdd79dcb294c1afe05a984f18ca0bf1e1abf81f4a72886cc6e99e0319361680cc45936c5c19e32259c49058c0acf95fc40fb44'
         }elseif($appId){
             $realAppId = $appId
             $hash0 = 'b4353c02359f2a29161f863d31d525227f958c269c51a920a5a6c14c37dbd0f0d9a0ede86cf0a35fa608ecccdfa1cbcc712d762d1cc62f3a64d74506c056a476'
@@ -3176,7 +3184,8 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             }catch{$rootIniNeedsWrite = $true}
         }
         if($rootIniNeedsWrite -and $realAppId){
-            $defaultIni = "[Main]`r`nRealAppId=$realAppId`r`nFakeAppId=$fakeAppId`r`n`r`n#Language=english`r`nBuildId=0`r`nInstallDir=`r`nUnlockAllDLC=false`r`n`r`n`r`n[Misc]`r`nExtraProtection=false`r`nPhotonIntegration=false`r`nEmulateTicket=false`r`n`r`n`r`n[Interfaces]`r`nApps=true`r`nUser=true`r`nUtils=true`r`nStorage=true`r`nUserStats=true`r`nFriends=true`r`nUGC=true`r`nInventory=true`r`nAppTicket=true`r`n`r`n`r`n[Hashes]`r`n0=$hash0`r`n1337=$hash1337`r`n"
+            $photon = if($expId -eq 'repo' -or $appId -eq '3241660'){'true'}else{'false'}
+            $defaultIni = "[Main]`r`nRealAppId=$realAppId`r`nFakeAppId=$fakeAppId`r`n`r`n#Language=english`r`nBuildId=0`r`nInstallDir=`r`nUnlockAllDLC=false`r`n`r`n`r`n[Misc]`r`nExtraProtection=false`r`nPhotonIntegration=$photon`r`nEmulateTicket=false`r`n`r`n`r`n[Interfaces]`r`nApps=true`r`nUser=true`r`nUtils=true`r`nStorage=true`r`nUserStats=true`r`nFriends=true`r`nUGC=true`r`nInventory=true`r`nAppTicket=true`r`n`r`n`r`n[Hashes]`r`n0=$hash0`r`n1337=$hash1337`r`n"
             [IO.File]::WriteAllText($rootIni, $defaultIni, [System.Text.Encoding]::ASCII)
             Write-CocoLog "OnlineFix.ini restaurado y verificado en '$rootIni'"
         }
@@ -3210,6 +3219,12 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                 }elseif($content -match '(?i)RealAppId\s*=\s*1478500' -or $content -match '(?i)RealAppId\s*=\s*2670630'){
                     $targetHash0 = '6348b4cad0694d061f859f5b9f3fbb6cc90ac5113ebcc30c0f5078943334ae06a4866f97cc3e67ef543421b5f9523bfb3c90eafddf0627ad177ceabe8473c2da'
                     $targetHash1337 = '3d20da45882aaf132163f28befa5b3a36522039776000a375947f30a885293d9e83cffc48624bc7f3c2636840153ad98a44fe2794064a2e4ee7ad325e8635ebb'
+                }elseif($content -match '(?i)RealAppId\s*=\s*2455360'){
+                    $targetHash0 = 'b827003fe85ecf063ff7b3f2da1646239e394da4e244f4ff42c93b3a8c4f18238dd98fb5a1080d6050ad1c0c653db9ce23eba5272cc62f426239d0954b589fad'
+                    $targetHash1337 = '0668f8b2eb4d826f4478152a3696647fc87cd6ff53df6c860cb626c917e1b2fe90e801355c055eef936b6a159a781926d7c147031668f8ef74273fefa3477263'
+                }elseif($content -match '(?i)RealAppId\s*=\s*3241660'){
+                    $targetHash0 = '7daf7245f816aca908330f027527253c49244e8945ed89be097da9eb110e6c88da5331f2eddd307084af4a6c39f613e51d58541028f20ecf6ea3fd84f7cb0b5d'
+                    $targetHash1337 = '1c28dc43813c5af932d38b7b46cdd79dcb294c1afe05a984f18ca0bf1e1abf81f4a72886cc6e99e0319361680cc45936c5c19e32259c49058c0acf95fc40fb44'
                 }elseif(-not $targetHash1337){
                     if($content -match '(?i)1337\s*=\s*([a-f0-9]{128})'){
                         $targetHash1337 = $matches[1]

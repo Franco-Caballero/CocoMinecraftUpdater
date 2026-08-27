@@ -1147,6 +1147,77 @@
                 "serverName": "Coco - Cooking Simulator 2"
             },
             "files": []
+        },
+        {
+            "id": "repo",
+            "name": "R.E.P.O",
+            "description": "Juego cooperativo de extraccion y supervivencia procedural en primera persona.",
+            "instanceId": "repo",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "REPO.exe",
+                "requiredFiles": [
+                    {
+                        "path": "REPO.exe",
+                        "sha256": "412f7cf79cf16888999e22905ca3bb11a6074857efdf8c754073a47ef872317c",
+                        "size": 666624,
+                        "archiveSha256": "f8024de0b5af9a318377cd52a64b6e8bc619c76793f10d07be11abe02a8dcef6"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "9e6f4bf93bfc3da01c39b212dd8417aa10e619cdcd70f9a923454869ffbf6446",
+                        "size": 31073200,
+                        "archiveSha256": "f8024de0b5af9a318377cd52a64b6e8bc619c76793f10d07be11abe02a8dcef6"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+                        "size": 11944448,
+                        "archiveSha256": "f8024de0b5af9a318377cd52a64b6e8bc619c76793f10d07be11abe02a8dcef6"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+                        "size": 506368,
+                        "archiveSha256": "f8024de0b5af9a318377cd52a64b6e8bc619c76793f10d07be11abe02a8dcef6"
+                    },
+                    {
+                        "path": "Custom.dll",
+                        "sha256": "de7311a5a8b5b2716bde4e4202b14640afa441e9df83c5f49ea7c91f79be5d1d",
+                        "size": 2203136,
+                        "archiveSha256": "f8024de0b5af9a318377cd52a64b6e8bc619c76793f10d07be11abe02a8dcef6"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "3241660"
+            },
+            "pack": {
+                "packId": "standalone-repo",
+                "lockPath": "launcher/experiences/repo.lock.json",
+                "version": "0.4.4.3",
+                "sha256": "f8024de0b5af9a318377cd52a64b6e8bc619c76793f10d07be11abe02a8dcef6",
+                "size": 618899137,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.133/REPO.zip",
+                        "sha256": "f8024de0b5af9a318377cd52a64b6e8bc619c76793f10d07be11abe02a8dcef6",
+                        "size": 618899137
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - R.E.P.O"
+            },
+            "files": []
         }
     ]
 }
