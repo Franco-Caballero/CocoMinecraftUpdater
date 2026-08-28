@@ -1,0 +1,38 @@
+# ============================================================
+# COCO LAUNCHER - Firma automatica con SignPath
+# Corre al publicar un release, firma el CocoUpdater.exe y
+# vuelve a subirlo firmado al mismo release.
+# ============================================================
+
+name: Sign release binaries
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  signing:
+    runs-on: windows-latest
+    steps:
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download ${{ github.event.release.tag_name }} -D ./artifacts -p "*.exe"
+
+      - name: Sign with SignPath
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: "coco-launcher"
+          signing-policy-slug: "release-signing"
+          artifact-configuration-slug: "initial"
+          input-artifact-path: ./artifacts/CocoUpdater.exe
+          output-artifact-path: ./signed/CocoUpdater.exe
+
+      - name: Re-upload signed binary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} ./signed/CocoUpdater.exe --clobber
