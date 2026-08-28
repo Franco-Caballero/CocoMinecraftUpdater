@@ -1,7 +1,7 @@
 # ============================================================
 # COCO LAUNCHER - Firma automatica con SignPath
-# Corre al publicar un release, firma el CocoUpdater.exe y
-# vuelve a subirlo firmado al mismo release.
+# Corre al publicar un release (o manualmente desde Actions),
+# firma el CocoUpdater.exe y vuelve a subirlo firmado.
 # ============================================================
 
 name: Sign release binaries
@@ -9,30 +9,48 @@ name: Sign release binaries
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag del release a firmar'
+        required: true
+        default: 'v1.0.1'
+
+env:
+  REPO: ${{ github.repository }}
 
 jobs:
   signing:
     runs-on: windows-latest
     steps:
+      - name: Resolve tag
+        id: tag
+        run: |
+          $t = "${{ github.event.release.tag_name }}"
+          if (-not $t) { $t = "${{ inputs.tag }}" }
+          "tag=$t" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Download release assets
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          gh release download ${{ github.event.release.tag_name }} -D ./artifacts -p "*.exe"
+          gh release download "$env:TAG" -R "$env:REPO" -D ./artifacts -p "*.exe"
 
       - name: Sign with SignPath
         uses: signpath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-          project-slug: "coco-launcher"
-          signing-policy-slug: "release-signing"
-          artifact-configuration-slug: "initial"
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
           input-artifact-path: ./artifacts/CocoUpdater.exe
           output-artifact-path: ./signed/CocoUpdater.exe
 
       - name: Re-upload signed binary
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          gh release upload ${{ github.event.release.tag_name }} ./signed/CocoUpdater.exe --clobber
+          gh release upload "$env:TAG" ./signed/CocoUpdater.exe -R "$env:REPO" --clobber
