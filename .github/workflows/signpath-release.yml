@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # COCO LAUNCHER - Firma automatica con SignPath
 # Corre al publicar un release (o manualmente desde Actions),
 # firma el CocoUpdater.exe y vuelve a subirlo firmado.
@@ -23,6 +23,10 @@ jobs:
   signing:
     runs-on: windows-latest
     steps:
+      - name: Safety check (solo prereleases)
+        run: |
+          if ("${{ github.event.release.prerelease }}" -ne "true") { throw "SOLO prereleases: un release normal se convierte en 'latest' y rompe el manifiesto latest.json de todos los launchers." }
+
       - name: Resolve tag
         id: tag
         run: |
