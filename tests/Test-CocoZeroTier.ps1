@@ -79,20 +79,19 @@ if($cli){
         try{Invoke-RestMethod -Method Delete -Uri $memberUri -Headers $headers -TimeoutSec 10|Out-Null}catch{}
     }
 
-    # Aceptacion permanente: la tarea de SYSTEM debe existir, repetirse cada
-    # minuto y apuntar a la copia estable del autorizador.
+    # La autoaceptacion debe existir solo mientras el launcher esta abierto.
+    # Ninguna tarea SYSTEM puede continuar admitiendo miembros al cerrarlo.
     $taskName='Coco ZeroTier AutoAccept'
     $task=Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-    if(-not$task){throw 'Falta la tarea permanente de autoaceptacion Coco.'}
-    if($task.State-eq'Disabled'){throw 'La tarea de autoaceptacion esta deshabilitada.'}
-    $principalUser=[string]$task.Principal.UserId
-    if($principalUser-notmatch'^(SYSTEM|S-1-5-18)$'){throw "La tarea de autoaceptacion no corre como SYSTEM: $principalUser"}
-    $actionText=(@($task.Actions)|ForEach-Object{"$($_.Execute) $($_.Arguments)"})-join' '
-    foreach($required in @($networkId,'CocoNetworkAuthorizer.ps1','-Once')){
-        if($actionText-notmatch[regex]::Escape($required)){throw ("La tarea de autoaceptacion no referencia {0}."-f$required)}
+    if($task){throw 'La tarea permanente de autoaceptacion Coco no fue retirada.'}
+    $networkScript=Get-Content (Join-Path $root 'engine\CocoNetwork.ps1') -Raw
+    if($networkScript-notmatch'Start-CocoNetworkAuthorizer\s+\$config\s+\$PID'){
+        throw 'El autorizador no esta ligado al PID del launcher.'
     }
-    $taskXml=Export-ScheduledTask -TaskName $taskName
-    if($taskXml-notmatch'PT1M'){throw 'La tarea de autoaceptacion no se repite cada minuto.'}
+    $elevatedScript=Get-Content (Join-Path $root 'engine\CocoNetworkElevated.ps1') -Raw
+    if($elevatedScript-match'Install-CocoAutoAcceptTask'-or$elevatedScript-notmatch'Remove-CocoLegacyAutoAcceptTask'){
+        throw 'El helper elevado todavia instala autoaceptacion permanente.'
+    }
 
     $statusPath=Join-Path $env:LOCALAPPDATA "CocoMinecraftUpdater\network\authorizer-$networkId.json"
     Remove-Item -LiteralPath $statusPath -Force -ErrorAction SilentlyContinue
@@ -107,9 +106,9 @@ if($cli){
             if($heartbeat.healthy-and$heartbeat.running-and[int64]$heartbeat.watchPid-eq$watch.Id){break}
             Start-Sleep -Milliseconds 200
         }while((Get-Date)-lt$deadline)
-        if(-not$heartbeat.healthy-or-not$heartbeat.running-or[int64]$heartbeat.watchPid-ne$watch.Id){throw 'El autorizador persistente no publico un heartbeat sano.'}
+        if(-not$heartbeat.healthy-or-not$heartbeat.running-or[int64]$heartbeat.watchPid-ne$watch.Id){throw 'El autorizador de la sesion del launcher no publico un heartbeat sano.'}
         $watch.WaitForExit()
-        if(-not$authorizerProcess.WaitForExit(5000)){throw 'El autorizador no se detuvo al terminar Minecraft simulado.'}
+        if(-not$authorizerProcess.WaitForExit(5000)){throw 'El autorizador no se detuvo al cerrar el launcher simulado.'}
         $stopped=Get-Content -LiteralPath $statusPath -Raw|ConvertFrom-Json
         if($stopped.running){throw 'El heartbeat del autorizador no registro su cierre.'}
     }finally{
@@ -128,4 +127,4 @@ if(Test-Path -LiteralPath $msi){
     }
 }
 
-'PASS: integracion ZeroTier, controles de seguridad y estado vivo validados.'
+'PASS: integracion ZeroTier, autoaceptacion ligada al launcher y cierre sin tarea permanente validados.'

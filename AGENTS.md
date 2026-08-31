@@ -141,7 +141,7 @@ El Publisher exige la siguiente versión pública exacta, compila, valida hashes
 
 - Updater: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`
 - Sesión/skins: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs\launcher-session-service.log`
-- Autoaceptación ZeroTier: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs\zerotier-authorizer.log` y tarea `Coco ZeroTier AutoAccept`
+- Autoaceptación ZeroTier: `%LOCALAPPDATA%\CocoMinecraftUpdater\logs\zerotier-authorizer.log` y estado `network\authorizer-<networkId>.json`; la tarea heredada `Coco ZeroTier AutoAccept` debe estar ausente
 - Coco original: `%APPDATA%\.minecraft\logs\latest.log`
 - Experiencia: `%APPDATA%\CocoMinecraft\experiences\<instanceId>\logs\latest.log`
 - Crash: `<gameDir>\crash-reports`

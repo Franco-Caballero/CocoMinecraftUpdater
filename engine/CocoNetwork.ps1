@@ -359,7 +359,10 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
         try{$profileOkay=(Get-NetConnectionProfile -InterfaceIndex $adapter.ifIndex -ErrorAction Stop).NetworkCategory-eq$desiredProfile}catch{}
     }
     $firewallOkay=if($Role-eq'host'){Test-CocoHostFirewall $config}else{Test-CocoClientFirewallClean $config}
-    if($installRequired-or-not$network-or-not$adapter-or-not$profileOkay-or-not$firewallOkay){
+    $legacyAutoAcceptTask=if($Role-eq'host'){
+        Get-ScheduledTask -TaskName 'Coco ZeroTier AutoAccept' -ErrorAction SilentlyContinue
+    }else{$null}
+    if($installRequired-or-not$network-or-not$adapter-or-not$profileOkay-or-not$firewallOkay-or$legacyAutoAcceptTask){
         if(-not$script:CocoForm){Show-CocoWindow}
         [void](Invoke-CocoNetworkElevation $config $Role $installRequired)
     }
@@ -369,7 +372,10 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
         # Fix the host member first so the authorizer never gives it a random IP.
         Ensure-CocoControllerNetwork $config
         [void](Set-CocoHostMember $config)
-        Start-CocoNetworkAuthorizer $config $MinecraftPid
+        # Auto-accept exists only for the lifetime of this launcher process.
+        # Closing Coco Launcher must stop admission even if Minecraft or the
+        # ZeroTier Windows service remains open.
+        Start-CocoNetworkAuthorizer $config $PID
     }
     $network=Wait-CocoZeroTierReady $config $Role
     $peerMode=Get-CocoPeerMode $config $Role

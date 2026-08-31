@@ -47,47 +47,15 @@ function Get-Network([string]$Cli,[string]$NetworkId){
     return @($items|Where-Object{$_.id-eq$NetworkId-or$_.nwid-eq$NetworkId}|Select-Object -First 1)[0]
 }
 
-function Install-CocoAutoAcceptTask([hashtable]$Config){
-    # Aceptacion permanente: una tarea de SYSTEM ejecuta el autorizador cada
-    # minuto, asi cualquier amigo que se una a la red Coco queda admitido solo,
-    # aunque el host no tenga abierto el launcher ni Minecraft.
+function Remove-CocoLegacyAutoAcceptTask {
+    # Versiones anteriores instalaban un autorizador SYSTEM permanente. La
+    # admision ahora pertenece exclusivamente a la sesion del launcher.
     $taskName='Coco ZeroTier AutoAccept'
-    try{
-        if(-not$config.authorizerSourcePath-or-not(Test-Path -LiteralPath $config.authorizerSourcePath)){throw 'Falta el autorizador de origen.'}
-        $stableDir='C:\ProgramData\CocoMinecraftUpdater\network'
-        New-Item -ItemType Directory -Path $stableDir -Force|Out-Null
-        $stableCopy=Join-Path $stableDir 'CocoNetworkAuthorizer.ps1'
-        Copy-Item -LiteralPath $config.authorizerSourcePath -Destination $stableCopy -Force
-        $taskArguments='-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -NetworkId {1} -PollSeconds 1 -Once' -f `
-            ($stableCopy-replace'"','\"'),[string]$config.networkId
-        $principal=New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
-        $settings=New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
-            -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 2) -StartWhenAvailable
-        $registered=$false
-        try{
-            $action=New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $taskArguments
-            $trigger=New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(-1) -RepetitionInterval (New-TimeSpan -Minutes 1)
-            Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force -ErrorAction Stop|Out-Null
-            $registered=$true
-        }catch{
-            # Algunas builds rechazan la repeticion del cmdlet; schtasks si la acepta.
-            & schtasks.exe /Create /F /TN $taskName /SC MINUTE /MO 1 /TR ("powershell.exe "+$taskArguments) /RU SYSTEM /RL HIGHEST 2>&1|Out-Null
-            if($LASTEXITCODE-eq0){$registered=$true}
-        }
-        if(-not$registered){throw 'El planificador de Windows rechazo la tarea.'}
-        try{
-            # Lectura para Usuarios: cualquier sesion puede verificar la tarea.
-            $scheduleService=New-Object -ComObject 'Schedule.Service'
-            $scheduleService.Connect()
-            $rootFolder=$scheduleService.GetFolder('\')
-            $registeredTask=$rootFolder.GetTask($taskName)
-            $registeredTask.SetSecurityDescriptor('D:P(A;;FR;;;BU)(A;;FA;;;BA)(A;;FA;;;SY)',0)
-        }catch{}
-        Start-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-        Write-NetworkProgress 'Red Coco automatica' 'Nuevos amigos seran aceptados solos en la red privada.' 23
-    }catch{
-        Write-NetworkProgress 'Red Coco' ('Autoaceptacion permanente no instalada: {0}'-f$_.Exception.Message) 22
+    if(Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue){
+        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction Stop
     }
+    $stableCopy='C:\ProgramData\CocoMinecraftUpdater\network\CocoNetworkAuthorizer.ps1'
+    Remove-Item -LiteralPath $stableCopy -Force -ErrorAction SilentlyContinue
 }
 
 function Test-VersionAtLeast([string]$Actual,[string]$Minimum){
@@ -236,7 +204,7 @@ try{
                 -LocalPort ([int]$config.voicePort) -RemoteAddress $config.subnet -Profile Private `
                 -ErrorAction Stop|Out-Null
         }
-        Install-CocoAutoAcceptTask $config
+        Remove-CocoLegacyAutoAcceptTask
     }else{
         Remove-NetFirewallRule -DisplayName 'Coco Voice - ZeroTier UDP 24454' -ErrorAction SilentlyContinue
         Remove-NetFirewallRule -DisplayName $config.firewallRuleName -ErrorAction SilentlyContinue
