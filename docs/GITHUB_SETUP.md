@@ -74,6 +74,51 @@ Si una etapa falla antes de publicar, el canal estable continúa apuntando al re
 
 El workflow de GitHub es una compilación de respaldo, no el mecanismo oficial de publicación. No reemplaza al Publisher porque no puede validar ni actualizar la instalación host antes de exponer una versión.
 
+## Firma del launcher
+
+El `CocoUpdater.exe` distribuido actualmente no tiene una firma de código con
+reputación. El workflow histórico de SignPath que está en
+`.github/workflows/signpath-release.yml` falló el 2026-08-28 al autenticarse
+contra la API; sus secretos no deben reutilizarse sin regenerar el token en
+SignPath. Tampoco se debe firmar después de publicar un release estable: la
+firma cambia el SHA-256 del EXE y el `bootstrap.sha256` de `latest.json` debe
+describir exactamente el archivo firmado.
+
+La solicitud gratuita vigente para un proyecto open source se inicia en
+[SignPath Foundation - Apply](https://signpath.org/apply). El formulario y su
+CAPTCHA requieren la cuenta y la aprobación del propietario del proyecto; no se
+rellenan ni se envían automáticamente desde este repositorio. La política
+requerida por el programa está en [`CODE_SIGNING_POLICY.md`](../CODE_SIGNING_POLICY.md).
+
+Flujo seguro para la primera versión aprobada:
+
+1. El propietario completa y envía el formulario de SignPath Foundation.
+2. Instala la aplicación de SignPath para el repositorio y crea un token nuevo;
+   el token se guarda solamente como secreto de GitHub, nunca en el repositorio,
+   logs, locks ni este documento.
+3. Se configura la política de firma con el certificado de producción, se
+   actualiza el workflow a la versión vigente de la acción y se comprueba que el
+   binario se construye desde el commit del repositorio en un runner de GitHub.
+4. Para el siguiente release, se puede dejar el borrador sin publicar con:
+
+   ```powershell
+   .\tools\Publish-CocoRelease.ps1 -Version <siguiente-version> -KeepDraft
+   ```
+
+   Después se ejecuta manualmente `Sign release candidate` en GitHub Actions
+   usando ese tag. El workflow construye desde el tag, firma el EXE, actualiza
+   `latest.json` y conserva el release como borrador.
+5. Antes de publicarlo se verifica
+   `Get-AuthenticodeSignature`, el firmante esperado, el SHA-256 del EXE y el
+   `bootstrap.sha256` del manifiesto.
+6. Solo después de esas comprobaciones se publica el release estable. El botón
+   equivalente en GitHub CLI es `gh release edit <tag> --draft=false`.
+
+Firmar no garantiza que SmartScreen deje de mostrar una advertencia el primer
+día: Windows también acumula reputación por editor y por hash. El objetivo de
+la firma es mostrar un editor verificable y permitir que esa reputación se
+acumule con cada descarga limpia.
+
 ## Verificación posterior
 
 Después de publicar:

@@ -4,7 +4,8 @@ param(
     [string]$MinecraftRoot="$env:APPDATA\.minecraft",
     [string]$Repository='Franco-Caballero/CocoMinecraftUpdater',
     [string]$KnownE4mcDomainsCsv='',
-    [int64]$PublisherPid=0
+    [int64]$PublisherPid=0,
+    [switch]$KeepDraft
 )
 $ErrorActionPreference='Stop'
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
@@ -396,7 +397,16 @@ if($assetRelease.draft){
     $assetRelease=Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($assetRelease.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body (@{draft=$false;prerelease=$true}|ConvertTo-Json)
 }
 
-$body=@{tag_name="v$Version";target_commitish='main';name="Coco Pack $Version";body='Publicacion automatica incremental por JAR.';draft=$true;prerelease=$false}|ConvertTo-Json
+$releaseNotes=@'
+Publicacion automatica incremental por JAR.
+
+## Code signing policy
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+See https://github.com/Franco-Caballero/CocoMinecraftUpdater/blob/main/CODE_SIGNING_POLICY.md
+for the policy and the current signing status.
+'@
+$body=@{tag_name="v$Version";target_commitish='main';name="Coco Pack $Version";body=$releaseNotes;draft=$true;prerelease=$false}|ConvertTo-Json
 $existing=@($allReleases|Where-Object{$_.tag_name-eq"v$Version"}|Select-Object -First 1)
 if($existing){
     if(-not$existing.draft){throw "El release v$Version ya esta publicado."}
@@ -466,6 +476,13 @@ if($install.ExitCode-ne0){throw 'No se pudo actualizar la instalacion host; el r
 $candidateEngineZip=Join-Path $releaseDir "coco-engine-$Version.zip"
 Install-CocoPublishedEngineCacheLocally (Join-Path $releaseDir 'latest.json') $candidateEngineZip
 [void](Archive-StaleCocoBootstrapArtifacts $Version)
+
+if($KeepDraft){
+    Write-Progress -Activity "Publicando Coco Pack $Version" -Completed
+    Write-Host "Borrador listo para firma: $($release.html_url)"
+    Write-Host "Ejecuta el workflow 'Sign release candidate' sobre este tag y publica el borrador solo despues de verificar la firma y latest.json."
+    exit 0
+}
 
 $publishBody=@{draft=$false;prerelease=$false;make_latest=$true}|ConvertTo-Json
 $release=Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($release.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $publishBody

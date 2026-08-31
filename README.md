@@ -67,10 +67,18 @@ El Publisher exige partir de `origin/main` sincronizado y usar exactamente la ve
 - Los perfiles offline requieren una política de whitelist independiente de la autorización de red.
 - El EXE todavía no dispone de una firma de código con reputación; SmartScreen puede advertir en la primera ejecución.
 
+La política de firma y el estado de la solicitud están en
+[`CODE_SIGNING_POLICY.md`](CODE_SIGNING_POLICY.md). La solicitud gratuita para
+proyectos open source se presenta en [SignPath Foundation](https://signpath.org/apply);
+no se debe describir ningún EXE como firmado hasta que la solicitud sea aprobada,
+la política de SignPath use el certificado de producción y se verifique el hash
+del manifiesto.
+
 ## Documentación
 
 - [Operación, publicación y soporte](docs/OPERACION.md)
 - [Canal estable y arquitectura de GitHub](docs/GITHUB_SETUP.md)
+- [Política de firma de código](CODE_SIGNING_POLICY.md)
 
 Los diagnósticos se almacenan en `%LOCALAPPDATA%\CocoMinecraftUpdater\logs`. Bootstrap y engine comparten un Run ID y registran una cronología de etapas; los errores dejan además `CocoUpdater-error-*.txt` en el Escritorio con clasificación, contexto del pack, logs, red/procesos/capacidad y una acción recomendada, sin copiar tokens o contraseñas. Las experiencias nuevas deben pasar [`docs/ModpackCompatibilityChecklist.md`](docs/ModpackCompatibilityChecklist.md); la auditoría actual de Cobbleverse está en [`docs/CobbleverseAudit-2026-07-26.md`](docs/CobbleverseAudit-2026-07-26.md).
 

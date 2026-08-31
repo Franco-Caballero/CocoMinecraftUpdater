@@ -1,55 +1,87 @@
-﻿# ============================================================
-# COCO LAUNCHER - Firma automatica con SignPath
-# Corre al publicar un release (o manualmente desde Actions),
-# firma el CocoUpdater.exe y vuelve a subirlo firmado.
+# ============================================================
+# COCO LAUNCHER - Firma segura de un release candidato
+#
+# Este workflow solo trabaja con un release BORRADOR iniciado manualmente.
+# Construye el EXE desde el tag, lo firma con SignPath, actualiza el hash del
+# bootstrap en latest.json y deja el borrador para una revision humana.
+# Nunca firma ni modifica un release estable ya publicado.
 # ============================================================
 
-name: Sign release binaries
+name: Sign release candidate
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag del release a firmar'
+        description: 'Tag del release borrador a firmar (por ejemplo v0.5.134)'
         required: true
-        default: 'v1.0.1'
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: signpath-release-${{ inputs.tag }}
+  cancel-in-progress: false
 
 env:
   REPO: ${{ github.repository }}
+  TAG: ${{ inputs.tag }}
 
 jobs:
   signing:
     runs-on: windows-latest
     steps:
-      - name: Safety check (solo prereleases)
-        run: |
-          if ("${{ github.event.release.prerelease }}" -ne "true") { throw "SOLO prereleases: un release normal se convierte en 'latest' y rompe el manifiesto latest.json de todos los launchers." }
-
-      - name: Resolve tag
-        id: tag
-        run: |
-          $t = "${{ github.event.release.tag_name }}"
-          if (-not $t) { $t = "${{ inputs.tag }}" }
-          "tag=$t" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
-      - name: Download release assets
+      - name: Validate the draft release
+        shell: powershell
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          gh release download "$env:TAG" -R "$env:REPO" -D ./artifacts -p "*.exe"
+          if ($env:TAG -notmatch '^v\d+\.\d+\.\d+$') {
+            throw "El tag debe tener formato vMAJOR.MINOR.PATCH: $env:TAG"
+          }
+          $json = gh api "repos/$env:REPO/releases/tags/$env:TAG"
+          if ($LASTEXITCODE -ne 0) { throw "No existe el release $env:TAG." }
+          $release = $json | ConvertFrom-Json
+          if (-not $release.draft) { throw "$env:TAG no es un borrador; no se modifica un release publicado." }
+          if ($release.prerelease) { throw "$env:TAG debe ser un borrador normal, no un prerelease." }
+
+      - name: Checkout the tagged source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 1
+
+      - name: Install ps2exe
+        shell: powershell
+        run: Install-Module ps2exe -Scope CurrentUser -Force -AllowClobber
+
+      - name: Build the unsigned bootstrap from the tag
+        shell: powershell
+        run: |
+          $manifest = Get-Content -LiteralPath 'release/latest.json' -Raw | ConvertFrom-Json
+          if ("v$($manifest.version)" -ne $env:TAG) {
+            throw "El tag $env:TAG no coincide con release/latest.json ($($manifest.version))."
+          }
+          New-Item -ItemType Directory -Path 'dist' -Force | Out-Null
+          $template = [IO.File]::ReadAllText((Resolve-Path 'bootstrap/CocoBootstrapper.ps1'))
+          $image = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path 'fullbody.png')))
+          [IO.File]::WriteAllText('bootstrap.generated.ps1', $template.Replace('__FULLBODY_BASE64__', $image), (New-Object Text.UTF8Encoding($true)))
+          Invoke-ps2exe -InputFile 'bootstrap.generated.ps1' -OutputFile 'dist/CocoUpdater.exe' -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version "$($manifest.version).0" -NoConsole -IconFile 'reynaico.ico'
+          if (-not (Test-Path -LiteralPath 'dist/CocoUpdater.exe')) { throw 'No se genero CocoUpdater.exe.' }
 
       - name: Upload unsigned artifact
         id: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: unsigned-coco
-          path: ./artifacts/CocoUpdater.exe
+          name: coco-updater-unsigned-${{ inputs.tag }}
+          path: dist/CocoUpdater.exe
+          archive: false
 
       - name: Sign with SignPath
-        uses: signpath/github-action-submit-signing-request@v1
+        id: sign
+        uses: signpath/github-action-submit-signing-request@v2
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
@@ -59,13 +91,43 @@ jobs:
           github-artifact-id: ${{ steps.upload.outputs.artifact-id }}
           output-artifact-directory: ./signed
           wait-for-completion: true
+          skip-decompress: true
 
-      - name: Re-upload signed binary
+      - name: Verify the production signature and update the draft manifest
+        shell: powershell
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          $signed = Get-ChildItem ./signed -Filter *.exe -Recurse | Select-Object -First 1
-          if (-not $signed) { throw "No se encontro el exe firmado" }
-          Write-Host "Subiendo $($signed.FullName)"
-          gh release upload "$env:TAG" "$($signed.FullName)" -R "$env:REPO" --clobber
+          $signed = @(Get-ChildItem -LiteralPath './signed' -Filter 'CocoUpdater.exe' -File -Recurse)
+          if ($signed.Count -ne 1) { throw "Se esperaba exactamente un CocoUpdater.exe firmado; encontrados $($signed.Count)." }
+          $signature = Get-AuthenticodeSignature -LiteralPath $signed[0].FullName
+          if ($signature.Status -ne 'Valid' -or -not $signature.SignerCertificate) {
+            throw "La firma no es valida: $($signature.Status)."
+          }
+          if ($signature.SignerCertificate.Subject -match '(?i)self.?signed|coco launcher test') {
+            throw "Se rechazo el certificado de prueba; conecta el certificado de produccion antes de publicar."
+          }
+          New-Item -ItemType Directory -Path './candidate' -Force | Out-Null
+          gh release download "$env:TAG" -R "$env:REPO" -D './candidate' -p 'latest.json' --clobber
+          if ($LASTEXITCODE -ne 0) { throw "No se pudo descargar latest.json del borrador $env:TAG." }
+          $manifestPath = (Resolve-Path './candidate/latest.json').Path
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          if ("v$($manifest.version)" -ne $env:TAG) { throw 'latest.json no corresponde al tag firmado.' }
+          if ($manifest.bootstrap.url -notmatch ("/$([regex]::Escape($env:TAG))/CocoUpdater\.exe$")) {
+            throw 'La URL bootstrap de latest.json no corresponde al release firmado.'
+          }
+          $hash = (Get-FileHash -LiteralPath $signed[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest.bootstrap.sha256 = $hash
+          $manifest.bootstrap.size = [int64]$signed[0].Length
+          [IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 100), (New-Object Text.UTF8Encoding($false)))
+          gh release upload "$env:TAG" "$($signed[0].FullName)" "$manifestPath" -R "$env:REPO" --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudieron subir el EXE firmado y latest.json al borrador.' }
+
+          $remote = gh api "repos/$env:REPO/releases/tags/$env:TAG" | ConvertFrom-Json
+          if (-not $remote.draft) { throw 'El release dejo de ser borrador durante la operacion.' }
+          $asset = @($remote.assets | Where-Object name -eq 'CocoUpdater.exe' | Select-Object -First 1)
+          if ($asset.Count -ne 1 -or [int64]$asset[0].size -ne [int64]$signed[0].Length) {
+            throw 'El asset remoto no coincide con el EXE firmado.'
+          }
+          Write-Host "Borrador firmado y verificado: $($remote.html_url)"
+          Write-Host "SHA-256 firmado: $hash"
