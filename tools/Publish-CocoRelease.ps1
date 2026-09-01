@@ -385,6 +385,24 @@ function Get-AllReleases {
     }
     return @($result)
 }
+function Send-CocoReleaseAsset($Release,$Asset){
+    $upload="https://uploads.github.com/repos/$Repository/releases/$($Release.id)/assets?name=$([Uri]::EscapeDataString($Asset.Name))"
+    for($attempt=1;$attempt-le4;$attempt++){
+        try{
+            Invoke-RestMethod -Method Post -Uri $upload -Headers $headers -ContentType 'application/octet-stream' -InFile $Asset.FullName -TimeoutSec 45|Out-Null
+            return
+        }catch{
+            # GitHub puede terminar de almacenar el asset aunque PowerShell 5.1
+            # quede esperando el cierre HTTP. Antes de repetir, comprueba el
+            # estado remoto y acepta únicamente nombre + tamaño exactos.
+            $remote=@(Get-ReleaseAssets ([int64]$Release.id)|Where-Object name -eq $Asset.Name|Select-Object -First 1)
+            if($remote-and[int64]$remote.size-eq[int64]$Asset.Length){return}
+            if($remote){Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($remote.id)" -Headers $headers -TimeoutSec 60|Out-Null}
+            if($attempt-eq4){throw}
+            Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))
+        }
+    }
+}
 $allReleases=@(Get-AllReleases)
 
 # Los JARs viven en un release estable por hash. Solo se suben contenidos nuevos.
@@ -399,8 +417,7 @@ foreach($asset in $jarAssets){
     $uploaded=@($remoteJarAssets|Where-Object name -eq $asset.Name|Select-Object -First 1)
     if($uploaded -and [int64]$uploaded.size -eq [int64]$asset.Length){continue}
     if($uploaded){Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($uploaded.id)" -Headers $headers|Out-Null}
-    $upload="https://uploads.github.com/repos/$Repository/releases/$($assetRelease.id)/assets?name=$([Uri]::EscapeDataString($asset.Name))"
-    Invoke-WithRetry {Invoke-RestMethod -Method Post -Uri $upload -Headers $headers -ContentType 'application/octet-stream' -InFile $asset.FullName|Out-Null} $asset.Name
+    Send-CocoReleaseAsset $assetRelease $asset
 }
 $remoteJarAssets=@(Get-ReleaseAssets $assetRelease.id)
 foreach($asset in $jarAssets){
@@ -454,8 +471,7 @@ foreach($asset in $assets){
     $uploaded=@($release.assets|Where-Object name -eq $asset.Name|Select-Object -First 1)
     # Estos nombres son versionados, no content-addressed: en un reintento se reemplazan siempre.
     if($uploaded){Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($uploaded.id)" -Headers $headers|Out-Null}
-    $upload="https://uploads.github.com/repos/$Repository/releases/$($release.id)/assets?name=$([Uri]::EscapeDataString($asset.Name))"
-    Invoke-WithRetry {Invoke-RestMethod -Method Post -Uri $upload -Headers $headers -ContentType 'application/octet-stream' -InFile $asset.FullName -TimeoutSec 3600|Out-Null} $asset.Name
+    Send-CocoReleaseAsset $release $asset
 }
 $remoteAssets=@(Get-ReleaseAssets $release.id)
 $missing=[Collections.Generic.List[string]]::new()
