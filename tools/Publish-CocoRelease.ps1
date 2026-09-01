@@ -364,7 +364,9 @@ function Get-ReleaseAssets([int64]$ReleaseId){
         # Windows PowerShell 5.1 preserves a top-level JSON array as one pipeline
         # object when Invoke-RestMethod is wrapped directly in @(...). Force the
         # response through the pipeline so every release asset is enumerated.
-        $response=Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$Repository/releases/$ReleaseId/assets?per_page=100&page=$page" -Headers $headers
+        $response=Invoke-WithRetry {
+            Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$Repository/releases/$ReleaseId/assets?per_page=100&page=$page" -Headers $headers -TimeoutSec 60
+        } "listar assets del release (pagina $page)"
         $batch=@($response|ForEach-Object{$_})
         foreach($item in $batch){$result.Add($item)}
         if($batch.Count-lt100){break}
@@ -374,7 +376,9 @@ function Get-ReleaseAssets([int64]$ReleaseId){
 function Get-AllReleases {
     $result=[Collections.Generic.List[object]]::new()
     for($page=1;$page-le20;$page++){
-        $response=Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$Repository/releases?per_page=100&page=$page" -Headers $headers
+        $response=Invoke-WithRetry {
+            Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$Repository/releases?per_page=100&page=$page" -Headers $headers -TimeoutSec 60
+        } "listar releases (pagina $page)"
         $batch=@($response|ForEach-Object{$_})
         foreach($item in $batch){$result.Add($item)}
         if($batch.Count-lt100){break}
