@@ -44,6 +44,8 @@ try{
         if($report-notlike"*$marker*"){throw "El diagnostico no contiene: $marker"}
     }
     if($report-like'*SECRET-MUST-NOT-LEAK*'){throw 'El diagnostico filtro un token guardado en identity.json.'}
+    $mediaClassification=Get-CocoFailureClassification 'MediaElement no pudo decodificar el video del streaming.'
+    if($mediaClassification.Code-ne'MEDIA'){throw 'El diagnostico no clasifica los bloqueos del reproductor como MEDIA.'}
     'PASS: diagnostico correlacionado, clasificado, accionable y sin tokens validado.'
 }finally{
     $env:LOCALAPPDATA=$oldLocal

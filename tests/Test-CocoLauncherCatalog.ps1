@@ -22,7 +22,7 @@ foreach($required in 'ExperienceId','Prepare','Launch','-Live','Invoke-CocoManag
 }
 if($devHelperText-match"ExperienceId\\s*=\\s*'[^']+'"){throw 'El helper rapido quedo hardcodeado a una experiencia.'}
 if($catalog.releaseStatus-ne'development'-and$catalog.releaseStatus-ne'approved'){throw 'El catalogo debe declarar development o approved.'}
-if($catalog.catalogVersion-ne'0.3.0'){throw 'El catalogo no refleja la visibilidad directa de todas las experiencias.'}
+if($catalog.catalogVersion-ne'0.4.0'){throw 'El catalogo no refleja el schema de contenido episodico.'}
 if($catalog.experiences[0].id-ne'coco-original'-or$catalog.backend.version-ne'5.0.4'-or$catalog.backend.commit-ne'0718735'){
     throw 'El catalogo inicial no conserva Coco original o el backend fijado.'
 }
@@ -118,9 +118,40 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne15-or
+if($managedExperiences.Count-ne16-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
+}
+foreach($managed in $managedExperiences){
+    $imagePath=if($managed.ui){[string]$managed.ui.imagePath}else{''}
+    if([string]::IsNullOrWhiteSpace($imagePath)-or-not(Test-CocoSafeRelativePath $imagePath)-or$imagePath-notmatch'^assets/experiences/[a-z0-9][a-z0-9.-]+\.(jpg|jpeg|png)$'){
+        throw "La experiencia '$($managed.id)' no declara una portada segura en assets/experiences."
+    }
+    $imageFile=Join-Path $root ($imagePath-replace'/','\')
+    if(-not(Test-Path -LiteralPath $imageFile -PathType Leaf)){throw "Falta la portada de '$($managed.id)': $imageFile"}
+    $image=$null
+    try{$image=[Drawing.Image]::FromFile($imageFile)}catch{throw "La portada de '$($managed.id)' no es una imagen valida."}finally{if($image){$image.Dispose()}}
+}
+$heartSignal=@($catalog.experiences|Where-Object id -eq 'heart-signal'|Select-Object -First 1)[0]
+if(-not$heartSignal-or$heartSignal.runtime.type-ne'media'-or$heartSignal.launch.workflow-ne'coco-media'-or
+   $heartSignal.content.type-ne'episodic-video'-or$heartSignal.content.downloadFolderName-ne'heart signal'){
+    throw 'Heart Signal no esta declarado como contenido episodico local.'
+}
+$heartEpisodes=@($heartSignal.content.episodes)
+if($heartEpisodes.Count-ne2){throw 'Heart Signal debe mostrar las dos partes del E01 como episodios separados.'}
+$heartEpisode1=@($heartEpisodes|Where-Object id -eq 's05e01-p01'|Select-Object -First 1)[0]
+if(-not$heartEpisode1-or$heartEpisode1.title-ne'Temporada 5 - Episodio 1 - Parte 1'-or
+   $heartEpisode1.fileName-ne'Heart Signal - S05E01 - Parte 1.mp4'-or[int64]$heartEpisode1.size-ne1837932680-or
+   $heartEpisode1.sha256-ne'fd9f418b00b06a56159d7e07d90cb953c3c5f94c9f7ceb32b2a899acb88b21a4'-or
+   $heartEpisode1.streamUrl-notmatch'^https://' -or$heartEpisode1.sourceUrl-notmatch'^https://'){
+    throw 'La Parte 1 del E01 de Heart Signal no conserva la metadata o URL publicada.'
+}
+$heartEpisode2=@($heartEpisodes|Where-Object id -eq 's05e01-p02'|Select-Object -First 1)[0]
+if(-not$heartEpisode2-or$heartEpisode2.title-ne'Temporada 5 - Episodio 1 - Parte 2'-or
+   $heartEpisode2.fileName-ne'Heart Signal - S05E01 - Parte 2.mp4'-or[int64]$heartEpisode2.size-ne1829237387-or
+   $heartEpisode2.sha256-ne'714412a27a5429373e278ed4c1180e229721cc3b4afe212e436aa45496abdc1a'-or
+   $heartEpisode2.streamUrl-notmatch'^https://' -or$heartEpisode2.sourceUrl-notmatch'^https://'){
+    throw 'La Parte 2 del E01 de Heart Signal no conserva la metadata o URL publicada.'
 }
 $bounds=for($i=0;$i-lt$managedExperiences.Count;$i++){Get-CocoExperienceButtonBounds $i}
 for($i=0;$i-lt$bounds.Count;$i++){
@@ -344,6 +375,29 @@ try{
     $rejected=$false
     try{[void](Read-CocoLauncherCatalog $badPath)}catch{$rejected=$_.Exception.Message-match'duplicado'}
     if(-not$rejected){throw 'El catalogo acepto IDs de experiencia duplicados.'}
+
+    $bad=Get-Content -LiteralPath $template -Raw|ConvertFrom-Json
+    $bad.releaseStatus='approved'
+    $badHeart=@($bad.experiences|Where-Object id -eq 'heart-signal'|Select-Object -First 1)[0]
+    $badHeart.content.episodes[0].sourceUrl='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/test/episode.mp4'
+    $badHeart.content.episodes[0].size=2147483648
+    $badPath=Join-Path $testRoot 'github-size.json'
+    $bad|ConvertTo-Json -Depth 20|Set-Content -LiteralPath $badPath -Encoding UTF8
+    $rejected=$false
+    try{[void](Read-CocoLauncherCatalog $badPath)}catch{$rejected=$_.Exception.Message-match'2 GiB'}
+    if(-not$rejected){throw 'El catalogo permitio un episodio de GitHub Free mayor o igual a 2 GiB.'}
+
+    $bad=Get-Content -LiteralPath $template -Raw|ConvertFrom-Json
+    $bad.releaseStatus='approved'
+    $badHeart=@($bad.experiences|Where-Object id -eq 'heart-signal'|Select-Object -First 1)[0]
+    $badHeart.content.episodes[0].sourceUrl=''
+    $badHeart.content.episodes[0].streamUrl='https://example.com/episode.mp4'
+    $badHeart.content.episodes[0].size=1
+    $badHeart.content.episodes[0].sha256=('a'*64)
+    $badHeart.content.episodes=@($badHeart.content.episodes[0])
+    $badPath=Join-Path $testRoot 'stream-only.json'
+    $bad|ConvertTo-Json -Depth 20|Set-Content -LiteralPath $badPath -Encoding UTF8
+    try{[void](Read-CocoLauncherCatalog $badPath)}catch{throw 'El catalogo rechazo un episodio aprobado que solo declara streamUrl HTTPS.'}
 
     $bad=Get-Content -LiteralPath $template -Raw|ConvertFrom-Json
     $bad.experiences[0].files=@([pscustomobject]@{path='../saves/coco/level.dat';sha256=('a'*64);size=1;policy='replace'})

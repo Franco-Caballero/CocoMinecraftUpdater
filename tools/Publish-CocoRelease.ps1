@@ -325,6 +325,16 @@ if(Test-Path -LiteralPath $experienceBuilder -PathType Leaf){
 .\tests\Test-CocoLauncherObservability.ps1
 .\tests\Test-CocoSkinSync.ps1
 .\tests\Test-CocoVoiceChatDefaults.ps1
+.\tests\Test-CocoMediaExperience.ps1
+.\tests\Test-CocoMediaHttpProxy.ps1
+.\tests\Test-CocoMediaPlaybackProgress.ps1
+.\tests\Test-CocoMediaPlaybackState.ps1
+.\tests\Test-CocoMediaPlayerIntegration.ps1
+.\tests\Test-CocoMediaPlayerSmoke.ps1
+.\tests\Test-CocoMediaSelectorAction.ps1
+.\tests\Test-CocoMediaSelectorUi.ps1
+.\tests\Test-CocoMediaSplit.ps1
+.\tests\Test-CocoMediaStreamingPriority.ps1
 
 git fetch origin main --quiet
 if($LASTEXITCODE){throw 'No se pudo volver a comprobar origin/main antes del commit.'}

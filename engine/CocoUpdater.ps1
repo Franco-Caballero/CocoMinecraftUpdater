@@ -92,6 +92,7 @@ function Get-CocoFailureClassification([string]$Message){
     if($value-match'416|range not satisfiable|parcial invalido|hash|sha-?256|tamano fijado|integridad|zip slip'){return [pscustomobject]@{Code='PACK-INTEGRITY';Action='Coco descarto el fragmento incompatible y reintentara una descarga limpia verificada. Si vuelve a fallar, envia este TXT del Escritorio.'}}
     if($value-match'espacio|disk|disco|no space'){return [pscustomobject]@{Code='DISK-SPACE';Action='Libera espacio en C: y vuelve a abrir Coco; las descargas verificadas ya completas se reutilizan.'}}
     if($value-match'identidad|identity|username|nombre local|jugador'){return [pscustomobject]@{Code='IDENTITY';Action='Reabre Coco, revisa el nombre del jugador y usa siempre la misma identidad local.'}}
+    if($value-match'mediaelement|codec|decodific|reproductor|video|streaming|proxy.*media'){return [pscustomobject]@{Code='MEDIA';Action='Reabre el episodio y envia el TXT del Escritorio si vuelve a fallar. Incluye la etapa, episodio y logs necesarios para distinguir red, proxy y codec de Windows.'}}
     if($value-match'zerotier|adaptador|network id|autoriz|25564|red coco'){return [pscustomobject]@{Code='ZEROTIER';Action='Comprueba que el host tenga Coco/Minecraft abierto y vuelve a ejecutar; adjunta este informe si vuelve a fallar.'}}
     if($value-match'25565|puerto|listen|socket|connection|conectar|timeout|timed out|nombre remoto'){return [pscustomobject]@{Code='CONNECTIVITY';Action='Verifica internet/host y vuelve a abrir Coco. No borres la instancia: el proceso es reanudable.'}}
     if($value-match'access|acceso|denegado|permission|administrador|uac'){return [pscustomobject]@{Code='WINDOWS-PERMISSION';Action='Permite Coco/ZeroTier en Windows o antivirus y vuelve a ejecutar. No hace falta mover la instancia.'}}
@@ -407,7 +408,7 @@ function Show-CocoWindow {
     Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing
     [Windows.Forms.Application]::EnableVisualStyles()
     $key=[Drawing.Color]::FromArgb(1,2,3)
-    $f=New-Object Windows.Forms.Form; $f.Text='Coco Minecraft Updater'; $f.Size=New-Object Drawing.Size(1080,840)
+    $f=New-Object Windows.Forms.Form; $f.Text='Coco Launcher'; $f.Size=New-Object Drawing.Size(1080,840)
     $f.StartPosition='CenterScreen'; $f.FormBorderStyle='None'; $f.MaximizeBox=$false; $f.ShowInTaskbar=$true
     $f.AutoScaleMode='None'; $f.TopMost=$false
     $f.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
@@ -435,7 +436,7 @@ function Show-CocoWindow {
     $p=New-Object Windows.Forms.Panel; $p.Location=New-Object Drawing.Point(0,0); $p.Size=New-Object Drawing.Size(4,20)
     $p.BackColor=[Drawing.Color]::FromArgb(177,92,255); $track.Controls.Add($p)
     $sparkle=[char]0x2726
-    $b=New-Object Windows.Forms.Label; $b.Text="$sparkle  COCO PACK  |  FABRIC 26.1.2"; $b.Location=New-Object Drawing.Point(46,122)
+    $b=New-Object Windows.Forms.Label; $b.Text="$sparkle  COCO LAUNCHER  |  EXPERIENCIAS"; $b.Location=New-Object Drawing.Point(46,122)
     $b.Size=New-Object Drawing.Size(570,20); $b.Font=New-Object Drawing.Font('Segoe UI Semibold',9); $b.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
     $panel.Controls.AddRange(@($t,$d,$track,$b))
     $artPath=Join-Path $script:CocoEngineRoot 'assets\fullbody.png'
@@ -1214,7 +1215,7 @@ function Show-CocoPreview {
     while($watch.Elapsed.TotalSeconds -lt 11){
         $seconds=$watch.Elapsed.TotalSeconds
         if($seconds -lt 2){
-            $p=[int](5+10*$seconds/2);Set-CocoState 'Buscando Minecraft' 'Identificando automaticamente la instalacion correcta...' $p
+            $p=[int](5+10*$seconds/2);Set-CocoState 'Iniciando Coco Launcher' 'Identificando la instalacion disponible...' $p
         }elseif($seconds -lt 7){
             $fraction=($seconds-2)/5;$p=[int](15+58*$fraction)
             $downloaded=101*$fraction;Set-CocoState 'Descargando mods' ('{0:N1} / 101,0 MB  |  20,2 MB/s  |  faltan ~00:{1:00}' -f $downloaded,[Math]::Max(0,[int](5-5*$fraction))) $p
@@ -1314,7 +1315,7 @@ try {
     }
 
     if (-not $Silent) { Show-CocoWindow }
-    Set-CocoState 'Buscando Minecraft' 'Identificando automaticamente la instalacion correcta...' 6
+    Set-CocoState 'Iniciando Coco Launcher' 'Identificando la instalacion disponible...' 6
     if($GameDir){Repair-InterruptedInstall $GameDir}
     $runningInstances=@(Get-RunningMinecraftInstances $manifest)
     $compatibleRunningDirs=@($runningInstances|Where-Object Compatible|ForEach-Object GameDir|Select-Object -Unique)

@@ -11,7 +11,9 @@ El mismo `CocoUpdater.exe` cumple dos funciones:
 - Si existe una experiencia administrada activa, prepara su instancia aislada, elige automáticamente esa única partida y abre Minecraft conectado a `10.77.37.1:25565`.
 - Si no existe una partida administrada, actualiza Coco original. Coco original sigue abriéndose con el launcher oficial o TLauncher; Bridge conserva la comprobación dentro del juego.
 
-Los amigos nunca eligen un pack. Sólo el host ve el selector de experiencias.
+En las experiencias Minecraft, los amigos no eligen un pack: sólo el host ve el selector de partidas. Heart Signal es una excepción deliberada: cualquier cliente puede abrirla directamente, aunque no haya una sesión Minecraft activa ni el launcher del host esté abierto.
+
+La biblioteca de experiencias usa un único viewport con el desplazamiento vertical nativo de WinForms: no hay una barra superpuesta ni animación que reposicione manualmente las tarjetas. Esto permite que la rueda y el arrastre actualicen juntos el contenido y su thumb, con prioridad en estabilidad sobre una barra tematizada.
 
 ## Identidad
 
@@ -22,11 +24,11 @@ Orden de resolución:
 1. Reutilizar `identity.json` si ya contiene un nombre local válido.
 2. Migrar silenciosamente a local el nombre válido de un estado Microsoft creado por versiones anteriores.
 3. Reutilizar un único nombre válido seleccionado en TLauncher o en metadatos locales seguros.
-4. Si no existe un nombre inequívoco, dejar vacío el campo permanente de la tarjeta `TU IDENTIDAD COCO`.
+4. Si no existe un nombre inequívoco, dejar vacío el campo del popup de identidad que se abre desde `JUGADOR`.
 
 El nombre tiene 3–16 letras, números o guion bajo. Determina la identidad de inventario, avances y permisos, por lo que no debe cambiarse después de jugar.
 
-La identidad no bloquea la red, la descarga, la verificación ni la instalación. Nombre y skin forman una única tarjeta permanente: la cabeza queda a la izquierda, el nombre es un campo siempre visible al centro y la acción de skin queda a la derecha. Un nombre válido se guarda con Enter o al salir del campo. Si todavía falta o quedó texto válido sin confirmar, Coco pausa únicamente la creación del proceso, mantiene el foco y muestra `Pulsa Enter para confirmar`; no abre otro formulario ni acepta prematuramente los primeros tres caracteres. Durante los milisegundos en que se construye el proceso cliente la tarjeta se congela y luego el launcher se oculta. En el host permanece editable durante la preparación y mientras la partida está online; los cambios de nombre posteriores al arranque se aplican en la sesión siguiente.
+La identidad no bloquea la red, la descarga, la verificación ni la instalación. El botón pequeño `JUGADOR` vive en la cabecera, junto a minimizar, y abre un popup compacto con el nombre y la vista previa de la skin; el pie queda libre para la lista de experiencias. Un nombre válido se guarda con Enter o al salir del campo. Si todavía falta o quedó texto válido sin confirmar, Coco abre ese popup, mantiene el foco y muestra `Pulsa Enter para confirmar`; no acepta prematuramente los primeros tres caracteres. Durante los milisegundos en que se construye el proceso cliente el popup se congela y luego el launcher se oculta. En el host permanece editable durante la preparación y mientras la partida está online; los cambios de nombre posteriores al arranque se aplican en la sesión siguiente.
 
 La red privada y el UUID Fixer preservan una identidad offline coherente, pero **no autentican el nombre**. Una persona autorizada en ZeroTier podría suplantar otro nombre. Las sesiones actuales son sólo para el grupo de confianza; antes de ampliar el acceso debe añadirse una política de whitelist/nombres reservados. La evidencia específica de Cobbleverse vive en [`CobbleverseAudit-2026-07-26.md`](CobbleverseAudit-2026-07-26.md).
 
@@ -40,9 +42,21 @@ La red privada y el UUID Fixer preservan una identidad offline coherente, pero *
 | Zombie Apocalypse | Forge 1.12.2 | Visible | La prueba real anterior fue confirmada por el host. Lan Server Properties 1.0 se instala solo al host: puerto 25565 y `Online Mode: OFF`. |
 | COBBLEVERSE 1.7.42-CF | Fabric 1.21.1 | Visible | Instalación y arranque real hasta el menú aprobados el 2026-07-26; Cobblemon, shader del pack y DH+Iris/OpenGL cargaron. Usa heap recomendado de 5 GiB y fija DH en 32 chunks para host y clientes. Falta completar LAN/clientes. Crea un mundo aleatorio con Terralith, sin mapa ni semilla prefijados. |
 
-La presencia en el catálogo publicado es la única regla de disponibilidad: toda entrada `managed` con workflow `coco-managed` o `coco-standalone` aparece al host y puede lanzarse. Las etiquetas `blocked`, `experimental`, `normal` y `validated` fueron eliminadas del schema y del engine. Las auditorías conservan evidencia y trabajo pendiente sin alterar visibilidad.
+### Heart Signal y distribución en GitHub
+
+Heart Signal es una experiencia `managed` de tipo `media`, no una instancia de Minecraft. Al abrirla, Coco muestra los episodios y prioriza `streamUrl` en el reproductor integrado. Si no hay `streamUrl` pero sí `sourceUrl`, ofrece una descarga reanudable en `%USERPROFILE%\Downloads\heart signal`; el archivo local se verifica por tamaño y SHA-256 y no se duplica al reproducirlo. La ventana del reproductor usa una cabecera propia sin el marco clásico, controles sin bordes, barra de reproducción dibujada para Coco, volumen, pausa/reanudar, doble clic y F11/Escape para pantalla completa. El reproductor actual es `MediaElement` de WPF: no requiere VLC ni otro programa instalado y ya reprodujo las dos partes MP4 de prueba, pero usa los códecs de Media Foundation disponibles en Windows. El caso objetivo H.264/AAC en Windows 10/11 normal queda cubierto; Windows N necesita su Media Feature Pack y un sistema recortado o un códec exótico puede requerir un motor empaquetado como LibVLC en una iteración posterior.
+
+La meta de publicación sigue siendo GitHub. Un GitHub Release no admite un asset individual de 2 GiB o más ([límite oficial de Release](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)). La vía GitHub para un archivo mayor es Git LFS: el máximo depende del plan —2 GB en Free/Pro, 4 GB en Team y 5 GB en Enterprise Cloud— ([límites oficiales de Git LFS](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage)). El MP4 original del E01 medía 3,667,168,526 bytes y ahora está representado por dos assets de 1,837,932,680 y 1,829,237,387 bytes, respectivamente. Por eso el tamaño de `catalog.template.json` debe ser siempre el tamaño real de cada parte final: cambiar sólo la metadata rompería la verificación.
+
+Git LFS no es un reproductor: cada reproducción consume el ancho de banda LFS del propietario ([facturación y cuotas oficiales](https://docs.github.com/en/billing/concepts/product-billing/git-lfs)). Para que el streaming sea viable, el asset final debe quedar en una sola URL HTTPS que acepte rangos HTTP y, en MP4, conviene mover el índice `moov` al inicio (`faststart`). Si el archivo supera el límite de GitHub, las alternativas son reducirlo por codificación o dividirlo y adaptar el reproductor; dividirlo ya no es el flujo simple de un MP4 único.
+
+Con GitHub Free, el camino de menor fricción es publicar los episodios ya convertidos como assets de un Release, apuntando `streamUrl` y `sourceUrl` a la URL directa del asset. Se debe dejar margen y apuntar a aproximadamente 1,8–1,9 GiB por archivo, no exactamente al borde de 2 GiB. Si un episodio completo es más grande, se divide sin recodificar en dos MP4 independientes —por ejemplo `s05e01-p01` y `s05e01-p02`— y cada parte se muestra como un episodio separado. Su posición se guarda con su propio ID, por lo que cerrar Coco en una parte no afecta la otra. `tools/Split-CocoMediaFile.ps1` automatiza este corte y rechaza resultados que no sean dos MP4 reproducibles menores de 2 GiB. Esto permite que el launcher empiece a recibir cada parte mientras reproduce; la copia local sólo ocurre si el usuario elige descargarla. GitHub redirige esos assets como descargas adjuntas, por lo que Coco crea durante la sesión un proxy HTTP efímero en `127.0.0.1`: reenvía solamente los rangos que pide el reproductor, cambia el tipo MIME y no escribe el video en disco.
+
+La presencia en el catálogo publicado es la única regla de disponibilidad: toda entrada `managed` con workflow `coco-managed`, `coco-standalone` o `coco-media` aparece en Coco. Las experiencias Minecraft siguen la sesión única del host; una experiencia `coco-media` se puede abrir desde el cliente sin sesión Minecraft y sin que el launcher del host esté abierto. La red puede seguir preparándose para las experiencias Minecraft, pero no participa en el streaming de Heart Signal. Las etiquetas `blocked`, `experimental`, `normal` y `validated` fueron eliminadas del schema y del engine. Las auditorías conservan evidencia y trabajo pendiente sin alterar visibilidad.
 
 ## Flujo del amigo
+
+Para Heart Signal, el cliente puede probar el flujo sin simular una partida: abre Coco, pulsa **Heart Signal**, entra en **EPISODIOS** y reproduce una parte. El launcher detecta el rol `client` si la instalación no contiene `config\coco-host.json`; en esta misma PC se puede forzar para pruebas con `tools\Invoke-CocoLauncherUiDev.ps1 -Role client`. El video se obtiene desde GitHub directamente y el host no participa.
 
 1. Abre Coco.
 2. Coco actualiza bootstrap/engine y muestra etapa, detalle, progreso y Run ID.
@@ -110,9 +124,9 @@ Políticas universales:
 
 ### Skins elegidas por los jugadores
 
-El pie permanente del launcher contiene una sola tarjeta `TU IDENTIDAD COCO` con nombre y vista previa de la cabeza. La cabeza y la zona `TU SKIN` admiten clic y arrastre: el clic abre un selector de Windows limitado a PNG y soltar un único PNG ejecuta el mismo flujo. No existen botones de alturas diferentes ni un formulario técnico separado.
+La cabecera del launcher contiene un botón pequeño `JUGADOR` junto a minimizar. Al pulsarlo aparece el popup de identidad con el nombre y la vista previa de la cabeza. La cabeza y la zona `TU SKIN` admiten clic y arrastre: el clic abre un selector de Windows limitado a PNG y soltar un único PNG ejecuta el mismo flujo. No existen botones de alturas diferentes ni un formulario técnico separado.
 
-Coco acepta únicamente PNG decodificables de hasta 1 MB y dimensiones exactas 64x64 o 64x32. El nombre del archivo original es irrelevante: la copia se guarda con el nombre de jugador validado. Elegir una skin no pausa red, descarga ni instalación. Si falta identidad, la propia tarjeta marca el campo y pide escribir allí un nombre válido antes de asociar la imagen.
+Coco acepta únicamente PNG decodificables de hasta 1 MB y dimensiones exactas 64x64 o 64x32. El nombre del archivo original es irrelevante: la copia se guarda con el nombre de jugador validado. Elegir una skin no pausa red, descarga ni instalación. Si falta identidad, el popup marca el campo y pide escribir allí un nombre válido antes de asociar la imagen.
 
 La skin propia es completamente opcional. Si el jugador no elige ningún PNG, conserva la apariencia predeterminada de Minecraft y Coco continúa normalmente; únicamente el nombre local válido puede pausar el último instante antes de crear el proceso del juego.
 

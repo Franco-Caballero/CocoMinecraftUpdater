@@ -1,6 +1,6 @@
 {
     "schemaVersion": 1,
-    "catalogVersion": "0.3.0",
+    "catalogVersion": "0.4.0",
     "releaseStatus": "approved",
     "sessionPolicy": {
         "maximumConcurrentSessions": 1,
@@ -70,6 +70,9 @@
         {
             "id": "coco-original",
             "name": "Coco original",
+            "ui": {
+                "imagePath": "assets/experiences/coco-original.jpg"
+            },
             "description": "Mundo cooperativo actual; se abre exclusivamente con el launcher habitual de cada jugador.",
             "instanceId": "coco-original",
             "managementMode": "legacy-current",
@@ -100,6 +103,9 @@
         {
             "id": "dread-arrenek",
             "name": "DREAD - A Horror Survival Pack",
+            "ui": {
+                "imagePath": "assets/experiences/dread-arrenek.png"
+            },
             "description": "Supervivencia de horror inmersiva con criaturas acechantes en la oscuridad, armas de fuego (TACZ), clima dinamico y noche cerrada.",
             "instanceId": "dread-arrenek",
             "managementMode": "managed",
@@ -158,6 +164,9 @@
         {
             "id": "into-the-backrooms",
             "name": "Into The Backrooms (Found Footage)",
+            "ui": {
+                "imagePath": "assets/experiences/into-the-backrooms.jpg"
+            },
             "description": "Experiencia VHS Found Footage y horror procedimental en los Backrooms (Nivel 0, Poolrooms y mas). Generacion automatica sin mapas externos.",
             "instanceId": "into-the-backrooms",
             "managementMode": "managed",
@@ -212,6 +221,9 @@
         {
             "id": "cobbleverse",
             "name": "COBBLEVERSE - Pokemon Adventure",
+            "ui": {
+                "imagePath": "assets/experiences/cobbleverse.png"
+            },
             "description": "Aventura completa de Cobblemon con progresion, gimnasios, estructuras y generacion de terreno Terralith. Crea un mundo nuevo aleatorio; no usa mapa ni semilla prefijados.",
             "instanceId": "cobbleverse",
             "managementMode": "managed",
@@ -288,6 +300,9 @@
         {
             "id": "zombie-apocalypse-slow-zombies",
             "name": "Zombie Apocalypse (Slow Zombies)",
+            "ui": {
+                "imagePath": "assets/experiences/zombie-apocalypse-slow-zombies.jpg"
+            },
             "description": "Supervivencia apocaliptica clasica con hordas de zombies lentos, armas de fuego 3D (Techguns), vehiculos y construccion de defensas por Forge Labs.",
             "instanceId": "zombie-apocalypse-slow-zombies",
             "managementMode": "managed",
@@ -333,6 +348,9 @@
         {
             "id": "nightfallcraft",
             "name": "NightfallCraft - The Casket of Reveries",
+            "ui": {
+                "imagePath": "assets/experiences/nightfallcraft.jpg"
+            },
             "description": "Experiencia RPG de accion y fantasia oscura (estilo Souls) con combate Epic Fight, misiones, exploracion y atmosfera inmersiva.",
             "instanceId": "nightfallcraft",
             "managementMode": "managed",
@@ -428,6 +446,9 @@
         {
             "id": "valorant-craft",
             "name": "VALORANTCraft - CSmain Tactical",
+            "ui": {
+                "imagePath": "assets/experiences/valorant-craft.png"
+            },
             "description": "Partida tactica basada en CSmain: equipos, rondas, fase de compra, economia, Spike y defuse, con armas TACZ de Valorant y agentes Origins.",
             "instanceId": "valorant-craft",
             "managementMode": "managed",
@@ -528,6 +549,9 @@
         {
             "id": "big-walk",
             "name": "Big Walk",
+            "ui": {
+                "imagePath": "assets/experiences/big-walk.png"
+            },
             "description": "Juego cooperativo de aventura y puzles en equipo. Únanse usando el Join Code del Host.",
             "instanceId": "big-walk",
             "managementMode": "managed",
@@ -613,6 +637,9 @@
         {
             "id": "shift-at-midnight",
             "name": "Shift at Midnight",
+            "ui": {
+                "imagePath": "assets/experiences/shift-at-midnight.jpg"
+            },
             "description": "Juego cooperativo de terror en el turno nocturno de una tienda. Sobrevivan el turno juntos.",
             "instanceId": "shift-at-midnight",
             "managementMode": "managed",
@@ -678,6 +705,9 @@
         {
             "id": "peak",
             "name": "PEAK",
+            "ui": {
+                "imagePath": "assets/experiences/peak.png"
+            },
             "instanceId": "peak",
             "managementMode": "managed",
             "runtime": {
@@ -763,6 +793,9 @@
         {
             "id": "machine-party",
             "name": "Machine Party",
+            "ui": {
+                "imagePath": "assets/experiences/machine-party.jpg"
+            },
             "description": "Juego multijugador cooperativo y competitivo de fiesta con robots. Compitan y sobrevivan juntos.",
             "instanceId": "machine-party",
             "managementMode": "managed",
@@ -834,6 +867,9 @@
         {
             "id": "content-warning",
             "name": "Content Warning",
+            "ui": {
+                "imagePath": "assets/experiences/content-warning.jpg"
+            },
             "description": "Filmen cosas aterradoras con amigos para volverse famosos en SpookTube.",
             "instanceId": "content-warning",
             "managementMode": "managed",
@@ -905,6 +941,9 @@
         {
             "id": "scam-line",
             "name": "Scam Line",
+            "ui": {
+                "imagePath": "assets/experiences/scam-line.jpg"
+            },
             "description": "Juego cooperativo de atracos y estafas en equipo.",
             "instanceId": "scam-line",
             "managementMode": "managed",
@@ -970,6 +1009,9 @@
         {
             "id": "lockdown-protocol",
             "name": "LOCKDOWN Protocol",
+            "ui": {
+                "imagePath": "assets/experiences/lockdown-protocol.jpg"
+            },
             "description": "Juego de deduccion social y accion cooperativa en primera persona.",
             "instanceId": "lockdown-protocol",
             "managementMode": "managed",
@@ -1040,6 +1082,9 @@
         {
             "id": "cooking-simulator-2",
             "name": "Cooking Simulator 2",
+            "ui": {
+                "imagePath": "assets/experiences/cooking-simulator-2.jpg"
+            },
             "tagline": "Better Together",
             "summary": "Cocina y gestiona tu restaurante en cooperativo multijugador.",
             "description": "Secuela cooperativa de Cooking Simulator donde gestionas tu cocina, creas recetas y sirves platos deliciosos junto a tus amigos.",
@@ -1151,6 +1196,9 @@
         {
             "id": "repo",
             "name": "R.E.P.O",
+            "ui": {
+                "imagePath": "assets/experiences/repo.jpg"
+            },
             "description": "Juego cooperativo de extraccion y supervivencia procedural en primera persona.",
             "instanceId": "repo",
             "managementMode": "managed",
@@ -1216,6 +1264,49 @@
                 "workflow": "coco-standalone",
                 "autoJoin": true,
                 "serverName": "Coco - R.E.P.O"
+            },
+            "files": []
+        },
+        {
+            "id": "heart-signal",
+            "name": "Heart Signal",
+            "ui": {
+                "imagePath": "assets/experiences/heart-signal-s05.jpg"
+            },
+            "description": "Serie de episodios de video. Abre un episodio en el reproductor integrado; si hace falta, el launcher puede descargarlo en Downloads.",
+            "instanceId": "heart-signal",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "media"
+            },
+            "content": {
+                "type": "episodic-video",
+                "downloadFolderName": "heart signal",
+                "openAfterDownload": true,
+                "episodes": [
+                    {
+                        "id": "s05e01-p01",
+                        "title": "Temporada 5 - Episodio 1 - Parte 1",
+                        "fileName": "Heart Signal - S05E01 - Parte 1.mp4",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e01-parts-20260901/Heart.Signal.-.S05E01.-.Parte.1.mp4",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e01-parts-20260901/Heart.Signal.-.S05E01.-.Parte.1.mp4",
+                        "size": 1837932680,
+                        "sha256": "fd9f418b00b06a56159d7e07d90cb953c3c5f94c9f7ceb32b2a899acb88b21a4"
+                    },
+                    {
+                        "id": "s05e01-p02",
+                        "title": "Temporada 5 - Episodio 1 - Parte 2",
+                        "fileName": "Heart Signal - S05E01 - Parte 2.mp4",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e01-parts-20260901/Heart.Signal.-.S05E01.-.Parte.2.mp4",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e01-parts-20260901/Heart.Signal.-.S05E01.-.Parte.2.mp4",
+                        "size": 1829237387,
+                        "sha256": "714412a27a5429373e278ed4c1180e229721cc3b4afe212e436aa45496abdc1a"
+                    }
+                ]
+            },
+            "launch": {
+                "workflow": "coco-media",
+                "serverName": "Heart Signal"
             },
             "files": []
         }

@@ -8,6 +8,18 @@ $root=Split-Path $PSScriptRoot -Parent
 $engineFile=if([string]::IsNullOrWhiteSpace($EnginePath)){Join-Path $root 'engine\CocoLauncher.ps1'}else{[IO.Path]::GetFullPath($EnginePath)}
 . $engineFile
 function Test-CocoManagedGameRunning([string]$InstanceRoot,[string]$ExecutableName=''){return $false}
+function Get-TestDescendantButtons($Control){
+    foreach($child in @($Control.Controls)){
+        if($child-is[Windows.Forms.Button]){$child}
+        if($child.Controls.Count-gt0){Get-TestDescendantButtons $child}
+    }
+}
+function Get-TestDescendantControls($Control){
+    foreach($child in @($Control.Controls)){
+        $child
+        if($child.Controls.Count-gt0){Get-TestDescendantControls $child}
+    }
+}
 
 $testRoot=Join-Path ([IO.Path]::GetTempPath()) "coco-storage-ui-$([guid]::NewGuid().ToString('N'))"
 New-Item -ItemType Directory -Path $testRoot -Force|Out-Null
@@ -30,7 +42,7 @@ try{
     $promptTimer.Add_Tick({
         $script:CocoPromptTicks++
         foreach($window in @([Windows.Forms.Application]::OpenForms)){
-            $default=@($window.Controls|Where-Object{$_-is[Windows.Forms.Button]-and$_.Text-eq'INSTALAR EN RUTA POR DEFECTO'})[0]
+            $default=@(Get-TestDescendantButtons $window|Where-Object{$_.Text-eq'INSTALAR EN RUTA POR DEFECTO'})[0]
             if($default){$default.PerformClick();return}
             if($script:CocoPromptTicks-gt50){$window.DialogResult=[Windows.Forms.DialogResult]::Cancel;$window.Close();return}
         }
@@ -43,28 +55,29 @@ try{
     $panel=New-Object Windows.Forms.Panel
     $panel.Size=New-Object Drawing.Size(570,340)
     Update-CocoExperienceCardsUi $panel $catalog $paths 'client'
-    $cards=@($panel.Controls|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Tag})
+    $cards=@(Get-TestDescendantControls $panel|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Tag-and[string]$_.Name-eq'CocoExperienceCard'})
     if($cards.Count-ne2){throw "La UI cliente creo $($cards.Count) tarjetas y se esperaban 2."}
     $missingCard=@($cards|Where-Object{$_.Tag.ExperienceId-eq'missing'})[0]
     $installedCard=@($cards|Where-Object{$_.Tag.ExperienceId-eq'installed'})[0]
-    $missingButtons=@($missingCard.Controls|Where-Object{$_-is[Windows.Forms.Button]})
-    $installedButtons=@($installedCard.Controls|Where-Object{$_-is[Windows.Forms.Button]})
-    if($missingButtons.Count-ne2-or$installedButtons.Count-ne2){throw 'La UI cliente no conserva los dos botones de almacenamiento por tarjeta.'}
+    $missingButtons=@(Get-TestDescendantButtons $missingCard)
+    $installedButtons=@(Get-TestDescendantButtons $installedCard)
+    if($missingButtons.Count-ne1-or$installedButtons.Count-ne2){throw "La UI cliente no conserva los botones de almacenamiento esperados. missing=$($missingButtons.Count) installed=$($installedButtons.Count)"}
     $missingFree=@($missingButtons|Where-Object Text -eq 'LIBERAR ESPACIO')[0]
     $missingMove=@($missingButtons|Where-Object Text -eq 'INSTALAR')[0]
     $installedFree=@($installedButtons|Where-Object Text -eq 'LIBERAR ESPACIO')[0]
-    if($missingFree.Enabled-or-not$missingMove.Enabled-or-not$installedFree.Enabled){throw 'Los estados de botones cliente no reflejan instalado/no instalado.'}
-    if(([string]$missingCard.Controls[2].Text)-notmatch'No instalado'-or([string]$missingCard.Controls[2].Text)-notmatch'CLIC PARA INSTALAR'){throw 'La tarjeta no instalada no ofrece la indicacion de instalacion.'}
+    if($missingFree-or-not$missingMove.Enabled-or-not$installedFree.Enabled){throw 'Los estados de botones cliente no reflejan instalado/no instalado.'}
+    $missingStatus=@($missingCard|ForEach-Object{Get-TestDescendantControls $_}|Where-Object{[string]$_.Text-match'NO INSTALADO'})[0]
+    if(-not$missingStatus){throw 'La tarjeta no instalada no ofrece la indicacion de instalacion.'}
 
     $panel.Controls.Clear()
     Update-CocoExperienceCardsUi $panel $catalog $paths 'host'
-    $hostCards=@($panel.Controls|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Tag})
+    $hostCards=@(Get-TestDescendantControls $panel|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Tag-and[string]$_.Name-eq'CocoExperienceCard'})
     foreach($hostCard in $hostCards){
-        $buttons=@($hostCard.Controls|Where-Object{$_-is[Windows.Forms.Button]})
+        $buttons=@(Get-TestDescendantButtons $hostCard)
         if($buttons.Count-ne3){throw 'La UI host no muestra ALOJAR, CARPETA y BORRAR en cada tarjeta.'}
     }
     $missingHost=@($hostCards|Where-Object{$_.Tag.ExperienceId-eq'missing'})[0]
-    $missingDelete=@($missingHost.Controls|Where-Object{$_-is[Windows.Forms.Button]-and$_.Text-eq'BORRAR'})[0]
+    $missingDelete=@(Get-TestDescendantButtons $missingHost|Where-Object Text -eq 'BORRAR')[0]
     if($missingDelete.Enabled){throw 'BORRAR debe estar deshabilitado para una instancia no instalada.'}
     $panel.Dispose()
     'PASS: tarjetas cliente/host, rutas, estados y botones de almacenamiento validados.'

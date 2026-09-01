@@ -37,6 +37,12 @@ $assets=Join-Path $stage 'assets'
 New-Item -ItemType Directory -Path $assets -Force|Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'fullbody.png') -Destination (Join-Path $assets 'fullbody.png') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'reynaico.ico') -Destination (Join-Path $assets 'reynaico.ico') -Force
+$experienceAssetsSource=Join-Path $projectRoot 'assets\experiences'
+if(Test-Path -LiteralPath $experienceAssetsSource -PathType Container){
+    $experienceAssetsDestination=Join-Path $assets 'experiences'
+    New-Item -ItemType Directory -Path $experienceAssetsDestination -Force|Out-Null
+    Copy-Item -Path (Join-Path $experienceAssetsSource '*') -Destination $experienceAssetsDestination -Recurse -Force
+}
 $skinSource=Join-Path $projectRoot 'launcher\assets\skins\smolbird.png.base64'
 $skinDestination=Join-Path $assets 'skins\smolbird.png'
 New-Item -ItemType Directory -Path (Split-Path $skinDestination -Parent) -Force|Out-Null

@@ -829,44 +829,62 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     
     if (-not $script:CocoForm -or $script:CocoForm.IsDisposed) { Write-CocoStorageDiagnostic 'location.prompt.rejected.no-window' @{experienceId=$expId;instanceId=$instanceId};throw 'No se puede elegir la ubicacion: la ventana de Coco Launcher no esta disponible.' }
     
-    $dialog = New-Object Windows.Forms.Form
-    $dialog.Text = 'Ubicacion de instalacion'
-    $dialog.Size = New-Object Drawing.Size(520, 220)
-    $dialog.StartPosition = 'CenterParent'
-    $dialog.FormBorderStyle = 'FixedDialog'
-    $dialog.MaximizeBox = $false
-    $dialog.MinimizeBox = $false
-    $dialog.TopMost = $true
-    
-    $label = New-Object Windows.Forms.Label
-    $label.Text = ("Donde deseas instalar '{0}'?" -f $Experience.name)
-    $label.Font = New-Object Drawing.Font('Segoe UI Semibold', 11)
-    $label.Location = New-Object Drawing.Point(25, 18)
-    $label.Size = New-Object Drawing.Size(460, 28)
-    
-    $subLabel = New-Object Windows.Forms.Label
-    $subLabel.Text = ("Por defecto se instalara en:`r`n{0}" -f $instanceRoot)
-    $subLabel.Font = New-Object Drawing.Font('Segoe UI', 8.5)
-    $subLabel.ForeColor = [Drawing.Color]::FromArgb(200, 190, 215)
-    $subLabel.Location = New-Object Drawing.Point(25, 48)
-    $subLabel.Size = New-Object Drawing.Size(460, 42)
-    
-    $defaultBtn = New-Object Windows.Forms.Button
-    $defaultBtn.Text = 'INSTALAR EN RUTA POR DEFECTO'
-    $defaultBtn.Font = New-Object Drawing.Font('Segoe UI Semibold', 9)
-    $defaultBtn.Location = New-Object Drawing.Point(25, 105)
-    $defaultBtn.Size = New-Object Drawing.Size(240, 42)
-    Set-CocoFlatButtonStyle $defaultBtn ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)
-    $defaultBtn.DialogResult = [Windows.Forms.DialogResult]::OK
-    $dialog.AcceptButton = $defaultBtn
-    $defaultBtn.Add_Click({$dialog.Tag='default'})
-    
-    $customBtn = New-Object Windows.Forms.Button
-    $customBtn.Text = 'ELEGIR OTRA CARPETA...'
-    $customBtn.Font = New-Object Drawing.Font('Segoe UI Semibold', 9)
-    $customBtn.Location = New-Object Drawing.Point(275, 105)
-    $customBtn.Size = New-Object Drawing.Size(210, 42)
-    Set-CocoFlatButtonStyle $customBtn ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
+    $experienceName=[string]$Experience.name
+    $dialog=New-Object Windows.Forms.Form
+    $dialog.Name='CocoInstallLocationDialog';$dialog.Text=("Instalar {0}"-f$experienceName);$dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='None';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.KeyPreview=$true;$dialog.ShowInTaskbar=$false;$dialog.TopMost=$true;$dialog.BackColor=[Drawing.Color]::FromArgb(53,35,67);$dialog.Padding=New-Object Windows.Forms.Padding(1);$dialog.ClientSize=New-Object Drawing.Size(660,315);$dialog.MinimumSize=New-Object Drawing.Size(660,315)
+    $dialog.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(84,59,106),1);$eventArgs.Graphics.DrawRectangle($pen,0,0,$sender.ClientSize.Width-1,$sender.ClientSize.Height-1);$pen.Dispose()}.GetNewClosure())
+
+    $header=New-Object Windows.Forms.Panel;$header.Name='CocoInstallLocationHeader';$header.Dock='Top';$header.Height=78;$header.BackColor=[Drawing.Color]::FromArgb(27,19,38)
+    $accent=New-Object Windows.Forms.Panel;$accent.Name='CocoInstallLocationAccent';$accent.Dock='Left';$accent.Width=5;$accent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
+    $heading=New-Object Windows.Forms.Label;$heading.Name='CocoInstallLocationTitle';$heading.Text='INSTALAR EXPERIENCIA';$heading.Font=New-Object Drawing.Font('Segoe UI Semibold',14);$heading.ForeColor=[Drawing.Color]::White;$heading.AutoEllipsis=$true
+    $subHeading=New-Object Windows.Forms.Label;$subHeading.Name='CocoInstallLocationSubtitle';$subHeading.Text=("Elige donde guardar {0}"-f$experienceName);$subHeading.Font=New-Object Drawing.Font('Segoe UI',8.5);$subHeading.ForeColor=[Drawing.Color]::FromArgb(177,162,193);$subHeading.AutoEllipsis=$true
+    $closeButton=New-Object Windows.Forms.Button;$closeButton.Name='CocoInstallLocationCloseButton';$closeButton.Text='X';$closeButton.AccessibleName='Cerrar';$closeButton.Font=New-Object Drawing.Font('Segoe UI Semibold',9);Set-CocoMediaButtonStyle $closeButton ([Drawing.Color]::FromArgb(27,19,38)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(150,48,70));$closeButton.Add_Click({$dialog.Tag='cancelled';$dialog.DialogResult=[Windows.Forms.DialogResult]::Cancel;$dialog.Close()}.GetNewClosure())
+    $header.Controls.AddRange(@($accent,$heading,$subHeading,$closeButton))
+
+    $body=New-Object Windows.Forms.Panel;$body.Name='CocoInstallLocationBody';$body.Dock='Fill';$body.BackColor=[Drawing.Color]::FromArgb(22,13,34)
+    $intro=New-Object Windows.Forms.Label;$intro.Name='CocoInstallLocationIntro';$intro.Text='La instalacion se guardara en una carpeta separada para esta experiencia.';$intro.Font=New-Object Drawing.Font('Segoe UI Semibold',8.5);$intro.ForeColor=[Drawing.Color]::FromArgb(235,228,241);$intro.AutoEllipsis=$true
+    $pathCard=New-Object Windows.Forms.Panel;$pathCard.Name='CocoInstallLocationPathCard';$pathCard.BackColor=[Drawing.Color]::FromArgb(32,22,48)
+    $pathCaption=New-Object Windows.Forms.Label;$pathCaption.Name='CocoInstallLocationPathCaption';$pathCaption.Text='RUTA PREDETERMINADA';$pathCaption.Font=New-Object Drawing.Font('Segoe UI Semibold',7.5);$pathCaption.ForeColor=[Drawing.Color]::FromArgb(177,162,193)
+    $pathLabel=New-Object Windows.Forms.Label;$pathLabel.Name='CocoInstallLocationPath';$pathLabel.Text=$instanceRoot;$pathLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',9);$pathLabel.ForeColor=[Drawing.Color]::White;$pathLabel.AutoEllipsis=$true
+    $pathCard.Controls.AddRange(@($pathCaption,$pathLabel))
+    $hint=New-Object Windows.Forms.Label;$hint.Name='CocoInstallLocationHint';$hint.Text='Tambien puedes elegir otra carpeta. Coco creara dentro la carpeta de la instancia.';$hint.Font=New-Object Drawing.Font('Segoe UI',8);$hint.ForeColor=[Drawing.Color]::FromArgb(177,162,193);$hint.AutoEllipsis=$true
+    $toolTip=New-Object Windows.Forms.ToolTip;$toolTip.AutoPopDelay=6000;$toolTip.InitialDelay=350;$toolTip.ReshowDelay=100;$toolTip.SetToolTip($pathLabel,$instanceRoot)
+    $body.Controls.AddRange(@($intro,$pathCard,$hint))
+
+    $footer=New-Object Windows.Forms.Panel;$footer.Name='CocoInstallLocationFooter';$footer.Dock='Bottom';$footer.Height=82;$footer.BackColor=[Drawing.Color]::FromArgb(27,19,38)
+    $footerLine=New-Object Windows.Forms.Panel;$footerLine.Name='CocoInstallLocationFooterLine';$footerLine.Dock='Top';$footerLine.Height=1;$footerLine.BackColor=[Drawing.Color]::FromArgb(72,52,91)
+    $defaultBtn=New-Object Windows.Forms.Button;$defaultBtn.Name='CocoInstallLocationDefaultButton';$defaultBtn.Text='INSTALAR EN RUTA POR DEFECTO';$defaultBtn.AccessibleName='Instalar en ruta por defecto';$defaultBtn.Size=New-Object Drawing.Size(280,38);Set-CocoMediaButtonStyle $defaultBtn ([Drawing.Color]::FromArgb(177,92,255)) ([Drawing.Color]::White) ([Drawing.Color]::FromArgb(196,121,255));$defaultBtn.DialogResult=[Windows.Forms.DialogResult]::OK;$defaultBtn.Add_Click({$dialog.Tag='default'}.GetNewClosure())
+    $customBtn=New-Object Windows.Forms.Button;$customBtn.Name='CocoInstallLocationCustomButton';$customBtn.Text='ELEGIR OTRA CARPETA';$customBtn.AccessibleName='Elegir otra carpeta';$customBtn.Size=New-Object Drawing.Size(176,38);Set-CocoMediaButtonStyle $customBtn ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White) ([Drawing.Color]::FromArgb(102,61,140))
+    $cancelBtn=New-Object Windows.Forms.Button;$cancelBtn.Name='CocoInstallLocationCancelButton';$cancelBtn.Text='CANCELAR';$cancelBtn.AccessibleName='Cancelar';$cancelBtn.Size=New-Object Drawing.Size(94,38);Set-CocoMediaButtonStyle $cancelBtn ([Drawing.Color]::FromArgb(38,27,52)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(67,46,88));$cancelBtn.DialogResult=[Windows.Forms.DialogResult]::Cancel;$cancelBtn.Add_Click({$dialog.Tag='cancelled'}.GetNewClosure())
+    $footer.Controls.AddRange(@($footerLine,$defaultBtn,$customBtn,$cancelBtn))
+
+    $layoutInstallDialog={
+        $width=[Math]::Max(1,[int]$dialog.ClientSize.Width);$headerWidth=[Math]::Max(220,$width-66)
+        $heading.Location=New-Object Drawing.Point(22,11);$heading.Size=New-Object Drawing.Size($headerWidth,25)
+        $subHeading.Location=New-Object Drawing.Point(22,42);$subHeading.Size=New-Object Drawing.Size($headerWidth,18)
+        $closeButton.Location=New-Object Drawing.Point([Math]::Max(0,$width-46),20);$closeButton.Size=New-Object Drawing.Size(34,34)
+        $bodyWidth=[Math]::Max(1,[int]$body.ClientSize.Width);$bodyHeight=[Math]::Max(1,[int]$body.ClientSize.Height);$margin=22
+        $intro.Location=New-Object Drawing.Point($margin,18);$intro.Size=New-Object Drawing.Size([Math]::Max(1,$bodyWidth-($margin*2)),22)
+        $pathCard.Location=New-Object Drawing.Point($margin,48);$pathCard.Size=New-Object Drawing.Size([Math]::Max(1,$bodyWidth-($margin*2)),70)
+        $pathCaption.Location=New-Object Drawing.Point(14,10);$pathCaption.Size=New-Object Drawing.Size([Math]::Max(1,$pathCard.ClientSize.Width-28),16)
+        $pathLabel.Location=New-Object Drawing.Point(14,31);$pathLabel.Size=New-Object Drawing.Size([Math]::Max(1,$pathCard.ClientSize.Width-28),28)
+        $hint.Location=New-Object Drawing.Point($margin,128);$hint.Size=New-Object Drawing.Size([Math]::Max(1,$bodyWidth-($margin*2)),22)
+        $footerWidth=[int][Math]::Max(1,[int]$footer.ClientSize.Width);$gap=8;$right=22
+        $cancelX=[int]$footerWidth-[int]$right-[int]$cancelBtn.Width;$cancelBtn.Location=[Drawing.Point]::new($cancelX,25)
+        $customX=[int]$cancelBtn.Left-[int]$gap-[int]$customBtn.Width;$customBtn.Location=[Drawing.Point]::new($customX,25)
+        $defaultX=[int]$customBtn.Left-[int]$gap-[int]$defaultBtn.Width;$defaultBtn.Location=[Drawing.Point]::new($defaultX,25)
+    }.GetNewClosure()
+    $dialog.Add_Resize($layoutInstallDialog)
+    $dialog.Controls.AddRange(@($body,$footer,$header))
+    &$layoutInstallDialog
+    $dialog.AcceptButton=$defaultBtn;$dialog.CancelButton=$cancelBtn
+    $dragState=@{Active=$false;Start=[Drawing.Point]::Empty;Origin=[Drawing.Point]::Empty}
+    $beginDrag={param($sender,$eventArgs)if($eventArgs.Button-eq[Windows.Forms.MouseButtons]::Left){$dragState.Active=$true;$dragState.Start=[Windows.Forms.Cursor]::Position;$dragState.Origin=$dialog.Location}}.GetNewClosure()
+    $moveDrag={param($sender,$eventArgs)if($dragState.Active){$current=[Windows.Forms.Cursor]::Position;$dialog.Location=New-Object Drawing.Point($dragState.Origin.X+($current.X-$dragState.Start.X),$dragState.Origin.Y+($current.Y-$dragState.Start.Y))}}.GetNewClosure()
+    $endDrag={param($sender,$eventArgs)$dragState.Active=$false}.GetNewClosure()
+    foreach($dragControl in @($header,$heading,$subHeading)){$dragControl.Add_MouseDown($beginDrag);$dragControl.Add_MouseMove($moveDrag);$dragControl.Add_MouseUp($endDrag)}
+    $dialog.Add_KeyDown({param($sender,$eventArgs)if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Escape){$sender.Tag='cancelled';$sender.DialogResult=[Windows.Forms.DialogResult]::Cancel;$sender.Close()}}.GetNewClosure())
+    $dialog.Add_Shown({[void]$defaultBtn.Focus()}.GetNewClosure())
     $customBtn.Add_Click({
         Write-CocoStorageDiagnostic 'location.prompt.custom-dialog.open' @{experienceId=$expId;instanceId=$instanceId;defaultRoot=$instanceRoot}
         $fbd = New-Object Windows.Forms.FolderBrowserDialog
@@ -893,8 +911,6 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
         }else{Write-CocoStorageDiagnostic 'location.prompt.custom-cancelled' @{experienceId=$expId;instanceId=$instanceId}}
     })
     
-    $dialog.Controls.AddRange(@($label, $subLabel, $defaultBtn, $customBtn))
-    $dialog.Add_Shown({[void]$defaultBtn.Focus()})
     $result=$dialog.ShowDialog($script:CocoForm)
     $choice=[string]$dialog.Tag
     $dialog.Dispose()
@@ -1008,6 +1024,14 @@ function Set-CocoExperienceCardsEnabled($DynamicPanel,[bool]$Enabled){
     }
 }
 
+function Get-CocoExperienceCardControls($Control){
+    if(-not$Control-or$Control.IsDisposed){return}
+    foreach($child in @($Control.Controls)){
+        if($child-is[Windows.Forms.Panel]-and[string]$child.Name-eq'CocoExperienceCard'){$child}
+        if($child.Controls.Count-gt0){Get-CocoExperienceCardControls $child}
+    }
+}
+
 function Invoke-CocoExperienceStorageInstallUi($Info){
     if(-not$Info-or$script:CocoStorageInstallInProgress){return}
     $script:CocoStorageInstallInProgress=$true
@@ -1078,6 +1102,862 @@ function Invoke-CocoExperienceFreeSpaceUi($Info){
     }
 }
 
+function Test-CocoMediaExperience($Experience){
+    return [bool]($Experience -and [string]$Experience.runtime.type -eq 'media' -and
+        [string]$Experience.content.type -eq 'episodic-video')
+}
+
+function Get-CocoUserDownloadsRoot{
+    $userProfile=[Environment]::GetFolderPath('UserProfile')
+    if([string]::IsNullOrWhiteSpace($userProfile)){$userProfile=$env:USERPROFILE}
+    if([string]::IsNullOrWhiteSpace($userProfile)){throw 'No se pudo resolver la carpeta del usuario para las descargas.'}
+    [IO.Path]::GetFullPath((Join-Path $userProfile 'Downloads'))
+}
+
+function Get-CocoMediaDownloadRoot($Experience){
+    if(-not(Test-CocoMediaExperience $Experience)){throw 'La experiencia no es contenido episodico Coco.'}
+    $folder=[string]$Experience.content.downloadFolderName
+    if([string]::IsNullOrWhiteSpace($folder)-or-not(Test-CocoSafeRelativePath $folder)-or$folder.Contains('/')-or$folder.Contains('\')){
+        throw "La carpeta de descargas de '$($Experience.id)' no es segura."
+    }
+    $downloads=Get-CocoUserDownloadsRoot
+    $root=[IO.Path]::GetFullPath((Join-Path $downloads $folder))
+    if(-not(Test-CocoPathWithin $root $downloads)){throw 'La carpeta de contenido debe permanecer dentro de Downloads.'}
+    $root
+}
+
+function Get-CocoMediaEpisodePath($Experience,$Episode){
+    $fileName=[string]$Episode.fileName
+    if([string]::IsNullOrWhiteSpace($fileName)-or-not(Test-CocoSafeRelativePath $fileName)-or
+       [IO.Path]::GetFileName($fileName)-ne$fileName){
+        throw "El nombre del episodio '$($Episode.id)' no es seguro."
+    }
+    Join-Path (Get-CocoMediaDownloadRoot $Experience) $fileName
+}
+
+function Get-CocoMediaStatePath($Experience){
+    Join-Path (Get-CocoMediaDownloadRoot $Experience) '.coco-media-state.json'
+}
+
+function Read-CocoMediaState($Experience){
+    $path=Get-CocoMediaStatePath $Experience
+    if(-not(Test-Path -LiteralPath $path -PathType Leaf)){return $null}
+    try{Get-Content -LiteralPath $path -Raw|ConvertFrom-Json}catch{
+        Write-CocoLog "HEART SIGNAL: estado de media ilegible; se ignorara sin tocar videos: $($_.Exception.Message)"
+        return $null
+    }
+}
+
+function Get-CocoMediaEpisodeLocalStatus($Experience,$Episode){
+    $path=Get-CocoMediaEpisodePath $Experience $Episode
+    $partial="$path.partial"
+    $expectedSize=[int64]$Episode.size
+    $state=Read-CocoMediaState $Experience
+    $record=$null
+    if($state-and$state.episodes){$record=@($state.episodes|Where-Object{[string]$_.id-eq[string]$Episode.id}|Select-Object -First 1)[0]}
+    $result=[ordered]@{
+        Status='missing';Path=$path;PartialPath=$partial;Bytes=[int64]0;PartialBytes=[int64]0;ExpectedSize=$expectedSize
+        LastWriteUtc='';StateRecord=$record
+    }
+    if(Test-Path -LiteralPath $path -PathType Leaf){
+        $item=Get-Item -LiteralPath $path -Force
+        $result.Bytes=[int64]$item.Length
+        $result.LastWriteUtc=$item.LastWriteTimeUtc.ToString('o')
+        if($item.Length-ne$expectedSize){$result.Status='mismatch'}
+        elseif($record-and[string]$record.sha256-eq([string]$Episode.sha256).ToLowerInvariant()-and
+               [int64]$record.size-eq$expectedSize-and[string]$record.lastWriteUtc-eq[string]$result.LastWriteUtc){$result.Status='verified'}
+        else{$result.Status='present'}
+    }
+    if(Test-Path -LiteralPath $partial -PathType Leaf){$result.PartialBytes=[int64](Get-Item -LiteralPath $partial -Force).Length;if($result.Status-eq'missing'){$result.Status='partial'}}
+    [pscustomobject]$result
+}
+
+function Get-CocoMediaExperienceStatus($Experience){
+    $episodes=@($Experience.content.episodes)
+    $states=@($episodes|ForEach-Object{Get-CocoMediaEpisodeLocalStatus $Experience $_})
+    [pscustomobject]@{
+        Root=Get-CocoMediaDownloadRoot $Experience
+        Total=$episodes.Count
+        Verified=@($states|Where-Object Status-eq'verified').Count
+        Present=@($states|Where-Object Status-eq'present').Count
+        Partial=@($states|Where-Object Status-eq'partial').Count
+        Bytes=[int64](($states|Measure-Object -Property Bytes -Sum).Sum)
+        States=$states
+    }
+}
+
+function Write-CocoMediaState($Experience,$Episode,[string]$LastWriteUtc=''){
+    $root=Get-CocoMediaDownloadRoot $Experience
+    New-Item -ItemType Directory -Path $root -Force|Out-Null
+    $statePath=Join-Path $root '.coco-media-state.json'
+    $existing=Read-CocoMediaState $Experience
+    $records=@();$previous=$null
+    if($existing-and$existing.episodes){$previous=@($existing.episodes|Where-Object{[string]$_.id-eq[string]$Episode.id}|Select-Object -First 1)[0];$records=@($existing.episodes|Where-Object{[string]$_.id-ne[string]$Episode.id})}
+    if([string]::IsNullOrWhiteSpace($LastWriteUtc)-and(Test-Path -LiteralPath (Get-CocoMediaEpisodePath $Experience $Episode) -PathType Leaf)){
+        $LastWriteUtc=(Get-Item -LiteralPath (Get-CocoMediaEpisodePath $Experience $Episode) -Force).LastWriteTimeUtc.ToString('o')
+    }
+    $newRecord=[ordered]@{
+        id=[string]$Episode.id;fileName=[string]$Episode.fileName;size=[int64]$Episode.size
+        sha256=([string]$Episode.sha256).ToLowerInvariant();lastWriteUtc=$LastWriteUtc;verifiedAtUtc=[DateTime]::UtcNow.ToString('o')
+    }
+    foreach($name in 'positionSeconds','durationSeconds','playbackUpdatedAtUtc','completed'){
+        if($previous-and$previous.PSObject.Properties.Name-contains$name){$newRecord[$name]=$previous.$name}
+    }
+    $records+=,[pscustomobject]$newRecord
+    $payload=[ordered]@{schemaVersion=1;updatedAtUtc=[DateTime]::UtcNow.ToString('o');episodes=$records}
+    $temporary="$statePath.tmp-$PID"
+    try{
+        [IO.File]::WriteAllText($temporary,($payload|ConvertTo-Json -Depth 8),(New-Object Text.UTF8Encoding($false)))
+        Move-Item -LiteralPath $temporary -Destination $statePath -Force
+    }finally{Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}
+}
+
+function Get-CocoMediaPlaybackState($Experience,$Episode){
+    $state=Read-CocoMediaState $Experience;$record=$null
+    if($state-and$state.episodes){$record=@($state.episodes|Where-Object{[string]$_.id-eq[string]$Episode.id}|Select-Object -First 1)[0]}
+    [pscustomobject]@{
+        PositionSeconds=if($record-and$record.PSObject.Properties.Name-contains'positionSeconds'){[double]$record.positionSeconds}else{0.0}
+        DurationSeconds=if($record-and$record.PSObject.Properties.Name-contains'durationSeconds'){[double]$record.durationSeconds}else{0.0}
+        UpdatedAtUtc=if($record-and$record.PSObject.Properties.Name-contains'playbackUpdatedAtUtc'){[string]$record.playbackUpdatedAtUtc}else{''}
+        Completed=if($record-and$record.PSObject.Properties.Name-contains'completed'){[bool]$record.completed}else{$false}
+    }
+}
+
+function Write-CocoMediaPlaybackState($Experience,$Episode,[double]$PositionSeconds,[double]$DurationSeconds,[bool]$Completed=$false){
+    $root=Get-CocoMediaDownloadRoot $Experience;New-Item -ItemType Directory -Path $root -Force|Out-Null
+    $statePath=Join-Path $root '.coco-media-state.json';$existing=Read-CocoMediaState $Experience;$records=@()
+    if($existing-and$existing.episodes){$records=@($existing.episodes)}
+    $record=@($records|Where-Object{[string]$_.id-eq[string]$Episode.id}|Select-Object -First 1)[0]
+    if(-not$record){
+        $record=[pscustomobject]@{id=[string]$Episode.id;fileName=[string]$Episode.fileName;size=[int64]$Episode.size;sha256=([string]$Episode.sha256).ToLowerInvariant();lastWriteUtc='';verifiedAtUtc=''}
+        $records+=,$record
+    }
+    if(-not($record.PSObject.Properties.Name-contains'positionSeconds')){$record|Add-Member NoteProperty positionSeconds 0.0}
+    if(-not($record.PSObject.Properties.Name-contains'durationSeconds')){$record|Add-Member NoteProperty durationSeconds 0.0}
+    if(-not($record.PSObject.Properties.Name-contains'playbackUpdatedAtUtc')){$record|Add-Member NoteProperty playbackUpdatedAtUtc ''}
+    if(-not($record.PSObject.Properties.Name-contains'completed')){$record|Add-Member NoteProperty completed $false}
+    $record.positionSeconds=[Math]::Max(0.0,$PositionSeconds);$record.durationSeconds=[Math]::Max(0.0,$DurationSeconds);$record.playbackUpdatedAtUtc=[DateTime]::UtcNow.ToString('o');$record.completed=[bool]$Completed
+    $payload=[ordered]@{schemaVersion=1;updatedAtUtc=[DateTime]::UtcNow.ToString('o');episodes=$records};$temporary="$statePath.tmp-$PID"
+    try{[IO.File]::WriteAllText($temporary,($payload|ConvertTo-Json -Depth 8),(New-Object Text.UTF8Encoding($false)));Move-Item -LiteralPath $temporary -Destination $statePath -Force}finally{Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}
+}
+
+function Invoke-CocoMediaPumpUi{
+    if($script:CocoMediaDialog-and$script:CocoMediaDialog.IsDisposed){$script:CocoMediaCancelRequested=$true}
+    try{[Windows.Forms.Application]::DoEvents()}catch{}
+    if($script:CocoMediaCancelRequested){throw 'La operacion de Heart Signal fue cancelada.'}
+}
+
+function Set-CocoMediaUiStatus([string]$Text,[int]$Percent=0){
+    $Percent=[Math]::Max(0,[Math]::Min(100,$Percent))
+    if($script:CocoMediaProgressBar-and-not$script:CocoMediaProgressBar.IsDisposed){
+        if($script:CocoMediaProgressBar -is [Windows.Forms.ProgressBar]){$script:CocoMediaProgressBar.Value=$Percent}
+        else{$script:CocoMediaProgressBar.Tag=$Percent;$script:CocoMediaProgressBar.Invalidate()}
+    }
+    if($script:CocoMediaStatusLabel-and-not$script:CocoMediaStatusLabel.IsDisposed){$script:CocoMediaStatusLabel.Text=$Text}
+    if(Get-Command Set-CocoLauncherStep -ErrorAction SilentlyContinue){try{Set-CocoLauncherStep 4 'HEART SIGNAL' $Text $Percent}catch{}}
+    Invoke-CocoMediaPumpUi
+}
+
+function Format-CocoMediaBytes([int64]$Bytes){
+    if($Bytes-ge1GB){'{0:N2} GB'-f($Bytes/1GB)}elseif($Bytes-ge1MB){'{0:N0} MB'-f($Bytes/1MB)}elseif($Bytes-ge1KB){'{0:N0} KB'-f($Bytes/1KB)}else{'{0} B'-f$Bytes}
+}
+
+function Format-CocoMediaTime([double]$Seconds){
+    if([double]::IsNaN($Seconds)-or[double]::IsInfinity($Seconds)){$Seconds=0}
+    $span=[TimeSpan]::FromSeconds([Math]::Max(0,$Seconds))
+    if($span.TotalHours-ge1){$span.ToString('h\:mm\:ss')}else{$span.ToString('mm\:ss')}
+}
+
+function Get-CocoMediaFileSha256([string]$Path,[string]$Title='Verificando archivo',[int]$ProgressStart=0,[int]$ProgressEnd=100){
+    if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){throw "No existe el archivo de media: $Path"}
+    $item=Get-Item -LiteralPath $Path -Force;$total=[int64]$item.Length;$readTotal=[int64]0
+    $sha=[Security.Cryptography.SHA256]::Create();$stream=$null
+    try{
+        $stream=[IO.File]::Open($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        $buffer=New-Object byte[] (4MB);$lastUi=[DateTime]::MinValue
+        while(($read=$stream.Read($buffer,0,$buffer.Length))-gt0){
+            [void]$sha.TransformBlock($buffer,0,$read,$buffer,0);$readTotal+=$read
+            $now=[DateTime]::UtcNow
+            if(($now-$lastUi).TotalMilliseconds-ge200-or$readTotal-eq$total){
+                $lastUi=$now;$pct=if($total-gt0){$ProgressStart+[int](($ProgressEnd-$ProgressStart)*$readTotal/$total)}else{$ProgressEnd}
+                Set-CocoMediaUiStatus ("{0}: {1} / {2}"-f$Title,(Format-CocoMediaBytes $readTotal),(Format-CocoMediaBytes $total)) $pct
+            }
+        }
+        [void]$sha.TransformFinalBlock([byte[]]@(),0,0)
+        ([BitConverter]::ToString($sha.Hash)).Replace('-','').ToLowerInvariant()
+    }finally{if($stream){$stream.Dispose()};$sha.Dispose()}
+}
+
+function Wait-CocoMediaRetry([int]$Seconds){
+    $until=[DateTime]::UtcNow.AddSeconds($Seconds)
+    while([DateTime]::UtcNow-lt$until){Invoke-CocoMediaPumpUi;Start-Sleep -Milliseconds 250}
+}
+
+function Invoke-CocoMediaHttpDownload($Experience,$Episode,[string]$Destination){
+    $url=[string]$Episode.sourceUrl
+    if($url-notmatch'^https://'){throw "El episodio '$($Episode.id)' aun no tiene un asset HTTPS publicado."}
+    $parent=Split-Path $Destination -Parent;New-Item -ItemType Directory -Path $parent -Force|Out-Null
+    $partial="$Destination.partial";$expectedSize=[int64]$Episode.size;$expectedHash=([string]$Episode.sha256).ToLowerInvariant()
+    for($attempt=1;$attempt-le4;$attempt++){
+        $resumeBytes=if(Test-Path -LiteralPath $partial -PathType Leaf){[int64](Get-Item -LiteralPath $partial -Force).Length}else{[int64]0}
+        if($resumeBytes-gt$expectedSize){Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue;$resumeBytes=0}
+        $request=$null;$response=$null;$input=$null;$output=$null;$responseStatus=0;$hashMismatch=$false
+        try{
+            $request=[Net.HttpWebRequest]::Create($url);$request.UserAgent='CocoLauncher/HeartSignal';$request.Timeout=30000;$request.ReadWriteTimeout=30000
+            if($resumeBytes-gt0){$request.AddRange($resumeBytes)}
+            $response=$request.GetResponse();$responseStatus=[int]$response.StatusCode
+            $resumed=$resumeBytes-gt0-and$response.StatusCode-eq[Net.HttpStatusCode]::PartialContent
+            if($resumeBytes-gt0-and-not$resumed){Write-CocoLog "HEART SIGNAL: el asset no acepto el rango; se reinicia el parcial."}
+            $total=[int64]$response.ContentLength
+            if($resumed){$total+=$resumeBytes}else{$resumeBytes=0}
+            if($total-le0){$total=$expectedSize}
+            $input=$response.GetResponseStream()
+            $output=if($resumed){[IO.File]::Open($partial,[IO.FileMode]::Append,[IO.FileAccess]::Write,[IO.FileShare]::Read)}else{[IO.File]::Create($partial)}
+            $received=$resumeBytes;$watch=[Diagnostics.Stopwatch]::StartNew();$lastUi=[DateTime]::MinValue
+            Write-CocoLog "HEART SIGNAL: descarga intento=$attempt; reanudada=$resumed; bytesIniciales=$resumeBytes; destino=$Destination"
+            $buffer=New-Object byte[] (4MB)
+            while(($read=$input.Read($buffer,0,$buffer.Length))-gt0){
+                Invoke-CocoMediaPumpUi; $output.Write($buffer,0,$read);$received+=$read
+                $now=[DateTime]::UtcNow
+                if(($now-$lastUi).TotalMilliseconds-ge200-or$received-eq$total){
+                    $lastUi=$now;$pct=if($expectedSize-gt0){[int](75*$received/$expectedSize)}else{50}
+                    $speed=if($watch.Elapsed.TotalSeconds-gt0){$received/$watch.Elapsed.TotalSeconds}else{0}
+                    $eta=if($speed-gt0){[TimeSpan]::FromSeconds([Math]::Max(0,($expectedSize-$received)/$speed))}else{[TimeSpan]::Zero}
+                    Set-CocoMediaUiStatus ("Descargando: {0} / {1} | {2:N1} MB/s | faltan ~{3}"-f(Format-CocoMediaBytes $received),(Format-CocoMediaBytes $expectedSize),($speed/1MB),(Format-CocoMediaTime $eta.TotalSeconds)) $pct
+                }
+            }
+            if($received-ne$expectedSize){throw "La descarga termino incompleta: $received de $expectedSize bytes."}
+            $actual=Get-CocoMediaFileSha256 $partial 'Verificando SHA-256' 76 96
+            if($actual-ne$expectedHash){$hashMismatch=$true;throw "El episodio '$($Episode.id)' no coincide con el SHA-256 publicado."}
+            if(Test-Path -LiteralPath $Destination -PathType Leaf){
+                $preserved="$Destination.coco-replaced-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+                Move-Item -LiteralPath $Destination -Destination $preserved -Force
+                Write-CocoLog "HEART SIGNAL: archivo anterior preservado en $preserved"
+            }
+            Move-Item -LiteralPath $partial -Destination $Destination -Force
+            Write-CocoMediaState $Experience $Episode
+            Set-CocoMediaUiStatus 'Descarga y verificacion completadas.' 100
+            return $Destination
+        }catch{
+            if($script:CocoMediaCancelRequested){throw 'La operacion de Heart Signal fue cancelada.'}
+            if($hashMismatch-or$responseStatus-eq416){Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue}
+            if($attempt-eq4){throw}
+            Write-CocoLog "HEART SIGNAL: fallo de descarga intento=${attempt}: $($_.Exception.Message)"
+            Set-CocoMediaUiStatus ("Reintentando descarga (intento {0}/4); se conserva el parcial."-f($attempt+1)) 75
+            Wait-CocoMediaRetry ([int][Math]::Pow(2,$attempt-1))
+        }finally{if($output){$output.Dispose()};if($input){$input.Dispose()};if($response){$response.Dispose()}}
+    }
+}
+
+function Test-CocoMediaEpisodeFile($Experience,$Episode,[switch]$RecordVerifiedState){
+    $status=Get-CocoMediaEpisodeLocalStatus $Experience $Episode
+    if(-not(Test-Path -LiteralPath $status.Path -PathType Leaf)){return [pscustomobject]@{Exists=$false;Matches=$false;Path=$status.Path;Status=$status.Status;ActualHash='';ExpectedHash=[string]$Episode.sha256}}
+    if([int64]$status.Bytes-ne[int64]$Episode.size){return [pscustomobject]@{Exists=$true;Matches=$false;Path=$status.Path;Status='mismatch';ActualHash='';ExpectedHash=[string]$Episode.sha256}}
+    $actual=Get-CocoMediaFileSha256 $status.Path 'Verificando episodio' 5 95
+    $matches=[string]::Equals($actual,([string]$Episode.sha256).ToLowerInvariant(),[StringComparison]::OrdinalIgnoreCase)
+    if($matches-and$RecordVerifiedState){Write-CocoMediaState $Experience $Episode (Get-Item -LiteralPath $status.Path -Force).LastWriteTimeUtc.ToString('o')}
+    [pscustomobject]@{Exists=$true;Matches=$matches;Path=$status.Path;Status=if($matches){'verified'}else{'mismatch'};ActualHash=$actual;ExpectedHash=([string]$Episode.sha256).ToLowerInvariant()}
+}
+
+function Get-CocoMediaContentType([string]$FileName){
+    switch([IO.Path]::GetExtension($FileName).ToLowerInvariant()){
+        '.mp4' {'video/mp4';break}
+        '.m4v' {'video/mp4';break}
+        '.mkv' {'video/x-matroska';break}
+        '.webm' {'video/webm';break}
+        default {'application/octet-stream'}
+    }
+}
+
+function Start-CocoMediaHttpProxy([string]$RemoteUrl,[string]$FileName){
+    if($RemoteUrl-notmatch'^https://'){throw 'El streaming remoto de media debe usar HTTPS.'}
+    $extension=[IO.Path]::GetExtension($FileName).ToLowerInvariant()
+    if($extension-notmatch'^\.(mp4|m4v|mkv|webm)$'){$extension='.bin'}
+    $contentType=Get-CocoMediaContentType $FileName
+    $probe=$null;$job=$null
+    try{
+        $probe=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,0)
+        $probe.Start()
+        $port=[int]$probe.LocalEndpoint.Port
+        $probe.Stop();$probe=$null
+        $token=([Guid]::NewGuid().ToString('N'))
+        $job=Start-Job -ArgumentList @($RemoteUrl,$port,$token,$contentType,$extension) -ScriptBlock {
+            param([string]$UpstreamUrl,[int]$ListenPort,[string]$RouteToken,[string]$MimeType,[string]$MediaExtension)
+            $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,$ListenPort)
+            $crlf=[string][char]13+[string][char]10
+            function Send-CocoProxyError($Stream,[int]$Code,[string]$Reason,[string]$Message){
+                $body=[Text.Encoding]::UTF8.GetBytes($Message)
+                $header=@(
+                    "HTTP/1.1 $Code $Reason"
+                    'Content-Type: text/plain; charset=utf-8'
+                    'Cache-Control: no-store'
+                    'Connection: close'
+                    "Content-Length: $($body.Length)"
+                    ''
+                    ''
+                )-join$script:crlf
+                $bytes=[Text.Encoding]::ASCII.GetBytes($header)
+                [void]$Stream.Write($bytes,0,$bytes.Length)
+                if($body.Length-gt0){[void]$Stream.Write($body,0,$body.Length)}
+            }
+            try{
+                $listener.Start()
+                while($true){
+                    while(-not$listener.Pending()){Start-Sleep -Milliseconds 100}
+                    $client=$null;$stream=$null;$reader=$null;$upstream=$null;$upstreamStream=$null
+                    try{
+                        $client=$listener.AcceptTcpClient()
+                        $client.NoDelay=$true;$client.ReceiveTimeout=30000;$client.SendTimeout=30000
+                        $stream=$client.GetStream()
+                        $reader=[IO.StreamReader]::new($stream,[Text.Encoding]::ASCII,$false,8192,$true)
+                        $requestLine=$reader.ReadLine()
+                        if([string]::IsNullOrWhiteSpace($requestLine)){continue}
+                        $parts=$requestLine.Split(' ')
+                        if($parts.Count-lt2){throw 'Solicitud HTTP invalida.'}
+                        $method=$parts[0].ToUpperInvariant();$requestPath=$parts[1]
+                        $headers=@{}
+                        while($true){
+                            $line=$reader.ReadLine()
+                            if($null-eq$line-or$line-eq''){break}
+                            $colon=$line.IndexOf(':')
+                            if($colon-gt0){$headers[$line.Substring(0,$colon).Trim()]=$line.Substring($colon+1).Trim()}
+                        }
+                        $expectedPath="/coco-media/$RouteToken/media$MediaExtension"
+                        if($requestPath-ne$expectedPath){Send-CocoProxyError $stream 404 'Not Found' 'Ruta de media no encontrada.';continue}
+                        if($method-notin @('GET','HEAD')){Send-CocoProxyError $stream 405 'Method Not Allowed' 'Solo se admite GET o HEAD.';continue}
+                        $rangeHeader=[string]$headers['Range'];$hasRange=$false;$rangeStart=[int64]0;$rangeEnd=[int64]-1
+                        if(-not[string]::IsNullOrWhiteSpace($rangeHeader)){
+                            if($rangeHeader-match'^bytes=(\d+)-(\d*)$'){
+                                $hasRange=$true;$rangeStart=[int64]$Matches[1]
+                                if(-not[string]::IsNullOrWhiteSpace($Matches[2])){$rangeEnd=[int64]$Matches[2]}
+                            }else{
+                                Send-CocoProxyError $stream 416 'Range Not Satisfiable' 'Solo se admite un rango HTTP simple.';continue
+                            }
+                        }
+                        $request=[Net.HttpWebRequest]::Create($UpstreamUrl)
+                        $request.Method=$method;$request.UserAgent='CocoLauncher/HeartSignal';$request.AllowAutoRedirect=$true;$request.KeepAlive=$false;$request.Timeout=30000;$request.ReadWriteTimeout=30000
+                        if($hasRange){
+                            if($rangeEnd-ge$rangeStart){$request.AddRange($rangeStart,$rangeEnd)}else{$request.AddRange($rangeStart)}
+                        }
+                        try{$upstream=$request.GetResponse()}catch{
+                            $remoteResponse=$_.Exception.Response
+                            if($remoteResponse){$code=[int]$remoteResponse.StatusCode;$reason=[string]$remoteResponse.StatusDescription;Send-CocoProxyError $stream $code $reason 'El asset remoto rechazo la solicitud.';$remoteResponse.Dispose();continue}
+                            throw
+                        }
+                        $upstreamStatus=[int]$upstream.StatusCode
+                        if($hasRange-and$upstreamStatus-ne206){throw "El asset remoto no devolvio contenido parcial (HTTP $upstreamStatus)."}
+                        $length=[int64]$upstream.ContentLength
+                        if($length-lt0){throw 'El asset remoto no informo Content-Length.'}
+                        $statusLine=if($upstreamStatus-eq206){'HTTP/1.1 206 Partial Content'}else{'HTTP/1.1 200 OK'}
+                        $responseHeaders=@(
+                            $statusLine
+                            "Content-Type: $MimeType"
+                            'Accept-Ranges: bytes'
+                            'Cache-Control: no-store'
+                            'Connection: close'
+                            "Content-Length: $length"
+                        )
+                        $contentRange=[string]$upstream.Headers['Content-Range']
+                        if(-not[string]::IsNullOrWhiteSpace($contentRange)){$responseHeaders+="Content-Range: $contentRange"}
+                        $responseBytes=[Text.Encoding]::ASCII.GetBytes((($responseHeaders+@('',''))-join$crlf))
+                        [void]$stream.Write($responseBytes,0,$responseBytes.Length)
+                        if($method-eq'HEAD'){continue}
+                        $upstreamStream=$upstream.GetResponseStream()
+                        $buffer=New-Object byte[] (1MB)
+                        while(($read=$upstreamStream.Read($buffer,0,$buffer.Length))-gt0){[void]$stream.Write($buffer,0,$read)}
+                    }catch{
+                        if($stream){
+                            try{Send-CocoProxyError $stream 502 'Bad Gateway' 'No se pudo obtener el asset remoto.'}catch{}
+                        }
+                    }finally{
+                        if($upstreamStream){$upstreamStream.Dispose()}
+                        if($upstream){$upstream.Dispose()}
+                        if($reader){$reader.Dispose()}
+                        if($stream){$stream.Dispose()}
+                        if($client){$client.Dispose()}
+                    }
+                }
+            }finally{if($listener){$listener.Stop()}}
+        }
+        $deadline=[DateTime]::UtcNow.AddSeconds(8);$ready=$false
+        while([DateTime]::UtcNow-lt$deadline){
+            if($job.State-in @('Failed','Stopped','Completed')){throw "No se pudo iniciar el proxy de streaming local (estado $($job.State))."}
+            $client=$null
+            try{$client=[Net.Sockets.TcpClient]::new();$client.Connect('127.0.0.1',$port);$ready=$true;break}catch{}finally{if($client){$client.Dispose()}}
+            Start-Sleep -Milliseconds 100
+        }
+        if(-not$ready){throw 'El proxy de streaming local no comenzo a escuchar a tiempo.'}
+        [pscustomobject]@{Job=$job;Port=$port;Token=$token;Url="http://127.0.0.1:$port/coco-media/$token/media$extension";RemoteUrl=$RemoteUrl}
+    }catch{
+        if($probe){try{$probe.Stop()}catch{}}
+        if($job){
+            try{Stop-Job -Job $job -ErrorAction SilentlyContinue}catch{}
+            try{Remove-Job -Job $job -Force -ErrorAction SilentlyContinue}catch{}
+        }
+        throw
+    }
+}
+
+function Stop-CocoMediaHttpProxy($Proxy){
+    if(-not$Proxy){return}
+    if($Proxy.Job){
+        try{Stop-Job -Job $Proxy.Job -ErrorAction SilentlyContinue}catch{}
+        try{Remove-Job -Job $Proxy.Job -Force -ErrorAction SilentlyContinue}catch{}
+    }
+}
+
+function Set-CocoMediaButtonStyle($Button,[Drawing.Color]$BackColor,[Drawing.Color]$ForeColor,[Drawing.Color]$HoverColor){
+    if(-not$Button){return}
+    if($HoverColor.IsEmpty){$HoverColor=[Drawing.Color]::FromArgb([Math]::Min(255,$BackColor.R+18),[Math]::Min(255,$BackColor.G+18),[Math]::Min(255,$BackColor.B+18))}
+    $Button.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+    $Button.FlatAppearance.BorderSize=0
+    $Button.FlatAppearance.MouseOverBackColor=$HoverColor
+    $Button.FlatAppearance.MouseDownBackColor=[Drawing.Color]::FromArgb([Math]::Max(0,$BackColor.R-12),[Math]::Max(0,$BackColor.G-12),[Math]::Max(0,$BackColor.B-12))
+    $Button.UseVisualStyleBackColor=$false
+    $Button.BackColor=$BackColor
+    $Button.ForeColor=$ForeColor
+    $Button.Cursor=[Windows.Forms.Cursors]::Hand
+    $Button.Margin=New-Object Windows.Forms.Padding(0)
+    $Button.Padding=New-Object Windows.Forms.Padding(0)
+    $Button.Font=New-Object Drawing.Font('Segoe UI Semibold',9)
+    $Button.UseCompatibleTextRendering=$true
+}
+
+function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
+    if([string]::IsNullOrWhiteSpace($Source)){$Source=[string]$Episode.streamUrl}
+    if([string]::IsNullOrWhiteSpace($Source)){throw 'No existe una fuente de reproduccion para este episodio.'}
+    if($Source-notmatch'^(https://|[a-zA-Z]:[\\/])'){throw 'La fuente de reproduccion no usa HTTPS ni una ruta local valida.'}
+    $formatTimeCommand=(Get-Command Format-CocoMediaTime -ErrorAction Stop).ScriptBlock
+    $writePlaybackCommand=(Get-Command Write-CocoMediaPlaybackState -ErrorAction Stop).ScriptBlock
+    $logCommand=(Get-Command Write-CocoLog -ErrorAction SilentlyContinue).ScriptBlock
+    try{
+        Add-Type -AssemblyName PresentationCore
+        Add-Type -AssemblyName PresentationFramework
+        Add-Type -AssemblyName WindowsBase
+        Add-Type -AssemblyName WindowsFormsIntegration
+    }catch{throw "Windows no pudo cargar el reproductor integrado: $($_.Exception.Message)"}
+    $form=New-Object Windows.Forms.Form;$form.Text=("Heart Signal - {0}"-f[string]$Episode.title);$form.StartPosition='CenterParent';$form.FormBorderStyle='None';$form.MinimizeBox=$false;$form.MaximizeBox=$false;$form.KeyPreview=$true;$form.BackColor=[Drawing.Color]::FromArgb(53,35,67);$form.Padding=New-Object Windows.Forms.Padding(1);$form.ClientSize=New-Object Drawing.Size(1000,650);$form.MinimumSize=New-Object Drawing.Size(640,420)
+    $chrome=New-Object Windows.Forms.Panel;$chrome.Name='CocoMediaHeader';$chrome.Dock='Top';$chrome.Height=58;$chrome.BackColor=[Drawing.Color]::FromArgb(27,19,38)
+    $accent=New-Object Windows.Forms.Panel;$accent.Name='CocoMediaHeaderAccent';$accent.Dock='Left';$accent.Width=4;$accent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
+    $titleLabel=New-Object Windows.Forms.Label;$titleLabel.Name='CocoMediaTitle';$titleLabel.Text='HEART SIGNAL';$titleLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',11);$titleLabel.ForeColor=[Drawing.Color]::White;$titleLabel.AutoEllipsis=$true
+    $subtitleLabel=New-Object Windows.Forms.Label;$subtitleLabel.Name='CocoMediaSubtitle';$subtitleLabel.Text=("Episodio {0}"-f[string]$Episode.title);$subtitleLabel.Font=New-Object Drawing.Font('Segoe UI',8);$subtitleLabel.ForeColor=[Drawing.Color]::FromArgb(177,162,193);$subtitleLabel.AutoEllipsis=$true
+    $statusLabel=New-Object Windows.Forms.Label;$statusLabel.Name='CocoMediaStatus';$statusLabel.Text='Cargando video...';$statusLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',8);$statusLabel.ForeColor=[Drawing.Color]::FromArgb(168,236,168);$statusLabel.TextAlign='MiddleRight';$statusLabel.AutoEllipsis=$true
+    $minimize=New-Object Windows.Forms.Button;$minimize.Name='CocoMediaMinimizeButton';$minimize.Text='-';$minimize.AccessibleName='Minimizar';$minimize.Font=New-Object Drawing.Font('Segoe UI',12);Set-CocoMediaButtonStyle $minimize ([Drawing.Color]::FromArgb(27,19,38)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(53,35,67))
+    $close=New-Object Windows.Forms.Button;$close.Name='CocoMediaCloseButton';$close.Text='X';$close.AccessibleName='Cerrar';$close.Font=New-Object Drawing.Font('Segoe UI Semibold',10);Set-CocoMediaButtonStyle $close ([Drawing.Color]::FromArgb(27,19,38)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(150,48,70))
+    $chrome.Controls.AddRange(@($accent,$titleLabel,$subtitleLabel,$minimize,$close))
+    $videoHost=New-Object Windows.Forms.Integration.ElementHost;$videoHost.Name='CocoMediaVideoHost';$videoHost.Dock='Fill';$videoHost.BackColor=[Drawing.Color]::Black
+    $media=New-Object System.Windows.Controls.MediaElement;$media.LoadedBehavior='Manual';$media.UnloadedBehavior='Manual';$media.Stretch='Uniform';$media.Volume=1.0;$media.ScrubbingEnabled=$true
+    $videoHost.Child=$media
+    $controls=New-Object Windows.Forms.Panel;$controls.Name='CocoMediaControlPanel';$controls.Dock='Bottom';$controls.Height=86;$controls.BackColor=[Drawing.Color]::FromArgb(27,19,38)
+    $controlLine=New-Object Windows.Forms.Panel;$controlLine.Name='CocoMediaControlLine';$controlLine.Dock='Top';$controlLine.Height=1;$controlLine.BackColor=[Drawing.Color]::FromArgb(72,52,91)
+    $play=New-Object Windows.Forms.Button;$play.Name='CocoMediaPlayButton';$play.Text='PAUSAR';$play.AccessibleName='Pausar o reproducir';$play.Size=New-Object Drawing.Size(112,36);Set-CocoMediaButtonStyle $play ([Drawing.Color]::FromArgb(177,92,255)) ([Drawing.Color]::White) ([Drawing.Color]::FromArgb(196,121,255))
+    $position=New-Object Windows.Forms.Label;$position.Name='CocoMediaPosition';$position.Text='00:00 / --:--';$position.TextAlign='MiddleCenter';$position.Font=New-Object Drawing.Font('Segoe UI Semibold',8.5);$position.BackColor=[Drawing.Color]::FromArgb(38,27,52);$position.ForeColor=[Drawing.Color]::FromArgb(235,228,241)
+    $seek=New-Object Windows.Forms.Panel;$seek.Name='CocoMediaSeekBar';$seek.TabStop=$true;$seek.Cursor=[Windows.Forms.Cursors]::Hand;$seek.BackColor=[Drawing.Color]::FromArgb(27,19,38);$seek.AccessibleName='Posicion del video';$seek.AccessibleRole=[Windows.Forms.AccessibleRole]::Slider
+    $volumeLabel=New-Object Windows.Forms.Label;$volumeLabel.Name='CocoMediaVolumeLabel';$volumeLabel.Text='VOL';$volumeLabel.TextAlign='MiddleCenter';$volumeLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',7.5);$volumeLabel.ForeColor=[Drawing.Color]::FromArgb(177,162,193)
+    $volume=New-Object Windows.Forms.Panel;$volume.Name='CocoMediaVolumeBar';$volume.TabStop=$true;$volume.Cursor=[Windows.Forms.Cursors]::Hand;$volume.BackColor=[Drawing.Color]::FromArgb(27,19,38);$volume.AccessibleName='Volumen';$volume.AccessibleRole=[Windows.Forms.AccessibleRole]::Slider
+    $fullscreen=New-Object Windows.Forms.Button;$fullscreen.Name='CocoMediaFullscreenButton';$fullscreen.Text='PANTALLA COMPLETA';$fullscreen.AccessibleName='Pantalla completa';$fullscreen.Font=New-Object Drawing.Font('Segoe UI Semibold',8);$fullscreen.TextAlign='MiddleCenter';$fullscreen.Size=New-Object Drawing.Size(174,36);Set-CocoMediaButtonStyle $fullscreen ([Drawing.Color]::FromArgb(38,27,52)) ([Drawing.Color]::FromArgb(235,228,241)) ([Drawing.Color]::FromArgb(67,46,88))
+    $toolTip=New-Object Windows.Forms.ToolTip;$toolTip.AutoPopDelay=4000;$toolTip.InitialDelay=400;$toolTip.ReshowDelay=100
+    $toolTip.SetToolTip($play,'Pausar / reproducir (Espacio)');$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)');$toolTip.SetToolTip($seek,'Busca una posicion en el episodio');$toolTip.SetToolTip($volume,'Volumen')
+    $statusLabel.TextAlign='MiddleLeft';$statusLabel.BackColor=[Drawing.Color]::FromArgb(38,27,52);$statusLabel.Padding=New-Object Windows.Forms.Padding(10,0,6,0)
+    $controls.Controls.AddRange(@($controlLine,$play,$statusLabel,$position,$seek,$volumeLabel,$volume,$fullscreen));$form.Controls.Add($videoHost);$form.Controls.Add($controls);$form.Controls.Add($chrome)
+    $savedPlayback=Get-CocoMediaPlaybackState $Experience $Episode
+    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds}
+    $formatTime={param([double]$Seconds)&$formatTimeCommand $Seconds}.GetNewClosure()
+    $layoutChrome={
+        $width=[Math]::Max(1,[int]$chrome.ClientSize.Width)
+        $titleWidth=[Math]::Max(220,$width-110);$titleLabel.Location=New-Object Drawing.Point(22,7);$titleLabel.Size=New-Object Drawing.Size($titleWidth,22)
+        $subtitleLabel.Location=New-Object Drawing.Point(22,30);$subtitleLabel.Size=New-Object Drawing.Size($titleWidth,18)
+        $minimize.Size=New-Object Drawing.Size(34,34);$minimize.Location=New-Object Drawing.Point([Math]::Max(0,$width-84),11)
+        $close.Size=New-Object Drawing.Size(34,34);$close.Location=New-Object Drawing.Point([Math]::Max(0,$width-44),11)
+    }.GetNewClosure()
+    $layoutPlayer={
+        $width=[Math]::Max(1,[int]$controls.ClientSize.Width);$height=[Math]::Max(1,[int]$controls.ClientSize.Height)
+        $margin=18;$gap=10;$rowHeight=36;$rowY=[Math]::Max(28,$height-$rowHeight-18)
+        $playWidth=112;$statusWidth=122;$positionWidth=112;$volumeLabelWidth=36;$volumeWidth=78;$fullscreenWidth=174
+        $fixed=$playWidth+$statusWidth+$positionWidth+$volumeLabelWidth+$volumeWidth+$fullscreenWidth
+        $singleRow=($width-($margin*2)-$fixed-($gap*6)-100-ge0)
+        if($singleRow){
+            $seekWidth=[Math]::Max(100,$width-($margin*2)-$fixed-($gap*6));$x=$margin
+            $play.Location=New-Object Drawing.Point($x,$rowY);$play.Size=New-Object Drawing.Size($playWidth,$rowHeight);$x+=$playWidth+$gap
+            $statusLabel.Location=New-Object Drawing.Point($x,($rowY+3));$statusLabel.Size=New-Object Drawing.Size($statusWidth,30);$x+=$statusWidth+$gap
+            $position.Location=New-Object Drawing.Point($x,($rowY+3));$position.Size=New-Object Drawing.Size($positionWidth,30);$x+=$positionWidth+$gap
+            $seek.Location=New-Object Drawing.Point($x,($rowY+3));$seek.Size=New-Object Drawing.Size($seekWidth,30);$x+=$seekWidth+$gap
+            $volumeLabel.Location=New-Object Drawing.Point($x,($rowY+3));$volumeLabel.Size=New-Object Drawing.Size($volumeLabelWidth,30);$x+=$volumeLabelWidth+$gap
+            $volume.Location=New-Object Drawing.Point($x,$rowY);$volume.Size=New-Object Drawing.Size($volumeWidth,$rowHeight);$x+=$volumeWidth+$gap
+            $fullscreen.Location=New-Object Drawing.Point($x,$rowY);$fullscreen.Size=New-Object Drawing.Size($fullscreenWidth,$rowHeight)
+        }else{
+            $topY=10;$bottomY=[Math]::Max(52,$height-$rowHeight-10);$lowerFixed=$volumeLabelWidth+$volumeWidth+$fullscreenWidth;$lowerSeekWidth=[Math]::Max(100,$width-($margin*2)-$lowerFixed-($gap*3));$x=$margin
+            $play.Location=New-Object Drawing.Point($x,$topY);$play.Size=New-Object Drawing.Size($playWidth,$rowHeight);$x+=$playWidth+$gap
+            $statusLabel.Location=New-Object Drawing.Point($x,($topY+3));$statusLabel.Size=New-Object Drawing.Size($statusWidth,30);$x+=$statusWidth+$gap
+            $position.Location=New-Object Drawing.Point($x,($topY+3));$position.Size=New-Object Drawing.Size($positionWidth,30)
+            $x=$margin;$seek.Location=New-Object Drawing.Point($x,($bottomY+3));$seek.Size=New-Object Drawing.Size($lowerSeekWidth,30);$x+=$lowerSeekWidth+$gap
+            $volumeLabel.Location=New-Object Drawing.Point($x,($bottomY+3));$volumeLabel.Size=New-Object Drawing.Size($volumeLabelWidth,30);$x+=$volumeLabelWidth+$gap
+            $volume.Location=New-Object Drawing.Point($x,$bottomY);$volume.Size=New-Object Drawing.Size($volumeWidth,$rowHeight);$x+=$volumeWidth+$gap
+            $fullscreen.Location=New-Object Drawing.Point($x,$bottomY);$fullscreen.Size=New-Object Drawing.Size($fullscreenWidth,$rowHeight)
+        }
+    }.GetNewClosure()
+    $chrome.Add_Resize($layoutChrome)
+    $controls.Add_Resize($layoutPlayer)
+    &$layoutChrome
+    &$layoutPlayer
+    $savePlayback={
+        param([bool]$Force=$false)
+        try{
+            $now=[DateTime]::UtcNow
+            if(-not$Force-and($now-$state.LastSavedUtc).TotalSeconds-lt2){return}
+            $current=[Math]::Max(0.0,[double]$media.Position.TotalSeconds)
+            if($state.Duration-le0-and$current-le0){return}
+            &$writePlaybackCommand $Experience $Episode $current $state.Duration $state.Completed
+            $state.LastSavedUtc=$now
+        }catch{
+            try{if($logCommand){&$logCommand "HEART SIGNAL: no se pudo guardar la posicion de '$($Episode.id)': $($_.Exception.Message)"}}catch{}
+        }
+    }.GetNewClosure()
+    $applyResume={
+        if($state.ResumeApplied-or$state.Duration-le0){return}
+        $state.ResumeApplied=$true
+        if($state.Completed){$state.ResumeSeconds=0.0;$state.Completed=$false;return}
+        if($state.ResumeSeconds-gt5-and$state.ResumeSeconds-lt($state.Duration-15)){
+            try{$media.Position=[TimeSpan]::FromSeconds([Math]::Min($state.ResumeSeconds,$state.Duration-1));$statusLabel.Text=("Continuando desde {0}"-f(&$formatTime $media.Position.TotalSeconds))}catch{}
+        }else{$state.ResumeSeconds=0.0}
+    }.GetNewClosure()
+    $setSeekFromX={
+        param([int]$X)
+        if($state.Duration-le0){return}
+        $usable=[Math]::Max(1,$seek.ClientSize.Width-8);$ratio=[Math]::Max(0.0,[Math]::Min(1.0,($X-4)/[double]$usable));$state.SeekPreviewSeconds=$state.Duration*$ratio;$seek.Invalidate()
+    }.GetNewClosure()
+    $seek.Add_Paint(({
+        param($sender,$eventArgs)
+        $graphics=$eventArgs.Graphics;$graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
+        $left=6;$right=[Math]::Max($left+1,$sender.ClientSize.Width-6);$center=[int]($sender.ClientSize.Height/2);$trackColor=[Drawing.Color]::FromArgb(64,49,78);$fillColor=[Drawing.Color]::FromArgb(177,92,255)
+        $trackPen=New-Object Drawing.Pen($trackColor,6);$graphics.DrawLine($trackPen,$left,$center,$right,$center);$trackPen.Dispose()
+        $seconds=if($state.Seeking){$state.SeekPreviewSeconds}else{[double]$media.Position.TotalSeconds};$ratio=if($state.Duration-gt0){[Math]::Max(0.0,[Math]::Min(1.0,$seconds/$state.Duration))}else{0.0};$thumbX=[int]($left+($right-$left)*$ratio)
+        $fillPen=New-Object Drawing.Pen($fillColor,6);if($thumbX-gt$left){$graphics.DrawLine($fillPen,$left,$center,$thumbX,$center)};$fillPen.Dispose()
+        $thumbBrush=New-Object Drawing.SolidBrush($fillColor);$graphics.FillEllipse($thumbBrush,$thumbX-6,$center-6,12,12);$thumbBrush.Dispose()
+    }.GetNewClosure()))
+    $seek.Add_MouseDown(({
+        param($sender,$eventArgs)
+        if($eventArgs.Button-eq[Windows.Forms.MouseButtons]::Left){$state.Seeking=$true;$sender.Focus();&$setSeekFromX $eventArgs.X}
+    }.GetNewClosure()))
+    $seek.Add_MouseMove(({
+        param($sender,$eventArgs)
+        if($state.Seeking){&$setSeekFromX $eventArgs.X}
+    }.GetNewClosure()))
+    $seek.Add_MouseUp(({
+        param($sender,$eventArgs)
+        if($state.Seeking-and$eventArgs.Button-eq[Windows.Forms.MouseButtons]::Left){if($state.Duration-gt0){$media.Position=[TimeSpan]::FromSeconds($state.SeekPreviewSeconds);$state.Completed=$false};&$savePlayback $true;$state.Seeking=$false;$sender.Invalidate()}
+    }.GetNewClosure()))
+    $seek.Add_KeyDown(({
+        param($sender,$eventArgs)
+        if($state.Duration-gt0-and$eventArgs.KeyCode-in @([Windows.Forms.Keys]::Left,[Windows.Forms.Keys]::Right)){$delta=if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Left){-5.0}else{5.0};$state.SeekPreviewSeconds=[Math]::Max(0.0,[Math]::Min($state.Duration-1,$media.Position.TotalSeconds+$delta));$media.Position=[TimeSpan]::FromSeconds($state.SeekPreviewSeconds);$state.Completed=$false;&$savePlayback $true;$sender.Invalidate();$eventArgs.Handled=$true}
+    }.GetNewClosure()))
+    $setVolumeFromX={
+        param([int]$X)
+        $usable=[Math]::Max(1,$volume.ClientSize.Width-8);$state.Volume=[Math]::Max(0.0,[Math]::Min(1.0,($X-4)/[double]$usable));$media.Volume=$state.Volume;$volume.Invalidate()
+    }.GetNewClosure()
+    $volume.Add_Paint(({
+        param($sender,$eventArgs)
+        $graphics=$eventArgs.Graphics;$graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias;$left=5;$right=[Math]::Max($left+1,$sender.ClientSize.Width-5);$center=[int]($sender.ClientSize.Height/2);$trackColor=[Drawing.Color]::FromArgb(64,49,78);$fillColor=[Drawing.Color]::FromArgb(177,92,255)
+        $trackPen=New-Object Drawing.Pen($trackColor,5);$graphics.DrawLine($trackPen,$left,$center,$right,$center);$trackPen.Dispose();$thumbX=[int]($left+($right-$left)*$state.Volume);$fillPen=New-Object Drawing.Pen($fillColor,5);if($thumbX-gt$left){$graphics.DrawLine($fillPen,$left,$center,$thumbX,$center)};$fillPen.Dispose();$thumbBrush=New-Object Drawing.SolidBrush($fillColor);$graphics.FillEllipse($thumbBrush,$thumbX-5,$center-5,10,10);$thumbBrush.Dispose()
+    }.GetNewClosure()))
+    $volume.Add_MouseDown(({
+        param($sender,$eventArgs)
+        if($eventArgs.Button-eq[Windows.Forms.MouseButtons]::Left){$sender.Focus();&$setVolumeFromX $eventArgs.X}
+    }.GetNewClosure()))
+    $volume.Add_MouseMove(({
+        param($sender,$eventArgs)
+        if($eventArgs.Button-eq[Windows.Forms.MouseButtons]::Left){&$setVolumeFromX $eventArgs.X}
+    }.GetNewClosure()))
+    $volume.Add_KeyDown(({
+        param($sender,$eventArgs)
+        if($eventArgs.KeyCode-in @([Windows.Forms.Keys]::Left,[Windows.Forms.Keys]::Right)){$delta=if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Left){-0.05}else{0.05};$state.Volume=[Math]::Max(0.0,[Math]::Min(1.0,$state.Volume+$delta));$media.Volume=$state.Volume;$sender.Invalidate();$eventArgs.Handled=$true}
+    }.GetNewClosure()))
+    $timer=New-Object Windows.Forms.Timer;$timer.Interval=250
+    $startTimer=New-Object Windows.Forms.Timer;$startTimer.Interval=250
+    $startTimer.Add_Tick(({
+        if($state.Started){$startTimer.Stop()}else{try{$media.Play()}catch{}}
+    }.GetNewClosure()))
+    $timer.Add_Tick(({
+        try{
+            if($media.NaturalDuration.HasTimeSpan){$state.Duration=$media.NaturalDuration.TimeSpan.TotalSeconds;&$applyResume;if(-not$state.Seeking){$state.SeekPreviewSeconds=$media.Position.TotalSeconds};&$seek.Invalidate();$position.Text=("{0} / {1}"-f(&$formatTime $media.Position.TotalSeconds),(&$formatTime $state.Duration));if($state.Started){&$savePlayback $false}}
+            if($media.DownloadProgress-lt1-and-not$state.Started){$statusLabel.Text=("Buffer {0}%"-f[int]($media.DownloadProgress*100))}elseif($state.Started-and$statusLabel.Text-like'Buffer*'){$statusLabel.Text='Reproduciendo'}
+        }catch{}
+    }.GetNewClosure()))
+    $media.Add_MediaOpened(({
+        param($sender,$eventArgs)
+        try{$state.MediaReady=$true;$play.Enabled=$true;if($media.NaturalDuration.HasTimeSpan){$state.Duration=$media.NaturalDuration.TimeSpan.TotalSeconds;&$applyResume}}catch{}
+        try{$media.Play();$state.Started=$true;if($statusLabel.Text-notlike'Continuando*'){$statusLabel.Text='Reproduciendo'};$play.Text='PAUSAR'}catch{$state.Started=$false;$statusLabel.Text='Preparando reproduccion...'}
+    }.GetNewClosure()))
+    $media.Add_MediaEnded(({
+        param($sender,$eventArgs)
+        $state.Started=$false;$state.Completed=$true;$statusLabel.Text='Finalizado';$play.Text='REPETIR';&$savePlayback $true
+    }.GetNewClosure()))
+    $media.Add_MediaFailed(({
+        param($sender,$eventArgs)
+        $state.Started=$false;$state.MediaReady=$false;$play.Enabled=$true;$play.Text='REINTENTAR';$statusLabel.Text='No compatible';$statusLabel.ForeColor=[Drawing.Color]::FromArgb(255,139,151);$message=try{[string]$eventArgs.ErrorException.Message}catch{'El sistema no pudo decodificar este video.'};try{if($logCommand){&$logCommand "HEART SIGNAL: MediaElement fallo: $message"}}catch{}
+    }.GetNewClosure()))
+    $play.Enabled=$false
+    $play.Add_Click(({
+        try{
+            if(-not$state.MediaReady){$statusLabel.Text='Preparando reproduccion...';return}
+            if($play.Text-eq'REPETIR'){$media.Position=[TimeSpan]::Zero;$state.Completed=$false;$media.Play();$state.Started=$true;$play.Text='PAUSAR';$statusLabel.Text='Reproduciendo'}elseif($state.Started){$media.Pause();$state.Started=$false;$play.Text='REPRODUCIR';$statusLabel.Text='Pausado'}else{$state.Completed=$false;$media.Play();$state.Started=$true;$play.Text='PAUSAR';$statusLabel.Text='Reproduciendo'};&$savePlayback $true
+        }catch{
+            $detail=[string]$_.Exception.Message
+            try{Write-CocoLog "HEART SIGNAL: control del reproductor fallo: $detail"}catch{}
+            $statusLabel.Text='No se pudo controlar el video.'
+        }
+    }.GetNewClosure()))
+    $minimize.Add_Click(({
+        $form.WindowState=[Windows.Forms.FormWindowState]::Minimized
+    }.GetNewClosure()))
+    $close.Add_Click(({
+        $form.Close()
+    }.GetNewClosure()))
+    $dragState=[pscustomobject]@{Active=$false;Start=[Drawing.Point]::new(0,0);FormLocation=$form.Location}
+    $beginDrag={
+        param($sender,$eventArgs)
+        if($eventArgs.Button-eq[Windows.Forms.MouseButtons]::Left){$dragState.Active=$true;$dragState.Start=[Windows.Forms.Cursor]::Position;$dragState.FormLocation=$form.Location}
+    }.GetNewClosure()
+    $moveDrag={
+        param($sender,$eventArgs)
+        if($dragState.Active){$cursor=[Windows.Forms.Cursor]::Position;$dx=$cursor.X-$dragState.Start.X;$dy=$cursor.Y-$dragState.Start.Y;$form.Location=[Drawing.Point]::new($dragState.FormLocation.X+$dx,$dragState.FormLocation.Y+$dy)}
+    }.GetNewClosure()
+    $endDrag={$dragState.Active=$false}.GetNewClosure()
+    foreach($dragControl in @($chrome,$accent,$titleLabel,$subtitleLabel)){$dragControl.Add_MouseDown($beginDrag);$dragControl.Add_MouseMove($moveDrag);$dragControl.Add_MouseUp($endDrag)}
+    $toggleFullscreen={
+        if($state.Fullscreen){
+            $restoreWindowState=$state.PreviousWindowState;$form.WindowState=[Windows.Forms.FormWindowState]::Normal;$form.FormBorderStyle=$state.PreviousFormBorderStyle;$form.Padding=New-Object Windows.Forms.Padding(1);$form.Bounds=$state.PreviousBounds;if($restoreWindowState-eq[Windows.Forms.FormWindowState]::Maximized){$form.WindowState=$restoreWindowState};$state.Fullscreen=$false;$fullscreen.Text='PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)')
+        }else{
+            $state.PreviousFormBorderStyle=$form.FormBorderStyle;$state.PreviousWindowState=$form.WindowState;$state.PreviousBounds=$form.Bounds;$form.WindowState=[Windows.Forms.FormWindowState]::Normal;$form.FormBorderStyle='None';$form.Padding=New-Object Windows.Forms.Padding(0);$form.WindowState=[Windows.Forms.FormWindowState]::Maximized;$state.Fullscreen=$true;$fullscreen.Text='SALIR DE PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Salir de pantalla completa (Esc)')
+        }
+        $chrome.Visible=$true;$controls.Visible=$true;&$layoutChrome;&$layoutPlayer;$form.Activate()
+    }.GetNewClosure()
+    $fullscreen.Add_Click(({
+        &$toggleFullscreen
+    }.GetNewClosure()))
+    $videoHost.Add_DoubleClick(({
+        &$toggleFullscreen
+    }.GetNewClosure()))
+    $form.Add_KeyDown(({
+        param($sender,$eventArgs)
+        if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Space){$play.PerformClick();$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true}
+        elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::F11-or($state.Fullscreen-and$eventArgs.KeyCode-eq[Windows.Forms.Keys]::Escape)){
+            &$toggleFullscreen;$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }
+    }.GetNewClosure()))
+    $form.Add_FormClosing(({
+        param($sender,$eventArgs)
+        try{&$savePlayback $true;$state.ClosingSaved=$true;$timer.Stop();$startTimer.Stop();$media.Stop()}catch{}
+    }.GetNewClosure()))
+    $proxy=$null
+    try{
+        if($Source-match'^https://'){
+            $statusLabel.Text='Preparando streaming...'
+            $proxy=Start-CocoMediaHttpProxy $Source ([string]$Episode.fileName)
+            $mediaSource=[string]$proxy.Url
+        }else{$mediaSource=$Source}
+        $uri=if($mediaSource-match'^[a-zA-Z]:[\\/]'){[Uri]::new([IO.Path]::GetFullPath($mediaSource))}else{[Uri]::new($mediaSource)}
+        $form.Add_Shown(({
+            try{$media.Source=$uri;$timer.Start();$startTimer.Start()}
+            catch{$statusLabel.Text='No se pudo cargar el video.';$statusLabel.ForeColor=[Drawing.Color]::FromArgb(255,139,151);try{if($logCommand){&$logCommand "HEART SIGNAL: no se pudo cargar el video: $($_.Exception.Message)"}}catch{}}
+        }.GetNewClosure()))
+        if($script:CocoForm-and-not$script:CocoForm.IsDisposed){[void]$form.ShowDialog($script:CocoForm)}else{[void]$form.ShowDialog()}
+    }finally{
+        try{if(-not$state.ClosingSaved){&$savePlayback $true};$timer.Stop();$startTimer.Stop();$media.Stop()}catch{}
+        try{$timer.Dispose()}catch{}
+        try{$startTimer.Dispose()}catch{}
+        try{$form.Dispose()}catch{}
+        if($proxy){Stop-CocoMediaHttpProxy $proxy}
+    }
+}
+
+function Invoke-CocoMediaEpisodePlayback($Experience,$Episode){
+    $status=Get-CocoMediaEpisodeLocalStatus $Experience $Episode
+    if($status.Status-ne'verified'){
+        $check=Test-CocoMediaEpisodeFile $Experience $Episode -RecordVerifiedState
+        if(-not$check.Matches){throw "El archivo local no coincide con el SHA-256 esperado para '$($Episode.fileName)'. Descargalo de nuevo cuando exista un asset publicado."}
+    }
+    Invoke-CocoMediaPlayerUi $Experience $Episode $status.Path
+    $status.Path
+}
+
+function Get-CocoMediaEpisodeStatusText($Status,$Episode,$Experience=$null){
+    if([string]$Episode.streamUrl-match'^https://'){
+        $text='Streaming directo'
+    }else{
+        $text=switch([string]$Status.Status){
+            'verified'{'Disponible en este PC'}
+            'present'{'Archivo local detectado; se verificara al reproducir'}
+            'partial'{'Descarga parcial'}
+            'mismatch'{"No coincide con el hash esperado; se puede reemplazar"}
+            default{
+                if([string]::IsNullOrWhiteSpace([string]$Episode.sourceUrl)){'Asset pendiente de publicar'}
+                else{'No descargado'}
+            }
+        }
+    }
+    if($Experience){$playback=Get-CocoMediaPlaybackState $Experience $Episode;if($playback-and-not$playback.Completed-and$playback.PositionSeconds-gt5){$text="$text | Continua en $(Format-CocoMediaTime $playback.PositionSeconds)"}}
+    $text
+}
+
+function Update-CocoMediaEpisodeRowUi($RowInfo){
+    if(-not$RowInfo-or$RowInfo.Button.IsDisposed){return}
+    $status=Get-CocoMediaEpisodeLocalStatus $RowInfo.Experience $RowInfo.Episode
+    $RowInfo.Status=$status
+    if(-not$RowInfo.StatusLabel.IsDisposed){$RowInfo.StatusLabel.Text=Get-CocoMediaEpisodeStatusText $status $RowInfo.Episode $RowInfo.Experience}
+    $canAct=$true;$buttonText='DESCARGAR';$streaming=[string]$RowInfo.Episode.streamUrl-match'^https://'
+    if($streaming){
+        $buttonText='VER EN COCO'
+    }else{
+        switch([string]$status.Status){
+            'verified'{$buttonText='REPRODUCIR'}
+            'present'{$buttonText='VERIFICAR / REPRODUCIR'}
+            'partial'{$buttonText='REANUDAR'}
+            'mismatch'{$buttonText=if([string]$RowInfo.Episode.sourceUrl){'DESCARGAR DE NUEVO'}else{'ASSET PENDIENTE'}}
+            default{if([string]::IsNullOrWhiteSpace([string]$RowInfo.Episode.sourceUrl)){$buttonText='ASSET PENDIENTE';$canAct=$false}}
+        }
+    }
+    $RowInfo.Button.Text=$buttonText;$RowInfo.Button.Enabled=$canAct
+}
+
+function Invoke-CocoMediaEpisodeAction($RowInfo){
+    if(-not$RowInfo-or-not$RowInfo.Button.Enabled-or$script:CocoMediaDownloadInProgress){return}
+    $script:CocoMediaDownloadInProgress=$true;$script:CocoMediaCancelRequested=$false;$script:CocoMediaDialog=$RowInfo.Dialog
+    $script:CocoMediaCurrentExperience=$RowInfo.Experience
+    if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){
+        $mediaRoot=try{Get-CocoMediaDownloadRoot $RowInfo.Experience}catch{''}
+        Set-CocoDiagnosticContext @{
+            component='media';mode=if([string]$RowInfo.Episode.streamUrl-match'^https://'){'stream'}else{'local'}
+            experienceId=[string]$RowInfo.Experience.id;episodeId=[string]$RowInfo.Episode.id
+            mediaFile=[string]$RowInfo.Episode.fileName;instanceRoot=$mediaRoot;stage='Abriendo episodio'
+        }
+    }
+    foreach($button in @($RowInfo.Dialog.Tag.Buttons)){if($button-and-not$button.IsDisposed){$button.Enabled=$false}}
+    try{
+        $status=Get-CocoMediaEpisodeLocalStatus $RowInfo.Experience $RowInfo.Episode
+        if([string]$RowInfo.Episode.streamUrl-match'^https://'){
+            Set-CocoMediaUiStatus 'Conectando con el streaming...' 5
+            Invoke-CocoMediaPlayerUi $RowInfo.Experience $RowInfo.Episode ([string]$RowInfo.Episode.streamUrl)
+        }elseif($status.Status-eq'verified'){
+            Set-CocoMediaUiStatus 'Abriendo el reproductor integrado...' 100
+            [void](Invoke-CocoMediaEpisodePlayback $RowInfo.Experience $RowInfo.Episode)
+        }elseif($status.Status-eq'present'){
+            $check=Test-CocoMediaEpisodeFile $RowInfo.Experience $RowInfo.Episode -RecordVerifiedState
+            if($check.Matches){[void](Invoke-CocoMediaEpisodePlayback $RowInfo.Experience $RowInfo.Episode)}
+            elseif([string]$RowInfo.Episode.sourceUrl-notmatch'^https://'){throw "El archivo existe, pero no coincide y el asset remoto aun no esta publicado."}
+            else{[void](Invoke-CocoMediaHttpDownload $RowInfo.Experience $RowInfo.Episode $status.Path);[void](Invoke-CocoMediaEpisodePlayback $RowInfo.Experience $RowInfo.Episode)}
+        }elseif([string]$RowInfo.Episode.sourceUrl-notmatch'^https://'){
+            throw 'Este episodio aun no tiene un asset publicado. La prueba local solo puede reproducir un archivo ya presente en Downloads.'
+        }else{
+            [void](Invoke-CocoMediaHttpDownload $RowInfo.Experience $RowInfo.Episode $status.Path);[void](Invoke-CocoMediaEpisodePlayback $RowInfo.Experience $RowInfo.Episode)
+        }
+    }catch{
+        if([string]$_.Exception.Message-notmatch'cancelada'){
+            try{Write-CocoLog "HEART SIGNAL: accion fallida: $($_.Exception.Message)"}catch{}
+            $failureDetail=if(Get-Command Get-CocoLauncherFailureDetail -ErrorAction SilentlyContinue){Get-CocoLauncherFailureDetail $_}else{[string]$_.Exception.Message}
+            [Windows.Forms.MessageBox]::Show($failureDetail,'Heart Signal',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Error)|Out-Null
+        }
+    }finally{
+        $script:CocoMediaDownloadInProgress=$false;$script:CocoMediaCancelRequested=$false;$script:CocoMediaDialog=$null;$script:CocoMediaCurrentExperience=$null
+        if($RowInfo.Dialog-and-not$RowInfo.Dialog.IsDisposed){foreach($button in @($RowInfo.Dialog.Tag.Buttons)){if($button-and-not$button.IsDisposed){$button.Enabled=$true}};Update-CocoMediaEpisodeRowUi $RowInfo;Set-CocoMediaUiStatus 'Selecciona un episodio para descargarlo o reproducirlo.' 0}
+    }
+}
+
+function Invoke-CocoMediaOpenFolderUi($Experience){
+    $root=Get-CocoMediaDownloadRoot $Experience;New-Item -ItemType Directory -Path $root -Force|Out-Null
+    Start-Process -FilePath explorer.exe -ArgumentList @($root)
+}
+
+function Invoke-CocoMediaEpisodeUi($Experience){
+    if(-not(Test-CocoMediaExperience $Experience)){return}
+    $script:CocoMediaInteraction=$true
+    $episodeActionInfo=@(Get-Command Invoke-CocoMediaEpisodeAction -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0]
+    $episodeActionCommand=[System.Management.Automation.ScriptBlock]$episodeActionInfo.ScriptBlock
+    Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
+    $dialog=New-Object Windows.Forms.Form
+    $dialog.Name='CocoMediaEpisodeSelector';$dialog.Text=[string]$Experience.name;$dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='None';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.KeyPreview=$true;$dialog.ShowInTaskbar=$false;$dialog.BackColor=[Drawing.Color]::FromArgb(27,19,38);$dialog.Padding=New-Object Windows.Forms.Padding(1);$dialog.ClientSize=New-Object Drawing.Size(760,380);$dialog.MinimumSize=New-Object Drawing.Size(660,340)
+    $dialog.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(84,59,106),1);$eventArgs.Graphics.DrawRectangle($pen,0,0,$sender.ClientSize.Width-1,$sender.ClientSize.Height-1);$pen.Dispose()}.GetNewClosure())
+
+    $header=New-Object Windows.Forms.Panel;$header.Name='CocoMediaSelectorHeader';$header.Dock='Top';$header.Height=82;$header.BackColor=[Drawing.Color]::FromArgb(27,19,38)
+    $accent=New-Object Windows.Forms.Panel;$accent.Dock='Left';$accent.Width=5;$accent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
+    $heading=New-Object Windows.Forms.Label;$heading.Name='CocoMediaSelectorTitle';$heading.Text='HEART SIGNAL';$heading.Font=New-Object Drawing.Font('Segoe UI Semibold',14);$heading.ForeColor=[Drawing.Color]::White;$heading.AutoEllipsis=$true
+    $badge=New-Object Windows.Forms.Label;$badge.Name='CocoMediaSelectorBadge';$badge.Text='STREAMING DIRECTO';$badge.TextAlign='MiddleCenter';$badge.Font=New-Object Drawing.Font('Segoe UI Semibold',7.5);$badge.ForeColor=[Drawing.Color]::FromArgb(183,239,194);$badge.BackColor=[Drawing.Color]::FromArgb(39,57,48)
+    $closeButton=New-Object Windows.Forms.Button;$closeButton.Name='CocoMediaSelectorCloseButton';$closeButton.Text='X';$closeButton.AccessibleName='Cerrar selector';$closeButton.Font=New-Object Drawing.Font('Segoe UI Semibold',9);Set-CocoMediaButtonStyle $closeButton ([Drawing.Color]::FromArgb(27,19,38)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(150,48,70))
+    $header.Controls.AddRange(@($accent,$heading,$badge,$closeButton))
+
+    $body=New-Object Windows.Forms.Panel;$body.Name='CocoMediaSelectorBody';$body.Dock='Fill';$body.BackColor=[Drawing.Color]::FromArgb(22,13,34);$body.Padding=New-Object Windows.Forms.Padding(20,8,20,8)
+    $list=New-Object Windows.Forms.Panel;$list.Name='CocoMediaEpisodeList';$list.Dock='Fill';$list.AutoScroll=$true;$list.BackColor=[Drawing.Color]::FromArgb(22,13,34);$list.Padding=New-Object Windows.Forms.Padding(0)
+    $list.HorizontalScroll.Enabled=$false;$list.HorizontalScroll.Visible=$false
+    $body.Controls.Add($list)
+
+    $footer=New-Object Windows.Forms.Panel;$footer.Name='CocoMediaSelectorFooter';$footer.Dock='Bottom';$footer.Height=58;$footer.BackColor=[Drawing.Color]::FromArgb(27,19,38)
+    $footerLine=New-Object Windows.Forms.Panel;$footerLine.Name='CocoMediaSelectorFooterLine';$footerLine.Dock='Top';$footerLine.Height=1;$footerLine.BackColor=[Drawing.Color]::FromArgb(72,52,91)
+    $statusLabel=New-Object Windows.Forms.Label;$statusLabel.Name='CocoMediaSelectorStatus';$statusLabel.Text='';$statusLabel.Visible=$false
+    $progress=New-Object Windows.Forms.Panel;$progress.Name='CocoMediaProgressBar';$progress.BackColor=[Drawing.Color]::FromArgb(55,40,70);$progress.Tag=0;$progress.Height=6
+    $progress.Add_Paint(({
+        param($sender,$eventArgs)
+        $width=[Math]::Max(0,[int](($sender.ClientSize.Width-2)*([int]$sender.Tag/100.0)))
+        $brush=New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(177,92,255));if($width-gt0){$eventArgs.Graphics.FillRectangle($brush,1,1,$width,([Math]::Max(1,$sender.ClientSize.Height-2)))};$brush.Dispose()
+    }.GetNewClosure()))
+    $cancelButton=New-Object Windows.Forms.Button;$cancelButton.Name='CocoMediaCancelButton';$cancelButton.Text='CANCELAR';$cancelButton.Size=New-Object Drawing.Size(110,34);Set-CocoMediaButtonStyle $cancelButton ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(105,52,75))
+    $footer.Controls.AddRange(@($footerLine,$progress,$cancelButton))
+    $dialog.Controls.AddRange(@($body,$footer,$header))
+
+    $layoutSelector={
+        $width=[Math]::Max(1,[int]$dialog.ClientSize.Width);$footerWidth=[Math]::Max(1,[int]$footer.ClientSize.Width);$headerWidth=[Math]::Max(1,[int]$header.ClientSize.Width)
+        $heading.Location=New-Object Drawing.Point(25,17);$heading.Size=New-Object Drawing.Size([Math]::Max(260,$headerWidth-245),24)
+        $badge.Size=New-Object Drawing.Size(142,25);$badge.Location=New-Object Drawing.Point([Math]::Max(260,$headerWidth-198),19)
+        $closeButton.Size=New-Object Drawing.Size(34,34);$closeButton.Location=New-Object Drawing.Point([Math]::Max(0,$headerWidth-48),15)
+        $progress.Location=New-Object Drawing.Point(20,26);$progress.Size=New-Object Drawing.Size([Math]::Max(180,$footerWidth-170),6)
+        $cancelButton.Location=New-Object Drawing.Point([Math]::Max(0,$footerWidth-130),12)
+    }.GetNewClosure()
+    $dialog.Add_Resize($layoutSelector);&$layoutSelector
+
+    $dragState=[pscustomobject]@{Active=$false;Start=[Drawing.Point]::Empty;FormLocation=[Drawing.Point]::Empty}
+    $beginDrag={param($sender,$eventArgs)if($eventArgs.Button-eq[Windows.Forms.MouseButtons]::Left){$dragState.Active=$true;$dragState.Start=[Windows.Forms.Cursor]::Position;$dragState.FormLocation=$dialog.Location}}.GetNewClosure()
+    $moveDrag={param($sender,$eventArgs)if($dragState.Active){$cursor=[Windows.Forms.Cursor]::Position;$dialog.Location=New-Object Drawing.Point($dragState.FormLocation.X+($cursor.X-$dragState.Start.X),$dragState.FormLocation.Y+($cursor.Y-$dragState.Start.Y))}}.GetNewClosure()
+    $endDrag={$dragState.Active=$false}.GetNewClosure()
+    foreach($dragControl in @($header,$accent,$heading,$badge)){$dragControl.Add_MouseDown($beginDrag);$dragControl.Add_MouseMove($moveDrag);$dragControl.Add_MouseUp($endDrag)}
+    $closeButton.Add_Click({$dialog.Close()}.GetNewClosure())
+    $cancelButton.Add_Click(({
+        if($script:CocoMediaDownloadInProgress){$script:CocoMediaCancelRequested=$true;$statusLabel.Text='Cancelando...'}else{$dialog.DialogResult=[Windows.Forms.DialogResult]::Cancel;$dialog.Close()}
+    }.GetNewClosure()))
+    $dialog.Add_KeyDown(({
+        param($sender,$eventArgs)
+        if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Escape-and-not$script:CocoMediaDownloadInProgress){$dialog.Close();$eventArgs.Handled=$true}
+    }.GetNewClosure()))
+
+    $dialog.Tag=[pscustomobject]@{Buttons=(New-Object Collections.ArrayList);Progress=$progress;StatusLabel=$statusLabel}
+    $rowY=8
+    foreach($episode in @($Experience.content.episodes)){
+        $rowWidth=[Math]::Max(520,[int]$list.ClientSize.Width-6)
+        $row=New-Object Windows.Forms.Panel;$row.Name='CocoMediaEpisodeRow';$row.Location=New-Object Drawing.Point(0,$rowY);$row.Size=New-Object Drawing.Size($rowWidth,76);$row.BackColor=[Drawing.Color]::FromArgb(43,27,67);$row.Padding=New-Object Windows.Forms.Padding(1)
+        $rowAccent=New-Object Windows.Forms.Panel;$rowAccent.Dock='Left';$rowAccent.Width=4;$rowAccent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
+        $title=New-Object Windows.Forms.Label;$title.Text=[string]$episode.title;$title.Font=New-Object Drawing.Font('Segoe UI Semibold',9.5);$title.ForeColor=[Drawing.Color]::White;$title.AutoEllipsis=$true
+        $file=New-Object Windows.Forms.Label;$file.Text=[string]$episode.fileName;$file.Font=New-Object Drawing.Font('Segoe UI',7.5);$file.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$file.AutoEllipsis=$true
+        $rowStatus=New-Object Windows.Forms.Label;$rowStatus.Font=New-Object Drawing.Font('Segoe UI',7.5);$rowStatus.ForeColor=[Drawing.Color]::FromArgb(183,239,194);$rowStatus.AutoEllipsis=$true
+        $button=New-Object Windows.Forms.Button;$button.Size=New-Object Drawing.Size(190,34);Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(103,55,143)) ([Drawing.Color]::White) ([Drawing.Color]::FromArgb(132,77,176))
+        $layoutRow={
+            $rowWidth=[Math]::Max(1,[int]$row.ClientSize.Width);$textWidth=[Math]::Max(220,$rowWidth-222)
+            $title.Location=New-Object Drawing.Point(17,7);$title.Size=New-Object Drawing.Size($textWidth,20);$file.Location=New-Object Drawing.Point(17,29);$file.Size=New-Object Drawing.Size($textWidth,17);$rowStatus.Location=New-Object Drawing.Point(17,51);$rowStatus.Size=New-Object Drawing.Size($textWidth,16);$button.Location=New-Object Drawing.Point([Math]::Max(0,$rowWidth-202),21)
+        }.GetNewClosure()
+        $row.Add_Resize($layoutRow);&$layoutRow
+        $rowInfo=[pscustomobject]@{Experience=$Experience;Episode=$episode;Dialog=$dialog;Button=$button;StatusLabel=$rowStatus;Status=$null}
+        $button.Tag=$rowInfo;$button.Add_Click({param($sender,$eventArgs)$null=&$episodeActionCommand $sender.Tag}.GetNewClosure())
+        $row.Controls.AddRange(@($rowAccent,$title,$file,$rowStatus,$button));$list.Controls.Add($row);[void]$dialog.Tag.Buttons.Add($button);Update-CocoMediaEpisodeRowUi $rowInfo;$rowY+=84
+    }
+    $list.Add_Resize(({
+        $targetWidth=[Math]::Max(520,[int]$list.ClientSize.Width-6)
+        foreach($episodeRow in @($list.Controls|Where-Object Name -eq 'CocoMediaEpisodeRow')){if($episodeRow.Width-ne$targetWidth){$episodeRow.Width=$targetWidth}}
+    }.GetNewClosure()))
+    $dialog.Add_FormClosing(({
+        param($sender,$eventArgs)
+        if($script:CocoMediaDownloadInProgress){$eventArgs.Cancel=$true;$script:CocoMediaCancelRequested=$true;$statusLabel.Text='Cancelando...'}
+    }.GetNewClosure()))
+    $script:CocoMediaDialog=$dialog;$script:CocoMediaProgressBar=$progress;$script:CocoMediaStatusLabel=$statusLabel
+    try{[void]$dialog.ShowDialog($script:CocoForm)}finally{$script:CocoMediaDialog=$null;$script:CocoMediaProgressBar=$null;$script:CocoMediaStatusLabel=$null;$dialog.Dispose();try{$statusLabel.Dispose()}catch{}}
+}
+
 function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$Role = 'client') {
     if (-not $DynamicPanel -or $DynamicPanel.IsDisposed -or -not $Catalog) { return }
     
@@ -1091,7 +1971,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
     $locationPath=Get-CocoLauncherInstanceLocationsPath $Paths
     
     $managedExperiences = @($Catalog.experiences | Where-Object {
-        $_.managementMode -eq 'managed' -and ($_.launch.workflow -eq 'coco-managed' -or $_.launch.workflow -eq 'coco-standalone')
+        $_.managementMode -eq 'managed' -and ($_.launch.workflow -eq 'coco-managed' -or $_.launch.workflow -eq 'coco-standalone' -or $_.launch.workflow -eq 'coco-media')
     })
     if ($managedExperiences.Count -eq 0) { return }
     Write-CocoStorageDiagnostic 'cards.refresh' @{role=$Role;experienceCount=$managedExperiences.Count;experiencesRoot=$expRoot;locationPath=$locationPath;panelSize=$DynamicPanel.Size}
@@ -1110,6 +1990,19 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
     $cardY = 22
     $cardIndex = 0
     foreach ($exp in $managedExperiences) {
+        if(Test-CocoMediaExperience $exp){
+            $mediaStatus=Get-CocoMediaExperienceStatus $exp;$mediaRoot=[string]$mediaStatus.Root
+            $card=New-Object Windows.Forms.Panel;$card.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric $cardY));$card.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 545),(Get-CocoLauncherUiMetric 64));$card.BackColor=[Drawing.Color]::FromArgb($(if($cardIndex%2-eq0){48}else{56}),30,72)
+            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=[string]$exp.name;$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9.5 7));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 3));$nameLabel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 20));$nameLabel.AutoEllipsis=$true
+            $pathLabel=New-Object Windows.Forms.Label;$pathLabel.Text="Descargas: $mediaRoot";$pathLabel.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6));$pathLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$pathLabel.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 23));$pathLabel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 18));$pathLabel.AutoEllipsis=$true
+            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Text="Serie | $($mediaStatus.Verified)/$($mediaStatus.Total) episodios verificados | CLIC PARA VER";$detailLabel.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6));$detailLabel.ForeColor=if($mediaStatus.Verified-eq$mediaStatus.Total){[Drawing.Color]::FromArgb(168,236,168)}else{[Drawing.Color]::FromArgb(180,170,195)};$detailLabel.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 41));$detailLabel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 18));$detailLabel.AutoEllipsis=$true
+            $cardInfo=[pscustomobject]@{InstanceId=[string]$exp.instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$mediaRoot;CurrentRoot=$mediaRoot;ExperiencesRoot=$expRoot;Usage=[pscustomobject]@{Installed=($mediaStatus.Verified-gt0);Bytes=$mediaStatus.Bytes;Label=("{0}/{1} episodios"-f$mediaStatus.Verified,$mediaStatus.Total)};IsRunning=$false;IsMedia=$true;MediaRoot=$mediaRoot;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+            $card.Controls.AddRange(@($nameLabel,$pathLabel,$detailLabel))
+            foreach($control in @($card,$nameLabel,$pathLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){Invoke-CocoMediaEpisodeUi $info.Experience}})}
+            $episodeButton=New-Object Windows.Forms.Button;$episodeButton.Text='EPISODIOS';$episodeButton.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 120),(Get-CocoLauncherUiMetric 28));$episodeButton.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 280),(Get-CocoLauncherUiMetric 18));Set-CocoFlatButtonStyle $episodeButton ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White);$episodeButton.Tag=$cardInfo;$episodeButton.Add_Click({param($sender,$eventArgs)Invoke-CocoMediaEpisodeUi $sender.Tag.Experience})
+            $folderButton=New-Object Windows.Forms.Button;$folderButton.Text='CARPETA';$folderButton.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 28));$folderButton.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 410),(Get-CocoLauncherUiMetric 18));Set-CocoFlatButtonStyle $folderButton ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255));$folderButton.Tag=$cardInfo;$folderButton.Add_Click({param($sender,$eventArgs)Invoke-CocoMediaOpenFolderUi $sender.Tag.Experience})
+            $card.Controls.AddRange(@($episodeButton,$folderButton));$DynamicPanel.Controls.Add($card);$cardY+=70;$cardIndex++;continue
+        }
         $instanceId = [string]$exp.instanceId
         if (-not $instanceId) { $instanceId = [string]$exp.id }
         $instanceRoot = Get-CocoExperienceInstanceRoot $exp $expRoot $locationPath
@@ -1257,6 +2150,150 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
 
 function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths, [int]$OffsetY = 0) {
     Update-CocoExperienceCardsUi $DynamicPanel $Catalog $Paths 'client'
+}
+
+# Layout moderno de la biblioteca: esta definicion queda despues del flujo
+# historico para mantener compatibilidad con herramientas que cargan el
+# engine por partes. Las tarjetas se dibujan en dos columnas y cada una tiene
+# una imagen local, texto con salto por palabra y tooltips para el contenido
+# completo.
+function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Role='client'){
+    if(-not$DynamicPanel-or$DynamicPanel.IsDisposed-or-not$Catalog){return}
+    $expRoot=if($Paths-is[hashtable]){[string]$Paths['ExperiencesRoot']}elseif($Paths-and$Paths.ExperiencesRoot){[string]$Paths.ExperiencesRoot}else{[string]$Paths}
+    $locationPath=Get-CocoLauncherInstanceLocationsPath $Paths
+    $managedExperiences=@($Catalog.experiences|Where-Object{ $_.managementMode-eq'managed'-and($_.launch.workflow-eq'coco-managed'-or$_.launch.workflow-eq'coco-standalone'-or$_.launch.workflow-eq'coco-media') })
+    if($managedExperiences.Count-eq0){return}
+    Write-CocoStorageDiagnostic 'cards.refresh' @{role=$Role;experienceCount=$managedExperiences.Count;experiencesRoot=$expRoot;locationPath=$locationPath;panelSize=$DynamicPanel.Size}
+    Set-CocoExperienceCardsScrollBehavior $DynamicPanel
+    if($script:CocoExperienceCardsToolTip){try{$script:CocoExperienceCardsToolTip.Dispose()}catch{}}
+    $script:CocoExperienceCardsToolTip=New-Object Windows.Forms.ToolTip
+    $DynamicPanel.SuspendLayout()
+    try{
+        $DynamicPanel.AutoScroll=$false;$DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,0)
+        foreach($oldControl in @($DynamicPanel.Controls)){
+            try{$DynamicPanel.Controls.Remove($oldControl);$oldControl.Dispose()}catch{}
+        }
+        $DynamicPanel.AutoScroll=$false;$DynamicPanel.HorizontalScroll.Visible=$false;$DynamicPanel.HorizontalScroll.Enabled=$false
+        $storageHeader=New-Object Windows.Forms.Label
+        $storageHeader.Text=if($Role-eq'host'){'EXPERIENCIAS Y GESTION DE INSTANCIAS'}else{'EXPERIENCIAS DISPONIBLES'}
+        $storageHeader.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9 7));$storageHeader.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$storageHeader.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric 0));$storageHeader.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 810),(Get-CocoLauncherUiMetric 20));$storageHeader.AutoEllipsis=$true
+        $DynamicPanel.Controls.Add($storageHeader)
+        $columns=2;$gap=Get-CocoLauncherUiMetric 12;$cardHeight=Get-CocoLauncherUiMetric 150;$availableWidth=[Math]::Max((Get-CocoLauncherUiMetric 500),$DynamicPanel.ClientSize.Width-(Get-CocoLauncherUiMetric 18));$cardWidth=[Math]::Max((Get-CocoLauncherUiMetric 240),[Math]::Floor(($availableWidth-$gap)/$columns));$imageWidth=Get-CocoLauncherUiMetric 140;$textX=$imageWidth+(Get-CocoLauncherUiMetric 12);$textWidth=[Math]::Max((Get-CocoLauncherUiMetric 110),$cardWidth-$textX-(Get-CocoLauncherUiMetric 4));$buttonY=$cardHeight-(Get-CocoLauncherUiMetric 38);$buttonGap=Get-CocoLauncherUiMetric 8
+        $cardIndex=0
+        foreach($exp in $managedExperiences){
+            $rowIndex=[int][Math]::Floor($cardIndex/$columns);$columnIndex=$cardIndex%$columns;$cardX=[int]($columnIndex*($cardWidth+$gap));$cardTop=[int]((Get-CocoLauncherUiMetric 22)+$rowIndex*($cardHeight+$gap))
+            $card=New-Object Windows.Forms.Panel;$card.Location=New-Object Drawing.Point($cardX,$cardTop);$card.Size=New-Object Drawing.Size($cardWidth,$cardHeight);$card.BackColor=[Drawing.Color]::FromArgb($(if($cardIndex%2-eq0){48}else{56}),30,72);$card.BorderStyle=[Windows.Forms.BorderStyle]::FixedSingle;Set-CocoControlDoubleBuffered $card
+            $imageBox=New-Object Windows.Forms.PictureBox;$imageBox.Name='CocoExperienceImage';$imageBox.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 7),(Get-CocoLauncherUiMetric 7));$imageHeight=[int]$cardHeight;$imageHeight-=(Get-CocoLauncherUiMetric 14);$imageBox.Size=[Drawing.Size]::new([int]$imageWidth,[int]$imageHeight);$imageBox.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Zoom;$imageBox.BackColor=[Drawing.Color]::FromArgb(30,20,42);$imageBox.BorderStyle=[Windows.Forms.BorderStyle]::FixedSingle;$imageBox.TabStop=$false;Set-CocoPictureBoxImage $imageBox (Get-CocoExperienceImagePath $exp)
+            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9.5 7));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.Location=New-Object Drawing.Point($textX,(Get-CocoLauncherUiMetric 8));$nameLabel.Size=New-Object Drawing.Size($textWidth,(Get-CocoLauncherUiMetric 38));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$true;$nameLabel.TextAlign=[Drawing.ContentAlignment]::TopLeft
+            $metaLabel=New-Object Windows.Forms.Label;$metaLabel.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6));$metaLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$metaLabel.Location=New-Object Drawing.Point($textX,(Get-CocoLauncherUiMetric 51));$metaLabel.Size=New-Object Drawing.Size($textWidth,(Get-CocoLauncherUiMetric 18));$metaLabel.AutoEllipsis=$true;$metaLabel.AutoSize=$false;$metaLabel.Visible=$false
+            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.Location=New-Object Drawing.Point($textX,(Get-CocoLauncherUiMetric 60));$detailLabel.Size=New-Object Drawing.Size($textWidth,(Get-CocoLauncherUiMetric 20));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false
+            $cardInfo=$null;$buttonSpecs=@()
+            if(Test-CocoMediaExperience $exp){
+                $mediaStatus=Get-CocoMediaExperienceStatus $exp;$mediaRoot=[string]$mediaStatus.Root;$metaLabel.Text='';$detailLabel.Text=if($mediaStatus.Verified-gt0){'LISTO PARA VER'}else{'NO DISPONIBLE'};$detailLabel.ForeColor=if($mediaStatus.Verified-gt0){[Drawing.Color]::FromArgb(168,236,168)}else{[Drawing.Color]::FromArgb(180,170,195)}
+                $cardInfo=[pscustomobject]@{InstanceId=[string]$exp.instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$mediaRoot;CurrentRoot=$mediaRoot;ExperiencesRoot=$expRoot;Usage=[pscustomobject]@{Installed=($mediaStatus.Verified-gt0);Bytes=$mediaStatus.Bytes;Label=("{0}/{1} partes"-f$mediaStatus.Verified,$mediaStatus.Total)};IsRunning=$false;IsMedia=$true;MediaRoot=$mediaRoot;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+                $buttonSpecs=@([pscustomobject]@{Text='EPISODIOS';Width=104;Kind='episode'},[pscustomobject]@{Text='CARPETA';Width=86;Kind='folder'})
+            }else{
+                $instanceId=[string]$exp.instanceId;if(-not$instanceId){$instanceId=[string]$exp.id};$instanceRoot=Get-CocoExperienceInstanceRoot $exp $expRoot $locationPath;$usage=Get-CocoExperienceDiskUsage $instanceRoot;$isRunning=Test-CocoManagedGameRunning $instanceRoot;Write-CocoStorageDiagnostic 'card.state' @{role=$Role;experienceId=$exp.id;instanceId=$instanceId;root=$instanceRoot;installed=$usage.Installed;usage=$usage.Label;running=$isRunning}
+                $metaLabel.Text=''
+                if($isRunning){$detailLabel.Text='EN EJECUCION';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)}elseif($usage.Installed){$detailLabel.Text='INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(168,236,168)}else{$detailLabel.Text='NO INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)}
+                $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+                if($Role-eq'host'){$buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ALOJAR PARTIDA'};Width=100;Kind='host'},[pscustomobject]@{Text='CARPETA';Width=70;Kind='folder'},[pscustomobject]@{Text='BORRAR';Width=54;Kind='delete'})}else{$buttonSpecs=@([pscustomobject]@{Text=if($usage.Installed){'CAMBIAR CARPETA'}else{'INSTALAR'};Width=if($usage.Installed){116}else{240};Kind='install'});if($usage.Installed){$buttonSpecs+=,[pscustomobject]@{Text='LIBERAR ESPACIO';Width=116;Kind='delete'}}}
+            }
+            $card.Controls.AddRange(@($imageBox,$nameLabel,$detailLabel));$script:CocoExperienceCardsToolTip.SetToolTip($card,"$([string]$exp.name)`r`n$([string]$exp.description)");$script:CocoExperienceCardsToolTip.SetToolTip($nameLabel,[string]$exp.name);$script:CocoExperienceCardsToolTip.SetToolTip($imageBox,[string]$exp.name)
+            if(Test-CocoMediaExperience $exp){foreach($control in @($card,$imageBox,$nameLabel,$metaLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){Invoke-CocoMediaEpisodeUi $info.Experience}}.GetNewClosure())}}else{foreach($control in @($card,$imageBox,$nameLabel,$metaLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){Invoke-CocoExperienceStorageInstallUi $info}}.GetNewClosure())}}
+            $totalButtonWidth=[int](($buttonSpecs|ForEach-Object{Get-CocoLauncherUiMetric ([int]$_.Width)}|Measure-Object -Sum).Sum)+[Math]::Max(0,$buttonSpecs.Count-1)*$buttonGap;$buttonX=$textX;$buttonRightPadding=Get-CocoLauncherUiMetric 4
+            if($buttonX+$totalButtonWidth-gt$cardWidth-$buttonRightPadding){$buttonX=[Math]::Max((Get-CocoLauncherUiMetric 7),$cardWidth-$buttonRightPadding-$totalButtonWidth)}
+            foreach($spec in $buttonSpecs){
+                $button=New-Object Windows.Forms.Button;$button.Text=[string]$spec.Text;$button.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric ([int]$spec.Width)),(Get-CocoLauncherUiMetric 28));$button.Location=New-Object Drawing.Point($buttonX,$buttonY);$button.Tag=$cardInfo;$button.TabStop=$false
+                if($spec.Kind-eq'delete'){$enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled;if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}}elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}elseif($spec.Kind-eq'folder'){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)}
+                if([string]$spec.Text-in@('CAMBIAR CARPETA','LIBERAR ESPACIO','ALOJAR PARTIDA','EN EJECUCION')){$button.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6))}
+                if($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)Invoke-CocoMediaEpisodeUi $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){Invoke-CocoMediaOpenFolderUi $sender.Tag.Experience}else{Invoke-CocoExperienceChangeLocationUi $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag}.GetNewClosure())}elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){Invoke-CocoExperienceChangeLocationUi $sender.Tag}else{Invoke-CocoExperienceStorageInstallUi $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)Invoke-CocoExperienceFreeSpaceUi $sender.Tag}.GetNewClosure())}
+                $card.Controls.Add($button);$buttonX+=$button.Width+$buttonGap
+            }
+            $DynamicPanel.Controls.Add($card);$cardIndex++
+        }
+        $hostExperiences=$managedExperiences;$logicalRows=[int][Math]::Ceiling($hostExperiences.Count/2.0);$gridContentHeight=Get-CocoLauncherUiMetric (22+($logicalRows*150)+([Math]::Max(0,$logicalRows-1)*12)+8);$DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new((Get-CocoLauncherUiMetric 0),[Math]::Max($gridContentHeight,(Get-CocoLauncherUiMetric ($hostExperiences.Count*70+22))));$DynamicPanel.AutoScroll=$true
+    }finally{$DynamicPanel.ResumeLayout($true)}
+    try{
+        $DynamicPanel.PerformLayout()
+        $DynamicPanel.VerticalScroll.Value=0
+        $DynamicPanel.AutoScrollPosition=[Drawing.Point]::Empty
+        $DynamicPanel.ScrollControlIntoView($storageHeader)
+        $DynamicPanel.VerticalScroll.Value=0
+        $DynamicPanel.Invalidate()
+    }catch{}
+}
+
+# Overhaul visual de las tarjetas: la portada ocupa toda la tarjeta y las
+# acciones viven sobre un degradado inferior. Asi se elimina la caja interna
+# y se aprovecha el espacio sin perder legibilidad.
+function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Role='client'){
+    if(-not$DynamicPanel-or$DynamicPanel.IsDisposed-or-not$Catalog){return}
+    $expRoot=if($Paths-is[hashtable]){[string]$Paths['ExperiencesRoot']}elseif($Paths-and$Paths.ExperiencesRoot){[string]$Paths.ExperiencesRoot}else{[string]$Paths}
+    $locationPath=Get-CocoLauncherInstanceLocationsPath $Paths
+    $managedExperiences=@($Catalog.experiences|Where-Object{ $_.managementMode-eq'managed'-and($_.launch.workflow-eq'coco-managed'-or$_.launch.workflow-eq'coco-standalone'-or$_.launch.workflow-eq'coco-media') })
+    if($managedExperiences.Count-eq0){return}
+    Write-CocoStorageDiagnostic 'cards.refresh' @{role=$Role;experienceCount=$managedExperiences.Count;experiencesRoot=$expRoot;locationPath=$locationPath;panelSize=$DynamicPanel.Size}
+    Set-CocoExperienceCardsScrollBehavior $DynamicPanel
+    if($script:CocoExperienceCardsToolTip){try{$script:CocoExperienceCardsToolTip.Dispose()}catch{}}
+    $script:CocoExperienceCardsToolTip=New-Object Windows.Forms.ToolTip
+    $DynamicPanel.SuspendLayout()
+    try{
+        $DynamicPanel.AutoScroll=$false;$DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,0)
+        foreach($oldControl in @($DynamicPanel.Controls)){
+            try{$DynamicPanel.Controls.Remove($oldControl);$oldControl.Dispose()}catch{}
+        }
+        $DynamicPanel.AutoScroll=$false;$DynamicPanel.HorizontalScroll.Visible=$false;$DynamicPanel.HorizontalScroll.Enabled=$false
+        $cardsContent=New-Object Windows.Forms.Panel;$cardsContent.Name='CocoExperienceCardsContent';$cardsContent.Location=[Drawing.Point]::new(0,0);$cardsContent.Size=[Drawing.Size]::new(1,1);$cardsContent.BackColor=[Drawing.Color]::FromArgb(22,13,34);$cardsContent.TabStop=$false;Set-CocoControlDoubleBuffered $cardsContent
+        $storageHeader=New-Object Windows.Forms.Label
+        $storageHeader.Text=if($Role-eq'host'){'EXPERIENCIAS Y GESTION DE INSTANCIAS'}else{'EXPERIENCIAS DISPONIBLES'}
+        $storageHeader.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9 7));$storageHeader.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$storageHeader.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric 0));$storageHeader.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 810),(Get-CocoLauncherUiMetric 20));$storageHeader.AutoEllipsis=$true
+        $cardsContent.Controls.Add($storageHeader)
+        $columns=2;$gap=Get-CocoLauncherUiMetric 10;$availableWidth=[Math]::Max((Get-CocoLauncherUiMetric 500),$DynamicPanel.ClientSize.Width-(Get-CocoLauncherUiMetric 18));$cardWidth=[Math]::Max((Get-CocoLauncherUiMetric 240),[Math]::Floor(($availableWidth-$gap)/$columns));$cardHeight=[int]$cardWidth;$gradientHeight=Get-CocoLauncherUiMetric 100;$actionPadding=Get-CocoLauncherUiMetric 10;$actionGap=Get-CocoLauncherUiMetric 8;$actionHeight=Get-CocoLauncherUiMetric 22
+        $cardIndex=0
+        foreach($exp in $managedExperiences){
+            $rowIndex=[int][Math]::Floor($cardIndex/$columns);$columnIndex=$cardIndex%$columns;$cardX=[int]($columnIndex*($cardWidth+$gap));$cardTop=[int]((Get-CocoLauncherUiMetric 22)+$rowIndex*($cardHeight+$gap))
+            $card=New-Object Windows.Forms.Panel;$card.Name='CocoExperienceCard';$card.Location=New-Object Drawing.Point($cardX,$cardTop);$card.Size=New-Object Drawing.Size($cardWidth,$cardHeight);$card.BackColor=[Drawing.Color]::FromArgb(30,20,42);$card.BorderStyle=[Windows.Forms.BorderStyle]::None;Set-CocoControlDoubleBuffered $card
+            $imageBox=New-Object Windows.Forms.PictureBox;$imageBox.Name='CocoExperienceImage';$imageBox.Location=New-Object Drawing.Point(0,0);$imageBox.Size=New-Object Drawing.Size($cardWidth,$cardHeight);$imageBox.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Normal;$imageBox.BackColor=[Drawing.Color]::FromArgb(30,20,42);$imageBox.BorderStyle=[Windows.Forms.BorderStyle]::None;$imageBox.TabStop=$false;Set-CocoControlDoubleBuffered $imageBox;Set-CocoPictureBoxCoverImage $imageBox (Get-CocoExperienceImagePath $exp) $cardWidth $cardHeight
+            $gradient=New-Object Windows.Forms.Panel;$gradient.Name='CocoExperienceGradient';$gradient.Dock='Bottom';$gradient.Height=$gradientHeight;$gradient.BackColor=[Drawing.Color]::Transparent;$gradient.Padding=New-Object Windows.Forms.Padding(0);Set-CocoControlDoubleBuffered $gradient
+            $gradient.Add_Paint(({
+                param($sender,$eventArgs)
+                $rectangle=New-Object Drawing.Rectangle(0,0,$sender.ClientSize.Width,$sender.ClientSize.Height)
+                $brush=[Drawing.Drawing2D.LinearGradientBrush]::new($rectangle,[Drawing.Color]::FromArgb(72,0,0,0),[Drawing.Color]::FromArgb(255,0,0,0),[Drawing.Drawing2D.LinearGradientMode]::Vertical)
+                $eventArgs.Graphics.FillRectangle($brush,$rectangle);$brush.Dispose()
+            }.GetNewClosure()))
+            $imageBox.Controls.Add($gradient);$gradient.BringToFront()
+            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 12 8));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.BackColor=[Drawing.Color]::Transparent;$nameLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 4));$nameLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 43));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$true;$nameLabel.TextAlign=[Drawing.ContentAlignment]::BottomLeft
+            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$detailLabel.BackColor=[Drawing.Color]::Transparent;$detailLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 51));$detailLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 16));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false
+            $buttonSpecs=@();$cardInfo=$null
+            if(Test-CocoMediaExperience $exp){
+                $mediaStatus=Get-CocoMediaExperienceStatus $exp;$mediaRoot=[string]$mediaStatus.Root;$streamAvailable=@($exp.content.episodes|Where-Object{[string]$_.streamUrl-match'^https://'}).Count-gt0;$detailLabel.Text=if($streamAvailable-or$mediaStatus.Verified-gt0){'LISTO PARA VER'}else{'NO DISPONIBLE'};$detailLabel.ForeColor=if($streamAvailable-or$mediaStatus.Verified-gt0){[Drawing.Color]::FromArgb(183,239,194)}else{[Drawing.Color]::FromArgb(180,170,195)}
+                $cardInfo=[pscustomobject]@{InstanceId=[string]$exp.instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$mediaRoot;CurrentRoot=$mediaRoot;ExperiencesRoot=$expRoot;Usage=[pscustomobject]@{Installed=($mediaStatus.Verified-gt0);Bytes=$mediaStatus.Bytes;Label=('{0}/{1} partes'-f$mediaStatus.Verified,$mediaStatus.Total)};IsRunning=$false;IsMedia=$true;MediaRoot=$mediaRoot;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+                $buttonSpecs=@([pscustomobject]@{Text='EPISODIOS';Kind='episode'})
+            }else{
+                $instanceId=[string]$exp.instanceId;if(-not$instanceId){$instanceId=[string]$exp.id};$instanceRoot=Get-CocoExperienceInstanceRoot $exp $expRoot $locationPath;$usage=Get-CocoExperienceDiskUsage $instanceRoot;$isRunning=Test-CocoManagedGameRunning $instanceRoot;Write-CocoStorageDiagnostic 'card.state' @{role=$Role;experienceId=$exp.id;instanceId=$instanceId;root=$instanceRoot;installed=$usage.Installed;usage=$usage.Label;running=$isRunning}
+                if($isRunning){$detailLabel.Text='EN EJECUCION';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)}elseif($usage.Installed){$detailLabel.Text='INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(183,239,194)}else{$detailLabel.Text='NO INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)}
+                $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+                if($Role-eq'host'){$buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ALOJAR PARTIDA'};Kind='host'},[pscustomobject]@{Text='CARPETA';Kind='folder'},[pscustomobject]@{Text='BORRAR';Kind='delete'})}else{$buttonSpecs=@([pscustomobject]@{Text=if($usage.Installed){'CAMBIAR CARPETA'}else{'INSTALAR'};Kind='install'});if($usage.Installed){$buttonSpecs+=,[pscustomobject]@{Text='LIBERAR ESPACIO';Kind='delete'}}}
+            }
+            $card.Controls.Add($imageBox);$gradient.Controls.Add($nameLabel);$gradient.Controls.Add($detailLabel);$script:CocoExperienceCardsToolTip.SetToolTip($card,"$([string]$exp.name)`r`n$([string]$exp.description)");$script:CocoExperienceCardsToolTip.SetToolTip($nameLabel,[string]$exp.name);$script:CocoExperienceCardsToolTip.SetToolTip($imageBox,[string]$exp.name)
+            if($cardInfo.IsMedia){foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){Invoke-CocoMediaEpisodeUi $info.Experience}}.GetNewClosure())}}else{foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){Invoke-CocoExperienceStorageInstallUi $info}}.GetNewClosure())}}
+            $actionAreaWidth=[Math]::Max((Get-CocoLauncherUiMetric 140),$cardWidth-(2*$actionPadding));$buttonCount=$buttonSpecs.Count;$usableButtonWidth=[Math]::Max((Get-CocoLauncherUiMetric 100),$actionAreaWidth-([Math]::Max(0,$buttonCount-1)*$actionGap));$maxPerButton=[int][Math]::Floor($usableButtonWidth/[Math]::Max(1,$buttonCount));$buttonWidth=[int][Math]::Min($maxPerButton,(Get-CocoLauncherUiMetric 108));$buttonGroupWidth=($buttonCount*$buttonWidth)+([Math]::Max(0,$buttonCount-1)*$actionGap);$buttonX=$cardWidth-$actionPadding-$buttonGroupWidth;$buttonY=$gradientHeight-$actionHeight-(Get-CocoLauncherUiMetric 4);$buttonIndex=0
+            foreach($spec in $buttonSpecs){
+                $button=New-Object Windows.Forms.Button;$button.Text=[string]$spec.Text;$button.Size=New-Object Drawing.Size($buttonWidth,$actionHeight);$button.Location=New-Object Drawing.Point($buttonX,$buttonY);$button.Tag=$cardInfo;$button.TabStop=$false
+                if($spec.Kind-eq'delete'){$enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled;if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}}elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}elseif($spec.Kind-eq'folder'){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)}
+                if([string]$spec.Text-in@('CAMBIAR CARPETA','LIBERAR ESPACIO','ALOJAR PARTIDA','EN EJECUCION')){$button.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6))}
+                if($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)Invoke-CocoMediaEpisodeUi $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){Invoke-CocoMediaOpenFolderUi $sender.Tag.Experience}else{Invoke-CocoExperienceChangeLocationUi $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag}.GetNewClosure())}elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){Invoke-CocoExperienceChangeLocationUi $sender.Tag}else{Invoke-CocoExperienceStorageInstallUi $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)Invoke-CocoExperienceFreeSpaceUi $sender.Tag}.GetNewClosure())}
+                $gradient.Controls.Add($button);$buttonIndex++;$buttonX+=$buttonWidth+$actionGap
+            }
+            $cardsContent.Controls.Add($card);$cardIndex++
+        }
+            $logicalRows=[int][Math]::Ceiling($managedExperiences.Count/2.0);$gridContentHeight=[int](Get-CocoLauncherUiMetric 22)+($logicalRows*$cardHeight)+([Math]::Max(0,$logicalRows-1)*$gap)+(Get-CocoLauncherUiMetric 8);$cardsContent.Size=[Drawing.Size]::new([Math]::Max(1,[int]$DynamicPanel.ClientSize.Width),[Math]::Max(1,[int]$gridContentHeight));$DynamicPanel.Controls.Add($cardsContent);$DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new((Get-CocoLauncherUiMetric 0),[Math]::Max($gridContentHeight,(Get-CocoLauncherUiMetric ($managedExperiences.Count*70+22))));$DynamicPanel.AutoScroll=$false
+    }finally{$DynamicPanel.ResumeLayout($true)}
+    try{$DynamicPanel.PerformLayout();Set-CocoExperienceCardsScrollContent $DynamicPanel $gridContentHeight;$DynamicPanel.Invalidate()}catch{}
+    Register-CocoExperienceScrollWheel $DynamicPanel $DynamicPanel
+    Set-CocoExperienceCardsNativeScrollStyle $DynamicPanel
+    Update-CocoExperienceCardsScrollBar $DynamicPanel
 }
 
 function Set-CocoLauncherStep(
@@ -2025,7 +3062,42 @@ function Read-CocoLauncherCatalog([string]$Path){
         if([string]$experience.instanceId-notmatch'^[a-z0-9][a-z0-9-]{1,47}$'){throw "instanceId invalido para '$id'."}
         if($experience.managementMode-notin@('legacy-current','managed')){throw "managementMode invalido para '$id'."}
         if(-not$experience.runtime){throw "Runtime incompleto para '$id'."}
-        if([string]$experience.runtime.type-eq'standalone'){
+        $isMedia=[string]$experience.runtime.type-eq'media'
+        if($isMedia){
+            if($experience.managementMode-ne'managed'-or-not$experience.launch-or[string]$experience.launch.workflow-ne'coco-media' -or
+               [string]::IsNullOrWhiteSpace([string]$experience.launch.serverName)){
+                throw "La experiencia media '$id' debe declarar workflow coco-media y serverName."
+            }
+            if(-not$experience.content-or[string]$experience.content.type-ne'episodic-video'){
+                throw "El contenido de '$id' debe declarar type episodic-video."
+            }
+            $downloadFolder=[string]$experience.content.downloadFolderName
+            if([string]::IsNullOrWhiteSpace($downloadFolder)-or-not(Test-CocoSafeRelativePath $downloadFolder)-or
+               $downloadFolder.Contains('/')-or$downloadFolder.Contains('\')){
+                throw "La carpeta de descargas de '$id' no es segura."
+            }
+            $episodeIds=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+            $episodeFiles=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+            $episodes=@($experience.content.episodes)
+            if(-not$episodes.Count){throw "La experiencia media '$id' no contiene episodios."}
+            foreach($episode in $episodes){
+                $episodeId=[string]$episode.id;$fileName=[string]$episode.fileName;$sourceUrl=[string]$episode.sourceUrl;$streamUrl=[string]$episode.streamUrl
+                if($episodeId-notmatch'^[a-z0-9][a-z0-9-]{1,47}$'-or-not$episodeIds.Add($episodeId)-or
+                   [string]::IsNullOrWhiteSpace([string]$episode.title)-or
+                   [string]::IsNullOrWhiteSpace($fileName)-or-not(Test-CocoSafeRelativePath $fileName)-or
+                   [IO.Path]::GetFileName($fileName)-ne$fileName-or-not$episodeFiles.Add($fileName)-or
+                   [IO.Path]::GetExtension($fileName).ToLowerInvariant()-notin@('.mkv','.mp4','.webm','.mov','.avi') -or
+                   [string]$episode.sha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$episode.size-le0){
+                    throw "Episodio media invalido en '$id': '$episodeId'."
+                }
+                if($sourceUrl-and$sourceUrl-notmatch'^https://'){throw "El asset del episodio '$episodeId' no usa HTTPS."}
+                if($streamUrl-and$streamUrl-notmatch'^https://'){throw "El stream del episodio '$episodeId' no usa HTTPS."}
+                if($catalog.releaseStatus-eq'approved'-and(($sourceUrl-match'(?i)^https://(?:github\.com/|[^/]+\.githubusercontent\.com/)')-or($streamUrl-match'(?i)^https://(?:github\.com/|[^/]+\.githubusercontent\.com/)')) -and[int64]$episode.size-ge2147483648){
+                    throw "El episodio '$episodeId' supera el limite de 2 GiB de GitHub Free; reduce el archivo o dividelo antes de publicarlo."
+                }
+                if($catalog.releaseStatus-eq'approved'-and-not($sourceUrl-or$streamUrl)){throw "El episodio '$episodeId' no tiene asset HTTPS publicado."}
+            }
+        }elseif([string]$experience.runtime.type-eq'standalone'){
             if(-not(Test-CocoSafeRelativePath ([string]$experience.runtime.executable))){throw "Ejecutable standalone invalido para '$id'."}
         }else{
             if([string]::IsNullOrWhiteSpace([string]$experience.runtime.minecraftVersion)){throw "Runtime incompleto para '$id'."}
@@ -2041,6 +3113,7 @@ function Read-CocoLauncherCatalog([string]$Path){
         if($experience.runtimePolicies-and$experience.runtimePolicies.onlineFixAppId-and[string]$experience.runtimePolicies.onlineFixAppId-notmatch'^\d{1,10}$'){
             throw "Identificador OnlineFix invalido para '$id'."
         }
+        if(-not$isMedia){
         if(-not$experience.hosting-or$experience.hosting.mode-notin@('lan','dedicated','either','p2p')){throw "Modo de hosting invalido para '$id'."}
         if($experience.hosting.mode-ne'p2p'){
             $port=[int]$experience.hosting.port
@@ -2137,11 +3210,12 @@ function Read-CocoLauncherCatalog([string]$Path){
                     }
                 }
             }
-            if($experience.worldTemplate){
+        if($experience.worldTemplate){
                 if(-not(Test-CocoSafeRelativePath ([string]$experience.worldTemplate.lockPath))){throw "worldTemplate.lockPath invalido para '$id'."}
                 if([string]$experience.worldTemplate.installRole-ne'host'){throw "El mundo de '$id' debe instalarse exclusivamente en el host."}
                 if([string]$experience.worldTemplate.firstRunPolicy-ne'create-once-preserve-forever'){throw "Politica de mundo invalida para '$id'."}
             }
+        }
         }
         foreach($file in @($experience.files)){
             if(-not (Test-CocoSafeRelativePath ([string]$file.path))){throw "Ruta administrada insegura en '$id': '$($file.path)'."}
@@ -4654,41 +5728,338 @@ function Get-CocoLauncherUiFontSize([double]$Value,[double]$Minimum=6){
     return [single][Math]::Max($Minimum,[Math]::Round($Value*$scale,1))
 }
 
+function Set-CocoControlDoubleBuffered($Control){
+    if(-not$Control){return}
+    try{
+        $flags=[Reflection.BindingFlags]::Instance-bor[Reflection.BindingFlags]::NonPublic-bor[Reflection.BindingFlags]::FlattenHierarchy
+        $property=$Control.GetType().GetProperty('DoubleBuffered',$flags)
+        if($property-and$property.CanWrite){$property.SetValue($Control,$true,$null)}
+    }catch{}
+}
+
+function Get-CocoExperienceImagePath($Experience){
+    $engineRoot=[string]$script:CocoEngineRoot
+    if([string]::IsNullOrWhiteSpace($engineRoot)){return ''}
+    $configured=if($Experience-and$Experience.ui){[string]$Experience.ui.imagePath}else{''}
+    if(-not[string]::IsNullOrWhiteSpace($configured)-and(Test-CocoSafeRelativePath $configured)){
+        $candidate=Join-Path $engineRoot ($configured-replace'/','\')
+        if(Test-Path -LiteralPath $candidate -PathType Leaf){return $candidate}
+    }
+    $fallback=Join-Path $engineRoot 'assets\fullbody.png'
+    if(Test-Path -LiteralPath $fallback -PathType Leaf){return $fallback}
+    return ''
+}
+
+function Set-CocoPictureBoxImage($Picture,[string]$Path){
+    if($Picture-and-not$Picture.IsDisposed){
+        try{
+            if($Picture.Image){$old=$Picture.Image;$Picture.Image=$null;$old.Dispose()}
+            if([string]::IsNullOrWhiteSpace($Path)-or-not(Test-Path -LiteralPath $Path -PathType Leaf)){return}
+            $bytes=[IO.File]::ReadAllBytes($Path);$stream=$null;$source=$null
+            try{
+                $stream=[IO.MemoryStream]::new($bytes,$false)
+                $source=[Drawing.Image]::FromStream($stream,$true,$true)
+                [void]($Picture.Image=[Drawing.Bitmap]::new($source))
+            }finally{
+                if($source){$source.Dispose()}
+                if($stream){$stream.Dispose()}
+            }
+        }catch{}
+    }
+}
+
+function Set-CocoPictureBoxCoverImage($Picture,[string]$Path,[int]$TargetWidth,[int]$TargetHeight){
+    if($Picture-and-not$Picture.IsDisposed){
+        try{
+            if($Picture.Image){$old=$Picture.Image;$Picture.Image=$null;$old.Dispose()}
+            if([string]::IsNullOrWhiteSpace($Path)-or-not(Test-Path -LiteralPath $Path -PathType Leaf)){return}
+            $bytes=[IO.File]::ReadAllBytes($Path);$stream=$null;$source=$null;$bitmap=$null;$graphics=$null
+            try{
+                $stream=[IO.MemoryStream]::new($bytes,$false)
+                $source=[Drawing.Image]::FromStream($stream,$true,$true)
+                $width=[Math]::Max(1,$TargetWidth);$height=[Math]::Max(1,$TargetHeight)
+                $bitmap=New-Object Drawing.Bitmap($width,$height)
+                $graphics=[Drawing.Graphics]::FromImage($bitmap)
+                $graphics.Clear([Drawing.Color]::FromArgb(30,20,42))
+                $sourceWidth=[Math]::Max(1,[int]$source.Width);$sourceHeight=[Math]::Max(1,[int]$source.Height)
+                $scale=[Math]::Max($width/[double]$sourceWidth,$height/[double]$sourceHeight)
+                $drawWidth=[int][Math]::Ceiling($sourceWidth*$scale);$drawHeight=[int][Math]::Ceiling($sourceHeight*$scale)
+                $drawX=[int](($width-$drawWidth)/2);$drawY=[int](($height-$drawHeight)/2)
+                $graphics.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                $graphics.PixelOffsetMode=[Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+                $graphics.CompositingQuality=[Drawing.Drawing2D.CompositingQuality]::HighQuality
+                $graphics.DrawImage($source,(New-Object Drawing.Rectangle($drawX,$drawY,$drawWidth,$drawHeight)),(New-Object Drawing.Rectangle(0,0,$sourceWidth,$sourceHeight)),[Drawing.GraphicsUnit]::Pixel)
+                $Picture.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Normal
+                $Picture.Image=$bitmap;$bitmap=$null
+            }finally{
+                if($graphics){$graphics.Dispose()}
+                if($bitmap){$bitmap.Dispose()}
+                if($source){$source.Dispose()}
+                if($stream){$stream.Dispose()}
+            }
+        }catch{}
+    }
+}
+
+function Format-CocoExperienceCardTitle([string]$Text,[int]$MaximumLineLength=27){
+    if([string]::IsNullOrWhiteSpace($Text)){return ''}
+    $words=$Text.Trim()-split'\s+'
+    $lines=New-Object Collections.Generic.List[string]
+    $current=''
+    foreach($word in $words){
+        $candidate=if([string]::IsNullOrWhiteSpace($current)){$word}else{"$current $word"}
+        if($candidate.Length-le$MaximumLineLength-or[string]::IsNullOrWhiteSpace($current)){$current=$candidate;continue}
+        [void]$lines.Add($current);$current=$word
+        if($lines.Count-eq2){break}
+    }
+    if($lines.Count-lt2-and-not[string]::IsNullOrWhiteSpace($current)){[void]$lines.Add($current)}
+    $consumed=($lines|ForEach-Object{$_})-join' '
+    if($consumed.Length-lt$Text.Trim().Length-and$lines.Count-ge2){$lines[1]="$($lines[1])..."}
+    return ($lines|Select-Object -First 2)-join"`r`n"
+}
+
+# V4 del scroll de experiencias. El viewport usa exclusivamente el
+# AutoScroll nativo de WinForms y su única barra nativa. No hay thumb
+# superpuesto, timer de animación ni repintado manual durante el arrastre.
+function Set-CocoExperienceCardsNativeScrollStyle($DynamicPanel){
+    # Compatibilidad con llamadas antiguas. No se alteran estilos HWND: hacerlo
+    # mientras AutoScroll recalcula la superficie era la causa de la barra doble.
+    return
+}
+
+function Get-CocoExperienceCardsNativeMaximum($DynamicPanel,[int]$FallbackMaximum=0){
+    $nativeMaximum=0
+    try{
+        $nativeMaximum=[Math]::Max(0,[int]$DynamicPanel.VerticalScroll.Maximum-[int]$DynamicPanel.VerticalScroll.LargeChange+1)
+    }catch{}
+    if($nativeMaximum-le0){$nativeMaximum=[Math]::Max(0,$FallbackMaximum)}
+    $nativeMaximum
+}
+
+function Get-CocoExperienceCardsScrollState($DynamicPanel,[bool]$Create=$true){
+    if(-not$DynamicPanel-or$DynamicPanel.IsDisposed){return $null}
+    $state=$null
+    if($DynamicPanel.PSObject.Properties.Name-contains'CocoExperienceScrollState'){$state=$DynamicPanel.CocoExperienceScrollState}
+    if(-not$state-and$Create){
+        $state=[pscustomobject]@{
+            ModelVersion=4;DynamicPanel=$DynamicPanel;Offset=0;PendingOffset=0;TargetOffset=0
+            ContentHeight=0;ViewHeight=0;Maximum=0;Items=@();LastWheelAt=0
+            Thumb=[Drawing.Rectangle]::new(0,0,0,0);ScrollBar=$null;ApplyTimer=$null
+            Drag=[pscustomobject]@{Active=$false;StartScreenY=0;StartValue=0;Travel=1;PendingValue=0}
+        }
+        $DynamicPanel|Add-Member -MemberType NoteProperty -Name CocoExperienceScrollState -Value $state -Force|Out-Null
+    }
+    if(-not$state){return $null}
+    # Conserva compatibilidad con estados creados por versiones anteriores.
+    foreach($property in 'ModelVersion','DynamicPanel','PendingOffset','TargetOffset','LastWheelAt','Thumb','ScrollBar','ApplyTimer','Drag'){
+        if($state.PSObject.Properties.Name-notcontains$property){
+            $value=switch($property){
+                'ModelVersion'{4};'DynamicPanel'{$DynamicPanel};'PendingOffset'{[int]$state.Offset}
+                'TargetOffset'{[int]$state.Offset};'LastWheelAt'{0};'Thumb'{[Drawing.Rectangle]::new(0,0,0,0)}
+                'ScrollBar'{$null};'ApplyTimer'{$null}
+                'Drag'{[pscustomobject]@{Active=$false;StartScreenY=0;StartValue=0;Travel=1;PendingValue=0}}
+            }
+            $state|Add-Member NoteProperty $property $value -Force
+        }
+    }
+    $state.ModelVersion=4
+    $state.DynamicPanel=$DynamicPanel
+    foreach($property in 'Active','StartScreenY','StartValue','Travel','PendingValue'){
+        if($state.Drag.PSObject.Properties.Name-notcontains$property){
+            $default=if($property-eq'Travel'){1}else{0}
+            $state.Drag|Add-Member NoteProperty $property $default -Force
+        }
+    }
+    $state
+}
+
+function Get-CocoExperienceCardsScrollMetrics($DynamicPanel){
+    $state=Get-CocoExperienceCardsScrollState $DynamicPanel
+    if(-not$state){return [pscustomobject]@{ContentHeight=1;ViewHeight=1;Maximum=0;Value=0}}
+    $contentHeight=[Math]::Max(1,[int]$state.ContentHeight)
+    $viewHeight=[Math]::Max(1,[int]$DynamicPanel.ClientSize.Height)
+    $fallbackMaximum=[Math]::Max(0,$contentHeight-$viewHeight)
+    $maximum=Get-CocoExperienceCardsNativeMaximum $DynamicPanel $fallbackMaximum
+    $value=0
+    try{$value=[Math]::Max(0,[Math]::Min($maximum,[int]$DynamicPanel.VerticalScroll.Value))}catch{$value=[Math]::Max(0,[Math]::Min($maximum,[int]$state.Offset))}
+    $state.ViewHeight=$viewHeight;$state.Maximum=$maximum;$state.Offset=$value
+    $state.PendingOffset=[Math]::Max(0,[Math]::Min($maximum,[int]$state.PendingOffset))
+    $state.TargetOffset=[Math]::Max(0,[Math]::Min($maximum,[int]$state.TargetOffset))
+    [pscustomobject]@{ContentHeight=$contentHeight;ViewHeight=$viewHeight;Maximum=$maximum;Value=$value}
+}
+
+function Update-CocoExperienceCardsScrollBar($DynamicPanel){
+    if(-not$DynamicPanel-or$DynamicPanel.IsDisposed){return}
+    # Limpia cualquier overlay viejo que haya quedado en una instancia
+    # reutilizada; el scroll nuevo no crea controles hermanos.
+    if($DynamicPanel.Parent){
+        foreach($legacyBar in @($DynamicPanel.Parent.Controls|Where-Object{$_.Name-eq'CocoLauncherScrollBar'})){
+            try{$DynamicPanel.Parent.Controls.Remove($legacyBar);$legacyBar.Dispose()}catch{}
+        }
+    }
+    $state=Get-CocoExperienceCardsScrollState $DynamicPanel
+    if(-not$state){return}
+    try{
+        $metrics=Get-CocoExperienceCardsScrollMetrics $DynamicPanel
+        $state.Offset=[int]$metrics.Value;$state.PendingOffset=[int]$metrics.Value;$state.TargetOffset=[int]$metrics.Value
+        $state.ScrollBar=$null;$state.Thumb=[Drawing.Rectangle]::new(0,0,0,0)
+    }catch{}
+}
+
+function Set-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset,[bool]$SyncTarget=$true,[bool]$ForcePaint=$false){
+    $state=Get-CocoExperienceCardsScrollState $DynamicPanel
+    if(-not$state){return}
+    try{
+        $DynamicPanel.AutoScroll=$true
+        $DynamicPanel.PerformLayout()
+    }catch{}
+    $metrics=Get-CocoExperienceCardsScrollMetrics $DynamicPanel
+    $clamped=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,[int]$Offset))
+    try{
+        # VerticalScroll.Value es el mecanismo nativo de WinForms: el thumb y
+        # la superficie se actualizan juntos incluso con el botón presionado.
+        $DynamicPanel.VerticalScroll.Value=$clamped
+        $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)
+    }catch{
+        try{$DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)}catch{}
+    }
+    try{$DynamicPanel.PerformLayout()}catch{}
+    $actual=try{[int]$DynamicPanel.VerticalScroll.Value}catch{[int]$clamped}
+    $state.Offset=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,$actual))
+    if($SyncTarget){$state.PendingOffset=$state.Offset;$state.TargetOffset=$state.Offset}
+    $DynamicPanel.Invalidate($false)
+    if($ForcePaint){try{$DynamicPanel.Update()}catch{}}
+}
+
+function Queue-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset){
+    Set-CocoExperienceCardsScrollOffset $DynamicPanel $Offset $true $false
+}
+
+function Start-CocoExperienceCardsScrollAnimation($DynamicPanel){
+    $state=Get-CocoExperienceCardsScrollState $DynamicPanel
+    if($state){Set-CocoExperienceCardsScrollOffset $DynamicPanel ([int]$state.TargetOffset) $true $false}
+}
+
+function Set-CocoExperienceCardsScrollContent($DynamicPanel,[int]$ContentHeight){
+    $state=Get-CocoExperienceCardsScrollState $DynamicPanel
+    if(-not$state){return}
+    $state.ContentHeight=[Math]::Max(1,[int]$ContentHeight);$state.ViewHeight=[Math]::Max(1,[int]$DynamicPanel.ClientSize.Height)
+    $state.Maximum=[Math]::Max(0,[int]$state.ContentHeight-[int]$state.ViewHeight);$state.Offset=0;$state.PendingOffset=0;$state.TargetOffset=0;$state.Drag.Active=$false
+    $state.Items=@()
+    foreach($control in @($DynamicPanel.Controls)){$state.Items+=,[pscustomobject]@{Control=$control;X=[int]$control.Left;Y=[int]$control.Top}}
+    try{
+        $DynamicPanel.AutoScroll=$true
+        $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,[int]$state.ContentHeight)
+        $DynamicPanel.PerformLayout()
+        # El vertical nativo reduce ClientSize.Width. Ajustar solo la superficie
+        # contenedora evita que aparezca un segundo riel horizontal; las tarjetas
+        # conservan exactamente sus tamaños y posiciones.
+        $surface=@($state.Items|Where-Object{$_.Control-and-not$_.Control.IsDisposed}|Select-Object -First 1)[0]
+        if($surface-and$surface.Control){$surface.Control.Width=[Math]::Max(1,[int]$DynamicPanel.ClientSize.Width)}
+        $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,[int]$state.ContentHeight)
+        $DynamicPanel.HorizontalScroll.Enabled=$false;$DynamicPanel.HorizontalScroll.Visible=$false
+        $DynamicPanel.PerformLayout()
+    }catch{}
+    Set-CocoExperienceCardsScrollOffset $DynamicPanel 0 $true $false
+}
+
+function Register-CocoExperienceScrollWheel($Control,$DynamicPanel){
+    if(-not$Control-or$Control.IsDisposed-or-not$DynamicPanel-or$DynamicPanel.IsDisposed){return}
+    # El panel raíz ya recibe el comportamiento nativo. En los hijos se añade
+    # un puente mínimo porque PictureBox/Button pueden consumir la rueda antes
+    # de que llegue al ScrollableControl.
+    if($Control-ne$DynamicPanel-and[string]$Control.AccessibleName-ne'CocoLauncherNativeWheelBoundV4'){
+        $Control.AccessibleName='CocoLauncherNativeWheelBoundV4'
+        $Control.Add_MouseWheel(({
+            param($sender,$eventArgs)
+            try{
+                $state=Get-CocoExperienceCardsScrollState $DynamicPanel
+                $delta=[int]$eventArgs.Delta
+                if(-not$state-or$delta-eq0){return}
+                $step=[Math]::Max(48,[int][Math]::Round([Math]::Abs($delta)*0.85))
+                $direction=if($delta-gt0){-1}else{1}
+                $metrics=Get-CocoExperienceCardsScrollMetrics $DynamicPanel
+                $base=[int]$DynamicPanel.VerticalScroll.Value
+                $next=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,$base+($direction*$step)))
+                Set-CocoExperienceCardsScrollOffset $DynamicPanel $next $true $false
+                if($eventArgs.PSObject.Properties.Name-contains'Handled'){$eventArgs.Handled=$true}
+            }catch{}
+        }.GetNewClosure()))
+    }
+    foreach($child in @($Control.Controls)){Register-CocoExperienceScrollWheel $child $DynamicPanel}
+}
+
+function Set-CocoExperienceCardsScrollBehavior($DynamicPanel){
+    if(-not$DynamicPanel-or$DynamicPanel.IsDisposed){return}
+    $DynamicPanel.AccessibleDescription='CocoLauncherNativeScrollViewportV4'
+    $DynamicPanel.AutoScroll=$true
+    $DynamicPanel.HorizontalScroll.Enabled=$false
+    $DynamicPanel.HorizontalScroll.Visible=$false
+    $state=Get-CocoExperienceCardsScrollState $DynamicPanel
+    $state.ScrollBar=$null;$state.ApplyTimer=$null
+    if($DynamicPanel.Parent){
+        foreach($legacyBar in @($DynamicPanel.Parent.Controls|Where-Object{$_.Name-eq'CocoLauncherScrollBar'})){
+            try{$DynamicPanel.Parent.Controls.Remove($legacyBar);$legacyBar.Dispose()}catch{}
+        }
+    }
+    if([string]$DynamicPanel.AccessibleName-ne'CocoLauncherNativeResizeBoundV4'){
+        $DynamicPanel.AccessibleName='CocoLauncherNativeResizeBoundV4'
+        $DynamicPanel.Add_Resize(({
+            param($sender,$eventArgs)
+            try{$sender.AutoScroll=$true;$sender.PerformLayout();Update-CocoExperienceCardsScrollBar $sender}catch{}
+        }.GetNewClosure()))
+    }
+    Update-CocoExperienceCardsScrollBar $DynamicPanel
+}
+
 function Set-CocoLauncherUiLayout {
     if(-not$script:CocoForm-or-not$script:CocoPanel){return}
     Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
     $work=[Windows.Forms.Screen]::PrimaryScreen.WorkingArea
-    # El launcher necesita una zona fija para el estado y otra independiente
-    # para la lista. La escala se calcula contra el lienzo completo para que
-    # el panel, la identidad y los botones sigan cabiendo en pantallas bajas.
-    $scale=[Math]::Min(1.0,[Math]::Min($work.Width/1080.0,$work.Height/840.0))
+    # El launcher reserva mas ancho para una grilla de dos columnas. La escala
+    # baja de forma proporcional en pantallas pequenas para que nunca recorte
+    # el contenido ni obligue a usar scroll horizontal.
+    $scale=[Math]::Min(1.0,[Math]::Min($work.Width/1440.0,$work.Height/900.0))
     $script:CocoUiScale=$scale
     $metric={param([double]$value)[int][Math]::Round($value*$scale)}
     $form=$script:CocoForm;$panel=$script:CocoPanel
     $form.SuspendLayout();$panel.SuspendLayout()
     try{
-        $form.Size=New-Object Drawing.Size((&$metric 1080),(&$metric 840))
+        $form.Size=New-Object Drawing.Size((&$metric 1440),(&$metric 900))
         $form.Location=New-Object Drawing.Point(
             ([int]($work.Left+[Math]::Max(0,($work.Width-$form.Width)/2))),
             ([int]($work.Top+[Math]::Max(0,($work.Height-$form.Height)/2))))
         $panel.Location=New-Object Drawing.Point((&$metric 25),(&$metric 25))
-        $panel.Size=New-Object Drawing.Size((&$metric 640),(&$metric 790))
+        $panel.Size=New-Object Drawing.Size((&$metric 900),(&$metric 870))
         if($script:CocoAccent){$script:CocoAccent.Location=New-Object Drawing.Point(0,0);$script:CocoAccent.Size=New-Object Drawing.Size((&$metric 9),$panel.ClientSize.Height)}
-        if($script:CocoTitle){$script:CocoTitle.Location=New-Object Drawing.Point((&$metric 43),(&$metric 24));$script:CocoTitle.Size=New-Object Drawing.Size((&$metric 570),(&$metric 42))}
-        if($script:CocoDetail){$script:CocoDetail.Location=New-Object Drawing.Point((&$metric 46),(&$metric 70));$script:CocoDetail.Size=New-Object Drawing.Size((&$metric 570),(&$metric 48))}
-        if($script:CocoTrack){$script:CocoTrack.Location=New-Object Drawing.Point((&$metric 46),(&$metric 126));$script:CocoTrack.Size=New-Object Drawing.Size((&$metric 570),(&$metric 20))}
+        if($script:CocoTitle){$script:CocoTitle.Location=New-Object Drawing.Point((&$metric 43),(&$metric 32));$script:CocoTitle.Size=New-Object Drawing.Size((&$metric 680),(&$metric 34))}
+        if($script:CocoDetail){$script:CocoDetail.Location=New-Object Drawing.Point((&$metric 46),(&$metric 76));$script:CocoDetail.Size=New-Object Drawing.Size((&$metric 840),(&$metric 44))}
+        if($script:CocoTrack){$script:CocoTrack.Location=New-Object Drawing.Point((&$metric 46),(&$metric 128));$script:CocoTrack.Size=New-Object Drawing.Size((&$metric 840),(&$metric 20))}
         if($script:CocoProgress){$script:CocoProgress.Location=New-Object Drawing.Point(0,0);$script:CocoProgress.Height=(&$metric 20)}
-        if($script:CocoBrand){$script:CocoBrand.Location=New-Object Drawing.Point((&$metric 46),(&$metric 151));$script:CocoBrand.Size=New-Object Drawing.Size((&$metric 570),(&$metric 20))}
+        if($script:CocoBrand){$script:CocoBrand.Location=New-Object Drawing.Point((&$metric 46),(&$metric 153));$script:CocoBrand.Size=New-Object Drawing.Size((&$metric 840),(&$metric 20))}
         $art=@($form.Controls|Where-Object{$_-is[Windows.Forms.PictureBox]-and$_.Parent-eq$form}|Select-Object -First 1)[0]
-        if($art){$art.Location=New-Object Drawing.Point((&$metric 675),(&$metric 5));$art.Size=New-Object Drawing.Size((&$metric 380),(&$metric 810))}
+        if($art){$art.Location=New-Object Drawing.Point((&$metric 950),(&$metric 5));$art.Size=New-Object Drawing.Size((&$metric 460),(&$metric 880))}
         foreach($control in @($panel.Controls)){
             if($control.Tag-eq'CocoLauncherDynamic'){
-                $control.Location=New-Object Drawing.Point((&$metric 46),(&$metric 184));$control.Size=New-Object Drawing.Size((&$metric 570),(&$metric 480))
+                $control.Location=New-Object Drawing.Point((&$metric 46),(&$metric 190));$control.Size=New-Object Drawing.Size((&$metric 840),(&$metric 660))
             }
         }
-        if($script:CocoSkinTile){$script:CocoSkinTile.Location=New-Object Drawing.Point((&$metric 46),(&$metric 680))}
+        if($script:CocoSkinTile-and-not$script:CocoSkinTile.IsDisposed){
+            $script:CocoSkinTile.Location=New-Object Drawing.Point((&$metric 500),(&$metric 34));$script:CocoSkinTile.Size=New-Object Drawing.Size((&$metric 315),(&$metric 92))
+        }
+        if($script:CocoIdentityButton-and-not$script:CocoIdentityButton.IsDisposed){
+            $script:CocoIdentityButton.Size=New-Object Drawing.Size((&$metric 74),(&$metric 28));$script:CocoIdentityButton.Location=New-Object Drawing.Point((&$metric 742),(&$metric 2))
+        }
+        if($script:CocoLauncherMinimizeButton-and-not$script:CocoLauncherMinimizeButton.IsDisposed){
+            $script:CocoLauncherMinimizeButton.Size=New-Object Drawing.Size((&$metric 34),(&$metric 28))
+            $script:CocoLauncherMinimizeButton.Location=New-Object Drawing.Point((&$metric 820),(&$metric 2))
+        }
+        if($script:CocoLauncherCloseButton-and-not$script:CocoLauncherCloseButton.IsDisposed){
+            $script:CocoLauncherCloseButton.Size=New-Object Drawing.Size((&$metric 34),(&$metric 28))
+            $script:CocoLauncherCloseButton.Location=New-Object Drawing.Point((&$metric 858),(&$metric 2))
+        }
     }finally{$panel.ResumeLayout();$form.ResumeLayout();$form.Refresh();[Windows.Forms.Application]::DoEvents()}
-    $script:CocoLauncherLayout=[pscustomobject]@{Scale=$scale;PanelHeight=790;DynamicTop=184;DynamicHeight=480;IdentityTop=680;FooterTop=720}
+    $script:CocoLauncherLayout=[pscustomobject]@{Scale=$scale;PanelWidth=900;PanelHeight=870;DynamicTop=190;DynamicWidth=840;DynamicHeight=660;IdentityTop=-1;FooterTop=-1}
 }
 
 function Set-CocoSkinTilePreview($Picture,$Label,[string]$SkinRoot,[string]$Username,[bool]$Pending=$false){
@@ -4780,6 +6151,7 @@ function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$P
                 $script:CocoIdentityStatus.Text=if(Test-CocoMinecraftUsername $candidate){'Pulsa Enter para confirmar.'}else{'3-16 letras, numeros o _.'}
                 $script:CocoIdentityStatus.ForeColor=if(Test-CocoMinecraftUsername $candidate){[Drawing.Color]::FromArgb(224,190,255)}else{[Drawing.Color]::FromArgb(255,139,151)}
             }
+            if($script:CocoIdentityOpenAction){& $script:CocoIdentityOpenAction}
             [void]$script:CocoIdentityTextBox.Focus()
             [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
         }
@@ -4787,14 +6159,14 @@ function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$P
     }
     $resolved=Resolve-CocoLauncherIdentity $Paths.IdentityPath $LegacyMinecraftRoot
     if($resolved.Status-eq'configured'){
-        if($script:CocoIdentityButton){$script:CocoIdentityButton.Text="JUGADOR: $($resolved.Identity.username)"}
+        if($script:CocoIdentityButton){$script:CocoIdentityButton.Text='JUGADOR';$script:CocoIdentityButton.AccessibleDescription="Jugador: $($resolved.Identity.username)"}
         return $resolved.Identity
     }
     $suggested=if($resolved.Hint){[string]$resolved.Hint.Username}else{''}
     Set-CocoLauncherStep $PromptStage 'CONFIGURA TU JUGADOR' 'Elige el nombre con el que entraras a la partida.' $PromptProgress
     $username=Show-CocoUsernamePanel $suggested
     $identity=Save-CocoLauncherIdentityState $Paths.IdentityPath offline $username '' 'user-onboarding'
-    if($script:CocoIdentityButton){$script:CocoIdentityButton.Text="JUGADOR: $username"}
+    if($script:CocoIdentityButton){$script:CocoIdentityButton.Text='JUGADOR';$script:CocoIdentityButton.AccessibleDescription="Jugador: $username"}
     $identity
 }
 
@@ -4947,6 +6319,10 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     else{Initialize-CocoSkinRegistry $catalog.globalPolicies $script:CocoEngineRoot $paths.SkinRoot}
     $original=@($catalog.experiences|Where-Object id -eq 'coco-original'|Select-Object -First 1)[0]
     if(-not$original-or[string]$original.pack.version-ne[string]$Manifest.version){throw 'El catalogo Coco Launcher no coincide con la version publicada del engine.'}
+    $script:CocoLauncherMinimizeButton=$null
+    $script:CocoLauncherCloseButton=$null
+    $script:CocoIdentityButton=$null
+    $script:CocoIdentityOpenAction=$null
     Show-CocoWindow
     $script:CocoForm.Text='Coco Launcher';$script:CocoBrand.Text='COCO LAUNCHER  |  UNA PARTIDA ACTIVA'
     try {
@@ -5010,21 +6386,22 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             }
         }
     }finally{$script:MinecraftPid=$oldMinecraftPid}
-    $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 184));$dynamic.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 570),(Get-CocoLauncherUiMetric 480));$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic)
+    $dynamic=New-Object Windows.Forms.Panel;$dynamic.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 190));$dynamic.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 840),(Get-CocoLauncherUiMetric 570));$dynamic.AutoScroll=$true;$dynamic.Tag='CocoLauncherDynamic';$script:CocoPanel.Controls.Add($dynamic);Set-CocoExperienceCardsScrollBehavior $dynamic
     $identityResolution=try{Resolve-CocoLauncherIdentity $paths.IdentityPath $LegacyMinecraftRoot}catch{$null}
     $savedIdentity=if($identityResolution-and$identityResolution.Status-eq'configured'){$identityResolution.Identity}else{try{Read-CocoLauncherIdentityState $paths.IdentityPath}catch{$null}}
-    $identityCard=New-Object Windows.Forms.Panel;$identityCard.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 46),(Get-CocoLauncherUiMetric 680));$identityCard.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 315),(Get-CocoLauncherUiMetric 80))
-    $identityCard.BackColor=[Drawing.Color]::FromArgb(58,36,81);$identityCard.AllowDrop=$true
+    $identityCard=New-Object Windows.Forms.Panel;$identityCard.Name='CocoIdentityPopup';$identityCard.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 500),(Get-CocoLauncherUiMetric 34));$identityCard.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 315),(Get-CocoLauncherUiMetric 92))
+    $identityCard.BackColor=[Drawing.Color]::FromArgb(36,22,57);$identityCard.BorderStyle=[Windows.Forms.BorderStyle]::FixedSingle;$identityCard.AllowDrop=$true;$identityCard.Visible=$false;Set-CocoControlDoubleBuffered $identityCard
     $skinPicture=New-Object Windows.Forms.PictureBox;$skinPicture.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 6),(Get-CocoLauncherUiMetric 6));$skinPicture.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 64),(Get-CocoLauncherUiMetric 64))
     $skinPicture.SizeMode='Zoom';$skinPicture.BackColor=[Drawing.Color]::FromArgb(36,22,57);$skinPicture.Cursor=[Windows.Forms.Cursors]::Hand;$skinPicture.AllowDrop=$true
-    $identityHeading=New-Object Windows.Forms.Label;$identityHeading.Text='TU IDENTIDAD COCO';$identityHeading.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 76),(Get-CocoLauncherUiMetric 4));$identityHeading.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 233),(Get-CocoLauncherUiMetric 18))
+    $identityHeading=New-Object Windows.Forms.Label;$identityHeading.Text='TU IDENTIDAD COCO';$identityHeading.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 76),(Get-CocoLauncherUiMetric 4));$identityHeading.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 198),(Get-CocoLauncherUiMetric 18))
     $identityHeading.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 7));$identityHeading.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
     $identityText=New-Object Windows.Forms.TextBox;$identityText.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 76),(Get-CocoLauncherUiMetric 24));$identityText.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 233),(Get-CocoLauncherUiMetric 25))
     $identityText.MaxLength=16;$identityText.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 10 7));$identityText.BorderStyle='FixedSingle'
     $identityText.Text=if($savedIdentity){[string]$savedIdentity.username}else{''}
     $identityStatus=New-Object Windows.Forms.Label;$identityStatus.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 76),(Get-CocoLauncherUiMetric 51));$identityStatus.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 233),(Get-CocoLauncherUiMetric 24))
     $identityStatus.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6))
-    $identityCard.Controls.AddRange(@($skinPicture,$identityHeading,$identityText,$identityStatus));$script:CocoPanel.Controls.Add($identityCard)
+    $identityClose=New-Object Windows.Forms.Button;$identityClose.Name='CocoIdentityCloseButton';$identityClose.Text='X';$identityClose.AccessibleName='Cerrar identidad';$identityClose.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 282),(Get-CocoLauncherUiMetric 3));$identityClose.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 26),(Get-CocoLauncherUiMetric 22));$identityClose.TabStop=$false;Set-CocoFlatButtonStyle $identityClose ([Drawing.Color]::FromArgb(36,22,57)) ([Drawing.Color]::FromArgb(218,210,229));$identityClose.Add_Click({$identityCard.Visible=$false}.GetNewClosure())
+    $identityCard.Controls.AddRange(@($skinPicture,$identityHeading,$identityText,$identityStatus,$identityClose));$script:CocoPanel.Controls.Add($identityCard)
     $skinTile=$identityCard
     $skinLabel=$identityStatus
     $script:CocoSkinTile=$identityCard;$script:CocoSkinPicture=$skinPicture;$script:CocoSkinLabel=$skinLabel
@@ -5046,13 +6423,15 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         if(-not(Test-CocoMinecraftUsername $candidate)){[void](&$validateIdentity);return $null}
         $current=try{Read-CocoLauncherIdentityState $paths.IdentityPath}catch{$null}
         if(-not$current-or[string]$current.username-ne$candidate){
-            $current=Save-CocoLauncherIdentityState $paths.IdentityPath offline $candidate '' 'inline-identity-card'
-            Write-CocoLog "Identidad local guardada desde la tarjeta: $candidate"
+            $current=Save-CocoLauncherIdentityState $paths.IdentityPath offline $candidate '' 'launcher-identity-popup'
+            Write-CocoLog "Identidad local guardada desde el popup del launcher: $candidate"
         }
         $script:CocoIdentityConfirmedName=$candidate
         $identityStatus.Text='Nombre valido.';$identityStatus.ForeColor=[Drawing.Color]::FromArgb(78,214,132)
         $pendingState=try{if(Test-Path -LiteralPath $paths.SkinStatePath){Get-Content -LiteralPath $paths.SkinStatePath -Raw|ConvertFrom-Json}else{$null}}catch{$null}
         Set-CocoSkinTilePreview $skinPicture $skinLabel $paths.SkinRoot $candidate ([bool]($pendingState-and$pendingState.username-eq$candidate-and$pendingState.pendingUpload))
+        if($script:CocoIdentityButton-and-not$script:CocoIdentityButton.IsDisposed){$script:CocoIdentityButton.Text='JUGADOR';$script:CocoIdentityButton.AccessibleDescription="Jugador: $candidate"}
+        $identityCard.Visible=$false
         $current
     }
     $identityText.Add_TextChanged({[void](&$validateIdentity)})
@@ -5103,14 +6482,33 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     foreach($control in @($identityCard,$skinPicture,$identityHeading,$identityStatus)){
         $control.Add_Click($chooseSkin);$control.Add_DragEnter($dragEnter);$control.Add_DragDrop($dragDrop)
     }
-    $minimize=New-Object Windows.Forms.Button;$minimize.Text='MINIMIZAR';$minimize.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 40));$minimize.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 375),(Get-CocoLauncherUiMetric 720))
-    Set-CocoFlatButtonStyle $minimize ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
+    $showIdentity={
+        if($identityCard.IsDisposed){return}
+        $identityCard.Visible=$true;$identityCard.BringToFront();$script:CocoForm.Activate();[void]$identityText.Focus();$identityText.SelectAll()
+    }.GetNewClosure()
+    $script:CocoIdentityOpenAction=$showIdentity
+    $identityButton=New-Object Windows.Forms.Button;$identityButton.Name='CocoLauncherIdentityButton';$identityButton.Text='JUGADOR';$identityButton.AccessibleName='Abrir identidad';$identityButton.AccessibleDescription=if($savedIdentity){"Jugador: $($savedIdentity.username)"}else{'Configurar jugador'};$identityButton.TabStop=$false
+    Set-CocoFlatButtonStyle $identityButton ([Drawing.Color]::FromArgb(22,13,37)) ([Drawing.Color]::FromArgb(224,190,255));$identityButton.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6));$identityButton.Add_Click({if($identityCard.Visible){$identityCard.Visible=$false}else{& $showIdentity}}.GetNewClosure())
+    $script:CocoIdentityButton=$identityButton;$script:CocoPanel.Controls.Add($identityButton)
+    # La identidad no es necesaria para ver contenido multimedia. El popup se
+    # abre solo al pulsar JUGADOR o cuando una experiencia Minecraft realmente
+    # necesita que el jugador confirme su nombre.
+    $identityCard.Visible=$false
+    $minimize=New-Object Windows.Forms.Button;$minimize.Name='CocoLauncherMinimizeButton';$minimize.Text='';$minimize.AccessibleName='Minimizar';$minimize.TabStop=$false
+    Set-CocoFlatButtonStyle $minimize ([Drawing.Color]::FromArgb(22,13,37)) ([Drawing.Color]::FromArgb(218,210,229))
+    $minimize.FlatAppearance.MouseOverBackColor=[Drawing.Color]::FromArgb(58,36,81);$minimize.FlatAppearance.MouseDownBackColor=[Drawing.Color]::FromArgb(42,27,58)
+    $minimize.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(218,210,229),1.5);$eventArgs.Graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias;$y=[int]($sender.ClientSize.Height/2)+3;$eventArgs.Graphics.DrawLine($pen,11,$y,$sender.ClientSize.Width-11,$y);$pen.Dispose()}.GetNewClosure())
     $minimize.Add_Click({try{$script:CocoForm.WindowState=[Windows.Forms.FormWindowState]::Minimized}catch{}})
-    $script:CocoPanel.Controls.Add($minimize)
-    $close=New-Object Windows.Forms.Button;$close.Text='CERRAR';$close.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 40));$close.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 501),(Get-CocoLauncherUiMetric 720))
-    Set-CocoFlatButtonStyle $close ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229))
-    $close.Add_Click({$script:CocoAllowClose=$true;$script:CocoForm.Close()});$script:CocoPanel.Controls.Add($close)
+    $script:CocoLauncherMinimizeButton=$minimize;$script:CocoPanel.Controls.Add($minimize)
+    $close=New-Object Windows.Forms.Button;$close.Name='CocoLauncherCloseButton';$close.Text='';$close.AccessibleName='Cerrar';$close.TabStop=$false
+    Set-CocoFlatButtonStyle $close ([Drawing.Color]::FromArgb(22,13,37)) ([Drawing.Color]::FromArgb(218,210,229))
+    $close.FlatAppearance.MouseOverBackColor=[Drawing.Color]::FromArgb(150,48,70);$close.FlatAppearance.MouseDownBackColor=[Drawing.Color]::FromArgb(105,35,52)
+    $close.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(218,210,229),1.5);$eventArgs.Graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias;$inset=11;$eventArgs.Graphics.DrawLine($pen,$inset,$inset,$sender.ClientSize.Width-$inset,$sender.ClientSize.Height-$inset);$eventArgs.Graphics.DrawLine($pen,$sender.ClientSize.Width-$inset,$inset,$inset,$sender.ClientSize.Height-$inset);$pen.Dispose()}.GetNewClosure())
+    $close.Add_Click({$script:CocoAllowClose=$true;$script:CocoForm.Close()});$script:CocoLauncherCloseButton=$close;$script:CocoPanel.Controls.Add($close)
+    Set-CocoLauncherUiLayout
+    $script:CocoMediaInteraction=$false
     $managedExperiences=@($catalog.experiences|Where-Object{$_.managementMode-eq'managed'})
+    $mediaExperiences=@($managedExperiences|Where-Object{Test-CocoMediaExperience $_})
     if($role-eq'host'){
         $script:CocoLauncherSelectedExperience=''
         Update-CocoExperienceCardsUi $dynamic $catalog $paths 'host'
@@ -5144,7 +6542,17 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             }
         }
         if($script:CocoForm.IsDisposed){return}
+        if($script:CocoMediaInteraction){
+            Set-CocoLauncherStep 3 'HEART SIGNAL LISTO' 'La sesion de Minecraft se mantiene sin abrir para que puedas elegir un episodio.' 30
+            while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
+            return
+        }
         if($session.State-eq'offline'){
+            if($mediaExperiences.Count-gt0){
+                Set-CocoLauncherStep 3 'HEART SIGNAL LISTO' 'Selecciona una parte para reproducirla desde el launcher. Esta experiencia no requiere Coco original.' 100
+                while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
+                return
+            }
             Set-CocoLauncherStep 3 'NO HAY EXPERIENCIA ESPECIAL ONLINE' 'Coco actualizara el mundo original, que sigues abriendo con tu launcher habitual.' 25
             $close.Enabled=$false
             try{$legacy=Sync-CocoLegacyInstanceForLauncher $LegacyMinecraftRoot $Manifest}finally{$identityText.Enabled=$true;$skinTile.Enabled=$true;$close.Enabled=$true}
@@ -5161,7 +6569,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             $devPrompt=$global:CocoUiDevTestLocationPrompt
             if(-not$devPrompt){$devPrompt=$script:CocoUiDevTestLocationPrompt}
             if($devPrompt){
-                $promptCard=@($dynamic.Controls|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Tag-and-not$_.Tag.Usage.Installed}|Select-Object -First 1)[0]
+            $promptCard=@(Get-CocoExperienceCardControls $dynamic|Where-Object{$_.Tag-and-not$_.Tag.Usage.Installed}|Select-Object -First 1)[0]
                 if($promptCard){
                     Set-CocoLauncherStep 3 'ELIGE DONDE INSTALAR' 'Esta es la prueba visual de una instancia que aun no esta instalada.' 28
                     Invoke-CocoExperienceStorageInstallUi $promptCard.Tag
