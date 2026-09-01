@@ -396,8 +396,8 @@ function Send-CocoReleaseAsset($Release,$Asset){
             # quede esperando el cierre HTTP. Antes de repetir, comprueba el
             # estado remoto y acepta únicamente nombre + tamaño exactos.
             $remote=@(Get-ReleaseAssets ([int64]$Release.id)|Where-Object name -eq $Asset.Name|Select-Object -First 1)
-            if($remote-and[int64]$remote.size-eq[int64]$Asset.Length){return}
-            if($remote){Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($remote.id)" -Headers $headers -TimeoutSec 60|Out-Null}
+            if($remote.Count-gt0-and[int64]$remote[0].size-eq[int64]$Asset.Length){return}
+            if($remote.Count-gt0){Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($remote[0].id)" -Headers $headers -TimeoutSec 60|Out-Null}
             if($attempt-eq4){throw}
             Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))
         }
