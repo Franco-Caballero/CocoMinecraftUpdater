@@ -332,6 +332,7 @@ if(Test-Path -LiteralPath $experienceBuilder -PathType Leaf){
 .\tests\Test-CocoMediaPlayerIntegration.ps1
 .\tests\Test-CocoMediaPlayerSmoke.ps1
 .\tests\Test-CocoMediaSelectorAction.ps1
+.\tests\Test-CocoMediaCardAction.ps1
 .\tests\Test-CocoMediaSelectorUi.ps1
 .\tests\Test-CocoMediaSplit.ps1
 .\tests\Test-CocoMediaStreamingPriority.ps1
