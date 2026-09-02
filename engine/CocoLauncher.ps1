@@ -1561,7 +1561,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $statusLabel.TextAlign='MiddleLeft';$statusLabel.BackColor=[Drawing.Color]::FromArgb(38,27,52);$statusLabel.Padding=New-Object Windows.Forms.Padding(10,0,6,0)
     $controls.Controls.AddRange(@($controlLine,$play,$statusLabel,$position,$seek,$volumeLabel,$volume,$fullscreen));$form.Controls.Add($videoHost);$form.Controls.Add($controls);$form.Controls.Add($chrome)
     $savedPlayback=Get-CocoMediaPlaybackState $Experience $Episode
-    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;PreviousShowInTaskbar=$form.ShowInTaskbar}
+    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;PreviousShowInTaskbar=$form.ShowInTaskbar}
     $formatTime={param([double]$Seconds)&$formatTimeCommand $Seconds}.GetNewClosure()
     $layoutChrome={
         $width=[Math]::Max(1,[int]$chrome.ClientSize.Width)
@@ -1730,24 +1730,38 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $endDrag={$dragState.Active=$false}.GetNewClosure()
     foreach($dragControl in @($chrome,$accent,$titleLabel,$subtitleLabel)){$dragControl.Add_MouseDown($beginDrag);$dragControl.Add_MouseMove($moveDrag);$dragControl.Add_MouseUp($endDrag)}
     $toggleFullscreen={
-        if($state.Fullscreen){
-            $restoreWindowState=$state.PreviousWindowState
-            $form.WindowState=[Windows.Forms.FormWindowState]::Normal
-            $form.FormBorderStyle=$state.PreviousFormBorderStyle
-            $form.Padding=$state.PreviousPadding
-            $form.TopMost=$state.PreviousTopMost
-            $form.ShowInTaskbar=$state.PreviousShowInTaskbar
-            $form.Bounds=$state.PreviousBounds
-            if($restoreWindowState-eq[Windows.Forms.FormWindowState]::Maximized){$form.WindowState=$restoreWindowState}
-            $state.Fullscreen=$false;$fullscreen.Text='PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)')
-        }else{
-            $state.PreviousFormBorderStyle=$form.FormBorderStyle;$state.PreviousWindowState=$form.WindowState;$state.PreviousBounds=$form.Bounds;$state.PreviousPadding=$form.Padding;$state.PreviousTopMost=$form.TopMost;$state.PreviousShowInTaskbar=$form.ShowInTaskbar
-            $screen=[Windows.Forms.Screen]::FromControl($form)
-            $form.WindowState=[Windows.Forms.FormWindowState]::Normal
-            $form.FormBorderStyle='None';$form.Padding=New-Object Windows.Forms.Padding(0);$form.ShowInTaskbar=$false;$form.TopMost=$true;$form.Bounds=$screen.Bounds
-            $state.Fullscreen=$true;$fullscreen.Text='SALIR DE PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Salir de pantalla completa (Esc)')
+        # ElementHost y MediaElement pueden recibir el mismo doble clic/tecla.
+        # Ignorar el segundo evento de la misma transicion evita entrar y salir
+        # de pantalla completa en el mismo gesto.
+        $now=[DateTime]::UtcNow
+        if(($now-$state.LastFullscreenToggleUtc).TotalMilliseconds-lt350){return}
+        $state.LastFullscreenToggleUtc=$now
+        $entering=-not$state.Fullscreen
+        try{
+            $form.SuspendLayout()
+            if($entering){
+                $state.PreviousFormBorderStyle=$form.FormBorderStyle;$state.PreviousWindowState=$form.WindowState;$state.PreviousBounds=$form.Bounds;$state.PreviousPadding=$form.Padding;$state.PreviousTopMost=$form.TopMost;$state.PreviousShowInTaskbar=$form.ShowInTaskbar
+                $screen=[Windows.Forms.Screen]::FromControl($form)
+                $form.WindowState=[Windows.Forms.FormWindowState]::Normal
+                $form.FormBorderStyle='None';$form.Padding=New-Object Windows.Forms.Padding(0);$form.ShowInTaskbar=$false;$form.TopMost=$true;$form.Bounds=$screen.Bounds
+                $state.Fullscreen=$true;$fullscreen.Text='SALIR DE PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Salir de pantalla completa (Esc)')
+            }else{
+                $restoreWindowState=$state.PreviousWindowState
+                $form.WindowState=[Windows.Forms.FormWindowState]::Normal
+                $form.FormBorderStyle=$state.PreviousFormBorderStyle
+                $form.Padding=$state.PreviousPadding
+                $form.TopMost=$state.PreviousTopMost
+                $form.ShowInTaskbar=$state.PreviousShowInTaskbar
+                $form.Bounds=$state.PreviousBounds
+                if($restoreWindowState-eq[Windows.Forms.FormWindowState]::Maximized){$form.WindowState=$restoreWindowState}
+                $state.Fullscreen=$false;$fullscreen.Text='PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)')
+            }
+            $chrome.Visible=(-not$state.Fullscreen);$controls.Visible=(-not$state.Fullscreen);&$layoutChrome;&$layoutPlayer
+        }catch{
+            try{if($logCommand){&$logCommand "HEART SIGNAL: cambio de pantalla completa fallo: $($_.Exception.Message)"}}catch{}
+        }finally{
+            try{$form.ResumeLayout($true);$form.PerformLayout();$form.Refresh();$form.Activate();if($state.Fullscreen){$videoHost.Focus();$media.Focus()}}catch{}
         }
-        $chrome.Visible=(-not$state.Fullscreen);$controls.Visible=(-not$state.Fullscreen);&$layoutChrome;&$layoutPlayer;$form.PerformLayout();$form.Activate();if($state.Fullscreen){$videoHost.Focus();$media.Focus()}
     }.GetNewClosure()
     $fullscreen.Add_Click(({
         &$toggleFullscreen
@@ -1888,7 +1902,7 @@ function Invoke-CocoMediaEpisodeAction($RowInfo){
     }finally{
         $script:CocoMediaDownloadInProgress=$false;$script:CocoMediaCancelRequested=$false;$script:CocoMediaDialog=$null;$script:CocoMediaCurrentExperience=$null
         if($RowInfo.Dialog-and-not$RowInfo.Dialog.IsDisposed){foreach($button in @($RowInfo.Dialog.Tag.Buttons)){if($button-and-not$button.IsDisposed){$button.Enabled=$true}};Update-CocoMediaEpisodeRowUi $RowInfo;Set-CocoMediaUiStatus 'Selecciona un episodio para descargarlo o reproducirlo.' 0}
-        if(Get-Command Set-CocoLauncherIdleState -ErrorAction SilentlyContinue){try{Set-CocoLauncherIdleState 'Elige otra experiencia o abre Heart Signal para seleccionar un episodio.' 100}catch{}}
+        if(Get-Command Set-CocoLauncherIdleState -ErrorAction SilentlyContinue){try{Set-CocoLauncherIdleState 'Elige una experiencia para instalarla, alojar una partida o reproducir contenido.' 100}catch{}}
     }
 }
 
@@ -2354,6 +2368,20 @@ function Set-CocoLauncherStep(
 
 function Set-CocoLauncherIdleState([string]$Detail='Elige una experiencia para instalarla, alojar una partida o reproducir contenido.',[int]$Progress=100){
     if(Get-Command Set-CocoState -ErrorAction SilentlyContinue){Set-CocoState 'COCO LAUNCHER LISTO' $Detail $Progress}
+}
+
+function Request-CocoLauncherClose{
+    try{
+        $form=$script:CocoForm
+        if(-not$form-or$form.IsDisposed){return}
+        $script:CocoAllowClose=$true
+        try{
+            if($form.Tag-and$form.Tag.PSObject.Properties.Name-contains'AllowClose'){$form.Tag.AllowClose=$true}
+        }catch{}
+        $form.Close()
+    }catch{
+        try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Close()}}catch{}
+    }
 }
 
 function Test-CocoSafeRelativePath([string]$Path){
@@ -6566,7 +6594,8 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     Set-CocoFlatButtonStyle $close ([Drawing.Color]::FromArgb(22,13,37)) ([Drawing.Color]::FromArgb(218,210,229))
     $close.FlatAppearance.MouseOverBackColor=[Drawing.Color]::FromArgb(150,48,70);$close.FlatAppearance.MouseDownBackColor=[Drawing.Color]::FromArgb(105,35,52)
     $close.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(218,210,229),1.5);$eventArgs.Graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias;$inset=11;$eventArgs.Graphics.DrawLine($pen,$inset,$inset,$sender.ClientSize.Width-$inset,$sender.ClientSize.Height-$inset);$eventArgs.Graphics.DrawLine($pen,$sender.ClientSize.Width-$inset,$inset,$inset,$sender.ClientSize.Height-$inset);$pen.Dispose()}.GetNewClosure())
-    $close.Add_Click({try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoAllowClose=$true;$script:CocoForm.Close()}}catch{}}.GetNewClosure());$script:CocoLauncherCloseButton=$close;$script:CocoPanel.Controls.Add($close)
+    $launcherCloseCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Request-CocoLauncherClose -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $close.Add_Click({&$launcherCloseCommand}.GetNewClosure());$script:CocoLauncherCloseButton=$close;$script:CocoPanel.Controls.Add($close)
     Set-CocoLauncherUiLayout
     $script:CocoMediaInteraction=$false
     $managedExperiences=@($catalog.experiences|Where-Object{$_.managementMode-eq'managed'})
@@ -6611,7 +6640,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         }
         if($session.State-eq'offline'){
             if($mediaExperiences.Count-gt0){
-                Set-CocoLauncherIdleState 'Selecciona una experiencia para instalarla o abre Heart Signal para elegir un episodio.' 100
+                Set-CocoLauncherIdleState 'Selecciona una experiencia para instalarla, alojar una partida o reproducir contenido.' 100
                 while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
                 return
             }

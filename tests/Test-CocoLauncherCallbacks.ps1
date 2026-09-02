@@ -51,8 +51,21 @@ try{
     Invoke-CocoLauncherIdentityButton $identityCard $identityText
     if($identityCard.Visible){throw 'FAIL: JUGADOR no pudo cerrar el popup de identidad.'}
     $identityCard.Dispose();Invoke-CocoLauncherIdentityButton $identityCard $identityText
-    $form.Close();$form.Dispose();$script:CocoForm=$null
-    'PASS: CARPETA y JUGADOR sobreviven a callbacks WinForms sin resolucion dinamica ni expresiones NULL.'
+    $form.Tag=[pscustomobject]@{AllowClose=$false}
+    $script:CocoAllowClose=$false
+    $form.Add_FormClosing({param($sender,$eventArgs)
+        $allows=[bool]($sender.Tag-and$sender.Tag.PSObject.Properties.Name-contains'AllowClose'-and$sender.Tag.AllowClose)
+        if(-not$script:CocoAllowClose-and-not$allows){$eventArgs.Cancel=$true}
+    })
+    $launcherCloseCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Request-CocoLauncherClose -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $closeButton=New-Object Windows.Forms.Button
+    $closeButton.Add_Click({&$launcherCloseCommand}.GetNewClosure())
+    $form.Controls.Add($closeButton)
+    $closeButton.PerformClick()
+    [Windows.Forms.Application]::DoEvents()
+    if(-not$form.IsDisposed){throw 'FAIL: la X del launcher no pudo cerrar el formulario.'}
+    $form.Dispose();$script:CocoForm=$null
+    'PASS: CARPETA, JUGADOR y la X sobreviven a callbacks WinForms sin resolucion dinamica ni expresiones NULL.'
 }finally{
     if($panel-and-not$panel.IsDisposed){$panel.Dispose()}
     if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Close();$script:CocoForm.Dispose()}

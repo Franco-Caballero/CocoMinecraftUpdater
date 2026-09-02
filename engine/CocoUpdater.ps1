@@ -411,7 +411,16 @@ function Show-CocoWindow {
     $f=New-Object Windows.Forms.Form; $f.Text='Coco Launcher'; $f.Size=New-Object Drawing.Size(1080,840)
     $f.StartPosition='CenterScreen'; $f.FormBorderStyle='None'; $f.MaximizeBox=$false; $f.ShowInTaskbar=$true
     $f.AutoScaleMode='None'; $f.TopMost=$false
-    $f.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
+    # El cierre se guarda tambien en el propio formulario. Asi el boton X no
+    # depende de que un callback de otra funcion conserve correctamente una
+    # variable de script entre scopes de PowerShell.
+    $f.Tag=[pscustomobject]@{AllowClose=$false}
+    $script:CocoAllowClose=$false
+    $f.Add_FormClosing({param($sender,$eventArgs)
+        $tagAllowsClose=$false
+        try{$tagAllowsClose=[bool]($sender.Tag-and$sender.Tag.PSObject.Properties.Name-contains'AllowClose'-and$sender.Tag.AllowClose)}catch{}
+        if(-not$script:CocoAllowClose-and-not$tagAllowsClose){$eventArgs.Cancel=$true}
+    })
     $f.Add_Activated({
         try {
             if ($f.WindowState -eq [Windows.Forms.FormWindowState]::Minimized) {

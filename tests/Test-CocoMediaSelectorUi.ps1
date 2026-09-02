@@ -28,7 +28,7 @@ $timer.Add_Tick({
     if($folder){$script:CocoMediaSelectorFailure='El selector de video aun muestra una accion de carpeta.';return}
     if($removedSelectorControls.Count){$script:CocoMediaSelectorFailure='El selector aun conserva una seccion de texto redundante.';return}
     if(-not$header){$script:CocoMediaSelectorFailure='No aparecio la cabecera propia del selector.';return}
-    if($rows.Count-ne2){$script:CocoMediaSelectorFailure="El selector mostro $($rows.Count) filas; se esperaban 2.";return}
+    if($rows.Count-ne4){$script:CocoMediaSelectorFailure="El selector mostro $($rows.Count) filas; se esperaban 4.";return}
     $cancel.PerformClick();$timer.Stop()
 })
 $timer.Start()
@@ -38,7 +38,7 @@ try{
     $script:CocoMediaSelectorClosed=$true
     if($script:CocoMediaSelectorFailure){throw $script:CocoMediaSelectorFailure}
     if(-not$script:CocoMediaSelectorSeen){throw 'El selector no llego a mostrarse.'}
-    'PASS: el selector moderno mostro las dos partes y CANCELAR lo cerro cuando no habia descarga activa.'
+    'PASS: el selector moderno mostro las cuatro partes y CANCELAR lo cerro cuando no habia descarga activa.'
 }finally{
     $timer.Stop();$timer.Dispose()
     if($parent-and-not$parent.IsDisposed){$parent.Dispose()}

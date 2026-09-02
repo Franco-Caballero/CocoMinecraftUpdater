@@ -1301,6 +1301,24 @@
                         "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e01-parts-20260901/Heart.Signal.-.S05E01.-.Parte.2.mp4",
                         "size": 1829237387,
                         "sha256": "714412a27a5429373e278ed4c1180e229721cc3b4afe212e436aa45496abdc1a"
+                    },
+                    {
+                        "id": "s05e02-p01",
+                        "title": "Temporada 5 - Episodio 2 - Parte 1",
+                        "fileName": "Heart Signal - S05E02 - Parte 1.mp4",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e02-parts-20260902/Heart.Signal.-.S05E02.Parte.1.mp4",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e02-parts-20260902/Heart.Signal.-.S05E02.Parte.1.mp4",
+                        "size": 1905582124,
+                        "sha256": "fae2f0a69cb7a19ca0ebb373c338f9a24c3be23a41c11e2b91b1c12688a0cf9a"
+                    },
+                    {
+                        "id": "s05e02-p02",
+                        "title": "Temporada 5 - Episodio 2 - Parte 2",
+                        "fileName": "Heart Signal - S05E02 - Parte 2.mp4",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e02-parts-20260902/Heart.Signal.-.S05E02.Parte.2.mp4",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e02-parts-20260902/Heart.Signal.-.S05E02.Parte.2.mp4",
+                        "size": 1898887829,
+                        "sha256": "d86985cace867d75e73e166814e86c96a8ced2a28ff719ed8e04bf3874a8620d"
                     }
                 ]
             },

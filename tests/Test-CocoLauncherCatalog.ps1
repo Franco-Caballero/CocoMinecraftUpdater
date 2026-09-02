@@ -138,7 +138,7 @@ if(-not$heartSignal-or$heartSignal.runtime.type-ne'media'-or$heartSignal.launch.
     throw 'Heart Signal no esta declarado como contenido episodico local.'
 }
 $heartEpisodes=@($heartSignal.content.episodes)
-if($heartEpisodes.Count-ne2){throw 'Heart Signal debe mostrar las dos partes del E01 como episodios separados.'}
+if($heartEpisodes.Count-ne4){throw 'Heart Signal debe mostrar las dos partes del E01 y las dos partes del E02 como episodios separados.'}
 $heartEpisode1=@($heartEpisodes|Where-Object id -eq 's05e01-p01'|Select-Object -First 1)[0]
 if(-not$heartEpisode1-or$heartEpisode1.title-ne'Temporada 5 - Episodio 1 - Parte 1'-or
    $heartEpisode1.fileName-ne'Heart Signal - S05E01 - Parte 1.mp4'-or[int64]$heartEpisode1.size-ne1837932680-or
@@ -152,6 +152,20 @@ if(-not$heartEpisode2-or$heartEpisode2.title-ne'Temporada 5 - Episodio 1 - Parte
    $heartEpisode2.sha256-ne'714412a27a5429373e278ed4c1180e229721cc3b4afe212e436aa45496abdc1a'-or
    $heartEpisode2.streamUrl-notmatch'^https://' -or$heartEpisode2.sourceUrl-notmatch'^https://'){
     throw 'La Parte 2 del E01 de Heart Signal no conserva la metadata o URL publicada.'
+}
+$heartEpisode3=@($heartEpisodes|Where-Object id -eq 's05e02-p01'|Select-Object -First 1)[0]
+if(-not$heartEpisode3-or$heartEpisode3.title-ne'Temporada 5 - Episodio 2 - Parte 1'-or
+   $heartEpisode3.fileName-ne'Heart Signal - S05E02 - Parte 1.mp4'-or[int64]$heartEpisode3.size-ne1905582124-or
+   $heartEpisode3.sha256-ne'fae2f0a69cb7a19ca0ebb373c338f9a24c3be23a41c11e2b91b1c12688a0cf9a'-or
+   $heartEpisode3.streamUrl-notmatch'^https://' -or$heartEpisode3.sourceUrl-notmatch'^https://'){
+    throw 'La Parte 1 del E02 de Heart Signal no conserva la metadata o URL publicada.'
+}
+$heartEpisode4=@($heartEpisodes|Where-Object id -eq 's05e02-p02'|Select-Object -First 1)[0]
+if(-not$heartEpisode4-or$heartEpisode4.title-ne'Temporada 5 - Episodio 2 - Parte 2'-or
+   $heartEpisode4.fileName-ne'Heart Signal - S05E02 - Parte 2.mp4'-or[int64]$heartEpisode4.size-ne1898887829-or
+   $heartEpisode4.sha256-ne'd86985cace867d75e73e166814e86c96a8ced2a28ff719ed8e04bf3874a8620d'-or
+   $heartEpisode4.streamUrl-notmatch'^https://' -or$heartEpisode4.sourceUrl-notmatch'^https://'){
+    throw 'La Parte 2 del E02 de Heart Signal no conserva la metadata o URL publicada.'
 }
 $bounds=for($i=0;$i-lt$managedExperiences.Count;$i++){Get-CocoExperienceButtonBounds $i}
 for($i=0;$i-lt$bounds.Count;$i++){

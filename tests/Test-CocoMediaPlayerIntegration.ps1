@@ -45,7 +45,7 @@ $timer.Add_Tick({
         $elapsed=($now-$startedAt).TotalSeconds
         $window=@([Windows.Forms.Application]::OpenForms|Where-Object{$_.Text-eq$windowTitle}|Select-Object -First 1)[0]
         if($elapsed-ge35){
-            $script:CocoUiTimedOut=$true;$script:CocoUiFailure='La prueba del reproductor excedio el tiempo limite.'
+            $script:CocoUiTimedOut=$true;$script:CocoUiFailure=('La prueba del reproductor excedio el tiempo limite. paused={0}; resumed={1}; fullscreen={2}; position={3}; title={4}' -f $script:CocoUiPaused,$script:CocoUiResumed,$script:CocoUiFullscreenTested,$position,$windowTitle)
             if($window-and-not$window.IsDisposed){$window.Close()};$timer.Stop();return
         }
         if(-not$window){return}
@@ -78,10 +78,10 @@ $timer.Add_Tick({
             $headerControl=@($window.Controls|Where-Object{$_.Name-eq'CocoMediaHeader'}|Select-Object -First 1)[0]
             $footerControl=@($window.Controls|Where-Object{$_.Name-eq'CocoMediaControlPanel'}|Select-Object -First 1)[0]
             $screenBounds=[Windows.Forms.Screen]::FromControl($window).Bounds
-            if($headerControl.Visible-or$footerControl.Visible-or$window.Bounds-ne$screenBounds){$script:CocoUiFailure='El boton no activo correctamente la pantalla completa real.'}
+            if($headerControl.Visible-or$footerControl.Visible-or$window.Bounds-ne$screenBounds){$script:CocoUiFailure=('El boton no activo correctamente la pantalla completa real. header={0}; footer={1}; window={2}; screen={3}; state={4}' -f $headerControl.Visible,$footerControl.Visible,$window.Bounds,$screenBounds,$window.WindowState)}
             else{
                 $toggleAction=if($window.Tag-and$window.Tag.PSObject.Properties.Name-contains'ToggleFullscreen'){[System.Management.Automation.ScriptBlock]$window.Tag.ToggleFullscreen}else{$null}
-                if($toggleAction){&$toggleAction}else{$footerControl.Visible=$true;$fullscreenControl.PerformClick()}
+                if($toggleAction){&$toggleAction;Start-Sleep -Milliseconds 400;&$toggleAction}else{$footerControl.Visible=$true;$fullscreenControl.PerformClick()}
                 [Windows.Forms.Application]::DoEvents()
                 if($fullscreenControl-and$fullscreenControl.Text-ne'PANTALLA COMPLETA'){$script:CocoUiFailure='Escape no restauro el texto de pantalla completa.'}
                 if(($headerControl-and-not$headerControl.Visible)-or($footerControl-and-not$footerControl.Visible)){$script:CocoUiFailure='El reproductor no pudo salir de pantalla completa.'}
