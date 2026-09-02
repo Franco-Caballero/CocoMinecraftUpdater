@@ -294,6 +294,8 @@ if(Test-Path -LiteralPath $experienceBuilder -PathType Leaf){
     & $experienceBuilder -OutputDirectory $experienceAssetDir
     if($LASTEXITCODE){throw 'No se pudo compilar el asset de VALORANTCraft.'}
 }
+$mediaTestUrl=@($launcherCatalog.experiences|Where-Object{[string]$_.runtime.type-eq'media'}|ForEach-Object{$_.content.episodes}|Where-Object{[string]$_.streamUrl-match'^https://'}|Select-Object -ExpandProperty streamUrl -First 1)[0]
+if([string]::IsNullOrWhiteSpace([string]$mediaTestUrl)){throw 'No se encontro una URL HTTPS de media para las pruebas del reproductor.'}
 .\tests\Test-CocoRelease.ps1 -Version $Version
 .\tests\Test-CocoBridge.ps1
 .\tests\Test-CocoAutomaticUpdate.ps1
@@ -325,16 +327,17 @@ if(Test-Path -LiteralPath $experienceBuilder -PathType Leaf){
 .\tests\Test-CocoLauncherObservability.ps1
 .\tests\Test-CocoSkinSync.ps1
 .\tests\Test-CocoVoiceChatDefaults.ps1
-.\tests\Test-CocoMediaExperience.ps1
+.\tests\Test-CocoMediaExperience.ps1 -AllowMissingLocal
 .\tests\Test-CocoMediaHttpProxy.ps1
-.\tests\Test-CocoMediaPlaybackProgress.ps1
+.\tests\Test-CocoMediaPlaybackProgress.ps1 -SourceUrl $mediaTestUrl -HoldSeconds 3 -TimeoutSeconds 30
 .\tests\Test-CocoMediaPlaybackState.ps1
-.\tests\Test-CocoMediaPlayerIntegration.ps1
-.\tests\Test-CocoMediaPlayerSmoke.ps1
+.\tests\Test-CocoMediaPlayerIntegration.ps1 -SourceUrl $mediaTestUrl -PlaySeconds 12
+.\tests\Test-CocoMediaPlayerSmoke.ps1 -SourceUrl $mediaTestUrl -TimeoutSeconds 30
 .\tests\Test-CocoMediaSelectorAction.ps1
 .\tests\Test-CocoMediaCardAction.ps1
+.\tests\Test-CocoLauncherCallbacks.ps1
 .\tests\Test-CocoMediaSelectorUi.ps1
-.\tests\Test-CocoMediaSplit.ps1
+.\tests\Test-CocoMediaSplit.ps1 -AllowMissingLocal
 .\tests\Test-CocoMediaStreamingPriority.ps1
 
 git fetch origin main --quiet

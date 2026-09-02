@@ -1254,7 +1254,6 @@ function Set-CocoMediaUiStatus([string]$Text,[int]$Percent=0){
         else{$script:CocoMediaProgressBar.Tag=$Percent;$script:CocoMediaProgressBar.Invalidate()}
     }
     if($script:CocoMediaStatusLabel-and-not$script:CocoMediaStatusLabel.IsDisposed){$script:CocoMediaStatusLabel.Text=$Text}
-    if(Get-Command Set-CocoLauncherStep -ErrorAction SilentlyContinue){try{Set-CocoLauncherStep 4 'HEART SIGNAL' $Text $Percent}catch{}}
     Invoke-CocoMediaPumpUi
 }
 
@@ -1536,19 +1535,20 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         Add-Type -AssemblyName WindowsBase
         Add-Type -AssemblyName WindowsFormsIntegration
     }catch{throw "Windows no pudo cargar el reproductor integrado: $($_.Exception.Message)"}
-    $form=New-Object Windows.Forms.Form;$form.Text=("Heart Signal - {0}"-f[string]$Episode.title);$form.StartPosition='CenterParent';$form.FormBorderStyle='None';$form.MinimizeBox=$false;$form.MaximizeBox=$false;$form.KeyPreview=$true;$form.BackColor=[Drawing.Color]::FromArgb(53,35,67);$form.Padding=New-Object Windows.Forms.Padding(1);$form.ClientSize=New-Object Drawing.Size(1000,650);$form.MinimumSize=New-Object Drawing.Size(640,420)
-    $chrome=New-Object Windows.Forms.Panel;$chrome.Name='CocoMediaHeader';$chrome.Dock='Top';$chrome.Height=58;$chrome.BackColor=[Drawing.Color]::FromArgb(27,19,38)
+    $mediaExperienceName=if([string]::IsNullOrWhiteSpace([string]$Experience.name)){'COCO VIDEO'}else{[string]$Experience.name}
+    $form=New-Object Windows.Forms.Form;$form.Text=("{0} - {1}"-f$mediaExperienceName,[string]$Episode.title);$form.StartPosition='CenterParent';$form.FormBorderStyle='None';$form.MinimizeBox=$false;$form.MaximizeBox=$false;$form.KeyPreview=$true;$form.BackColor=[Drawing.Color]::FromArgb(53,35,67);$form.Padding=New-Object Windows.Forms.Padding(1);$form.ClientSize=New-Object Drawing.Size(1000,650);$form.MinimumSize=New-Object Drawing.Size(640,420)
+    $chrome=New-Object Windows.Forms.Panel;$chrome.Name='CocoMediaHeader';$chrome.Dock='Top';$chrome.Height=46;$chrome.BackColor=[Drawing.Color]::FromArgb(27,19,38)
     $accent=New-Object Windows.Forms.Panel;$accent.Name='CocoMediaHeaderAccent';$accent.Dock='Left';$accent.Width=4;$accent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
-    $titleLabel=New-Object Windows.Forms.Label;$titleLabel.Name='CocoMediaTitle';$titleLabel.Text='HEART SIGNAL';$titleLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',11);$titleLabel.ForeColor=[Drawing.Color]::White;$titleLabel.AutoEllipsis=$true
+    $titleLabel=New-Object Windows.Forms.Label;$titleLabel.Name='CocoMediaTitle';$titleLabel.Text=$mediaExperienceName.ToUpperInvariant();$titleLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',11);$titleLabel.ForeColor=[Drawing.Color]::White;$titleLabel.AutoEllipsis=$true
     $subtitleLabel=New-Object Windows.Forms.Label;$subtitleLabel.Name='CocoMediaSubtitle';$subtitleLabel.Text=("Episodio {0}"-f[string]$Episode.title);$subtitleLabel.Font=New-Object Drawing.Font('Segoe UI',8);$subtitleLabel.ForeColor=[Drawing.Color]::FromArgb(177,162,193);$subtitleLabel.AutoEllipsis=$true
     $statusLabel=New-Object Windows.Forms.Label;$statusLabel.Name='CocoMediaStatus';$statusLabel.Text='Cargando video...';$statusLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',8);$statusLabel.ForeColor=[Drawing.Color]::FromArgb(168,236,168);$statusLabel.TextAlign='MiddleRight';$statusLabel.AutoEllipsis=$true
     $minimize=New-Object Windows.Forms.Button;$minimize.Name='CocoMediaMinimizeButton';$minimize.Text='-';$minimize.AccessibleName='Minimizar';$minimize.Font=New-Object Drawing.Font('Segoe UI',12);Set-CocoMediaButtonStyle $minimize ([Drawing.Color]::FromArgb(27,19,38)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(53,35,67))
     $close=New-Object Windows.Forms.Button;$close.Name='CocoMediaCloseButton';$close.Text='X';$close.AccessibleName='Cerrar';$close.Font=New-Object Drawing.Font('Segoe UI Semibold',10);Set-CocoMediaButtonStyle $close ([Drawing.Color]::FromArgb(27,19,38)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(150,48,70))
     $chrome.Controls.AddRange(@($accent,$titleLabel,$subtitleLabel,$minimize,$close))
     $videoHost=New-Object Windows.Forms.Integration.ElementHost;$videoHost.Name='CocoMediaVideoHost';$videoHost.Dock='Fill';$videoHost.BackColor=[Drawing.Color]::Black
-    $media=New-Object System.Windows.Controls.MediaElement;$media.LoadedBehavior='Manual';$media.UnloadedBehavior='Manual';$media.Stretch='Uniform';$media.Volume=1.0;$media.ScrubbingEnabled=$true
+    $media=New-Object System.Windows.Controls.MediaElement;$media.LoadedBehavior='Manual';$media.UnloadedBehavior='Manual';$media.Stretch='Uniform';$media.Volume=1.0;$media.ScrubbingEnabled=$true;$media.Focusable=$true
     $videoHost.Child=$media
-    $controls=New-Object Windows.Forms.Panel;$controls.Name='CocoMediaControlPanel';$controls.Dock='Bottom';$controls.Height=86;$controls.BackColor=[Drawing.Color]::FromArgb(27,19,38)
+    $controls=New-Object Windows.Forms.Panel;$controls.Name='CocoMediaControlPanel';$controls.Dock='Bottom';$controls.Height=68;$controls.BackColor=[Drawing.Color]::FromArgb(27,19,38)
     $controlLine=New-Object Windows.Forms.Panel;$controlLine.Name='CocoMediaControlLine';$controlLine.Dock='Top';$controlLine.Height=1;$controlLine.BackColor=[Drawing.Color]::FromArgb(72,52,91)
     $play=New-Object Windows.Forms.Button;$play.Name='CocoMediaPlayButton';$play.Text='PAUSAR';$play.AccessibleName='Pausar o reproducir';$play.Size=New-Object Drawing.Size(112,36);Set-CocoMediaButtonStyle $play ([Drawing.Color]::FromArgb(177,92,255)) ([Drawing.Color]::White) ([Drawing.Color]::FromArgb(196,121,255))
     $position=New-Object Windows.Forms.Label;$position.Name='CocoMediaPosition';$position.Text='00:00 / --:--';$position.TextAlign='MiddleCenter';$position.Font=New-Object Drawing.Font('Segoe UI Semibold',8.5);$position.BackColor=[Drawing.Color]::FromArgb(38,27,52);$position.ForeColor=[Drawing.Color]::FromArgb(235,228,241)
@@ -1561,37 +1561,37 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $statusLabel.TextAlign='MiddleLeft';$statusLabel.BackColor=[Drawing.Color]::FromArgb(38,27,52);$statusLabel.Padding=New-Object Windows.Forms.Padding(10,0,6,0)
     $controls.Controls.AddRange(@($controlLine,$play,$statusLabel,$position,$seek,$volumeLabel,$volume,$fullscreen));$form.Controls.Add($videoHost);$form.Controls.Add($controls);$form.Controls.Add($chrome)
     $savedPlayback=Get-CocoMediaPlaybackState $Experience $Episode
-    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds}
+    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;PreviousShowInTaskbar=$form.ShowInTaskbar}
     $formatTime={param([double]$Seconds)&$formatTimeCommand $Seconds}.GetNewClosure()
     $layoutChrome={
         $width=[Math]::Max(1,[int]$chrome.ClientSize.Width)
-        $titleWidth=[Math]::Max(220,$width-110);$titleLabel.Location=New-Object Drawing.Point(22,7);$titleLabel.Size=New-Object Drawing.Size($titleWidth,22)
-        $subtitleLabel.Location=New-Object Drawing.Point(22,30);$subtitleLabel.Size=New-Object Drawing.Size($titleWidth,18)
-        $minimize.Size=New-Object Drawing.Size(34,34);$minimize.Location=New-Object Drawing.Point([Math]::Max(0,$width-84),11)
-        $close.Size=New-Object Drawing.Size(34,34);$close.Location=New-Object Drawing.Point([Math]::Max(0,$width-44),11)
+        $titleWidth=[Math]::Max(220,$width-110);$titleLabel.Location=New-Object Drawing.Point(22,4);$titleLabel.Size=New-Object Drawing.Size($titleWidth,20)
+        $subtitleLabel.Location=New-Object Drawing.Point(22,25);$subtitleLabel.Size=New-Object Drawing.Size($titleWidth,17)
+        $minimize.Size=New-Object Drawing.Size(34,30);$minimize.Location=New-Object Drawing.Point([Math]::Max(0,$width-84),6)
+        $close.Size=New-Object Drawing.Size(34,30);$close.Location=New-Object Drawing.Point([Math]::Max(0,$width-44),6)
     }.GetNewClosure()
     $layoutPlayer={
         $width=[Math]::Max(1,[int]$controls.ClientSize.Width);$height=[Math]::Max(1,[int]$controls.ClientSize.Height)
-        $margin=18;$gap=10;$rowHeight=36;$rowY=[Math]::Max(28,$height-$rowHeight-18)
-        $playWidth=112;$statusWidth=122;$positionWidth=112;$volumeLabelWidth=36;$volumeWidth=78;$fullscreenWidth=174
+        $margin=18;$gap=8;$rowHeight=30;$rowY=[Math]::Max(22,$height-$rowHeight-10)
+        $playWidth=106;$statusWidth=118;$positionWidth=106;$volumeLabelWidth=30;$volumeWidth=70;$fullscreenWidth=174
         $fixed=$playWidth+$statusWidth+$positionWidth+$volumeLabelWidth+$volumeWidth+$fullscreenWidth
         $singleRow=($width-($margin*2)-$fixed-($gap*6)-100-ge0)
         if($singleRow){
             $seekWidth=[Math]::Max(100,$width-($margin*2)-$fixed-($gap*6));$x=$margin
             $play.Location=New-Object Drawing.Point($x,$rowY);$play.Size=New-Object Drawing.Size($playWidth,$rowHeight);$x+=$playWidth+$gap
-            $statusLabel.Location=New-Object Drawing.Point($x,($rowY+3));$statusLabel.Size=New-Object Drawing.Size($statusWidth,30);$x+=$statusWidth+$gap
-            $position.Location=New-Object Drawing.Point($x,($rowY+3));$position.Size=New-Object Drawing.Size($positionWidth,30);$x+=$positionWidth+$gap
-            $seek.Location=New-Object Drawing.Point($x,($rowY+3));$seek.Size=New-Object Drawing.Size($seekWidth,30);$x+=$seekWidth+$gap
-            $volumeLabel.Location=New-Object Drawing.Point($x,($rowY+3));$volumeLabel.Size=New-Object Drawing.Size($volumeLabelWidth,30);$x+=$volumeLabelWidth+$gap
+            $statusLabel.Location=New-Object Drawing.Point($x,($rowY+2));$statusLabel.Size=New-Object Drawing.Size($statusWidth,26);$x+=$statusWidth+$gap
+            $position.Location=New-Object Drawing.Point($x,($rowY+2));$position.Size=New-Object Drawing.Size($positionWidth,26);$x+=$positionWidth+$gap
+            $seek.Location=New-Object Drawing.Point($x,($rowY+2));$seek.Size=New-Object Drawing.Size($seekWidth,26);$x+=$seekWidth+$gap
+            $volumeLabel.Location=New-Object Drawing.Point($x,($rowY+2));$volumeLabel.Size=New-Object Drawing.Size($volumeLabelWidth,26);$x+=$volumeLabelWidth+$gap
             $volume.Location=New-Object Drawing.Point($x,$rowY);$volume.Size=New-Object Drawing.Size($volumeWidth,$rowHeight);$x+=$volumeWidth+$gap
             $fullscreen.Location=New-Object Drawing.Point($x,$rowY);$fullscreen.Size=New-Object Drawing.Size($fullscreenWidth,$rowHeight)
         }else{
-            $topY=10;$bottomY=[Math]::Max(52,$height-$rowHeight-10);$lowerFixed=$volumeLabelWidth+$volumeWidth+$fullscreenWidth;$lowerSeekWidth=[Math]::Max(100,$width-($margin*2)-$lowerFixed-($gap*3));$x=$margin
+            $topY=8;$bottomY=[Math]::Max(42,$height-$rowHeight-8);$lowerFixed=$volumeLabelWidth+$volumeWidth+$fullscreenWidth;$lowerSeekWidth=[Math]::Max(100,$width-($margin*2)-$lowerFixed-($gap*3));$x=$margin
             $play.Location=New-Object Drawing.Point($x,$topY);$play.Size=New-Object Drawing.Size($playWidth,$rowHeight);$x+=$playWidth+$gap
-            $statusLabel.Location=New-Object Drawing.Point($x,($topY+3));$statusLabel.Size=New-Object Drawing.Size($statusWidth,30);$x+=$statusWidth+$gap
-            $position.Location=New-Object Drawing.Point($x,($topY+3));$position.Size=New-Object Drawing.Size($positionWidth,30)
-            $x=$margin;$seek.Location=New-Object Drawing.Point($x,($bottomY+3));$seek.Size=New-Object Drawing.Size($lowerSeekWidth,30);$x+=$lowerSeekWidth+$gap
-            $volumeLabel.Location=New-Object Drawing.Point($x,($bottomY+3));$volumeLabel.Size=New-Object Drawing.Size($volumeLabelWidth,30);$x+=$volumeLabelWidth+$gap
+            $statusLabel.Location=New-Object Drawing.Point($x,($topY+2));$statusLabel.Size=New-Object Drawing.Size($statusWidth,26);$x+=$statusWidth+$gap
+            $position.Location=New-Object Drawing.Point($x,($topY+2));$position.Size=New-Object Drawing.Size($positionWidth,26)
+            $x=$margin;$seek.Location=New-Object Drawing.Point($x,($bottomY+2));$seek.Size=New-Object Drawing.Size($lowerSeekWidth,26);$x+=$lowerSeekWidth+$gap
+            $volumeLabel.Location=New-Object Drawing.Point($x,($bottomY+2));$volumeLabel.Size=New-Object Drawing.Size($volumeLabelWidth,26);$x+=$volumeLabelWidth+$gap
             $volume.Location=New-Object Drawing.Point($x,$bottomY);$volume.Size=New-Object Drawing.Size($volumeWidth,$rowHeight);$x+=$volumeWidth+$gap
             $fullscreen.Location=New-Object Drawing.Point($x,$bottomY);$fullscreen.Size=New-Object Drawing.Size($fullscreenWidth,$rowHeight)
         }
@@ -1679,7 +1679,12 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     }.GetNewClosure()))
     $timer.Add_Tick(({
         try{
-            if($media.NaturalDuration.HasTimeSpan){$state.Duration=$media.NaturalDuration.TimeSpan.TotalSeconds;&$applyResume;if(-not$state.Seeking){$state.SeekPreviewSeconds=$media.Position.TotalSeconds};&$seek.Invalidate();$position.Text=("{0} / {1}"-f(&$formatTime $media.Position.TotalSeconds),(&$formatTime $state.Duration));if($state.Started){&$savePlayback $false}}
+            $currentSeconds=[Math]::Max(0.0,[double]$media.Position.TotalSeconds)
+            if($media.NaturalDuration.HasTimeSpan){$state.Duration=[Math]::Max(0.0,[double]$media.NaturalDuration.TimeSpan.TotalSeconds);&$applyResume}
+            if(-not$state.Seeking){$state.SeekPreviewSeconds=$currentSeconds}
+            $position.Text=if($state.Duration-gt0){("{0} / {1}"-f(&$formatTime $currentSeconds),(&$formatTime $state.Duration))}else{("{0} / --:--"-f(&$formatTime $currentSeconds))}
+            $seek.Invalidate()
+            if($state.Started){&$savePlayback $false}
             if($media.DownloadProgress-lt1-and-not$state.Started){$statusLabel.Text=("Buffer {0}%"-f[int]($media.DownloadProgress*100))}elseif($state.Started-and$statusLabel.Text-like'Buffer*'){$statusLabel.Text='Reproduciendo'}
         }catch{}
     }.GetNewClosure()))
@@ -1726,17 +1731,40 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     foreach($dragControl in @($chrome,$accent,$titleLabel,$subtitleLabel)){$dragControl.Add_MouseDown($beginDrag);$dragControl.Add_MouseMove($moveDrag);$dragControl.Add_MouseUp($endDrag)}
     $toggleFullscreen={
         if($state.Fullscreen){
-            $restoreWindowState=$state.PreviousWindowState;$form.WindowState=[Windows.Forms.FormWindowState]::Normal;$form.FormBorderStyle=$state.PreviousFormBorderStyle;$form.Padding=New-Object Windows.Forms.Padding(1);$form.Bounds=$state.PreviousBounds;if($restoreWindowState-eq[Windows.Forms.FormWindowState]::Maximized){$form.WindowState=$restoreWindowState};$state.Fullscreen=$false;$fullscreen.Text='PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)')
+            $restoreWindowState=$state.PreviousWindowState
+            $form.WindowState=[Windows.Forms.FormWindowState]::Normal
+            $form.FormBorderStyle=$state.PreviousFormBorderStyle
+            $form.Padding=$state.PreviousPadding
+            $form.TopMost=$state.PreviousTopMost
+            $form.ShowInTaskbar=$state.PreviousShowInTaskbar
+            $form.Bounds=$state.PreviousBounds
+            if($restoreWindowState-eq[Windows.Forms.FormWindowState]::Maximized){$form.WindowState=$restoreWindowState}
+            $state.Fullscreen=$false;$fullscreen.Text='PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)')
         }else{
-            $state.PreviousFormBorderStyle=$form.FormBorderStyle;$state.PreviousWindowState=$form.WindowState;$state.PreviousBounds=$form.Bounds;$form.WindowState=[Windows.Forms.FormWindowState]::Normal;$form.FormBorderStyle='None';$form.Padding=New-Object Windows.Forms.Padding(0);$form.WindowState=[Windows.Forms.FormWindowState]::Maximized;$state.Fullscreen=$true;$fullscreen.Text='SALIR DE PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Salir de pantalla completa (Esc)')
+            $state.PreviousFormBorderStyle=$form.FormBorderStyle;$state.PreviousWindowState=$form.WindowState;$state.PreviousBounds=$form.Bounds;$state.PreviousPadding=$form.Padding;$state.PreviousTopMost=$form.TopMost;$state.PreviousShowInTaskbar=$form.ShowInTaskbar
+            $screen=[Windows.Forms.Screen]::FromControl($form)
+            $form.WindowState=[Windows.Forms.FormWindowState]::Normal
+            $form.FormBorderStyle='None';$form.Padding=New-Object Windows.Forms.Padding(0);$form.ShowInTaskbar=$false;$form.TopMost=$true;$form.Bounds=$screen.Bounds
+            $state.Fullscreen=$true;$fullscreen.Text='SALIR DE PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Salir de pantalla completa (Esc)')
         }
-        $chrome.Visible=$true;$controls.Visible=$true;&$layoutChrome;&$layoutPlayer;$form.Activate()
+        $chrome.Visible=(-not$state.Fullscreen);$controls.Visible=(-not$state.Fullscreen);&$layoutChrome;&$layoutPlayer;$form.PerformLayout();$form.Activate();if($state.Fullscreen){$videoHost.Focus();$media.Focus()}
     }.GetNewClosure()
     $fullscreen.Add_Click(({
         &$toggleFullscreen
     }.GetNewClosure()))
+    $form.Tag=[pscustomobject]@{ToggleFullscreen=$toggleFullscreen}
     $videoHost.Add_DoubleClick(({
         &$toggleFullscreen
+    }.GetNewClosure()))
+    $media.Add_MouseLeftButtonDown(({
+        param($sender,$eventArgs)
+        if($eventArgs.ClickCount-ge2){&$toggleFullscreen;$eventArgs.Handled=$true}
+    }.GetNewClosure()))
+    $media.Add_KeyDown(({
+        param($sender,$eventArgs)
+        if($eventArgs.Key-in @([Windows.Input.Key]::Escape,[Windows.Input.Key]::F11)){
+            &$toggleFullscreen;$eventArgs.Handled=$true
+        }
     }.GetNewClosure()))
     $form.Add_KeyDown(({
         param($sender,$eventArgs)
@@ -1860,6 +1888,7 @@ function Invoke-CocoMediaEpisodeAction($RowInfo){
     }finally{
         $script:CocoMediaDownloadInProgress=$false;$script:CocoMediaCancelRequested=$false;$script:CocoMediaDialog=$null;$script:CocoMediaCurrentExperience=$null
         if($RowInfo.Dialog-and-not$RowInfo.Dialog.IsDisposed){foreach($button in @($RowInfo.Dialog.Tag.Buttons)){if($button-and-not$button.IsDisposed){$button.Enabled=$true}};Update-CocoMediaEpisodeRowUi $RowInfo;Set-CocoMediaUiStatus 'Selecciona un episodio para descargarlo o reproducirlo.' 0}
+        if(Get-Command Set-CocoLauncherIdleState -ErrorAction SilentlyContinue){try{Set-CocoLauncherIdleState 'Elige otra experiencia o abre Heart Signal para seleccionar un episodio.' 100}catch{}}
     }
 }
 
@@ -1961,6 +1990,10 @@ function Invoke-CocoMediaEpisodeUi($Experience){
 function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$Role = 'client') {
     if (-not $DynamicPanel -or $DynamicPanel.IsDisposed -or -not $Catalog) { return }
     $mediaEpisodeUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaEpisodeUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $mediaOpenFolderUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaOpenFolderUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $experienceChangeLocationUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceChangeLocationUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $experienceStorageInstallUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceStorageInstallUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $experienceFreeSpaceUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceFreeSpaceUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     
     $expRoot = if ($Paths -is [hashtable]) {
         [string]$Paths['ExperiencesRoot']
@@ -2001,7 +2034,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
             $card.Controls.AddRange(@($nameLabel,$pathLabel,$detailLabel))
             foreach($control in @($card,$nameLabel,$pathLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure())}
             $episodeButton=New-Object Windows.Forms.Button;$episodeButton.Text='EPISODIOS';$episodeButton.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 120),(Get-CocoLauncherUiMetric 28));$episodeButton.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 280),(Get-CocoLauncherUiMetric 18));Set-CocoFlatButtonStyle $episodeButton ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White);$episodeButton.Tag=$cardInfo;$episodeButton.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())
-            $folderButton=New-Object Windows.Forms.Button;$folderButton.Text='CARPETA';$folderButton.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 28));$folderButton.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 410),(Get-CocoLauncherUiMetric 18));Set-CocoFlatButtonStyle $folderButton ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255));$folderButton.Tag=$cardInfo;$folderButton.Add_Click({param($sender,$eventArgs)Invoke-CocoMediaOpenFolderUi $sender.Tag.Experience})
+            $folderButton=New-Object Windows.Forms.Button;$folderButton.Text='CARPETA';$folderButton.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 28));$folderButton.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 410),(Get-CocoLauncherUiMetric 18));Set-CocoFlatButtonStyle $folderButton ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255));$folderButton.Tag=$cardInfo;$folderButton.Add_Click({param($sender,$eventArgs)&$mediaOpenFolderUiCommand $sender.Tag.Experience}.GetNewClosure())
             $card.Controls.AddRange(@($episodeButton,$folderButton));$DynamicPanel.Controls.Add($card);$cardY+=70;$cardIndex++;continue
         }
         $instanceId = [string]$exp.instanceId
@@ -2061,7 +2094,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
             $control.Add_Click({param($sender,$eventArgs)
                 $info=$sender.Tag
                 if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){
-                    Invoke-CocoExperienceStorageInstallUi $info
+                    &$experienceStorageInstallUiCommand $info
                 }
             })
         }
@@ -2084,7 +2117,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
             $hostBtn.Tag = [string]$exp.id
             $hostBtn.Add_Click({ param($sender, $eventArgs)
                 $script:CocoLauncherSelectedExperience = [string]$sender.Tag
-            })
+            }.GetNewClosure())
             $card.Controls.Add($hostBtn)
             
             $dirBtn = New-Object Windows.Forms.Button
@@ -2097,7 +2130,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
                 Set-CocoFlatButtonStyle $dirBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))
             }else{Set-CocoFlatButtonStyle $dirBtn ([Drawing.Color]::FromArgb(75, 45, 105)) ([Drawing.Color]::FromArgb(224, 190, 255))}
             $dirBtn.Tag = $cardInfo
-            $dirBtn.Add_Click({ param($sender, $eventArgs) Invoke-CocoExperienceChangeLocationUi $sender.Tag })
+            $dirBtn.Add_Click({ param($sender, $eventArgs) &$experienceChangeLocationUiCommand $sender.Tag }.GetNewClosure())
             $card.Controls.Add($dirBtn)
             
             $deleteBtn = New-Object Windows.Forms.Button
@@ -2109,7 +2142,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
             if($deleteBtn.Enabled){Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(140, 40, 55)) ([Drawing.Color]::White)}
             else{Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))}
             $deleteBtn.Tag=$cardInfo
-            $deleteBtn.Add_Click({param($sender,$eventArgs) Invoke-CocoExperienceFreeSpaceUi $sender.Tag})
+            $deleteBtn.Add_Click({param($sender,$eventArgs) &$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())
             $card.Controls.Add($deleteBtn)
         } else {
             $dirBtn = New-Object Windows.Forms.Button
@@ -2124,8 +2157,8 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
             $dirBtn.Tag = $cardInfo
             $dirBtn.Add_Click({
                 param($sender, $eventArgs)
-                if($sender.Tag.Usage.Installed){Invoke-CocoExperienceChangeLocationUi $sender.Tag}else{Invoke-CocoExperienceStorageInstallUi $sender.Tag}
-            })
+                if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}
+            }.GetNewClosure())
             $card.Controls.Add($dirBtn)
             
             $deleteBtn = New-Object Windows.Forms.Button
@@ -2137,7 +2170,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
             if($deleteBtn.Enabled){Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(140, 40, 55)) ([Drawing.Color]::White)}
             else{Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))}
             $deleteBtn.Tag = $cardInfo
-            $deleteBtn.Add_Click({ param($sender, $eventArgs) Invoke-CocoExperienceFreeSpaceUi $sender.Tag })
+            $deleteBtn.Add_Click({ param($sender, $eventArgs) &$experienceFreeSpaceUiCommand $sender.Tag }.GetNewClosure())
             $card.Controls.Add($deleteBtn)
         }
         
@@ -2161,6 +2194,10 @@ function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths, 
 function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Role='client'){
     if(-not$DynamicPanel-or$DynamicPanel.IsDisposed-or-not$Catalog){return}
     $mediaEpisodeUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaEpisodeUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $mediaOpenFolderUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaOpenFolderUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $experienceChangeLocationUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceChangeLocationUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $experienceStorageInstallUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceStorageInstallUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $experienceFreeSpaceUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceFreeSpaceUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $expRoot=if($Paths-is[hashtable]){[string]$Paths['ExperiencesRoot']}elseif($Paths-and$Paths.ExperiencesRoot){[string]$Paths.ExperiencesRoot}else{[string]$Paths}
     $locationPath=Get-CocoLauncherInstanceLocationsPath $Paths
     $managedExperiences=@($Catalog.experiences|Where-Object{ $_.managementMode-eq'managed'-and($_.launch.workflow-eq'coco-managed'-or$_.launch.workflow-eq'coco-standalone'-or$_.launch.workflow-eq'coco-media') })
@@ -2202,14 +2239,14 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 if($Role-eq'host'){$buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ALOJAR PARTIDA'};Width=100;Kind='host'},[pscustomobject]@{Text='CARPETA';Width=70;Kind='folder'},[pscustomobject]@{Text='BORRAR';Width=54;Kind='delete'})}else{$buttonSpecs=@([pscustomobject]@{Text=if($usage.Installed){'CAMBIAR CARPETA'}else{'INSTALAR'};Width=if($usage.Installed){116}else{240};Kind='install'});if($usage.Installed){$buttonSpecs+=,[pscustomobject]@{Text='LIBERAR ESPACIO';Width=116;Kind='delete'}}}
             }
             $card.Controls.AddRange(@($imageBox,$nameLabel,$detailLabel));$script:CocoExperienceCardsToolTip.SetToolTip($card,"$([string]$exp.name)`r`n$([string]$exp.description)");$script:CocoExperienceCardsToolTip.SetToolTip($nameLabel,[string]$exp.name);$script:CocoExperienceCardsToolTip.SetToolTip($imageBox,[string]$exp.name)
-            if(Test-CocoMediaExperience $exp){foreach($control in @($card,$imageBox,$nameLabel,$metaLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure())}}else{foreach($control in @($card,$imageBox,$nameLabel,$metaLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){Invoke-CocoExperienceStorageInstallUi $info}}.GetNewClosure())}}
+            if(Test-CocoMediaExperience $exp){foreach($control in @($card,$imageBox,$nameLabel,$metaLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure())}}else{foreach($control in @($card,$imageBox,$nameLabel,$metaLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){&$experienceStorageInstallUiCommand $info}}.GetNewClosure())}}
             $totalButtonWidth=[int](($buttonSpecs|ForEach-Object{Get-CocoLauncherUiMetric ([int]$_.Width)}|Measure-Object -Sum).Sum)+[Math]::Max(0,$buttonSpecs.Count-1)*$buttonGap;$buttonX=$textX;$buttonRightPadding=Get-CocoLauncherUiMetric 4
             if($buttonX+$totalButtonWidth-gt$cardWidth-$buttonRightPadding){$buttonX=[Math]::Max((Get-CocoLauncherUiMetric 7),$cardWidth-$buttonRightPadding-$totalButtonWidth)}
             foreach($spec in $buttonSpecs){
                 $button=New-Object Windows.Forms.Button;$button.Text=[string]$spec.Text;$button.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric ([int]$spec.Width)),(Get-CocoLauncherUiMetric 28));$button.Location=New-Object Drawing.Point($buttonX,$buttonY);$button.Tag=$cardInfo;$button.TabStop=$false
                 if($spec.Kind-eq'delete'){$enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled;if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}}elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}elseif($spec.Kind-eq'folder'){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)}
                 if([string]$spec.Text-in@('CAMBIAR CARPETA','LIBERAR ESPACIO','ALOJAR PARTIDA','EN EJECUCION')){$button.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6))}
-                if($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){Invoke-CocoMediaOpenFolderUi $sender.Tag.Experience}else{Invoke-CocoExperienceChangeLocationUi $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag}.GetNewClosure())}elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){Invoke-CocoExperienceChangeLocationUi $sender.Tag}else{Invoke-CocoExperienceStorageInstallUi $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)Invoke-CocoExperienceFreeSpaceUi $sender.Tag}.GetNewClosure())}
+                if($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){&$mediaOpenFolderUiCommand $sender.Tag.Experience}else{&$experienceChangeLocationUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag}.GetNewClosure())}elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)&$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())}
                 $card.Controls.Add($button);$buttonX+=$button.Width+$buttonGap
             }
             $DynamicPanel.Controls.Add($card);$cardIndex++
@@ -2232,6 +2269,10 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
 function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Role='client'){
     if(-not$DynamicPanel-or$DynamicPanel.IsDisposed-or-not$Catalog){return}
     $mediaEpisodeUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaEpisodeUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $mediaOpenFolderUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaOpenFolderUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $experienceChangeLocationUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceChangeLocationUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $experienceStorageInstallUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceStorageInstallUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $experienceFreeSpaceUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceFreeSpaceUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $expRoot=if($Paths-is[hashtable]){[string]$Paths['ExperiencesRoot']}elseif($Paths-and$Paths.ExperiencesRoot){[string]$Paths.ExperiencesRoot}else{[string]$Paths}
     $locationPath=Get-CocoLauncherInstanceLocationsPath $Paths
     $managedExperiences=@($Catalog.experiences|Where-Object{ $_.managementMode-eq'managed'-and($_.launch.workflow-eq'coco-managed'-or$_.launch.workflow-eq'coco-standalone'-or$_.launch.workflow-eq'coco-media') })
@@ -2280,13 +2321,13 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 if($Role-eq'host'){$buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ALOJAR PARTIDA'};Kind='host'},[pscustomobject]@{Text='CARPETA';Kind='folder'},[pscustomobject]@{Text='BORRAR';Kind='delete'})}else{$buttonSpecs=@([pscustomobject]@{Text=if($usage.Installed){'CAMBIAR CARPETA'}else{'INSTALAR'};Kind='install'});if($usage.Installed){$buttonSpecs+=,[pscustomobject]@{Text='LIBERAR ESPACIO';Kind='delete'}}}
             }
             $card.Controls.Add($imageBox);$gradient.Controls.Add($nameLabel);$gradient.Controls.Add($detailLabel);$script:CocoExperienceCardsToolTip.SetToolTip($card,"$([string]$exp.name)`r`n$([string]$exp.description)");$script:CocoExperienceCardsToolTip.SetToolTip($nameLabel,[string]$exp.name);$script:CocoExperienceCardsToolTip.SetToolTip($imageBox,[string]$exp.name)
-            if($cardInfo.IsMedia){foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure())}}else{foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){Invoke-CocoExperienceStorageInstallUi $info}}.GetNewClosure())}}
+            if($cardInfo.IsMedia){foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure())}}else{foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){&$experienceStorageInstallUiCommand $info}}.GetNewClosure())}}
             $actionAreaWidth=[Math]::Max((Get-CocoLauncherUiMetric 140),$cardWidth-(2*$actionPadding));$buttonCount=$buttonSpecs.Count;$usableButtonWidth=[Math]::Max((Get-CocoLauncherUiMetric 100),$actionAreaWidth-([Math]::Max(0,$buttonCount-1)*$actionGap));$maxPerButton=[int][Math]::Floor($usableButtonWidth/[Math]::Max(1,$buttonCount));$buttonWidth=[int][Math]::Min($maxPerButton,(Get-CocoLauncherUiMetric 108));$buttonGroupWidth=($buttonCount*$buttonWidth)+([Math]::Max(0,$buttonCount-1)*$actionGap);$buttonX=$cardWidth-$actionPadding-$buttonGroupWidth;$buttonY=$gradientHeight-$actionHeight-(Get-CocoLauncherUiMetric 4);$buttonIndex=0
             foreach($spec in $buttonSpecs){
                 $button=New-Object Windows.Forms.Button;$button.Text=[string]$spec.Text;$button.Size=New-Object Drawing.Size($buttonWidth,$actionHeight);$button.Location=New-Object Drawing.Point($buttonX,$buttonY);$button.Tag=$cardInfo;$button.TabStop=$false
                 if($spec.Kind-eq'delete'){$enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled;if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}}elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}elseif($spec.Kind-eq'folder'){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)}
                 if([string]$spec.Text-in@('CAMBIAR CARPETA','LIBERAR ESPACIO','ALOJAR PARTIDA','EN EJECUCION')){$button.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6))}
-                if($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){Invoke-CocoMediaOpenFolderUi $sender.Tag.Experience}else{Invoke-CocoExperienceChangeLocationUi $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag}.GetNewClosure())}elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){Invoke-CocoExperienceChangeLocationUi $sender.Tag}else{Invoke-CocoExperienceStorageInstallUi $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)Invoke-CocoExperienceFreeSpaceUi $sender.Tag}.GetNewClosure())}
+                if($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){&$mediaOpenFolderUiCommand $sender.Tag.Experience}else{&$experienceChangeLocationUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag}.GetNewClosure())}elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)&$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())}
                 $gradient.Controls.Add($button);$buttonIndex++;$buttonX+=$buttonWidth+$actionGap
             }
             $cardsContent.Controls.Add($card);$cardIndex++
@@ -2309,6 +2350,10 @@ function Set-CocoLauncherStep(
     $Progress = [Math]::Max(0, [Math]::Min(100, $Progress))
     if($Context-and(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue)){Set-CocoDiagnosticContext $Context}
     if(Get-Command Set-CocoState -ErrorAction SilentlyContinue){Set-CocoState ("ETAPA {0}/10 | {1}"-f$Step,$Title) $Detail $Progress}
+}
+
+function Set-CocoLauncherIdleState([string]$Detail='Elige una experiencia para instalarla, alojar una partida o reproducir contenido.',[int]$Progress=100){
+    if(Get-Command Set-CocoState -ErrorAction SilentlyContinue){Set-CocoState 'COCO LAUNCHER LISTO' $Detail $Progress}
 }
 
 function Test-CocoSafeRelativePath([string]$Path){
@@ -6173,6 +6218,18 @@ function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$P
     $identity
 }
 
+function Invoke-CocoLauncherIdentityButton($IdentityCard,$IdentityText){
+    try{
+        if(-not$IdentityCard-or$IdentityCard.IsDisposed){return}
+        if($IdentityCard.Visible){$IdentityCard.Visible=$false;return}
+        $IdentityCard.Visible=$true;$IdentityCard.BringToFront()
+        if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Activate()}
+        if($IdentityText-and-not$IdentityText.IsDisposed){[void]$IdentityText.Focus();$IdentityText.SelectAll()}
+    }catch{
+        try{Write-CocoLog "No se pudo abrir el popup de identidad: $($_.Exception.Message)"}catch{}
+    }
+}
+
 function Start-CocoLauncherExperience($Catalog,$Experience,$Identity,[string]$Role,$Paths,[string]$LegacyMinecraftRoot,[switch]$DisableAutoJoin){
     if($Experience.managementMode-ne'managed'-or($Experience.launch.workflow-ne'coco-managed'-and$Experience.launch.workflow-ne'coco-standalone')){
         throw 'Coco original se abre con el launcher habitual de cada jugador, no con Coco Launcher.'
@@ -6327,7 +6384,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     $script:CocoIdentityButton=$null
     $script:CocoIdentityOpenAction=$null
     Show-CocoWindow
-    $script:CocoForm.Text='Coco Launcher';$script:CocoBrand.Text='COCO LAUNCHER  |  UNA PARTIDA ACTIVA'
+    $script:CocoForm.Text='Coco Launcher';$script:CocoBrand.Text='COCO LAUNCHER  |  EXPERIENCIAS DISPONIBLES'
     try {
         $script:CocoForm.Add_Activated({
             try {
@@ -6377,6 +6434,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     try{
     Set-CocoLauncherStep 1 'INICIANDO COCO LAUNCHER' ("Engine {0} | ejecucion {1}"-f$Manifest.version,$runLabel) 13
     $role=if([string]::IsNullOrWhiteSpace($RoleOverride)){Get-CocoLauncherRole $LegacyMinecraftRoot}else{$RoleOverride}
+    if($script:CocoBrand){$script:CocoBrand.Text=if($role-eq'host'){'COCO LAUNCHER  |  MODO HOST'}else{'COCO LAUNCHER  |  EXPERIENCIAS DISPONIBLES'}}
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{role=$role}}
     Set-CocoLauncherStep 2 'PREPARANDO LA RED PRIVADA' 'Verificando ZeroTier, adaptador, autorizacion y rutas Coco...' 16
     $oldMinecraftPid=$script:MinecraftPid;$script:MinecraftPid=$PID
@@ -6437,11 +6495,11 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         $identityCard.Visible=$false
         $current
     }
-    $identityText.Add_TextChanged({[void](&$validateIdentity)})
-    $identityText.Add_Leave({[void](&$saveIdentity)})
+    $identityText.Add_TextChanged({[void](&$validateIdentity)}.GetNewClosure())
+    $identityText.Add_Leave({[void](&$saveIdentity)}.GetNewClosure())
     $identityText.Add_KeyDown({param($sender,$eventArgs)
         if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Enter){$eventArgs.SuppressKeyPress=$true;[void](&$saveIdentity)}
-    })
+    }.GetNewClosure())
     [void](&$validateIdentity)
     $applySkin={
         param([string]$SelectedPath)
@@ -6483,15 +6541,16 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         if($files.Count-eq1){&$applySkin ([string]$files[0])}
     }
     foreach($control in @($identityCard,$skinPicture,$identityHeading,$identityStatus)){
-        $control.Add_Click($chooseSkin);$control.Add_DragEnter($dragEnter);$control.Add_DragDrop($dragDrop)
+        $control.Add_Click($chooseSkin.GetNewClosure());$control.Add_DragEnter($dragEnter.GetNewClosure());$control.Add_DragDrop($dragDrop.GetNewClosure())
     }
     $showIdentity={
         if($identityCard.IsDisposed){return}
         $identityCard.Visible=$true;$identityCard.BringToFront();$script:CocoForm.Activate();[void]$identityText.Focus();$identityText.SelectAll()
     }.GetNewClosure()
     $script:CocoIdentityOpenAction=$showIdentity
+    $identityToggleCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoLauncherIdentityButton -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $identityButton=New-Object Windows.Forms.Button;$identityButton.Name='CocoLauncherIdentityButton';$identityButton.Text='JUGADOR';$identityButton.AccessibleName='Abrir identidad';$identityButton.AccessibleDescription=if($savedIdentity){"Jugador: $($savedIdentity.username)"}else{'Configurar jugador'};$identityButton.TabStop=$false
-    Set-CocoFlatButtonStyle $identityButton ([Drawing.Color]::FromArgb(22,13,37)) ([Drawing.Color]::FromArgb(224,190,255));$identityButton.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6));$identityButton.Add_Click({if($identityCard.Visible){$identityCard.Visible=$false}else{& $showIdentity}}.GetNewClosure())
+    Set-CocoFlatButtonStyle $identityButton ([Drawing.Color]::FromArgb(22,13,37)) ([Drawing.Color]::FromArgb(224,190,255));$identityButton.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6));$identityButton.Add_Click({&$identityToggleCommand $identityCard $identityText}.GetNewClosure())
     $script:CocoIdentityButton=$identityButton;$script:CocoPanel.Controls.Add($identityButton)
     # La identidad no es necesaria para ver contenido multimedia. El popup se
     # abre solo al pulsar JUGADOR o cuando una experiencia Minecraft realmente
@@ -6501,13 +6560,13 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     Set-CocoFlatButtonStyle $minimize ([Drawing.Color]::FromArgb(22,13,37)) ([Drawing.Color]::FromArgb(218,210,229))
     $minimize.FlatAppearance.MouseOverBackColor=[Drawing.Color]::FromArgb(58,36,81);$minimize.FlatAppearance.MouseDownBackColor=[Drawing.Color]::FromArgb(42,27,58)
     $minimize.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(218,210,229),1.5);$eventArgs.Graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias;$y=[int]($sender.ClientSize.Height/2)+3;$eventArgs.Graphics.DrawLine($pen,11,$y,$sender.ClientSize.Width-11,$y);$pen.Dispose()}.GetNewClosure())
-    $minimize.Add_Click({try{$script:CocoForm.WindowState=[Windows.Forms.FormWindowState]::Minimized}catch{}})
+    $minimize.Add_Click({try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.WindowState=[Windows.Forms.FormWindowState]::Minimized}}catch{}}.GetNewClosure())
     $script:CocoLauncherMinimizeButton=$minimize;$script:CocoPanel.Controls.Add($minimize)
     $close=New-Object Windows.Forms.Button;$close.Name='CocoLauncherCloseButton';$close.Text='';$close.AccessibleName='Cerrar';$close.TabStop=$false
     Set-CocoFlatButtonStyle $close ([Drawing.Color]::FromArgb(22,13,37)) ([Drawing.Color]::FromArgb(218,210,229))
     $close.FlatAppearance.MouseOverBackColor=[Drawing.Color]::FromArgb(150,48,70);$close.FlatAppearance.MouseDownBackColor=[Drawing.Color]::FromArgb(105,35,52)
     $close.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(218,210,229),1.5);$eventArgs.Graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias;$inset=11;$eventArgs.Graphics.DrawLine($pen,$inset,$inset,$sender.ClientSize.Width-$inset,$sender.ClientSize.Height-$inset);$eventArgs.Graphics.DrawLine($pen,$sender.ClientSize.Width-$inset,$inset,$inset,$sender.ClientSize.Height-$inset);$pen.Dispose()}.GetNewClosure())
-    $close.Add_Click({$script:CocoAllowClose=$true;$script:CocoForm.Close()});$script:CocoLauncherCloseButton=$close;$script:CocoPanel.Controls.Add($close)
+    $close.Add_Click({try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoAllowClose=$true;$script:CocoForm.Close()}}catch{}}.GetNewClosure());$script:CocoLauncherCloseButton=$close;$script:CocoPanel.Controls.Add($close)
     Set-CocoLauncherUiLayout
     $script:CocoMediaInteraction=$false
     $managedExperiences=@($catalog.experiences|Where-Object{$_.managementMode-eq'managed'})
@@ -6546,13 +6605,13 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         }
         if($script:CocoForm.IsDisposed){return}
         if($script:CocoMediaInteraction){
-            Set-CocoLauncherStep 3 'HEART SIGNAL LISTO' 'La sesion de Minecraft se mantiene sin abrir para que puedas elegir un episodio.' 30
+            Set-CocoLauncherIdleState 'El reproductor esta abierto. Puedes seguir usando el launcher cuando cierres el video.' 100
             while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
             return
         }
         if($session.State-eq'offline'){
             if($mediaExperiences.Count-gt0){
-                Set-CocoLauncherStep 3 'HEART SIGNAL LISTO' 'Selecciona una parte para reproducirla desde el launcher. Esta experiencia no requiere Coco original.' 100
+                Set-CocoLauncherIdleState 'Selecciona una experiencia para instalarla o abre Heart Signal para elegir un episodio.' 100
                 while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
                 return
             }

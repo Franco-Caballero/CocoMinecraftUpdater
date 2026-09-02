@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$Part1Path=(Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads\heart signal\Heart Signal - S05E01 - Parte 1.mp4'),
-    [string]$Part2Path=(Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads\heart signal\Heart Signal - S05E01 - Parte 2.mp4')
+    [string]$Part2Path=(Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads\heart signal\Heart Signal - S05E01 - Parte 2.mp4'),
+    [switch]$AllowMissingLocal
 )
 
 $ErrorActionPreference='Stop'
@@ -10,7 +11,17 @@ $expected=@(
     [pscustomobject]@{Path=$Part2Path;Size=[int64]1829237387;Sha256='714412a27a5429373e278ed4c1180e229721cc3b4afe212e436aa45496abdc1a'}
 )
 foreach($part in $expected){
-    if(-not(Test-Path -LiteralPath $part.Path -PathType Leaf)){throw "No existe la parte: $($part.Path)"}
+    if(-not(Test-Path -LiteralPath $part.Path -PathType Leaf)){
+        if(-not$AllowMissingLocal){throw "No existe la parte: $($part.Path)"}
+        $catalogPath=Join-Path (Split-Path $PSScriptRoot -Parent) 'launcher\catalog.template.json'
+        $catalog=Get-Content -LiteralPath $catalogPath -Raw|ConvertFrom-Json
+        $episodes=@($catalog.experiences|Where-Object id -eq 'heart-signal'|Select-Object -First 1).content.episodes
+        if(@($episodes|Where-Object{[int64]$_.size-ge2GB-or[string]$_.streamUrl-notmatch'^https://'-or[string]$_.sha256-notmatch'^[0-9a-fA-F]{64}$'}).Count){throw 'La metadata de las partes remotas no conserva HTTPS, hash o limite de 2 GiB.'}
+        if(@($episodes).Count-lt2){throw 'La metadata remota no conserva las dos partes esperadas.'}
+        [pscustomobject]@{Parts=$episodes.Count;Sizes=@($episodes|ForEach-Object{[int64]$_.size});Sha256=@($episodes|ForEach-Object{[string]$_.sha256});LocalFiles=$false}|ConvertTo-Json -Compress
+        'PASS: las dos partes remotas tienen metadata MP4, hashes y tamanos menores de 2 GiB; no se requirio descargarlas.'
+        return
+    }
     $item=Get-Item -LiteralPath $part.Path -Force
     if([int64]$item.Length-ne$part.Size){throw "Tamano incorrecto en '$($item.Name)': $($item.Length) != $($part.Size)"}
     $hash=(Get-FileHash -LiteralPath $part.Path -Algorithm SHA256).Hash.ToLowerInvariant()

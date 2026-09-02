@@ -2,7 +2,8 @@
 param(
     [string]$SourcePath=(Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads\heart signal\Heart Signal - S05E01 - Parte 1.mp4'),
     [string]$EpisodeId='s05e01-p01',
-    [switch]$RecordVerifiedState
+    [switch]$RecordVerifiedState,
+    [switch]$AllowMissingLocal
 )
 
 $ErrorActionPreference='Stop'
@@ -16,7 +17,14 @@ $experience=@($catalog.experiences|Where-Object id -eq 'heart-signal'|Select-Obj
 if(-not$experience){throw 'El catalogo no contiene Heart Signal.'}
 $episode=@($experience.content.episodes|Where-Object id -eq $EpisodeId|Select-Object -First 1)[0]
 if(-not$episode){throw "Heart Signal no contiene $EpisodeId."}
-if(-not(Test-Path -LiteralPath $SourcePath -PathType Leaf)){throw "No existe el archivo de prueba: $SourcePath"}
+if(-not(Test-Path -LiteralPath $SourcePath -PathType Leaf)){
+    if(-not$AllowMissingLocal){throw "No existe el archivo de prueba: $SourcePath"}
+    if([string]$episode.streamUrl-notmatch'^https://'){throw 'El episodio no tiene un streamUrl HTTPS para validacion remota.'}
+    if([int64]$episode.size-le0-or[string]$episode.sha256-notmatch'^[0-9a-fA-F]{64}$'){throw 'La metadata remota del episodio no tiene tamano/hash validos.'}
+    [pscustomobject]@{Experience=[string]$experience.name;Episode=[string]$episode.id;Path='(asset remoto; sin copia local)';Size=[int64]$episode.size;Sha256=[string]$episode.sha256;LocalStatus='streaming';StateRecorded=$false}|ConvertTo-Json -Compress
+    'PASS: Heart Signal tiene metadata HTTPS/hash valida; no se requirio copiar el asset al PC del Publisher.'
+    return
+}
 $source=[IO.Path]::GetFullPath($SourcePath)
 $destination=[IO.Path]::GetFullPath((Get-CocoMediaEpisodePath $experience $episode))
 if(-not[string]::Equals($source,$destination,[StringComparison]::OrdinalIgnoreCase)){
