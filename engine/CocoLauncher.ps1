@@ -6106,9 +6106,6 @@ function Set-CocoExperienceCardsNativeScrollStyle($DynamicPanel){
     try{
         Set-CocoControlDoubleBuffered $DynamicPanel
         try{$DynamicPanel.BackColor=[Drawing.Color]::FromArgb(22,13,34)}catch{}
-        if([System.Management.Automation.PSTypeName]'CocoPopupGate'.Type){
-            [CocoPopupGate]::ApplyDarkTheme($DynamicPanel.Handle)
-        }
     }catch{}
 }
 
@@ -6221,8 +6218,10 @@ function Set-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset,[bool]$S
         $actual=try{[int]$DynamicPanel.VerticalScroll.Value}catch{[int]$clamped}
     }
     $state.Offset=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,$actual))
-    if($SyncTarget){$state.PendingOffset=$state.Offset;$state.TargetOffset=$state.Offset}
-    if($ForcePaint){try{$DynamicPanel.Invalidate()}catch{}}
+    try{
+        $DynamicPanel.Invalidate($true)
+        $DynamicPanel.Update()
+    }catch{}
 }
 
 function Queue-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset){
@@ -6344,7 +6343,9 @@ function Set-CocoExperienceCardsScrollBehavior($DynamicPanel){
 function Set-CocoLauncherUiLayout {
     if(-not$script:CocoForm-or-not$script:CocoPanel){return}
     Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
-    $work=[Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+    $targetScreen=try{[Windows.Forms.Screen]::FromControl($script:CocoForm)}catch{[Windows.Forms.Screen]::PrimaryScreen}
+    if(-not$targetScreen){$targetScreen=[Windows.Forms.Screen]::PrimaryScreen}
+    $work=$targetScreen.WorkingArea
     # El launcher reserva mas ancho para una grilla de dos columnas. La escala
     # baja de forma proporcional en pantallas pequenas para que nunca recorte
     # el contenido ni obligue a usar scroll horizontal.
@@ -6354,20 +6355,30 @@ function Set-CocoLauncherUiLayout {
     $form=$script:CocoForm;$panel=$script:CocoPanel
     $form.SuspendLayout();$panel.SuspendLayout()
     try{
-        $form.Size=New-Object Drawing.Size((&$metric 1440),(&$metric 900))
-        $form.Location=New-Object Drawing.Point(
-            ([int]($work.Left+[Math]::Max(0,($work.Width-$form.Width)/2))),
-            ([int]($work.Top+[Math]::Max(0,($work.Height-$form.Height)/2))))
-        $panel.Location=New-Object Drawing.Point((&$metric 25),(&$metric 25))
-        $panel.Size=New-Object Drawing.Size((&$metric 900),(&$metric 870))
+        $formWidth=(&$metric 1440)
+        $formHeight=(&$metric 900)
+        $form.StartPosition=[Windows.Forms.FormStartPosition]::Manual
+        $form.Size=New-Object Drawing.Size($formWidth,$formHeight)
+        $formX=[int]($work.Left+[Math]::Max(0,($work.Width-$formWidth)/2))
+        $formY=[int]($work.Top+[Math]::Max(0,($work.Height-$formHeight)/2))
+        $form.Location=New-Object Drawing.Point($formX,$formY)
+        $panelWidth=(&$metric 900)
+        $panelHeight=(&$metric 870)
+        $art=@($form.Controls|Where-Object{$_-is[Windows.Forms.PictureBox]-and$_.Parent-eq$form}|Select-Object -First 1)[0]
+        $artWidth=if($art){(&$metric 460)}else{0}
+        $artHeight=if($art){(&$metric 880)}else{0}
+        $gap=if($art){(&$metric 25)}else{0}
+        $totalVisibleWidth=$panelWidth+$gap+$artWidth
+        $contentLeftMargin=[Math]::Max(10,[int](($formWidth-$totalVisibleWidth)/2))
+        $panel.Location=New-Object Drawing.Point($contentLeftMargin,(&$metric 25))
+        $panel.Size=New-Object Drawing.Size($panelWidth,$panelHeight)
         if($script:CocoAccent){$script:CocoAccent.Location=New-Object Drawing.Point(0,0);$script:CocoAccent.Size=New-Object Drawing.Size((&$metric 9),$panel.ClientSize.Height)}
         if($script:CocoTitle){$script:CocoTitle.Location=New-Object Drawing.Point((&$metric 43),(&$metric 32));$script:CocoTitle.Size=New-Object Drawing.Size((&$metric 680),(&$metric 34))}
         if($script:CocoDetail){$script:CocoDetail.Location=New-Object Drawing.Point((&$metric 46),(&$metric 76));$script:CocoDetail.Size=New-Object Drawing.Size((&$metric 840),(&$metric 44))}
         if($script:CocoTrack){$script:CocoTrack.Location=New-Object Drawing.Point((&$metric 46),(&$metric 128));$script:CocoTrack.Size=New-Object Drawing.Size((&$metric 840),(&$metric 20))}
         if($script:CocoProgress){$script:CocoProgress.Location=New-Object Drawing.Point(0,0);$script:CocoProgress.Height=(&$metric 20)}
         if($script:CocoBrand){$script:CocoBrand.Location=New-Object Drawing.Point((&$metric 46),(&$metric 153));$script:CocoBrand.Size=New-Object Drawing.Size((&$metric 840),(&$metric 20))}
-        $art=@($form.Controls|Where-Object{$_-is[Windows.Forms.PictureBox]-and$_.Parent-eq$form}|Select-Object -First 1)[0]
-        if($art){$art.Location=New-Object Drawing.Point((&$metric 950),(&$metric 5));$art.Size=New-Object Drawing.Size((&$metric 460),(&$metric 880))}
+        if($art){$art.Location=New-Object Drawing.Point(($contentLeftMargin+$panelWidth+$gap),(&$metric 5));$art.Size=New-Object Drawing.Size($artWidth,$artHeight)}
         foreach($control in @($panel.Controls)){
             if($control.Tag-eq'CocoLauncherDynamic'){
                 $control.Location=New-Object Drawing.Point((&$metric 46),(&$metric 190));$control.Size=New-Object Drawing.Size((&$metric 840),(&$metric 660))
