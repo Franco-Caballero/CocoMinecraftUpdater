@@ -77,6 +77,7 @@ public class CocoPopupGate {
     private static string[] dialogClasses = new string[0];
     private static readonly Dictionary<long, DateTime> actedOn = new Dictionary<long, DateTime>();
     private static readonly List<string> diagnostics = new List<string>();
+    private static readonly HashSet<int> baselineBrowserPids = new HashSet<int>();
     private static DateTime startedUtc = DateTime.UtcNow;
 
     public static long ClickedCount;
@@ -84,6 +85,16 @@ public class CocoPopupGate {
     public static long HiddenCount;
     public static string LastAction = "";
     private static readonly WinEventProc winEventHandler = new WinEventProc(OnWindowShown);
+
+    public static bool IsRunning() { return running; }
+
+    public static void BindProcessId(int pid) {
+        rootPid = pid;
+        lock (treeLock) {
+            if (treeCache == null) treeCache = new HashSet<int>();
+            if (pid != 0) treeCache.Add(pid);
+        }
+    }
 
     private static void HookThreadLoop(int myGeneration) {
         try {
@@ -111,7 +122,23 @@ public class CocoPopupGate {
             bool inTree = rootPid != 0 && managedPid == rootPid;
             if (!inTree && pids != null && pids.Count > 0) inTree = pids.Contains(managedPid);
             else if (!inTree && pids != null && pids.Count == 0 && rootPid != 0) { inTree = CollectTreePids(rootPid).Contains(managedPid); }
-            if (!inTree) return;
+            if (!inTree) {
+                if ((DateTime.UtcNow - startedUtc).TotalSeconds < 90) {
+                    StringBuilder t = new StringBuilder(512);
+                    GetWindowText(hwnd, t, 512);
+                    string tStr = (t.ToString() ?? "").ToLowerInvariant();
+                    bool hit = false;
+                    foreach (string rm in redirectTitleMarkers) {
+                        if (tStr.Contains(rm)) { hit = true; break; }
+                    }
+                    if (hit) {
+                        ShowWindow(hwnd, SW_HIDE);
+                        PostMessage(hwnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+                        LastAction = "hook-close-redirect-win:" + tStr;
+                    }
+                }
+                return;
+            }
             WindowInfo info = new WindowInfo();
             info.Handle = hwnd;
             info.Pid = pid;
@@ -147,7 +174,11 @@ public class CocoPopupGate {
         lock (diagnostics) { diagnostics.Clear(); }
         actedOn.Clear();
         clickedPending.Clear();
-        lock (treeLock) { treeCache = new HashSet<int>(); }
+        lock (treeLock) { treeCache = new HashSet<int>(); if (pid != 0) treeCache.Add(pid); }
+        lock (baselineBrowserPids) {
+            baselineBrowserPids.Clear();
+            foreach (int p in SnapshotBrowserPids()) baselineBrowserPids.Add(p);
+        }
         ClickedCount = 0; ClosedCount = 0; HiddenCount = 0; LastAction = "";
         int currentGeneration = ++generation;
         running = true;
@@ -265,16 +296,17 @@ public class CocoPopupGate {
     }
 
     private static readonly string[] browserNames = new string[] {
-        "chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe", "opera_gx.exe",
-        "iexplore.exe", "browser.exe", "waterfox.exe", "vivaldi.exe"
+        "chrome.exe", "msedge.exe", "firefox.exe", "zen.exe", "arc.exe", "brave.exe", "opera.exe", "opera_gx.exe",
+        "iexplore.exe", "browser.exe", "waterfox.exe", "vivaldi.exe", "floorp.exe", "thorium.exe", "librewolf.exe",
+        "chromium.exe", "epic.exe", "sidekick.exe", "yandex.exe", "whale.exe", "maxthon.exe"
     };
 
     private static readonly string[] redirectTitleMarkers = new string[] {
         "online-fix", "onlinefix", "online fix", "ofme", "freesteam", "steamrip", "free steam", "credits", "créditos", "the fix is made by", "cs.rin.ru"
     };
 
-    private static void SuppressRedirectProcesses(HashSet<int> treePids) {
-        if (treePids == null || treePids.Count <= 1) return;
+    private static HashSet<int> SnapshotBrowserPids() {
+        HashSet<int> result = new HashSet<int>();
         IntPtr snapshot = IntPtr.Zero;
         try {
             snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -284,17 +316,47 @@ public class CocoPopupGate {
                 if (Process32FirstW(snapshot, ref entry)) {
                     do {
                         int pid = unchecked((int)entry.th32ProcessID);
-                        if (pid != rootPid && treePids.Contains(pid)) {
+                        string exe = (entry.szExeFile ?? "").ToLowerInvariant();
+                        foreach (string b in browserNames) {
+                            if (exe == b || exe.EndsWith(b)) { result.Add(pid); break; }
+                        }
+                    } while (Process32NextW(snapshot, ref entry));
+                }
+            }
+        } catch {}
+        finally { if (snapshot != IntPtr.Zero && snapshot != (IntPtr)(-1)) CloseHandle(snapshot); }
+        return result;
+    }
+
+    private static void SuppressRedirectProcesses(HashSet<int> treePids) {
+        IntPtr snapshot = IntPtr.Zero;
+        try {
+            snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if (snapshot != IntPtr.Zero && snapshot != (IntPtr)(-1)) {
+                PROCESSENTRY32W entry = new PROCESSENTRY32W();
+                entry.dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32W));
+                if (Process32FirstW(snapshot, ref entry)) {
+                    do {
+                        int pid = unchecked((int)entry.th32ProcessID);
+                        if (pid != rootPid) {
                             string exe = (entry.szExeFile ?? "").ToLowerInvariant();
+                            bool isBrowser = false;
                             foreach (string b in browserNames) {
-                                if (exe == b || exe.EndsWith(b)) {
+                                if (exe == b || exe.EndsWith(b)) { isBrowser = true; break; }
+                            }
+                            if (isBrowser) {
+                                bool inTree = treePids != null && treePids.Contains(pid);
+                                bool newSpawn = false;
+                                lock (baselineBrowserPids) {
+                                    newSpawn = (DateTime.UtcNow - startedUtc).TotalSeconds < 75 && !baselineBrowserPids.Contains(pid);
+                                }
+                                if (inTree || newSpawn) {
                                     IntPtr hProc = OpenProcess(PROCESS_TERMINATE, false, pid);
                                     if (hProc != IntPtr.Zero) {
                                         try { TerminateProcess(hProc, 0); } catch {}
                                         finally { CloseHandle(hProc); }
                                         LastAction = "kill-redirect-proc:" + exe + "(" + pid + ")";
                                     }
-                                    break;
                                 }
                             }
                         }
@@ -536,11 +598,23 @@ function Get-CocoPopupGateConfig($Experience){
     return $config
 }
 
+function Prepare-CocoStandalonePopupGate($Experience){
+    if(-not([System.Management.Automation.PSTypeName]'CocoPopupGate').Type){return $false}
+    $config=Get-CocoPopupGateConfig $Experience
+    [void]([CocoPopupGate]::StartSessionWatcher(0,([string]::Join('|',$config.markers)),([string]::Join('|',$config.buttonLabels)),([string]::Join('|',$config.dialogClasses))))
+    Write-CocoLog "POPUPGATE: vigilante pre-armado (markers=$(@($config.markers).Count);labels=$(@($config.buttonLabels).Count))."
+    return $true
+}
+
 function Start-CocoStandalonePopupGate($Process,$Experience){
     if(-not$Process-or$Process.HasExited){return $false}
     if(-not([System.Management.Automation.PSTypeName]'CocoPopupGate').Type){return $false}
     $config=Get-CocoPopupGateConfig $Experience
-    [void]([CocoPopupGate]::StartSessionWatcher([int]$Process.Id,([string]::Join('|',$config.markers)),([string]::Join('|',$config.buttonLabels)),([string]::Join('|',$config.dialogClasses))))
+    if([CocoPopupGate]::IsRunning()){
+        [CocoPopupGate]::BindProcessId([int]$Process.Id)
+    }else{
+        [void]([CocoPopupGate]::StartSessionWatcher([int]$Process.Id,([string]::Join('|',$config.markers)),([string]::Join('|',$config.buttonLabels)),([string]::Join('|',$config.dialogClasses))))
+    }
     Write-CocoLog "POPUPGATE: vigilante activo para PID $($Process.Id) (markers=$(@($config.markers).Count);labels=$(@($config.buttonLabels).Count))."
     return $true
 }
@@ -5265,6 +5339,7 @@ function Invoke-CocoManagedExperienceLaunch(
         }elseif($experience.runtime -and $experience.runtime.arguments){
             $launchArgs = @($experience.runtime.arguments)
         }
+        Prepare-CocoStandalonePopupGate $experience
         $process = if($launchArgs.Count -gt 0){
             Write-CocoLog "Argumentos standalone: $($launchArgs -join ' ')"
             Start-Process -FilePath $execPath -ArgumentList $launchArgs -WorkingDirectory $installed.InstanceRoot -PassThru
