@@ -351,8 +351,9 @@ if($LASTEXITCODE -and $LASTEXITCODE -ne 1){throw 'Fallo git commit.'}
 git push
 if($LASTEXITCODE){throw 'Fallo git push.'}
 
-$credentialRequest="protocol=https`nhost=github.com`n`n"
-$credentialLines=@($credentialRequest|git credential fill)
+$credInputFile=Join-Path $env:TEMP "coco-git-cred-$PID.txt"
+[IO.File]::WriteAllText($credInputFile,"protocol=https`nhost=github.com`n`n",(New-Object Text.UTF8Encoding($false)))
+$credentialLines=try{@(cmd.exe /c "git credential fill < `"$credInputFile`"")}finally{Remove-Item -LiteralPath $credInputFile -Force -ErrorAction SilentlyContinue}
 $credential=@{};foreach($line in $credentialLines){if($line-match'^([^=]+)=(.*)$'){$credential[$matches[1]]=$matches[2]}}
 if(-not$credential.password){throw 'Git Credential Manager no devolvio una credencial de GitHub.'}
 $headers=@{Authorization="Bearer $($credential.password)";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28';'User-Agent'='CocoPublisher'}
