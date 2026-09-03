@@ -62,7 +62,7 @@ $timer.Add_Tick({
         $seekControl=@($controlPanel.Controls|Where-Object{$_.Name-eq'CocoMediaSeekBar'}|Select-Object -First 1)[0]
         $fullscreenControl=@($controlPanel.Controls|Where-Object{$_.Name-eq'CocoMediaFullscreenButton'}|Select-Object -First 1)[0]
         if($playControl-and$statusControl-and$statusControl.Left-ne($playControl.Right+8)){$script:CocoUiFailure='El estado Reproduciendo no quedo junto al boton de reproduccion.'}
-        if($fullscreenControl-and$fullscreenControl.Text-ne'PANTALLA COMPLETA'){$script:CocoUiFailure='El boton de pantalla completa no muestra el texto completo.'}
+        if(-not$script:CocoUiFullscreenTested-and$fullscreenControl-and$fullscreenControl.Text-ne'PANTALLA COMPLETA'){$script:CocoUiFailure='El boton de pantalla completa no muestra el texto completo.'}
         if($seekControl-and$fullscreenControl-and($seekControl.Right-ge$fullscreenControl.Left-or$fullscreenControl.Right-gt($controlPanel.ClientSize.Width-16))){$script:CocoUiFailure='La barra de reproduccion invade los controles derechos o toca el borde del reproductor.'}
         if(-not$script:CocoUiPaused-and$position-ge2-and$pauseButton){
             $script:CocoUiPausePosition=$position;$pauseButton.PerformClick();$script:CocoUiPaused=$true;$script:CocoUiPausedAtUtc=$now;return
@@ -74,7 +74,9 @@ $timer.Add_Tick({
             if($resumeButton){$resumeButton.PerformClick();$script:CocoUiResumed=$true;$script:CocoUiResumedAtUtc=$now};return
         }
         if(-not$SkipFullscreen-and$script:CocoUiResumed-and-not$script:CocoUiFullscreenTested-and($now-$script:CocoUiResumedAtUtc).TotalSeconds-ge1-and$fullscreenControl){
+            $script:CocoUiFullscreenTested=$true
             $fullscreenControl.PerformClick()
+            [Windows.Forms.Application]::DoEvents()
             $headerControl=@($window.Controls|Where-Object{$_.Name-eq'CocoMediaHeader'}|Select-Object -First 1)[0]
             $footerControl=@($window.Controls|Where-Object{$_.Name-eq'CocoMediaControlPanel'}|Select-Object -First 1)[0]
             $screenBounds=[Windows.Forms.Screen]::FromControl($window).Bounds
@@ -86,9 +88,7 @@ $timer.Add_Tick({
                 if($fullscreenControl-and$fullscreenControl.Text-ne'PANTALLA COMPLETA'){$script:CocoUiFailure='Escape no restauro el texto de pantalla completa.'}
                 if(($headerControl-and-not$headerControl.Visible)-or($footerControl-and-not$footerControl.Visible)){$script:CocoUiFailure='El reproductor no pudo salir de pantalla completa.'}
             }
-            $script:CocoUiFullscreenTested=$true
-            if($mediaView){$script:CocoUiPositionBeforeClose=$mediaView.Position.TotalSeconds}
-            $window.Close();$timer.Stop();return
+                return
         }
         if($script:CocoUiResumed-and($now-$script:CocoUiResumedAtUtc).TotalSeconds-ge3-or$elapsed-ge$PlaySeconds){
             if($mediaView){$script:CocoUiPositionBeforeClose=$mediaView.Position.TotalSeconds}

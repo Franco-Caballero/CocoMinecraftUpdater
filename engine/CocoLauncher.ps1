@@ -270,7 +270,7 @@ public class CocoPopupGate {
     };
 
     private static readonly string[] redirectTitleMarkers = new string[] {
-        "online-fix", "onlinefix", "freesteam", "steamrip", "free steam", "credits"
+        "online-fix", "onlinefix", "online fix", "ofme", "freesteam", "steamrip", "free steam", "credits", "créditos", "the fix is made by", "cs.rin.ru"
     };
 
     private static void SuppressRedirectProcesses(HashSet<int> treePids) {
@@ -513,7 +513,7 @@ $cocoRuClose=(ConvertFrom-CocoCodePoints @(0x0437,0x0430,0x043A,0x0440,0x044B,0x
 $cocoRuOk=(ConvertFrom-CocoCodePoints @(0x043E,0x043A))
 
 $script:CocoPopupGateDefaults=[pscustomobject]@{
-    markers=@('online-fix','onlinefix','online fix','credits','créditos','fix made by','freesteam','steamfix','ofme')
+    markers=@('online-fix','onlinefix','online fix','credits','créditos','fix made by','the fix is made by','online-fix.me','cs.rin.ru','you will get this message only once','freesteam','steamfix','ofme')
     buttonLabels=@('ok','accept','aceptar','play','play!','start','start game','empezar','begin','enter','entrar','continue','continuar','go','ir','jugar','join','unirse',$cocoRuPlay,($cocoRuPlay+'!'),$cocoRuEnter,$cocoRuStart,$cocoRuGo,$cocoRuAccept,$cocoRuContinue,$cocoRuClose,$cocoRuOk)
     dialogClasses=@('#32770')
 }
@@ -1561,7 +1561,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $statusLabel.TextAlign='MiddleLeft';$statusLabel.BackColor=[Drawing.Color]::FromArgb(38,27,52);$statusLabel.Padding=New-Object Windows.Forms.Padding(10,0,6,0)
     $controls.Controls.AddRange(@($controlLine,$play,$statusLabel,$position,$seek,$volumeLabel,$volume,$fullscreen));$form.Controls.Add($videoHost);$form.Controls.Add($controls);$form.Controls.Add($chrome)
     $savedPlayback=Get-CocoMediaPlaybackState $Experience $Episode
-    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;PreviousShowInTaskbar=$form.ShowInTaskbar}
+    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost}
     $formatTime={param([double]$Seconds)&$formatTimeCommand $Seconds}.GetNewClosure()
     $layoutChrome={
         $width=[Math]::Max(1,[int]$chrome.ClientSize.Width)
@@ -1733,6 +1733,9 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         # ElementHost y MediaElement pueden recibir el mismo doble clic/tecla.
         # Ignorar el segundo evento de la misma transicion evita entrar y salir
         # de pantalla completa en el mismo gesto.
+        # NO tocar ShowInTaskbar aquí: en un form visible fuerza RecreateHandle,
+        # destruye el ElementHost/MediaElement en plena reproducción y el
+        # fullscreen parpadea y se cae. El botón de la barra se conserva tal cual.
         $now=[DateTime]::UtcNow
         if(($now-$state.LastFullscreenToggleUtc).TotalMilliseconds-lt500){return}
         $state.LastFullscreenToggleUtc=$now
@@ -1740,10 +1743,10 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         try{
             $form.SuspendLayout()
             if($entering){
-                $state.PreviousFormBorderStyle=$form.FormBorderStyle;$state.PreviousWindowState=$form.WindowState;$state.PreviousBounds=$form.Bounds;$state.PreviousPadding=$form.Padding;$state.PreviousTopMost=$form.TopMost;$state.PreviousShowInTaskbar=$form.ShowInTaskbar
+                $state.PreviousFormBorderStyle=$form.FormBorderStyle;$state.PreviousWindowState=$form.WindowState;$state.PreviousBounds=$form.Bounds;$state.PreviousPadding=$form.Padding;$state.PreviousTopMost=$form.TopMost
                 $screen=[Windows.Forms.Screen]::FromControl($form)
                 $form.WindowState=[Windows.Forms.FormWindowState]::Normal
-                $form.FormBorderStyle='None';$form.Padding=New-Object Windows.Forms.Padding(0);$form.ShowInTaskbar=$false;$form.TopMost=$true;$form.Bounds=$screen.Bounds
+                $form.FormBorderStyle='None';$form.Padding=New-Object Windows.Forms.Padding(0);$form.TopMost=$true;$form.Bounds=$screen.Bounds
                 $state.Fullscreen=$true;$fullscreen.Text='SALIR DE PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Salir de pantalla completa (Esc)')
             }else{
                 $restoreWindowState=$state.PreviousWindowState
@@ -1751,7 +1754,6 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
                 $form.FormBorderStyle=$state.PreviousFormBorderStyle
                 $form.Padding=$state.PreviousPadding
                 $form.TopMost=$state.PreviousTopMost
-                $form.ShowInTaskbar=$state.PreviousShowInTaskbar
                 $form.Bounds=$state.PreviousBounds
                 if($restoreWindowState-eq[Windows.Forms.FormWindowState]::Maximized){$form.WindowState=$restoreWindowState}
                 $state.Fullscreen=$false;$fullscreen.Text='PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)')
@@ -2315,12 +2317,29 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
             $rowIndex=[int][Math]::Floor($cardIndex/$columns);$columnIndex=$cardIndex%$columns;$cardX=[int]($columnIndex*($cardWidth+$gap));$cardTop=[int]((Get-CocoLauncherUiMetric 22)+$rowIndex*($cardHeight+$gap))
             $card=New-Object Windows.Forms.Panel;$card.Name='CocoExperienceCard';$card.Location=New-Object Drawing.Point($cardX,$cardTop);$card.Size=New-Object Drawing.Size($cardWidth,$cardHeight);$card.BackColor=[Drawing.Color]::FromArgb(30,20,42);$card.BorderStyle=[Windows.Forms.BorderStyle]::None;Set-CocoControlDoubleBuffered $card
             $imageBox=New-Object Windows.Forms.PictureBox;$imageBox.Name='CocoExperienceImage';$imageBox.Location=New-Object Drawing.Point(0,0);$imageBox.Size=New-Object Drawing.Size($cardWidth,$cardHeight);$imageBox.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Normal;$imageBox.BackColor=[Drawing.Color]::FromArgb(30,20,42);$imageBox.BorderStyle=[Windows.Forms.BorderStyle]::None;$imageBox.TabStop=$false;Set-CocoControlDoubleBuffered $imageBox;Set-CocoPictureBoxCoverImage $imageBox (Get-CocoExperienceImagePath $exp) $cardWidth $cardHeight
-            $gradient=New-Object Windows.Forms.Panel;$gradient.Name='CocoExperienceGradient';$gradient.Dock='Bottom';$gradient.Height=$gradientHeight;$gradient.BackColor=[Drawing.Color]::Transparent;$gradient.Padding=New-Object Windows.Forms.Padding(0);Set-CocoControlDoubleBuffered $gradient
+            $gradient=New-Object Windows.Forms.Panel;$gradient.Name='CocoExperienceGradient';$gradient.Dock='Bottom';$gradient.Height=$gradientHeight;$gradient.BackColor=[Drawing.Color]::FromArgb(30,20,42);$gradient.Padding=New-Object Windows.Forms.Padding(0);Set-CocoControlDoubleBuffered $gradient
             $gradient.Add_Paint(({
                 param($sender,$eventArgs)
-                $rectangle=New-Object Drawing.Rectangle(0,0,$sender.ClientSize.Width,$sender.ClientSize.Height)
+                # Pintado OPACO: hornea la rebanada de portada + degradado en una
+                # sola pasada. El panel transparente sobre el PictureBox obligaba a
+                # WinForms a fingir la transparencia repintando al padre, y al
+                # scrollear esos repintados llegaban tarde = imágenes duplicadas.
+                # Con el fondo opaco y determinista el scroll mueve ventanas
+                # opacas y lo expuesto se repinta bien, como cualquier scroll.
+                $w=[Math]::Max(1,$sender.ClientSize.Width);$h=[Math]::Max(1,$sender.ClientSize.Height)
+                $graphics=$eventArgs.Graphics
+                $cover=try{$imageBox.Image}catch{$null}
+                if($cover){
+                    $srcY=[Math]::Max(0,[int]$cover.Height-$h)
+                    $srcH=[Math]::Max(1,[Math]::Min([int]$cover.Height-$srcY,$h))
+                    $srcW=[Math]::Max(1,[Math]::Min([int]$cover.Width,$w))
+                    try{$graphics.DrawImage($cover,(New-Object Drawing.Rectangle(0,0,$w,$h)),(New-Object Drawing.Rectangle(0,$srcY,$srcW,$srcH)),[Drawing.GraphicsUnit]::Pixel)}catch{}
+                }else{
+                    try{$graphics.Clear([Drawing.Color]::FromArgb(30,20,42))}catch{}
+                }
+                $rectangle=New-Object Drawing.Rectangle(0,0,$w,$h)
                 $brush=[Drawing.Drawing2D.LinearGradientBrush]::new($rectangle,[Drawing.Color]::FromArgb(72,0,0,0),[Drawing.Color]::FromArgb(255,0,0,0),[Drawing.Drawing2D.LinearGradientMode]::Vertical)
-                try{$eventArgs.Graphics.FillRectangle($brush,$rectangle)}finally{$brush.Dispose()}
+                try{$graphics.FillRectangle($brush,$rectangle)}finally{$brush.Dispose()}
             }.GetNewClosure()))
             $imageBox.Controls.Add($gradient);$gradient.BringToFront()
             $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 12 8));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.BackColor=[Drawing.Color]::Transparent;$nameLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 4));$nameLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 43));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$true;$nameLabel.TextAlign=[Drawing.ContentAlignment]::BottomLeft;Set-CocoControlDoubleBuffered $nameLabel
@@ -4335,6 +4354,10 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             $realAppId = '3241660'
             $hash0 = '7daf7245f816aca908330f027527253c49244e8945ed89be097da9eb110e6c88da5331f2eddd307084af4a6c39f613e51d58541028f20ecf6ea3fd84f7cb0b5d'
             $hash1337 = '1c28dc43813c5af932d38b7b46cdd79dcb294c1afe05a984f18ca0bf1e1abf81f4a72886cc6e99e0319361680cc45936c5c19e32259c49058c0acf95fc40fb44'
+        }elseif($expId -eq 'how-to-fish' -or $appId -eq '4001890'){
+            $realAppId = '4001890'
+            $hash0 = '58117ec53dd4075dec9b9d0c2e1cfd942c856c0d89c4a1491998eec52a4ca39619e3fecf0bd47fe3c1e389f3bca67dcc6f639704ecd040f66f8e812596acaf93'
+            $hash1337 = 'b0418265dcf6d7ef61587b9e10fc7b3870ed81828c9639f085964144572770a1a33d8dd6c9951396003acbad154fdac6477603fa1dccbc716ea5df818405f206'
         }elseif($appId){
             $realAppId = $appId
             $hash0 = 'b4353c02359f2a29161f863d31d525227f958c269c51a920a5a6c14c37dbd0f0d9a0ede86cf0a35fa608ecccdfa1cbcc712d762d1cc62f3a64d74506c056a476'
@@ -4392,6 +4415,9 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                 }elseif($content -match '(?i)RealAppId\s*=\s*3241660'){
                     $targetHash0 = '7daf7245f816aca908330f027527253c49244e8945ed89be097da9eb110e6c88da5331f2eddd307084af4a6c39f613e51d58541028f20ecf6ea3fd84f7cb0b5d'
                     $targetHash1337 = '1c28dc43813c5af932d38b7b46cdd79dcb294c1afe05a984f18ca0bf1e1abf81f4a72886cc6e99e0319361680cc45936c5c19e32259c49058c0acf95fc40fb44'
+                }elseif($content -match '(?i)RealAppId\s*=\s*4001890'){
+                    $targetHash0 = '58117ec53dd4075dec9b9d0c2e1cfd942c856c0d89c4a1491998eec52a4ca39619e3fecf0bd47fe3c1e389f3bca67dcc6f639704ecd040f66f8e812596acaf93'
+                    $targetHash1337 = 'b0418265dcf6d7ef61587b9e10fc7b3870ed81828c9639f085964144572770a1a33d8dd6c9951396003acbad154fdac6477603fa1dccbc716ea5df818405f206'
                 }elseif(-not $targetHash1337){
                     if($content -match '(?i)1337\s*=\s*([a-f0-9]{128})'){
                         $targetHash1337 = $matches[1]
@@ -5912,10 +5938,9 @@ function Format-CocoExperienceCardTitle([string]$Text,[int]$MaximumLineLength=27
 }
 
 # V4 del scroll de experiencias. El viewport usa exclusivamente el
-# AutoScroll nativo de WinForms y su única barra nativa. No hay thumb
-# superpuesto, timer de animación ni repintado manual durante el arrastre.
-# La rueda usa exactamente la misma ruta nativa que la barra (AutoScrollPosition
-# con invalidación de hijos) para no dejar fantasmas de las portadas.
+# AutoScroll nativo de WinForms y su única barra nativa (sin thumb superpuesto).
+# La rueda reenvía cada notch al mismo VerticalScroll.Value nativo en un set
+# directo e inmediato, igual que la barra: sin animaciones ni deslizamientos.
 function Set-CocoExperienceCardsNativeScrollStyle($DynamicPanel){
     if(-not$DynamicPanel-or$DynamicPanel.IsDisposed){return}
     try{
@@ -5942,18 +5967,20 @@ function Get-CocoExperienceCardsScrollState($DynamicPanel,[bool]$Create=$true){
             ModelVersion=4;DynamicPanel=$DynamicPanel;Offset=0;PendingOffset=0;TargetOffset=0
             ContentHeight=0;ViewHeight=0;Maximum=0;Items=@();LastWheelAt=0
             Thumb=[Drawing.Rectangle]::new(0,0,0,0);ScrollBar=$null;ApplyTimer=$null
+            WheelCarry=0.0
             Drag=[pscustomobject]@{Active=$false;StartScreenY=0;StartValue=0;Travel=1;PendingValue=0}
         }
         $DynamicPanel|Add-Member -MemberType NoteProperty -Name CocoExperienceScrollState -Value $state -Force|Out-Null
     }
     if(-not$state){return $null}
     # Conserva compatibilidad con estados creados por versiones anteriores.
-    foreach($property in 'ModelVersion','DynamicPanel','PendingOffset','TargetOffset','LastWheelAt','Thumb','ScrollBar','ApplyTimer','Drag'){
+    foreach($property in 'ModelVersion','DynamicPanel','PendingOffset','TargetOffset','LastWheelAt','Thumb','ScrollBar','ApplyTimer','WheelCarry','Drag'){
         if($state.PSObject.Properties.Name-notcontains$property){
             $value=switch($property){
                 'ModelVersion'{4};'DynamicPanel'{$DynamicPanel};'PendingOffset'{[int]$state.Offset}
                 'TargetOffset'{[int]$state.Offset};'LastWheelAt'{0};'Thumb'{[Drawing.Rectangle]::new(0,0,0,0)}
                 'ScrollBar'{$null};'ApplyTimer'{$null}
+                'WheelCarry'{0.0}
                 'Drag'{[pscustomobject]@{Active=$false;StartScreenY=0;StartValue=0;Travel=1;PendingValue=0}}
             }
             $state|Add-Member NoteProperty $property $value -Force
@@ -6012,14 +6039,28 @@ function Set-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset,[bool]$S
     }catch{}
     $metrics=Get-CocoExperienceCardsScrollMetrics $DynamicPanel
     $clamped=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,[int]$Offset))
+    $current=try{[int]$DynamicPanel.VerticalScroll.Value}catch{[int]$state.Offset}
+    if($clamped-eq$current){
+        $state.Offset=$clamped
+        if($SyncTarget){$state.PendingOffset=$clamped;$state.TargetOffset=$clamped}
+        return
+    }
     try{
+        # Una sola vía nativa por llamada (igual que la barra). Fijar Value y
+        # AutoScrollPosition seguidos duplicaba el ScrollWindowEx y pegaba el avance.
         $DynamicPanel.VerticalScroll.Value=$clamped
-        $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)
     }catch{
         try{$DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)}catch{}
     }
     try{$DynamicPanel.PerformLayout()}catch{}
     $actual=try{[int]$DynamicPanel.VerticalScroll.Value}catch{[int]$clamped}
+    if($actual-ne$clamped){
+        # Respaldo solo si el primer mecanismo no surtió efecto (rango
+        # transitorio): nunca doble set cuando Value sí funcionó.
+        try{$DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)}catch{}
+        try{$DynamicPanel.PerformLayout()}catch{}
+        $actual=try{[int]$DynamicPanel.VerticalScroll.Value}catch{[int]$clamped}
+    }
     $state.Offset=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,$actual))
     if($SyncTarget){$state.PendingOffset=$state.Offset;$state.TargetOffset=$state.Offset}
     if($ForcePaint){try{$DynamicPanel.Update()}catch{}}
@@ -6039,6 +6080,7 @@ function Set-CocoExperienceCardsScrollContent($DynamicPanel,[int]$ContentHeight)
     if(-not$state){return}
     $state.ContentHeight=[Math]::Max(1,[int]$ContentHeight);$state.ViewHeight=[Math]::Max(1,[int]$DynamicPanel.ClientSize.Height)
     $state.Maximum=[Math]::Max(0,[int]$state.ContentHeight-[int]$state.ViewHeight);$state.Offset=0;$state.PendingOffset=0;$state.TargetOffset=0;$state.Drag.Active=$false
+    $state.WheelCarry=0.0
     $state.Items=@()
     foreach($control in @($DynamicPanel.Controls)){$state.Items+=,[pscustomobject]@{Control=$control;X=[int]$control.Left;Y=[int]$control.Top}}
     try{
@@ -6058,11 +6100,55 @@ function Set-CocoExperienceCardsScrollContent($DynamicPanel,[int]$ContentHeight)
 }
 
 function Register-CocoExperienceScrollWheel($Control,$DynamicPanel){
-    # El viewport usa AutoScroll nativo de WinForms. Windows Forms y Win32 propagan
-    # automáticamente los mensajes WM_MOUSEWHEEL desde los controles hijos hacia el panel
-    # contenedor (DynamicPanel), moviendo la superficie y la barra con la misma lógica nativa.
-    # No registrar handlers manuales redundantes en los hijos evita saltos multiplicados,
-    # artefactos de portadas repetidas y que el scroll se pegue.
+    if(-not$Control-or$Control.IsDisposed-or-not$DynamicPanel-or$DynamicPanel.IsDisposed){return}
+    # Puente de rueda DIRECTO (sin animación): cada notch mueve el mismo
+    # VerticalScroll.Value nativo que usa la barra, en un solo set inmediato.
+    # La propagación nativa sola solo responde si el foco está dentro del
+    # viewport; PictureBox/Button/Label la consumen antes, por eso se reenvía.
+    # La raíz usa marcador propio (NoteProperty) para no pisar el marcador de
+    # Resize que vive en AccessibleName; duplicarlo re-registraba handlers.
+    $isRoot=$Control -eq $DynamicPanel
+    $bound=$false
+    if($isRoot){try{$bound=[bool]$Control.PSObject.Properties['CocoExperienceWheelBoundV4']-and[bool]$Control.CocoExperienceWheelBoundV4}catch{$bound=$false}}
+    else{$bound=([string]$Control.AccessibleName-eq'CocoLauncherNativeWheelBoundV4')}
+    if(-not$bound){
+        if($isRoot){try{$Control|Add-Member -MemberType NoteProperty -Name CocoExperienceWheelBoundV4 -Value $true -Force|Out-Null}catch{}}
+        else{$Control.AccessibleName='CocoLauncherNativeWheelBoundV4'}
+        # Los closures de eventos corren en un session-state aislado: las
+        # funciones del engine NO se resuelven por nombre ahí dentro (muerte
+        # silenciosa con la rueda marcada como manejada = rueda muerta). Se
+        # capturan los ScriptBlocks por valor, patrón probado en los botones.
+        $getStateCommand=(Get-Command Get-CocoExperienceCardsScrollState -CommandType Function -ErrorAction Stop).ScriptBlock
+        $getMetricsCommand=(Get-Command Get-CocoExperienceCardsScrollMetrics -CommandType Function -ErrorAction Stop).ScriptBlock
+        $setOffsetCommand=(Get-Command Set-CocoExperienceCardsScrollOffset -CommandType Function -ErrorAction Stop).ScriptBlock
+        $Control.Add_MouseWheel(({
+            param($sender,$eventArgs)
+            try{
+                # Marcar manejado ANTES de mover: si lo nativo también se mueve
+                # en el mismo mensaje el salto se duplica y se pega.
+                try{if($eventArgs.PSObject.Properties.Name-contains'Handled'){$eventArgs.Handled=$true}}catch{}
+                $s=&$getStateCommand $DynamicPanel $false
+                $delta=[int]$eventArgs.Delta
+                if(-not$s-or$delta-eq0-or$DynamicPanel.IsDisposed){return}
+                $m=&$getMetricsCommand $DynamicPanel
+                if([int]$m.Maximum-le0){return}
+                $lines=try{[int][Windows.Forms.SystemInformation]::MouseWheelScrollLines}catch{3}
+                if($lines-le0){$lines=3}
+                $unit=[Math]::Max(24.0,([double]$DynamicPanel.ClientSize.Height/12.0*([double]$lines/3.0)))
+                # Acumular fracciones: las ruedas de alta resolución mandan
+                # deltas pequeños que sueltos se perderían.
+                $s.WheelCarry+=[double]$delta
+                $move=[int][Math]::Truncate($s.WheelCarry/120.0*$unit)
+                if($move-eq0){return}
+                $s.WheelCarry-=[double]$move*120.0/$unit
+                $live=[int]$m.Value
+                $next=[Math]::Max(0,[Math]::Min([int]$m.Maximum,($live-$move)))
+                if($next-eq$live){$s.WheelCarry=0.0;return}
+                &$setOffsetCommand $DynamicPanel $next
+            }catch{}
+        }.GetNewClosure()))
+    }
+    foreach($child in @($Control.Controls)){Register-CocoExperienceScrollWheel $child $DynamicPanel}
 }
 
 function Register-CocoNativeScrollWheel($Control,$Viewport){
@@ -6086,9 +6172,11 @@ function Set-CocoExperienceCardsScrollBehavior($DynamicPanel){
     }
     if([string]$DynamicPanel.AccessibleName-ne'CocoLauncherNativeResizeBoundV4'){
         $DynamicPanel.AccessibleName='CocoLauncherNativeResizeBoundV4'
+        # Captura por valor: el closure no resuelve funciones por nombre.
+        $updateBarCommand=(Get-Command Update-CocoExperienceCardsScrollBar -CommandType Function -ErrorAction Stop).ScriptBlock
         $DynamicPanel.Add_Resize(({
             param($sender,$eventArgs)
-            try{$sender.AutoScroll=$true;$sender.HorizontalScroll.Enabled=$false;$sender.HorizontalScroll.Visible=$false;$sender.PerformLayout();Update-CocoExperienceCardsScrollBar $sender}catch{}
+            try{$sender.AutoScroll=$true;$sender.HorizontalScroll.Enabled=$false;$sender.HorizontalScroll.Visible=$false;$sender.PerformLayout();&$updateBarCommand $sender}catch{}
         }.GetNewClosure()))
     }
     Update-CocoExperienceCardsScrollBar $DynamicPanel
