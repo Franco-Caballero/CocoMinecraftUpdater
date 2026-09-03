@@ -1,4 +1,4 @@
-﻿# tools/install.ps1 — Instalador y actualizador oficial de Coco Launcher
+# tools/install.ps1 — Instalador y actualizador oficial de Coco Launcher
 [CmdletBinding()]
 param(
     [string]$TargetDir = (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater'),
@@ -38,8 +38,26 @@ try {
     # Desbloquear archivo temporal para garantizar 0% de advertencias
     Unblock-File -LiteralPath $tempDownload -ErrorAction SilentlyContinue
 
-    # Reemplazo atomico del ejecutable
-    Move-Item -LiteralPath $tempDownload -Destination $targetExe -Force
+    # Si CocoUpdater ya se esta ejecutando, cerrar la instancia previa para liberar el archivo
+    $runningProcs = Get-Process -Name 'CocoUpdater' -ErrorAction SilentlyContinue
+    if ($runningProcs) {
+        Write-Host "Coco Launcher ya se encuentra en ejecucion. Cerrando instancia previa para actualizar..." -ForegroundColor Yellow
+        $runningProcs | Stop-Process -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 800
+    }
+
+    # Reemplazo atomico del ejecutable con reintentos defensivos
+    $moved = $false
+    for ($attempt = 1; $attempt -le 5; $attempt++) {
+        try {
+            Move-Item -LiteralPath $tempDownload -Destination $targetExe -Force
+            $moved = $true
+            break
+        } catch {
+            if ($attempt -eq 5) { throw }
+            Start-Sleep -Milliseconds 500
+        }
+    }
     Unblock-File -LiteralPath $targetExe -ErrorAction SilentlyContinue
     Write-Host "Coco Launcher instalado en: $targetExe" -ForegroundColor Green
 } finally {
