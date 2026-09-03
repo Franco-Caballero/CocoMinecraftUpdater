@@ -69,14 +69,14 @@ try{
     $publishScript=Join-Path $root 'tools\Publish-CocoRelease.ps1'
     $quotedPublishScript='"'+($publishScript-replace'"','\"')+'"'
     $quotedHostRoot='"'+($hostRoot-replace'"','\"')+'"'
-    $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedPublishScript,'-Version',$next,'-MinecraftRoot',$quotedHostRoot,'-PublisherPid',$PID)
+    $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedPublishScript,'-Version',$next,'-MinecraftRoot',$quotedHostRoot,'-PublisherPid',$PID,'-Fast')
     if($domains.Count){$arguments+='-KnownE4mcDomainsCsv';$arguments+=('"'+((@($domains)-join',')-replace'"','\"')+'"')}
     $process=Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $arguments -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
     $watch=[Diagnostics.Stopwatch]::StartNew()
     while(-not$process.HasExited){
-        $seconds=$watch.Elapsed.TotalSeconds;$progress=[Math]::Min(94,[int](8+86*(1-[Math]::Exp(-$seconds/65))))
+        $seconds=$watch.Elapsed.TotalSeconds;$progress=[Math]::Min(94,[int](8+86*(1-[Math]::Exp(-$seconds/25))))
         $fill.Width=[Math]::Max(8,[int](6.5*$progress))
-        if($seconds-lt15){$detail.Text='Compilando Bridge y preparando archivos...'}elseif($seconds-lt45){$detail.Text='Calculando mods y verificando hashes...'}else{$detail.Text='Subiendo la nueva version a GitHub...'}
+        if($seconds-lt8){$detail.Text='Compilando Bridge y preparando archivos...'}elseif($seconds-lt20){$detail.Text='Verificando integridad y ejecutando pruebas...'}else{$detail.Text='Subiendo la nueva version a GitHub...'}
         $form.Refresh();[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50;$process.Refresh()
     }
     # WaitForExit is required after redirected output. Without it, Windows

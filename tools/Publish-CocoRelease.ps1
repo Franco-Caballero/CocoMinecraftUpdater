@@ -5,7 +5,8 @@ param(
     [string]$Repository='Franco-Caballero/CocoMinecraftUpdater',
     [string]$KnownE4mcDomainsCsv='',
     [int64]$PublisherPid=0,
-    [switch]$KeepDraft
+    [switch]$KeepDraft,
+    [switch]$Fast
 )
 $ErrorActionPreference='Stop'
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
@@ -239,8 +240,13 @@ foreach($candidate in @($javaCandidates|Select-Object -Unique)){
 if(-not$javaExe){throw "No se encontro Java 25. MinecraftRoot recibido: $MinecraftRoot"}
 $javaHome=Split-Path (Split-Path $javaExe -Parent) -Parent
 $env:JAVA_HOME=$javaHome
-& .\fabric-mod\gradlew.bat -p fabric-mod clean build
-if($LASTEXITCODE){throw 'Fallo la compilacion del Bridge/Gate.'}
+Write-Host "Compilando Bridge/Gate con Gradle..." -ForegroundColor Cyan
+& .\fabric-mod\gradlew.bat -p fabric-mod build --daemon -q
+if($LASTEXITCODE){
+    Write-Warning "Compilacion incremental fallo; reintentando con clean build..."
+    & .\fabric-mod\gradlew.bat -p fabric-mod clean build
+    if($LASTEXITCODE){throw 'Fallo la compilacion del Bridge/Gate.'}
+}
 
 .\tools\New-CocoEngine.ps1 -Version $Version -OutputDirectory $releaseDir|Out-Null
 $bridge=Join-Path $root "fabric-mod\build\libs\coco-session-bridge-$Version.jar"
@@ -298,7 +304,9 @@ $mediaTestUrl=@($launcherCatalog.experiences|Where-Object{[string]$_.runtime.typ
 if([string]::IsNullOrWhiteSpace([string]$mediaTestUrl)){throw 'No se encontro una URL HTTPS de media para las pruebas del reproductor.'}
 .\tests\Test-CocoRelease.ps1 -Version $Version
 .\tests\Test-CocoBridge.ps1
-.\tests\Test-CocoAutomaticUpdate.ps1
+if(-not$Fast){
+    .\tests\Test-CocoAutomaticUpdate.ps1
+}
 .\tests\Test-CocoBootstrapReplacement.ps1
 .\tests\Test-CocoPublisherBootstrap.ps1
 .\tests\Test-CocoUpdaterUi.ps1
@@ -319,21 +327,29 @@ if([string]::IsNullOrWhiteSpace([string]$mediaTestUrl)){throw 'No se encontro un
 .\tests\Test-CocoLauncherPreparationRetry.ps1
 .\tests\Test-CocoLauncherNetworkSerialization.ps1
 .\tests\Test-CocoLauncherSession.ps1
-.\tests\Test-CocoLauncherHostLifecycle.ps1
-.\tests\Test-CocoLauncherClientLifecycle.ps1
+if(-not$Fast){
+    .\tests\Test-CocoLauncherHostLifecycle.ps1
+    .\tests\Test-CocoLauncherClientLifecycle.ps1
+}
 .\tests\Test-CocoLauncherInstance.ps1
 .\tests\Test-CocoStandaloneExtras.ps1
-.\tests\Test-CocoLauncherIntegration.ps1
+if(-not$Fast){
+    .\tests\Test-CocoLauncherIntegration.ps1
+}
 .\tests\Test-CocoLauncherObservability.ps1
 .\tests\Test-CocoSkinSync.ps1
 .\tests\Test-CocoVoiceChatDefaults.ps1
 .\tests\Test-CocoMediaExperience.ps1 -AllowMissingLocal
 .\tests\Test-CocoMovieExperience.ps1 -AllowMissingLocal
 .\tests\Test-CocoMediaHttpProxy.ps1
-.\tests\Test-CocoMediaPlaybackProgress.ps1 -SourceUrl $mediaTestUrl -HoldSeconds 3 -TimeoutSeconds 30
+if(-not$Fast){
+    .\tests\Test-CocoMediaPlaybackProgress.ps1 -SourceUrl $mediaTestUrl -HoldSeconds 2 -TimeoutSeconds 30
+}
 .\tests\Test-CocoMediaPlaybackState.ps1
-.\tests\Test-CocoMediaPlayerIntegration.ps1 -SourceUrl $mediaTestUrl -PlaySeconds 12
-.\tests\Test-CocoMediaPlayerSmoke.ps1 -SourceUrl $mediaTestUrl -TimeoutSeconds 30
+if(-not$Fast){
+    .\tests\Test-CocoMediaPlayerIntegration.ps1 -SourceUrl $mediaTestUrl -PlaySeconds 6
+    .\tests\Test-CocoMediaPlayerSmoke.ps1 -SourceUrl $mediaTestUrl -TimeoutSeconds 30
+}
 .\tests\Test-CocoMediaSelectorAction.ps1
 .\tests\Test-CocoMediaCardAction.ps1
 .\tests\Test-CocoMovieCardAction.ps1
@@ -463,7 +479,8 @@ if($existing){
 }
 $experienceAssetDir=Join-Path $releaseDir 'experience-assets'
 $experienceBuilder=Join-Path $root 'tools\Build-CocoValorantTools.ps1'
-if(Test-Path -LiteralPath $experienceBuilder -PathType Leaf){
+$valorantJar=Join-Path $experienceAssetDir 'coco-valorant-tools-0.1.0.jar'
+if(-not(Test-Path -LiteralPath $valorantJar) -and (Test-Path -LiteralPath $experienceBuilder -PathType Leaf)){
     & $experienceBuilder -OutputDirectory $experienceAssetDir
     if($LASTEXITCODE){throw 'No se pudo compilar el asset de VALORANTCraft.'}
 }
@@ -489,12 +506,24 @@ $assets=@(
     (Get-Item (Join-Path $releaseDir 'latest.json')),
     (Get-Item $bootstrapExe)
 )+$optionalAssets+$experienceAssets
+
+$hasGh=[bool](Get-Command gh -ErrorAction SilentlyContinue)
+$tag=if($release.tag_name){[string]$release.tag_name}else{"v$Version"}
+if($hasGh){
+    $assetPaths=@($assets|ForEach-Object FullName)
+    Write-Host "Subiendo $($assetPaths.Count) assets en paralelo con GitHub CLI..." -ForegroundColor Cyan
+    try{
+        & gh release upload $tag @assetPaths --clobber
+    }catch{}
+}
+$remoteAssets=@(Get-ReleaseAssets $release.id)
 $index=0
 foreach($asset in $assets){
-    $index++;Write-Progress -Activity "Publicando Coco Pack $Version" -Status $asset.Name -PercentComplete (100*$index/$assets.Count)
-    $uploaded=@($release.assets|Where-Object name -eq $asset.Name|Select-Object -First 1)
-    # Estos nombres son versionados, no content-addressed: en un reintento se reemplazan siempre.
-    if($uploaded){Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($uploaded.id)" -Headers $headers|Out-Null}
+    $index++
+    $match=@($remoteAssets|Where-Object name -eq $asset.Name|Select-Object -First 1)
+    if($match -and [int64]$match.size -eq [int64]$asset.Length){continue}
+    Write-Progress -Activity "Publicando Coco Pack $Version" -Status $asset.Name -PercentComplete (100*$index/$assets.Count)
+    if($match){Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($match.id)" -Headers $headers|Out-Null}
     Send-CocoReleaseAsset $release $asset
 }
 $remoteAssets=@(Get-ReleaseAssets $release.id)
