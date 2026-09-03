@@ -394,7 +394,7 @@ function Send-CocoReleaseAsset($Release,$Asset){
     $upload="https://uploads.github.com/repos/$Repository/releases/$($Release.id)/assets?name=$([Uri]::EscapeDataString($Asset.Name))"
     for($attempt=1;$attempt-le4;$attempt++){
         try{
-            Invoke-RestMethod -Method Post -Uri $upload -Headers $headers -ContentType 'application/octet-stream' -InFile $Asset.FullName -TimeoutSec 45|Out-Null
+            Invoke-RestMethod -Method Post -Uri $upload -Headers $headers -ContentType 'application/octet-stream' -InFile $Asset.FullName -TimeoutSec 300|Out-Null
             return
         }catch{
             # GitHub puede terminar de almacenar el asset aunque PowerShell 5.1
