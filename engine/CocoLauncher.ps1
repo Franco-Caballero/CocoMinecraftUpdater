@@ -1986,7 +1986,7 @@ function Invoke-CocoMediaEpisodeAction($RowInfo){
             elseif([string]$RowInfo.Episode.sourceUrl-notmatch'^https://'){throw "El archivo existe, pero no coincide y el asset remoto aun no esta publicado."}
             else{[void](Invoke-CocoMediaHttpDownload $RowInfo.Experience $RowInfo.Episode $status.Path);[void](Invoke-CocoMediaEpisodePlayback $RowInfo.Experience $RowInfo.Episode)}
         }elseif([string]$RowInfo.Episode.sourceUrl-notmatch'^https://'){
-            throw if($isMovie){'Esta pelicula aun no tiene un asset publicado. La prueba local solo puede reproducir un archivo ya presente en Downloads.'}else{'Este episodio aun no tiene un asset publicado. La prueba local solo puede reproducir un archivo ya presente en Downloads.'}
+            throw $(if($isMovie){'Esta pelicula aun no tiene un asset publicado. La prueba local solo puede reproducir un archivo ya presente en Downloads.'}else{'Este episodio aun no tiene un asset publicado. La prueba local solo puede reproducir un archivo ya presente en Downloads.'})
         }else{
             [void](Invoke-CocoMediaHttpDownload $RowInfo.Experience $RowInfo.Episode $status.Path);[void](Invoke-CocoMediaEpisodePlayback $RowInfo.Experience $RowInfo.Episode)
         }
@@ -2003,7 +2003,7 @@ function Invoke-CocoMediaEpisodeAction($RowInfo){
                 foreach($button in @($RowInfo.Dialog.Tag.Buttons)){if($button-and-not$button.IsDisposed){$button.Enabled=$true}}
             }
             Update-CocoMediaEpisodeRowUi $RowInfo
-            Set-CocoMediaUiStatus (if($isMovie){'Selecciona la pelicula para reproducirla.'}else{'Selecciona un episodio para descargarlo o reproducirlo.'}) 0
+            Set-CocoMediaUiStatus $(if($isMovie){'Selecciona la pelicula para reproducirla.'}else{'Selecciona un episodio para descargarlo o reproducirlo.'}) 0
         }
         if(Get-Command Set-CocoLauncherIdleState -ErrorAction SilentlyContinue){try{Set-CocoLauncherIdleState 'Elige una experiencia para instalarla, alojar una partida o reproducir contenido.' 100}catch{}}
     }
