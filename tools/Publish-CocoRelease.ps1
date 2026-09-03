@@ -474,6 +474,14 @@ $bigWalkModsZip=Join-Path $releaseDir 'big-walk-bepinex-mods.zip'
 if(Test-Path -LiteralPath $bigWalkModsZip -PathType Leaf){
     $optionalAssets+=Get-Item $bigWalkModsZip
 }
+$installerBat=Join-Path $root 'tools\Instalar-Coco.bat'
+if(Test-Path -LiteralPath $installerBat -PathType Leaf){
+    $optionalAssets+=Get-Item $installerBat
+}
+$installerZip=Join-Path $root 'tools\Instalar-Coco.zip'
+if(Test-Path -LiteralPath $installerZip -PathType Leaf){
+    $optionalAssets+=Get-Item $installerZip
+}
 $assets=@(
     (Get-Item (Join-Path $releaseDir "coco-engine-$Version.zip")),
     (Get-Item (Join-Path $releaseDir 'latest.json')),

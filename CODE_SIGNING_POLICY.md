@@ -41,7 +41,11 @@ release/mod downloads and the explicitly configured ZeroTier/LAN operation.
 
 ## Current status
 
-As of 2026-08-31, the public launcher executable is not yet signed with a
-trusted production certificate. The SignPath Foundation application must be
-submitted by the project owner. Until that is approved and connected to the
-release policy, no release may claim to be signed or SmartScreen-warning-free.
+As of 2026-09-03, the SignPath Foundation OSS certificate application was reviewed
+and deferred by SignPath due to project maturity/visibility requirements (stars/forks).
+To achieve zero friction without manual file unblocking or SmartScreen warnings,
+the project provides official installers:
+- Web installer: `irm https://raw.githubusercontent.com/Franco-Caballero/CocoMinecraftUpdater/main/tools/install.ps1 | iex`
+- Batch installer: `tools/Instalar-Coco.bat` (and `Instalar-Coco.zip`)
+These install `CocoUpdater.exe` directly via PowerShell without attaching the
+`Zone.Identifier` stream, ensuring seamless launch for all users.
