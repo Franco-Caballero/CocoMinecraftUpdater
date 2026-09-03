@@ -78,6 +78,17 @@ Usa `-Action Launch` para abrir la instancia temporal. Agrega `-Live` únicament
 - No edites el lock para ocultar archivos y no copies JAR manualmente a la instancia como solución final.
 - No hardcodees IDs de experiencia en el engine.
 
+### Protocolo para experiencias standalone (Online-Fix / Steam emulators)
+
+Para garantizar **0% de popups y 0% de aperturas de navegador en cualquier PC** (el host o clientes):
+1. **Neutralización binaria IAT:**
+   - En `winmm.dll`: reemplazar el nombre importado `MessageBoxW` y `MessageBoxA` por `MessageBeep` (función no bloqueante de 11 caracteres en `USER32.dll` que retorna `TRUE` / `IDOK`). La DLL asume aceptación inmediata sin pintar ventanas y escribe su hash local en silencio.
+   - En `OnlineFix64.dll`: reemplazar `ShellExecuteW` y `ShellExecuteA` por `DragFinish` (función inocua en `SHELL32.dll`), impidiendo físicamente cualquier invocación al navegador.
+2. **Eliminación de `.url`:** borrar cualquier `OnlineFix.url` antes de empaquetar.
+3. **Configuración declarativa:** asegurar `OnlineFix.ini` con `RealAppId`, `FakeAppId=480`, `PhotonIntegration` si aplica, y registrar su ID en `Ensure-CocoOnlineFixSuppression`.
+4. **Empaquetado y catálogo:** generar el `.zip` en `release\experience-assets\<nombre>.zip`, fijar `requiredFiles` (ejecutable, `UnityPlayer.dll`, `OnlineFix64.dll`, `winmm.dll`, etc.) por SHA-256/tamaño en `catalog.template.json` y crear su lockfile.
+5. **Publicación y limpieza:** publicar con `Publish-CocoRelease.ps1` (usa streaming nativo `gh release upload`) y eliminar el `.zip` pesado local de `release\experience-assets` tras publicarlo para no ralentizar futuros releases.
+
 ### Configuración y shaders
 
 - Archivo de texto completo para todos los jugadores de una experiencia: `preferences.managedFiles` con ruta bajo `config/` o `shaderpacks/` y contenido exacto (máximo 1 MiB).
