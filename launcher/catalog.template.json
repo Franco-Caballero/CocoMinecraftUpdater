@@ -1347,31 +1347,31 @@
                         "path": "How to Fish.exe",
                         "sha256": "4b7295f03280671ed0853db142a76c1752861e6d90a2465154809966a7728400",
                         "size": 901704,
-                        "archiveSha256": "05bb5d930b44918c209aab0b68dfb70f74454de4307b8fb3bec88b0f4e50b057"
+                        "archiveSha256": "5d45bf2a6baf9c3bcd4066c77a7b17063bcabeb6e3506d0d161d9415306cdf82"
                     },
                     {
                         "path": "UnityPlayer.dll",
                         "sha256": "c85753eb31138449090594157977bb5d8003099fa18671cc3399da4df6df49cf",
                         "size": 36680104,
-                        "archiveSha256": "05bb5d930b44918c209aab0b68dfb70f74454de4307b8fb3bec88b0f4e50b057"
+                        "archiveSha256": "5d45bf2a6baf9c3bcd4066c77a7b17063bcabeb6e3506d0d161d9415306cdf82"
                     },
                     {
                         "path": "OnlineFix64.dll",
-                        "sha256": "ae23f76254fbcd88d36ff5d15f958708638cb63e6cebdc1d30247aa559c2340f",
+                        "sha256": "fe45ada8cc8f25bc6809dc2de345fb4b7a6a194afd13cb38da9698b4ae84461a",
                         "size": 13401600,
-                        "archiveSha256": "05bb5d930b44918c209aab0b68dfb70f74454de4307b8fb3bec88b0f4e50b057"
+                        "archiveSha256": "5d45bf2a6baf9c3bcd4066c77a7b17063bcabeb6e3506d0d161d9415306cdf82"
                     },
                     {
                         "path": "winmm.dll",
-                        "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+                        "sha256": "350b435820a94644fac0116b841f5bb2b9c6ff632e8079429e4df16a1983dab4",
                         "size": 502272,
-                        "archiveSha256": "05bb5d930b44918c209aab0b68dfb70f74454de4307b8fb3bec88b0f4e50b057"
+                        "archiveSha256": "5d45bf2a6baf9c3bcd4066c77a7b17063bcabeb6e3506d0d161d9415306cdf82"
                     },
                     {
                         "path": "StubDRM64.dll",
                         "sha256": "c44ce43eafddf6981ddfb7060eb01d70b0a0b7498a5a114e9fd0a240e6a97e9e",
                         "size": 101888,
-                        "archiveSha256": "05bb5d930b44918c209aab0b68dfb70f74454de4307b8fb3bec88b0f4e50b057"
+                        "archiveSha256": "5d45bf2a6baf9c3bcd4066c77a7b17063bcabeb6e3506d0d161d9415306cdf82"
                     }
                 ]
             },
@@ -1383,13 +1383,13 @@
                 "packId": "standalone-how-to-fish",
                 "lockPath": "launcher/experiences/how-to-fish.lock.json",
                 "version": "1.0.10",
-                "sha256": "05bb5d930b44918c209aab0b68dfb70f74454de4307b8fb3bec88b0f4e50b057",
-                "size": 406850779,
+                "sha256": "5d45bf2a6baf9c3bcd4066c77a7b17063bcabeb6e3506d0d161d9415306cdf82",
+                "size": 406850772,
                 "archives": [
                     {
-                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.139/How-To-Fish.zip",
-                        "sha256": "05bb5d930b44918c209aab0b68dfb70f74454de4307b8fb3bec88b0f4e50b057",
-                        "size": 406850779
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.140/How-To-Fish.zip",
+                        "sha256": "5d45bf2a6baf9c3bcd4066c77a7b17063bcabeb6e3506d0d161d9415306cdf82",
+                        "size": 406850772
                     }
                 ]
             },
