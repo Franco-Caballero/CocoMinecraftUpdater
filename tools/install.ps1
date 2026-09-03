@@ -86,10 +86,11 @@ try {
     Write-Host "Nota: No se pudo crear el acceso directo en el Escritorio ($($_.Exception.Message))" -ForegroundColor Gray
 }
 
-# 4. Lanzar la aplicacion
+# 4. Lanzar la aplicacion directamente
 if (-not $NoLaunch) {
-    Write-Host "Iniciando Coco Launcher..." -ForegroundColor Cyan
+    Write-Host "Iniciando Coco Launcher directamente..." -ForegroundColor Cyan
     Start-Process -FilePath $targetExe -WorkingDirectory $TargetDir
+    Start-Sleep -Milliseconds 800
 }
 
-Write-Host "Listo! Disfruta de Coco Launcher." -ForegroundColor Green
+Write-Host "Listo! Coco Launcher se esta abriendo en tu pantalla." -ForegroundColor Green
