@@ -1178,7 +1178,22 @@ function Invoke-CocoExperienceFreeSpaceUi($Info){
 
 function Test-CocoMediaExperience($Experience){
     return [bool]($Experience -and [string]$Experience.runtime.type -eq 'media' -and
-        [string]$Experience.content.type -eq 'episodic-video')
+        [string]$Experience.content.type -in @('episodic-video','movie'))
+}
+
+function Test-CocoMovieExperience($Experience){
+    return [bool]($Experience -and [string]$Experience.runtime.type -eq 'media' -and
+        [string]$Experience.content.type -eq 'movie')
+}
+
+function Get-CocoMediaItems($Experience){
+    if(-not(Test-CocoMediaExperience $Experience)){return @()}
+    if([string]$Experience.content.type -eq 'movie'){
+        if($Experience.content.movie){return @($Experience.content.movie)}
+        if($Experience.content.episodes){return @($Experience.content.episodes)}
+        return @()
+    }
+    return @($Experience.content.episodes)
 }
 
 function Get-CocoUserDownloadsRoot{
@@ -1189,7 +1204,7 @@ function Get-CocoUserDownloadsRoot{
 }
 
 function Get-CocoMediaDownloadRoot($Experience){
-    if(-not(Test-CocoMediaExperience $Experience)){throw 'La experiencia no es contenido episodico Coco.'}
+    if(-not(Test-CocoMediaExperience $Experience)){throw 'La experiencia no es contenido multimedia Coco.'}
     $folder=[string]$Experience.content.downloadFolderName
     if([string]::IsNullOrWhiteSpace($folder)-or-not(Test-CocoSafeRelativePath $folder)-or$folder.Contains('/')-or$folder.Contains('\')){
         throw "La carpeta de descargas de '$($Experience.id)' no es segura."
@@ -1204,7 +1219,7 @@ function Get-CocoMediaEpisodePath($Experience,$Episode){
     $fileName=[string]$Episode.fileName
     if([string]::IsNullOrWhiteSpace($fileName)-or-not(Test-CocoSafeRelativePath $fileName)-or
        [IO.Path]::GetFileName($fileName)-ne$fileName){
-        throw "El nombre del episodio '$($Episode.id)' no es seguro."
+        throw "El nombre del archivo multimedia '$($Episode.id)' no es seguro."
     }
     Join-Path (Get-CocoMediaDownloadRoot $Experience) $fileName
 }
@@ -1217,7 +1232,7 @@ function Read-CocoMediaState($Experience){
     $path=Get-CocoMediaStatePath $Experience
     if(-not(Test-Path -LiteralPath $path -PathType Leaf)){return $null}
     try{Get-Content -LiteralPath $path -Raw|ConvertFrom-Json}catch{
-        Write-CocoLog "HEART SIGNAL: estado de media ilegible; se ignorara sin tocar videos: $($_.Exception.Message)"
+        Write-CocoLog "MEDIA [$([string]$Experience.name)]: estado de media ilegible; se ignorara sin tocar videos: $($_.Exception.Message)"
         return $null
     }
 }
@@ -1247,8 +1262,9 @@ function Get-CocoMediaEpisodeLocalStatus($Experience,$Episode){
 }
 
 function Get-CocoMediaExperienceStatus($Experience){
-    $episodes=@($Experience.content.episodes)
+    $episodes=@(Get-CocoMediaItems $Experience)
     $states=@($episodes|ForEach-Object{Get-CocoMediaEpisodeLocalStatus $Experience $_})
+    $isMovie=Test-CocoMovieExperience $Experience
     [pscustomobject]@{
         Root=Get-CocoMediaDownloadRoot $Experience
         Total=$episodes.Count
@@ -1257,6 +1273,7 @@ function Get-CocoMediaExperienceStatus($Experience){
         Partial=@($states|Where-Object Status-eq'partial').Count
         Bytes=[int64](($states|Measure-Object -Property Bytes -Sum).Sum)
         States=$states
+        IsMovie=$isMovie
     }
 }
 
@@ -1942,15 +1959,19 @@ function Invoke-CocoMediaEpisodeAction($RowInfo){
     if(-not$RowInfo-or-not$RowInfo.Button.Enabled-or$script:CocoMediaDownloadInProgress){return}
     $script:CocoMediaDownloadInProgress=$true;$script:CocoMediaCancelRequested=$false;$script:CocoMediaDialog=$RowInfo.Dialog
     $script:CocoMediaCurrentExperience=$RowInfo.Experience
+    $isMovie=Test-CocoMovieExperience $RowInfo.Experience
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){
         $mediaRoot=try{Get-CocoMediaDownloadRoot $RowInfo.Experience}catch{''}
         Set-CocoDiagnosticContext @{
             component='media';mode=if([string]$RowInfo.Episode.streamUrl-match'^https://'){'stream'}else{'local'}
             experienceId=[string]$RowInfo.Experience.id;episodeId=[string]$RowInfo.Episode.id
-            mediaFile=[string]$RowInfo.Episode.fileName;instanceRoot=$mediaRoot;stage='Abriendo episodio'
+            mediaFile=[string]$RowInfo.Episode.fileName;instanceRoot=$mediaRoot
+            stage=if($isMovie){'Abriendo pelicula'}else{'Abriendo episodio'}
         }
     }
-    foreach($button in @($RowInfo.Dialog.Tag.Buttons)){if($button-and-not$button.IsDisposed){$button.Enabled=$false}}
+    if($RowInfo.Dialog-and$RowInfo.Dialog.Tag-and$RowInfo.Dialog.Tag.Buttons){
+        foreach($button in @($RowInfo.Dialog.Tag.Buttons)){if($button-and-not$button.IsDisposed){$button.Enabled=$false}}
+    }
     try{
         $status=Get-CocoMediaEpisodeLocalStatus $RowInfo.Experience $RowInfo.Episode
         if([string]$RowInfo.Episode.streamUrl-match'^https://'){
@@ -1965,21 +1986,44 @@ function Invoke-CocoMediaEpisodeAction($RowInfo){
             elseif([string]$RowInfo.Episode.sourceUrl-notmatch'^https://'){throw "El archivo existe, pero no coincide y el asset remoto aun no esta publicado."}
             else{[void](Invoke-CocoMediaHttpDownload $RowInfo.Experience $RowInfo.Episode $status.Path);[void](Invoke-CocoMediaEpisodePlayback $RowInfo.Experience $RowInfo.Episode)}
         }elseif([string]$RowInfo.Episode.sourceUrl-notmatch'^https://'){
-            throw 'Este episodio aun no tiene un asset publicado. La prueba local solo puede reproducir un archivo ya presente en Downloads.'
+            throw if($isMovie){'Esta pelicula aun no tiene un asset publicado. La prueba local solo puede reproducir un archivo ya presente en Downloads.'}else{'Este episodio aun no tiene un asset publicado. La prueba local solo puede reproducir un archivo ya presente en Downloads.'}
         }else{
             [void](Invoke-CocoMediaHttpDownload $RowInfo.Experience $RowInfo.Episode $status.Path);[void](Invoke-CocoMediaEpisodePlayback $RowInfo.Experience $RowInfo.Episode)
         }
     }catch{
         if([string]$_.Exception.Message-notmatch'cancelada'){
-            try{Write-CocoLog "HEART SIGNAL: accion fallida: $($_.Exception.Message)"}catch{}
+            try{Write-CocoLog "MEDIA [$([string]$RowInfo.Experience.name)]: accion fallida: $($_.Exception.Message)"}catch{}
             $failureDetail=if(Get-Command Get-CocoLauncherFailureDetail -ErrorAction SilentlyContinue){Get-CocoLauncherFailureDetail $_}else{[string]$_.Exception.Message}
-            [Windows.Forms.MessageBox]::Show($failureDetail,'Heart Signal',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Error)|Out-Null
+            [Windows.Forms.MessageBox]::Show($failureDetail,[string]$RowInfo.Experience.name,[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Error)|Out-Null
         }
     }finally{
         $script:CocoMediaDownloadInProgress=$false;$script:CocoMediaCancelRequested=$false;$script:CocoMediaDialog=$null;$script:CocoMediaCurrentExperience=$null
-        if($RowInfo.Dialog-and-not$RowInfo.Dialog.IsDisposed){foreach($button in @($RowInfo.Dialog.Tag.Buttons)){if($button-and-not$button.IsDisposed){$button.Enabled=$true}};Update-CocoMediaEpisodeRowUi $RowInfo;Set-CocoMediaUiStatus 'Selecciona un episodio para descargarlo o reproducirlo.' 0}
+        if($RowInfo.Dialog-and-not$RowInfo.Dialog.IsDisposed){
+            if($RowInfo.Dialog.Tag-and$RowInfo.Dialog.Tag.Buttons){
+                foreach($button in @($RowInfo.Dialog.Tag.Buttons)){if($button-and-not$button.IsDisposed){$button.Enabled=$true}}
+            }
+            Update-CocoMediaEpisodeRowUi $RowInfo
+            Set-CocoMediaUiStatus (if($isMovie){'Selecciona la pelicula para reproducirla.'}else{'Selecciona un episodio para descargarlo o reproducirlo.'}) 0
+        }
         if(Get-Command Set-CocoLauncherIdleState -ErrorAction SilentlyContinue){try{Set-CocoLauncherIdleState 'Elige una experiencia para instalarla, alojar una partida o reproducir contenido.' 100}catch{}}
     }
+}
+
+function Invoke-CocoMediaMovieAction($Experience){
+    if(-not(Test-CocoMediaExperience $Experience)){return}
+    $items=@(Get-CocoMediaItems $Experience)
+    if(-not$items.Count){throw "La pelicula '$($Experience.name)' no tiene archivo de video configurado."}
+    $movieItem=$items[0]
+    $fakeButton=New-Object Windows.Forms.Button;$fakeButton.Enabled=$true
+    $rowInfo=[pscustomobject]@{
+        Experience=$Experience
+        Episode=$movieItem
+        Dialog=$null
+        Button=$fakeButton
+        StatusLabel=(New-Object Windows.Forms.Label)
+        Status=$null
+    }
+    Invoke-CocoMediaEpisodeAction $rowInfo
 }
 
 function Invoke-CocoMediaOpenFolderUi($Experience){
@@ -2082,6 +2126,7 @@ function Invoke-CocoMediaEpisodeUi($Experience){
 function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$Role = 'client') {
     if (-not $DynamicPanel -or $DynamicPanel.IsDisposed -or -not $Catalog) { return }
     $mediaEpisodeUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaEpisodeUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $mediaMovieUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaMovieAction -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $mediaOpenFolderUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaOpenFolderUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $experienceChangeLocationUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceChangeLocationUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $experienceStorageInstallUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceStorageInstallUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
@@ -2117,17 +2162,28 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
     $cardIndex = 0
     foreach ($exp in $managedExperiences) {
         if(Test-CocoMediaExperience $exp){
+            $isMovie=Test-CocoMovieExperience $exp
             $mediaStatus=Get-CocoMediaExperienceStatus $exp;$mediaRoot=[string]$mediaStatus.Root
             $card=New-Object Windows.Forms.Panel;$card.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric $cardY));$card.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 545),(Get-CocoLauncherUiMetric 64));$card.BackColor=[Drawing.Color]::FromArgb($(if($cardIndex%2-eq0){48}else{56}),30,72)
             $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=[string]$exp.name;$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9.5 7));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 3));$nameLabel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 20));$nameLabel.AutoEllipsis=$true
             $pathLabel=New-Object Windows.Forms.Label;$pathLabel.Text="Descargas: $mediaRoot";$pathLabel.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6));$pathLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$pathLabel.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 23));$pathLabel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 18));$pathLabel.AutoEllipsis=$true
-            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Text="Serie | $($mediaStatus.Verified)/$($mediaStatus.Total) episodios verificados | CLIC PARA VER";$detailLabel.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6));$detailLabel.ForeColor=if($mediaStatus.Verified-eq$mediaStatus.Total){[Drawing.Color]::FromArgb(168,236,168)}else{[Drawing.Color]::FromArgb(180,170,195)};$detailLabel.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 41));$detailLabel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 18));$detailLabel.AutoEllipsis=$true
-            $cardInfo=[pscustomobject]@{InstanceId=[string]$exp.instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$mediaRoot;CurrentRoot=$mediaRoot;ExperiencesRoot=$expRoot;Usage=[pscustomobject]@{Installed=($mediaStatus.Verified-gt0);Bytes=$mediaStatus.Bytes;Label=("{0}/{1} episodios"-f$mediaStatus.Verified,$mediaStatus.Total)};IsRunning=$false;IsMedia=$true;MediaRoot=$mediaRoot;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+            $detailLabel=New-Object Windows.Forms.Label
+            if($isMovie){
+                $detailLabel.Text="Pelicula | $(if($mediaStatus.Verified-gt0){'Disponible en este PC'}else{'Streaming directo'}) | CLIC PARA VER"
+                $detailLabel.ForeColor=if($mediaStatus.Verified-gt0){[Drawing.Color]::FromArgb(168,236,168)}else{[Drawing.Color]::FromArgb(183,239,194)}
+            }else{
+                $detailLabel.Text="Serie | $($mediaStatus.Verified)/$($mediaStatus.Total) episodios verificados | CLIC PARA VER"
+                $detailLabel.ForeColor=if($mediaStatus.Verified-eq$mediaStatus.Total){[Drawing.Color]::FromArgb(168,236,168)}else{[Drawing.Color]::FromArgb(180,170,195)}
+            }
+            $detailLabel.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6));$detailLabel.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 41));$detailLabel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 18));$detailLabel.AutoEllipsis=$true
+            $cardInfo=[pscustomobject]@{InstanceId=[string]$exp.instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$mediaRoot;CurrentRoot=$mediaRoot;ExperiencesRoot=$expRoot;Usage=[pscustomobject]@{Installed=($mediaStatus.Verified-gt0);Bytes=$mediaStatus.Bytes;Label=if($isMovie){if($mediaStatus.Verified-gt0){'Pelicula lista'}else{'Streaming'}}else{("{0}/{1} episodios"-f$mediaStatus.Verified,$mediaStatus.Total)}};IsRunning=$false;IsMedia=$true;IsMovie=$isMovie;MediaRoot=$mediaRoot;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
             $card.Controls.AddRange(@($nameLabel,$pathLabel,$detailLabel))
-            foreach($control in @($card,$nameLabel,$pathLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure())}
-            $episodeButton=New-Object Windows.Forms.Button;$episodeButton.Text='EPISODIOS';$episodeButton.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 120),(Get-CocoLauncherUiMetric 28));$episodeButton.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 280),(Get-CocoLauncherUiMetric 18));Set-CocoFlatButtonStyle $episodeButton ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White);$episodeButton.Tag=$cardInfo;$episodeButton.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())
+            $mediaClickAction=if($isMovie){ {param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaMovieUiCommand $info.Experience}}.GetNewClosure() }
+                              else{ {param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure() }
+            foreach($control in @($card,$nameLabel,$pathLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click($mediaClickAction)}
+            $primaryMediaButton=New-Object Windows.Forms.Button;$primaryMediaButton.Text=if($isMovie){'VER PELICULA'}else{'EPISODIOS'};$primaryMediaButton.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 120),(Get-CocoLauncherUiMetric 28));$primaryMediaButton.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 280),(Get-CocoLauncherUiMetric 18));Set-CocoFlatButtonStyle $primaryMediaButton ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White);$primaryMediaButton.Tag=$cardInfo;$primaryMediaButton.Add_Click($mediaClickAction)
             $folderButton=New-Object Windows.Forms.Button;$folderButton.Text='CARPETA';$folderButton.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 28));$folderButton.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 410),(Get-CocoLauncherUiMetric 18));Set-CocoFlatButtonStyle $folderButton ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255));$folderButton.Tag=$cardInfo;$folderButton.Add_Click({param($sender,$eventArgs)&$mediaOpenFolderUiCommand $sender.Tag.Experience}.GetNewClosure())
-            $card.Controls.AddRange(@($episodeButton,$folderButton));$DynamicPanel.Controls.Add($card);$cardY+=70;$cardIndex++;continue
+            $card.Controls.AddRange(@($primaryMediaButton,$folderButton));$DynamicPanel.Controls.Add($card);$cardY+=70;$cardIndex++;continue
         }
         $instanceId = [string]$exp.instanceId
         if (-not $instanceId) { $instanceId = [string]$exp.id }
@@ -2361,6 +2417,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
 function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Role='client'){
     if(-not$DynamicPanel-or$DynamicPanel.IsDisposed-or-not$Catalog){return}
     $mediaEpisodeUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaEpisodeUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
+    $mediaMovieUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaMovieAction -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $mediaOpenFolderUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaOpenFolderUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $experienceChangeLocationUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceChangeLocationUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $experienceStorageInstallUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceStorageInstallUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
@@ -2394,12 +2451,6 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
             $gradient=New-Object Windows.Forms.Panel;$gradient.Name='CocoExperienceGradient';$gradient.Dock='Bottom';$gradient.Height=$gradientHeight;$gradient.BackColor=[Drawing.Color]::FromArgb(30,20,42);$gradient.Padding=New-Object Windows.Forms.Padding(0);Set-CocoControlDoubleBuffered $gradient
             $gradient.Add_Paint(({
                 param($sender,$eventArgs)
-                # Pintado OPACO: hornea la rebanada de portada + degradado en una
-                # sola pasada. El panel transparente sobre el PictureBox obligaba a
-                # WinForms a fingir la transparencia repintando al padre, y al
-                # scrollear esos repintados llegaban tarde = imágenes duplicadas.
-                # Con el fondo opaco y determinista el scroll mueve ventanas
-                # opacas y lo expuesto se repinta bien, como cualquier scroll.
                 $w=[Math]::Max(1,$sender.ClientSize.Width);$h=[Math]::Max(1,$sender.ClientSize.Height)
                 $graphics=$eventArgs.Graphics
                 $cover=try{$imageBox.Image}catch{$null}
@@ -2420,9 +2471,21 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
             $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$detailLabel.BackColor=[Drawing.Color]::Transparent;$detailLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 51));$detailLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 16));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false;Set-CocoControlDoubleBuffered $detailLabel
             $buttonSpecs=@();$cardInfo=$null
             if(Test-CocoMediaExperience $exp){
-                $mediaStatus=Get-CocoMediaExperienceStatus $exp;$mediaRoot=[string]$mediaStatus.Root;$streamAvailable=@($exp.content.episodes|Where-Object{[string]$_.streamUrl-match'^https://'}).Count-gt0;$detailLabel.Text=if($streamAvailable-or$mediaStatus.Verified-gt0){'LISTO PARA VER'}else{'NO DISPONIBLE'};$detailLabel.ForeColor=if($streamAvailable-or$mediaStatus.Verified-gt0){[Drawing.Color]::FromArgb(183,239,194)}else{[Drawing.Color]::FromArgb(180,170,195)}
-                $cardInfo=[pscustomobject]@{InstanceId=[string]$exp.instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$mediaRoot;CurrentRoot=$mediaRoot;ExperiencesRoot=$expRoot;Usage=[pscustomobject]@{Installed=($mediaStatus.Verified-gt0);Bytes=$mediaStatus.Bytes;Label=('{0}/{1} partes'-f$mediaStatus.Verified,$mediaStatus.Total)};IsRunning=$false;IsMedia=$true;MediaRoot=$mediaRoot;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
-                $buttonSpecs=@([pscustomobject]@{Text='EPISODIOS';Kind='episode'})
+                $isMovie=Test-CocoMovieExperience $exp
+                $mediaItems=@(Get-CocoMediaItems $exp)
+                $mediaStatus=Get-CocoMediaExperienceStatus $exp;$mediaRoot=[string]$mediaStatus.Root
+                $streamAvailable=@($mediaItems|Where-Object{[string]$_.streamUrl-match'^https://'}).Count-gt0
+                if($isMovie){
+                    $detailLabel.Text=if($mediaStatus.Verified-gt0){'LISTA PARA VER'}elseif($streamAvailable){'STREAMING DIRECTO'}else{'NO DISPONIBLE'}
+                    $detailLabel.ForeColor=if($streamAvailable-or$mediaStatus.Verified-gt0){[Drawing.Color]::FromArgb(183,239,194)}else{[Drawing.Color]::FromArgb(180,170,195)}
+                    $cardInfo=[pscustomobject]@{InstanceId=[string]$exp.instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$mediaRoot;CurrentRoot=$mediaRoot;ExperiencesRoot=$expRoot;Usage=[pscustomobject]@{Installed=($mediaStatus.Verified-gt0);Bytes=$mediaStatus.Bytes;Label=if($mediaStatus.Verified-gt0){'Pelicula lista'}else{'Streaming'}};IsRunning=$false;IsMedia=$true;IsMovie=$true;MediaRoot=$mediaRoot;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+                    $buttonSpecs=@([pscustomobject]@{Text='VER PELICULA';Kind='movie'})
+                }else{
+                    $detailLabel.Text=if($streamAvailable-or$mediaStatus.Verified-gt0){'LISTO PARA VER'}else{'NO DISPONIBLE'}
+                    $detailLabel.ForeColor=if($streamAvailable-or$mediaStatus.Verified-gt0){[Drawing.Color]::FromArgb(183,239,194)}else{[Drawing.Color]::FromArgb(180,170,195)}
+                    $cardInfo=[pscustomobject]@{InstanceId=[string]$exp.instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$mediaRoot;CurrentRoot=$mediaRoot;ExperiencesRoot=$expRoot;Usage=[pscustomobject]@{Installed=($mediaStatus.Verified-gt0);Bytes=$mediaStatus.Bytes;Label=('{0}/{1} partes'-f$mediaStatus.Verified,$mediaStatus.Total)};IsRunning=$false;IsMedia=$true;IsMovie=$false;MediaRoot=$mediaRoot;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+                    $buttonSpecs=@([pscustomobject]@{Text='EPISODIOS';Kind='episode'})
+                }
             }else{
                 $instanceId=[string]$exp.instanceId;if(-not$instanceId){$instanceId=[string]$exp.id};$instanceRoot=Get-CocoExperienceInstanceRoot $exp $expRoot $locationPath;$usage=Get-CocoExperienceDiskUsage $instanceRoot;$isRunning=Test-CocoManagedGameRunning $instanceRoot;Write-CocoStorageDiagnostic 'card.state' @{role=$Role;experienceId=$exp.id;instanceId=$instanceId;root=$instanceRoot;installed=$usage.Installed;usage=$usage.Label;running=$isRunning}
                 if($isRunning){$detailLabel.Text='EN EJECUCION';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)}elseif($usage.Installed){$detailLabel.Text='INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(183,239,194)}else{$detailLabel.Text='NO INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)}
@@ -2430,13 +2493,22 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 if($Role-eq'host'){$buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ALOJAR PARTIDA'};Kind='host'},[pscustomobject]@{Text='CARPETA';Kind='folder'},[pscustomobject]@{Text='BORRAR';Kind='delete'})}else{$buttonSpecs=@([pscustomobject]@{Text=if($usage.Installed){'CAMBIAR CARPETA'}else{'INSTALAR'};Kind='install'});if($usage.Installed){$buttonSpecs+=,[pscustomobject]@{Text='LIBERAR ESPACIO';Kind='delete'}}}
             }
             $card.Controls.Add($imageBox);$gradient.Controls.Add($nameLabel);$gradient.Controls.Add($detailLabel);$script:CocoExperienceCardsToolTip.SetToolTip($card,"$([string]$exp.name)`r`n$([string]$exp.description)");$script:CocoExperienceCardsToolTip.SetToolTip($nameLabel,[string]$exp.name);$script:CocoExperienceCardsToolTip.SetToolTip($imageBox,[string]$exp.name)
-            if($cardInfo.IsMedia){foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure())}}else{foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){&$experienceStorageInstallUiCommand $info}}.GetNewClosure())}}
-            $actionAreaWidth=[Math]::Max((Get-CocoLauncherUiMetric 140),$cardWidth-(2*$actionPadding));$buttonCount=$buttonSpecs.Count;$usableButtonWidth=[Math]::Max((Get-CocoLauncherUiMetric 100),$actionAreaWidth-([Math]::Max(0,$buttonCount-1)*$actionGap));$maxPerButton=[int][Math]::Floor($usableButtonWidth/[Math]::Max(1,$buttonCount));$buttonWidth=[int][Math]::Min($maxPerButton,(Get-CocoLauncherUiMetric 108));$buttonGroupWidth=($buttonCount*$buttonWidth)+([Math]::Max(0,$buttonCount-1)*$actionGap);$buttonX=$cardWidth-$actionPadding-$buttonGroupWidth;$buttonY=$gradientHeight-$actionHeight-(Get-CocoLauncherUiMetric 4);$buttonIndex=0
+            if($cardInfo.IsMedia){
+                $mediaAction=if($cardInfo.IsMovie){ {param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaMovieUiCommand $info.Experience}}.GetNewClosure() }
+                             else{ {param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure() }
+                foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){
+                    $control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand
+                    $control.Add_Click($mediaAction)
+                }
+            }else{
+                foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){&$experienceStorageInstallUiCommand $info}}.GetNewClosure())}
+            }
+            $actionAreaWidth=[Math]::Max((Get-CocoLauncherUiMetric 140),$cardWidth-(2*$actionPadding));$buttonCount=$buttonSpecs.Count;$usableButtonWidth=[Math]::Max((Get-CocoLauncherUiMetric 100),$actionAreaWidth-([Math]::Max(0,$buttonCount-1)*$actionGap));$maxPerButton=[int][Math]::Floor($usableButtonWidth/[Math]::Max(1,$buttonCount));$buttonWidth=[int][Math]::Min($maxPerButton,(Get-CocoLauncherUiMetric $(if($buttonCount-eq1){118}else{108})));$buttonGroupWidth=($buttonCount*$buttonWidth)+([Math]::Max(0,$buttonCount-1)*$actionGap);$buttonX=$cardWidth-$actionPadding-$buttonGroupWidth;$buttonY=$gradientHeight-$actionHeight-(Get-CocoLauncherUiMetric 4);$buttonIndex=0
             foreach($spec in $buttonSpecs){
                 $button=New-Object Windows.Forms.Button;$button.Text=[string]$spec.Text;$button.Size=New-Object Drawing.Size($buttonWidth,$actionHeight);$button.Location=New-Object Drawing.Point($buttonX,$buttonY);$button.Tag=$cardInfo;$button.TabStop=$false
                 if($spec.Kind-eq'delete'){$enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled;if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}}elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}elseif($spec.Kind-eq'folder'){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)}
-                if([string]$spec.Text-in@('CAMBIAR CARPETA','LIBERAR ESPACIO','ALOJAR PARTIDA','EN EJECUCION')){$button.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6))}
-                if($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){&$mediaOpenFolderUiCommand $sender.Tag.Experience}else{&$experienceChangeLocationUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag}.GetNewClosure())}elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)&$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())}
+                if([string]$spec.Text-in@('CAMBIAR CARPETA','LIBERAR ESPACIO','ALOJAR PARTIDA','EN EJECUCION','VER PELICULA')){$button.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6))}
+                if($spec.Kind-eq'movie'){$button.Add_Click({param($sender,$eventArgs)& $mediaMovieUiCommand $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){&$mediaOpenFolderUiCommand $sender.Tag.Experience}else{&$experienceChangeLocationUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag}.GetNewClosure())}elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)&$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())}
                 $gradient.Controls.Add($button);$buttonIndex++;$buttonX+=$buttonWidth+$actionGap
             }
             $cardsContent.Controls.Add($card);$cardIndex++
@@ -3254,34 +3326,34 @@ function Read-CocoLauncherCatalog([string]$Path){
                [string]::IsNullOrWhiteSpace([string]$experience.launch.serverName)){
                 throw "La experiencia media '$id' debe declarar workflow coco-media y serverName."
             }
-            if(-not$experience.content-or[string]$experience.content.type-ne'episodic-video'){
-                throw "El contenido de '$id' debe declarar type episodic-video."
+            if(-not$experience.content-or[string]$experience.content.type-notin@('episodic-video','movie')){
+                throw "El contenido de '$id' debe declarar type 'episodic-video' o 'movie'."
             }
             $downloadFolder=[string]$experience.content.downloadFolderName
             if([string]::IsNullOrWhiteSpace($downloadFolder)-or-not(Test-CocoSafeRelativePath $downloadFolder)-or
                $downloadFolder.Contains('/')-or$downloadFolder.Contains('\')){
                 throw "La carpeta de descargas de '$id' no es segura."
             }
-            $episodeIds=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-            $episodeFiles=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-            $episodes=@($experience.content.episodes)
-            if(-not$episodes.Count){throw "La experiencia media '$id' no contiene episodios."}
-            foreach($episode in $episodes){
-                $episodeId=[string]$episode.id;$fileName=[string]$episode.fileName;$sourceUrl=[string]$episode.sourceUrl;$streamUrl=[string]$episode.streamUrl
-                if($episodeId-notmatch'^[a-z0-9][a-z0-9-]{1,47}$'-or-not$episodeIds.Add($episodeId)-or
-                   [string]::IsNullOrWhiteSpace([string]$episode.title)-or
+            $itemIds=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+            $itemFiles=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+            $mediaItems=@(Get-CocoMediaItems $experience)
+            if(-not$mediaItems.Count){throw "La experiencia media '$id' no contiene elementos multimedia."}
+            foreach($item in $mediaItems){
+                $itemId=[string]$item.id;$fileName=[string]$item.fileName;$sourceUrl=[string]$item.sourceUrl;$streamUrl=[string]$item.streamUrl
+                if($itemId-notmatch'^[a-z0-9][a-z0-9-]{1,47}$'-or-not$itemIds.Add($itemId)-or
+                   [string]::IsNullOrWhiteSpace([string]$item.title)-or
                    [string]::IsNullOrWhiteSpace($fileName)-or-not(Test-CocoSafeRelativePath $fileName)-or
-                   [IO.Path]::GetFileName($fileName)-ne$fileName-or-not$episodeFiles.Add($fileName)-or
+                   [IO.Path]::GetFileName($fileName)-ne$fileName-or-not$itemFiles.Add($fileName)-or
                    [IO.Path]::GetExtension($fileName).ToLowerInvariant()-notin@('.mkv','.mp4','.webm','.mov','.avi') -or
-                   [string]$episode.sha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$episode.size-le0){
-                    throw "Episodio media invalido en '$id': '$episodeId'."
+                   [string]$item.sha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$item.size-le0){
+                    throw "Elemento media invalido en '$id': '$itemId'."
                 }
-                if($sourceUrl-and$sourceUrl-notmatch'^https://'){throw "El asset del episodio '$episodeId' no usa HTTPS."}
-                if($streamUrl-and$streamUrl-notmatch'^https://'){throw "El stream del episodio '$episodeId' no usa HTTPS."}
-                if($catalog.releaseStatus-eq'approved'-and(($sourceUrl-match'(?i)^https://(?:github\.com/|[^/]+\.githubusercontent\.com/)')-or($streamUrl-match'(?i)^https://(?:github\.com/|[^/]+\.githubusercontent\.com/)')) -and[int64]$episode.size-ge2147483648){
-                    throw "El episodio '$episodeId' supera el limite de 2 GiB de GitHub Free; reduce el archivo o dividelo antes de publicarlo."
+                if($sourceUrl-and$sourceUrl-notmatch'^https://'){throw "El asset de '$itemId' no usa HTTPS."}
+                if($streamUrl-and$streamUrl-notmatch'^https://'){throw "El stream de '$itemId' no usa HTTPS."}
+                if($catalog.releaseStatus-eq'approved'-and(($sourceUrl-match'(?i)^https://(?:github\.com/|[^/]+\.githubusercontent\.com/)')-or($streamUrl-match'(?i)^https://(?:github\.com/|[^/]+\.githubusercontent\.com/)')) -and[int64]$item.size-ge2147483648){
+                    throw "El elemento '$itemId' supera el limite de 2 GiB de GitHub Free; reduce el archivo o dividelo antes de publicarlo."
                 }
-                if($catalog.releaseStatus-eq'approved'-and-not($sourceUrl-or$streamUrl)){throw "El episodio '$episodeId' no tiene asset HTTPS publicado."}
+                if($catalog.releaseStatus-eq'approved'-and-not($sourceUrl-or$streamUrl)){throw "El elemento '$itemId' no tiene asset HTTPS publicado."}
             }
         }elseif([string]$experience.runtime.type-eq'standalone'){
             if(-not(Test-CocoSafeRelativePath ([string]$experience.runtime.executable))){throw "Ejecutable standalone invalido para '$id'."}

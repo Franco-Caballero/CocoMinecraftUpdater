@@ -328,6 +328,7 @@ if([string]::IsNullOrWhiteSpace([string]$mediaTestUrl)){throw 'No se encontro un
 .\tests\Test-CocoSkinSync.ps1
 .\tests\Test-CocoVoiceChatDefaults.ps1
 .\tests\Test-CocoMediaExperience.ps1 -AllowMissingLocal
+.\tests\Test-CocoMovieExperience.ps1 -AllowMissingLocal
 .\tests\Test-CocoMediaHttpProxy.ps1
 .\tests\Test-CocoMediaPlaybackProgress.ps1 -SourceUrl $mediaTestUrl -HoldSeconds 3 -TimeoutSeconds 30
 .\tests\Test-CocoMediaPlaybackState.ps1
@@ -335,6 +336,7 @@ if([string]::IsNullOrWhiteSpace([string]$mediaTestUrl)){throw 'No se encontro un
 .\tests\Test-CocoMediaPlayerSmoke.ps1 -SourceUrl $mediaTestUrl -TimeoutSeconds 30
 .\tests\Test-CocoMediaSelectorAction.ps1
 .\tests\Test-CocoMediaCardAction.ps1
+.\tests\Test-CocoMovieCardAction.ps1
 .\tests\Test-CocoLauncherCallbacks.ps1
 .\tests\Test-CocoMediaSelectorUi.ps1
 .\tests\Test-CocoMediaSplit.ps1 -AllowMissingLocal

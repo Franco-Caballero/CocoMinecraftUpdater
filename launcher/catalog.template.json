@@ -1329,6 +1329,51 @@
             "files": []
         },
         {
+            "id": "the-drama-2026",
+            "name": "The Drama",
+            "ui": {
+                "badge": "Película",
+                "accentColor": "#8E44AD",
+                "imagePath": "assets/experiences/the-drama.jpg"
+            },
+            "description": "Película (2026). Reproduce directamente en el reproductor integrado o descárgala en tu carpeta Downloads.",
+            "instanceId": "the-drama",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "media"
+            },
+            "content": {
+                "type": "movie",
+                "downloadFolderName": "the drama",
+                "openAfterDownload": true,
+                "movie": {
+                    "id": "the-drama-2026",
+                    "title": "The Drama (2026)",
+                    "fileName": "The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                    "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-drama-2026/The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                    "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-drama-2026/The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                    "size": 2021287571,
+                    "sha256": "1cefd87737a4624cb171bea607cab7554fd94b240572153dafe771596d6b5d2c"
+                },
+                "episodes": [
+                    {
+                        "id": "the-drama-2026",
+                        "title": "The Drama (2026)",
+                        "fileName": "The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-drama-2026/The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-drama-2026/The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                        "size": 2021287571,
+                        "sha256": "1cefd87737a4624cb171bea607cab7554fd94b240572153dafe771596d6b5d2c"
+                    }
+                ]
+            },
+            "launch": {
+                "workflow": "coco-media",
+                "serverName": "The Drama"
+            },
+            "files": []
+        },
+        {
             "id": "how-to-fish",
             "name": "How to Fish",
             "ui": {

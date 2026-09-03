@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne17-or
+if($managedExperiences.Count-ne18-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -166,6 +166,18 @@ if(-not$heartEpisode4-or$heartEpisode4.title-ne'Temporada 5 - Episodio 2 - Parte
    $heartEpisode4.sha256-ne'd86985cace867d75e73e166814e86c96a8ced2a28ff719ed8e04bf3874a8620d'-or
    $heartEpisode4.streamUrl-notmatch'^https://' -or$heartEpisode4.sourceUrl-notmatch'^https://'){
     throw 'La Parte 2 del E02 de Heart Signal no conserva la metadata o URL publicada.'
+}
+$theDrama=@($catalog.experiences|Where-Object id -eq 'the-drama-2026'|Select-Object -First 1)[0]
+if(-not$theDrama-or$theDrama.runtime.type-ne'media'-or$theDrama.launch.workflow-ne'coco-media'-or
+   $theDrama.content.type-ne'movie'-or$theDrama.content.downloadFolderName-ne'the drama'){
+    throw 'The Drama no esta declarado como pelicula local.'
+}
+$dramaMovie=$theDrama.content.movie
+if(-not$dramaMovie-or$dramaMovie.fileName-ne'The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4'-or
+   [int64]$dramaMovie.size-ne2021287571-or
+   $dramaMovie.sha256-ne'1cefd87737a4624cb171bea607cab7554fd94b240572153dafe771596d6b5d2c'-or
+   $dramaMovie.streamUrl-notmatch'^https://'-or$dramaMovie.sourceUrl-notmatch'^https://'){
+    throw 'The Drama no conserva la metadata o URL publicada.'
 }
 $bounds=for($i=0;$i-lt$managedExperiences.Count;$i++){Get-CocoExperienceButtonBounds $i}
 for($i=0;$i-lt$bounds.Count;$i++){
