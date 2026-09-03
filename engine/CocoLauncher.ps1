@@ -34,6 +34,18 @@ public class CocoPopupGate {
     [DllImport("user32.dll")] private static extern int GetMessage(out NativeMessage lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
     [DllImport("user32.dll")] private static extern bool PostThreadMessage(uint idThread, uint msg, IntPtr wParam, IntPtr lParam);
     [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+    [DllImport("shcore.dll")] private static extern int SetProcessDpiAwareness(int awareness);
+    [DllImport("user32.dll")] private static extern bool SetProcessDPIAware();
+    [DllImport("uxtheme.dll", ExactSpelling = true, CharSet = CharSet.Unicode)] public static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string pszSubIdList);
+
+    public static void EnablePerMonitorDpi() {
+        try { if (SetProcessDpiAwareness(2) == 0) return; } catch {}
+        try { SetProcessDPIAware(); } catch {}
+    }
+
+    public static void ApplyDarkTheme(IntPtr hWnd) {
+        try { SetWindowTheme(hWnd, "DarkMode_Explorer", null); } catch {}
+    }
 
     private delegate void WinEventProc(IntPtr hHook, uint evt, IntPtr hwnd, long idObject, long idChild, uint dwEventThread, uint dwmsEventTime);
     [StructLayout(LayoutKind.Sequential)] private struct NativeMessage { public IntPtr handle; public uint message; public IntPtr wParam; public IntPtr lParam; public uint time; public int ptX; public int ptY; }
@@ -559,6 +571,7 @@ public class CocoPopupGate {
 "@ -ErrorAction SilentlyContinue
     }catch{}
 }
+try{ [CocoPopupGate]::EnablePerMonitorDpi() }catch{}
 
 function ConvertFrom-CocoCodePoints([int[]]$CodePoints){
     -join ($CodePoints|ForEach-Object{[char]$_})
@@ -6093,6 +6106,9 @@ function Set-CocoExperienceCardsNativeScrollStyle($DynamicPanel){
     try{
         Set-CocoControlDoubleBuffered $DynamicPanel
         try{$DynamicPanel.BackColor=[Drawing.Color]::FromArgb(22,13,34)}catch{}
+        if([System.Management.Automation.PSTypeName]'CocoPopupGate'.Type){
+            [CocoPopupGate]::ApplyDarkTheme($DynamicPanel.Handle)
+        }
     }catch{}
 }
 
@@ -6193,8 +6209,6 @@ function Set-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset,[bool]$S
         return
     }
     try{
-        # Una sola vía nativa por llamada (igual que la barra). Fijar Value y
-        # AutoScrollPosition seguidos duplicaba el ScrollWindowEx y pegaba el avance.
         $DynamicPanel.VerticalScroll.Value=$clamped
     }catch{
         try{$DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)}catch{}
@@ -6202,15 +6216,13 @@ function Set-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset,[bool]$S
     try{$DynamicPanel.PerformLayout()}catch{}
     $actual=try{[int]$DynamicPanel.VerticalScroll.Value}catch{[int]$clamped}
     if($actual-ne$clamped){
-        # Respaldo solo si el primer mecanismo no surtió efecto (rango
-        # transitorio): nunca doble set cuando Value sí funcionó.
         try{$DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)}catch{}
         try{$DynamicPanel.PerformLayout()}catch{}
         $actual=try{[int]$DynamicPanel.VerticalScroll.Value}catch{[int]$clamped}
     }
     $state.Offset=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,$actual))
     if($SyncTarget){$state.PendingOffset=$state.Offset;$state.TargetOffset=$state.Offset}
-    if($ForcePaint){try{$DynamicPanel.Update()}catch{}}
+    if($ForcePaint){try{$DynamicPanel.Invalidate()}catch{}}
 }
 
 function Queue-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset){

@@ -13,6 +13,23 @@ param(
 
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+if(-not([System.Management.Automation.PSTypeName]'CocoBootstrapperDpi').Type){
+    try{
+        Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class CocoBootstrapperDpi {
+    [DllImport("shcore.dll")] public static extern int SetProcessDpiAwareness(int awareness);
+    [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+    public static void EnableDpi() {
+        try { if (SetProcessDpiAwareness(2) == 0) return; } catch {}
+        try { SetProcessDPIAware(); } catch {}
+    }
+}
+"@ -ErrorAction SilentlyContinue
+    }catch{}
+}
+try{ [CocoBootstrapperDpi]::EnableDpi() }catch{}
 $script:Splash = $null
 $script:EmbeddedFullbodyBase64 = '__FULLBODY_BASE64__'
 $script:CocoRunId=if($env:COCO_RUN_ID-match'^[a-fA-F0-9]{12,32}$'){$env:COCO_RUN_ID.ToLowerInvariant()}else{[guid]::NewGuid().ToString('N')}
@@ -39,13 +56,13 @@ function Set-CocoBootstrapLabelText($Label,[string]$Text,[single]$MaximumSize,[s
     $Label.Font=New-Object Drawing.Font($Label.Font.FontFamily,$MinimumSize,$Label.Font.Style)
 }
 
-function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
+function Show-CocoSplash([string]$Status='Iniciando Coco Launcher...') {
     Write-CocoBootstrapEvent $Status 1
     if($Silent -and -not$Preview-and$env:COCO_SHOW_ON_UPDATE-ne'1'){return}
     Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
     [Windows.Forms.Application]::EnableVisualStyles()
     $key=[Drawing.Color]::FromArgb(1,2,3)
-    $form=New-Object Windows.Forms.Form;$form.Text='Coco Minecraft Updater';$form.Size=New-Object Drawing.Size(1080,740)
+    $form=New-Object Windows.Forms.Form;$form.Text='Coco Launcher';$form.Size=New-Object Drawing.Size(1080,740)
     $form.StartPosition='CenterScreen';$form.FormBorderStyle='None';$form.BackColor=$key;$form.TransparencyKey=$key
     $form.AutoScaleMode='None';$form.ForeColor=[Drawing.Color]::White;$form.TopMost=$false
     $form.Add_FormClosing({param($sender,$eventArgs) if(-not$script:CocoAllowClose){$eventArgs.Cancel=$true}})
@@ -55,7 +72,7 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     $accent=New-Object Windows.Forms.Panel;$accent.Location=New-Object Drawing.Point(0,0);$accent.Size=New-Object Drawing.Size(9,460)
     $accent.BackColor=[Drawing.Color]::FromArgb(177,92,255);$panel.Controls.Add($accent)
     $sparkle=[char]0x2726
-    $title=New-Object Windows.Forms.Label;$title.Text='ETAPA 1/10 · INICIANDO COCO';$title.Location=New-Object Drawing.Point(43,42)
+    $title=New-Object Windows.Forms.Label;$title.Text='INICIANDO COCO LAUNCHER';$title.Location=New-Object Drawing.Point(43,42)
     $title.Location=New-Object Drawing.Point(43,30);$title.Size=New-Object Drawing.Size(570,72);$title.Font=New-Object Drawing.Font('Segoe UI Semibold',22)
     $title.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
     $detail=New-Object Windows.Forms.Label;$detail.Text=$Status;$detail.Location=New-Object Drawing.Point(46,106)
@@ -63,7 +80,7 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
     $track=New-Object Windows.Forms.Panel;$track.Location=New-Object Drawing.Point(46,190);$track.Size=New-Object Drawing.Size(570,30)
     $track.BackColor=[Drawing.Color]::FromArgb(58,36,81)
     $fill=New-Object Windows.Forms.Panel;$fill.Size=New-Object Drawing.Size(12,30);$fill.BackColor=[Drawing.Color]::FromArgb(177,92,255)
-    $brand=New-Object Windows.Forms.Label;$brand.Text="$sparkle  COCO PACK  |  FABRIC 26.1.2";$brand.Location=New-Object Drawing.Point(46,244)
+    $brand=New-Object Windows.Forms.Label;$brand.Text="$sparkle  COCO LAUNCHER  |  EXPERIENCIAS";$brand.Location=New-Object Drawing.Point(46,244)
     $brand.Size=New-Object Drawing.Size(570,25);$brand.Font=New-Object Drawing.Font('Segoe UI Semibold',10);$brand.ForeColor=[Drawing.Color]::FromArgb(177,92,255)
     $track.Controls.Add($fill);$panel.Controls.AddRange(@($title,$detail,$track,$brand))
     $art=New-Object Windows.Forms.PictureBox;$art.Location=New-Object Drawing.Point(675,5);$art.Size=New-Object Drawing.Size(380,720)
@@ -93,7 +110,7 @@ function Show-CocoSplash([string]$Status='Preparando el actualizador...') {
 function Set-CocoSplash([string]$Status,[int]$Progress){
     Write-CocoBootstrapEvent $Status $Progress
     if(-not$script:Splash){return}
-    $stage=if($Progress-lt7){'ETAPA 1/10 · BUSCANDO ACTUALIZACIONES'}elseif($Progress-lt12){'ETAPA 2/10 · ACTUALIZANDO COMPONENTES'}else{'ETAPA 2/10 · ABRIENDO EL MOTOR'}
+    $stage=if($Progress-lt7){'COMPROBANDO ACTUALIZACIONES'}elseif($Progress-lt12){'ACTUALIZANDO COMPONENTES'}else{'INICIANDO COCO LAUNCHER'}
     Set-CocoBootstrapLabelText $script:SplashTitle $stage 22 13
     Set-CocoBootstrapLabelText $script:SplashDetail "$Status`r`nEjecucion: $($script:CocoRunId.Substring(0,8))" 12 9
     $script:SplashFill.Width=[Math]::Max(4,[int]($script:SplashTrack.ClientSize.Width*$Progress/100))
@@ -408,15 +425,15 @@ if (-not $manifest.engine -or -not $manifest.engine.version -or -not $manifest.e
 
 $engineRoot = Join-Path $cacheRoot (Join-Path 'engine' $manifest.engine.version)
 $entryPoint = Join-Path $engineRoot 'CocoUpdater.ps1'
-Set-CocoSplash ("Engine {0}: comprobando cache local verificado..."-f$manifest.engine.version) 8
+Set-CocoSplash ("Motor {0}: comprobando cache local verificado..."-f$manifest.engine.version) 8
 if (-not (Test-Path -LiteralPath $entryPoint)) {
     $engineZip = Join-Path $cacheRoot "engine-$($manifest.engine.version).zip"
-    Set-CocoSplash ("Descargando engine {0} y comprobando SHA-256..."-f$manifest.engine.version) 9
-    Download-VerifiedFile $manifest.engine.url $engineZip $manifest.engine.sha256 "Descargando engine $($manifest.engine.version)" 9 10
+    Set-CocoSplash ("Descargando motor {0} y comprobando SHA-256..."-f$manifest.engine.version) 9
+    Download-VerifiedFile $manifest.engine.url $engineZip $manifest.engine.sha256 "Descargando motor $($manifest.engine.version)" 9 10
     $temporaryRoot = "$engineRoot.new"
     Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $temporaryRoot -Force | Out-Null
-    Set-CocoSplash 'Extrayendo el engine en una carpeta temporal segura...' 10
+    Set-CocoSplash 'Extrayendo componentes en una carpeta temporal segura...' 10
     Expand-CocoEngineArchive $engineZip $temporaryRoot
     New-Item -ItemType Directory -Path (Split-Path $engineRoot -Parent) -Force | Out-Null
     if(Test-Path -LiteralPath $engineRoot){
@@ -444,9 +461,9 @@ if ([IO.Path]::GetExtension($processPath) -ieq '.exe') {
     if($manifest.bootstrap -and $manifest.bootstrap.url -and $manifest.bootstrap.sha256){
         $canonicalMatches=(Test-Path -LiteralPath $canonicalExe) -and ((Get-Sha256 $canonicalExe) -eq $manifest.bootstrap.sha256.ToLowerInvariant())
         if(-not$canonicalMatches){
-            Set-CocoSplash 'Actualizando el EXE canonico sin bloquear esta ejecucion...' 11
+            Set-CocoSplash 'Actualizando Coco Launcher sin bloquear esta ejecucion...' 11
             $newExe=Join-Path $cacheRoot "CocoUpdater.$PID.new.exe"
-            Download-VerifiedFile $manifest.bootstrap.url $newExe $manifest.bootstrap.sha256 'Actualizando CocoUpdater.exe' 11 12
+            Download-VerifiedFile $manifest.bootstrap.url $newExe $manifest.bootstrap.sha256 'Actualizando Coco Launcher' 11 12
             Start-CocoBootstrapReplacement $newExe $canonicalExe $manifest.bootstrap.sha256.ToLowerInvariant()
         }
     }
@@ -461,7 +478,7 @@ if ($Preview) { $engineParameters.Preview=$true }
 if ($NetworkOnly) { $engineParameters.NetworkOnly=$true }
 if ($ShowOnUpdate) { $engineParameters.ShowOnUpdate=$true }
 if ($Silent) { $engineParameters.Silent=$true }
-Set-CocoSplash 'Engine verificado; transfiriendo la ejecucion al launcher...' 12
+Set-CocoSplash 'Componentes listos; iniciando Coco Launcher...' 12
 $env:COCO_ENGINE_ROOT=$engineRoot
 $engineSource=[IO.File]::ReadAllText($entryPoint,[Text.Encoding]::UTF8)
 $engineBlock=[ScriptBlock]::Create($engineSource)

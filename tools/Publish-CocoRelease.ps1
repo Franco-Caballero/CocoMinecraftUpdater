@@ -253,7 +253,7 @@ $fullbodyBase64=[Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $ro
 $generatedBootstrap=Join-Path $env:TEMP 'CocoBootstrapper.generated.ps1'
 [IO.File]::WriteAllText($generatedBootstrap,$bootstrapTemplate.Replace('__FULLBODY_BASE64__',$fullbodyBase64),(New-Object Text.UTF8Encoding($true)))
 $bootstrapExe=Join-Path $distDir 'CocoUpdater.exe'
-Invoke-ps2exe -InputFile $generatedBootstrap -OutputFile $bootstrapExe -Title 'Coco Minecraft Updater' -Product 'Coco Minecraft Updater' -Version "$Version.0" -NoConsole -IconFile (Join-Path $root 'reynaico.ico')
+Invoke-ps2exe -InputFile $generatedBootstrap -OutputFile $bootstrapExe -Title 'Coco Launcher' -Product 'Coco Launcher' -Version "$Version.0" -NoConsole -IconFile (Join-Path $root 'reynaico.ico')
 Remove-Item $generatedBootstrap -Force
 $publisherNext=Join-Path $root 'dist\CocoPublisher.next.exe'
 Remove-Item $publisherNext -Force -ErrorAction SilentlyContinue

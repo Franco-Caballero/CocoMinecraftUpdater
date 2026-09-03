@@ -319,7 +319,7 @@ if($global:CocoSharedUi){
     $script:CocoPanel=$global:CocoSharedUi.Panel;$script:CocoAccent=$global:CocoSharedUi.Accent;$script:CocoBrand=$global:CocoSharedUi.Brand
     if(-not$script:CocoPanel){$script:CocoPanel=@($script:CocoForm.Controls|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Controls.Count-ge4}|Select-Object -First 1)[0]}
     if($script:CocoPanel-and-not$script:CocoAccent){$script:CocoAccent=@($script:CocoPanel.Controls|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Width-lt20}|Select-Object -First 1)[0]}
-    if($script:CocoPanel-and-not$script:CocoBrand){$script:CocoBrand=@($script:CocoPanel.Controls|Where-Object{$_-is[Windows.Forms.Label]-and$_.Text-match'COCO PACK'}|Select-Object -First 1)[0]}
+    if($script:CocoPanel-and-not$script:CocoBrand){$script:CocoBrand=@($script:CocoPanel.Controls|Where-Object{$_-is[Windows.Forms.Label]-and($_.Text-match'COCO PACK'-or$_.Text-match'COCO LAUNCHER')}|Select-Object -First 1)[0]}
     # El launcher agrega una lista desplazable debajo del estado. Conserva
     # exactamente ese mismo lienzo desde el primer frame para que el progreso
     # y el texto de estado nunca caigan encima de las tarjetas host/cliente.
