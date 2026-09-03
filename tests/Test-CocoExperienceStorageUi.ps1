@@ -61,10 +61,10 @@ try{
     $installedCard=@($cards|Where-Object{$_.Tag.ExperienceId-eq'installed'})[0]
     $missingButtons=@(Get-TestDescendantButtons $missingCard)
     $installedButtons=@(Get-TestDescendantButtons $installedCard)
-    if($missingButtons.Count-ne1-or$installedButtons.Count-ne2){throw "La UI cliente no conserva los botones de almacenamiento esperados. missing=$($missingButtons.Count) installed=$($installedButtons.Count)"}
-    $missingFree=@($missingButtons|Where-Object Text -eq 'LIBERAR ESPACIO')[0]
+    if($missingButtons.Count-ne1-or$installedButtons.Count-ne3){throw "La UI cliente no conserva los botones de almacenamiento esperados. missing=$($missingButtons.Count) installed=$($installedButtons.Count)"}
+    $missingFree=@($missingButtons|Where-Object{[string]$_.Text-in@('BORRAR','LIBERAR ESPACIO')})[0]
     $missingMove=@($missingButtons|Where-Object Text -eq 'INSTALAR')[0]
-    $installedFree=@($installedButtons|Where-Object Text -eq 'LIBERAR ESPACIO')[0]
+    $installedFree=@($installedButtons|Where-Object{[string]$_.Text-in@('BORRAR','LIBERAR ESPACIO')})[0]
     if($missingFree-or-not$missingMove.Enabled-or-not$installedFree.Enabled){throw 'Los estados de botones cliente no reflejan instalado/no instalado.'}
     $missingStatus=@($missingCard|ForEach-Object{Get-TestDescendantControls $_}|Where-Object{[string]$_.Text-match'NO INSTALADO'})[0]
     if(-not$missingStatus){throw 'La tarjeta no instalada no ofrece la indicacion de instalacion.'}

@@ -2282,7 +2282,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
                 $hostBtn.Enabled = $false
                 Set-CocoFlatButtonStyle $hostBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))
             } else {
-                $hostBtn.Text = 'ALOJAR PARTIDA'
+                $hostBtn.Text = 'ABRIR'
                 Set-CocoFlatButtonStyle $hostBtn ([Drawing.Color]::FromArgb(83, 47, 117)) ([Drawing.Color]::White)
             }
             $hostBtn.Tag = [string]$exp.id
@@ -2317,7 +2317,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
             $card.Controls.Add($deleteBtn)
         } else {
             $dirBtn = New-Object Windows.Forms.Button
-            $dirBtn.Text = if($usage.Installed){'CAMBIAR CARPETA'}else{'INSTALAR'}
+            $dirBtn.Text = if($usage.Installed){'CARPETA'}else{'INSTALAR'}
             $dirBtn.Font = New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6))
             $dirBtn.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 120),(Get-CocoLauncherUiMetric 28))
             $dirBtn.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 280),(Get-CocoLauncherUiMetric 18))
@@ -2333,7 +2333,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$
             $card.Controls.Add($dirBtn)
             
             $deleteBtn = New-Object Windows.Forms.Button
-            $deleteBtn.Text = 'LIBERAR ESPACIO'
+            $deleteBtn.Text = 'BORRAR'
             $deleteBtn.Font = New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6))
             $deleteBtn.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 120),(Get-CocoLauncherUiMetric 28))
             $deleteBtn.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 410),(Get-CocoLauncherUiMetric 18))
@@ -2407,7 +2407,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 $metaLabel.Text=''
                 if($isRunning){$detailLabel.Text='EN EJECUCION';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)}elseif($usage.Installed){$detailLabel.Text='INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(168,236,168)}else{$detailLabel.Text='NO INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)}
                 $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
-                if($Role-eq'host'){$buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ALOJAR PARTIDA'};Width=100;Kind='host'},[pscustomobject]@{Text='CARPETA';Width=70;Kind='folder'},[pscustomobject]@{Text='BORRAR';Width=54;Kind='delete'})}else{$buttonSpecs=@([pscustomobject]@{Text=if($usage.Installed){'CAMBIAR CARPETA'}else{'INSTALAR'};Width=if($usage.Installed){116}else{240};Kind='install'});if($usage.Installed){$buttonSpecs+=,[pscustomobject]@{Text='LIBERAR ESPACIO';Width=116;Kind='delete'}}}
+                if($Role-eq'host'){$buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ABRIR'};Width=100;Kind='host'},[pscustomobject]@{Text='CARPETA';Width=70;Kind='folder'},[pscustomobject]@{Text='BORRAR';Width=54;Kind='delete'})}else{$buttonSpecs=@([pscustomobject]@{Text=if($usage.Installed){'CARPETA'}else{'INSTALAR'};Width=if($usage.Installed){116}else{240};Kind='install'});if($usage.Installed){$buttonSpecs+=,[pscustomobject]@{Text='BORRAR';Width=116;Kind='delete'}}}
             }
             $card.Controls.AddRange(@($imageBox,$nameLabel,$detailLabel));$script:CocoExperienceCardsToolTip.SetToolTip($card,"$([string]$exp.name)`r`n$([string]$exp.description)");$script:CocoExperienceCardsToolTip.SetToolTip($nameLabel,[string]$exp.name);$script:CocoExperienceCardsToolTip.SetToolTip($imageBox,[string]$exp.name)
             if(Test-CocoMediaExperience $exp){foreach($control in @($card,$imageBox,$nameLabel,$metaLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure())}}else{foreach($control in @($card,$imageBox,$nameLabel,$metaLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){&$experienceStorageInstallUiCommand $info}}.GetNewClosure())}}
@@ -2465,7 +2465,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
         $storageHeader.Text=if($Role-eq'host'){'EXPERIENCIAS Y GESTION DE INSTANCIAS'}else{'EXPERIENCIAS DISPONIBLES'}
         $storageHeader.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9 7));$storageHeader.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$storageHeader.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric 0));$storageHeader.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 810),(Get-CocoLauncherUiMetric 20));$storageHeader.AutoEllipsis=$true
         $cardsContent.Controls.Add($storageHeader)
-        $columns=2;$gap=Get-CocoLauncherUiMetric 10;$availableWidth=[Math]::Max((Get-CocoLauncherUiMetric 500),$DynamicPanel.ClientSize.Width-(Get-CocoLauncherUiMetric 18));$cardWidth=[Math]::Max((Get-CocoLauncherUiMetric 240),[Math]::Floor(($availableWidth-$gap)/$columns));$cardHeight=[int]$cardWidth;$gradientHeight=Get-CocoLauncherUiMetric 100;$actionPadding=Get-CocoLauncherUiMetric 10;$actionGap=Get-CocoLauncherUiMetric 8;$actionHeight=Get-CocoLauncherUiMetric 22
+        $columns=2;$gap=Get-CocoLauncherUiMetric 10;$availableWidth=[Math]::Max((Get-CocoLauncherUiMetric 500),$DynamicPanel.ClientSize.Width-(Get-CocoLauncherUiMetric 18));$cardWidth=[Math]::Max((Get-CocoLauncherUiMetric 240),[Math]::Floor(($availableWidth-$gap)/$columns));$cardHeight=[int]$cardWidth;$gradientHeight=Get-CocoLauncherUiMetric 110;$actionPadding=Get-CocoLauncherUiMetric 8;$actionGap=Get-CocoLauncherUiMetric 6;$actionHeight=Get-CocoLauncherUiMetric 28
         $cardIndex=0
         foreach($exp in $managedExperiences){
             $rowIndex=[int][Math]::Floor($cardIndex/$columns);$columnIndex=$cardIndex%$columns;$cardX=[int]($columnIndex*($cardWidth+$gap));$cardTop=[int]((Get-CocoLauncherUiMetric 22)+$rowIndex*($cardHeight+$gap))
@@ -2490,8 +2490,8 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 try{$graphics.FillRectangle($brush,$rectangle)}finally{$brush.Dispose()}
             }.GetNewClosure()))
             $imageBox.Controls.Add($gradient);$gradient.BringToFront()
-            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 12 8));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.BackColor=[Drawing.Color]::Transparent;$nameLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 4));$nameLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 43));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$true;$nameLabel.TextAlign=[Drawing.ContentAlignment]::BottomLeft;Set-CocoControlDoubleBuffered $nameLabel
-            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$detailLabel.BackColor=[Drawing.Color]::Transparent;$detailLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 51));$detailLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 16));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false;Set-CocoControlDoubleBuffered $detailLabel
+            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 12 8));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.BackColor=[Drawing.Color]::Transparent;$nameLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 4));$nameLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 40));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$true;$nameLabel.TextAlign=[Drawing.ContentAlignment]::BottomLeft;Set-CocoControlDoubleBuffered $nameLabel
+            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$detailLabel.BackColor=[Drawing.Color]::Transparent;$detailLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 46));$detailLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 18));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false;Set-CocoControlDoubleBuffered $detailLabel
             $buttonSpecs=@();$cardInfo=$null
             if(Test-CocoMediaExperience $exp){
                 $isMovie=Test-CocoMovieExperience $exp
@@ -2514,7 +2514,11 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 if($isRunning){$detailLabel.Text='EN EJECUCION';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)}elseif($usage.Installed){$detailLabel.Text='INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(183,239,194)}else{$detailLabel.Text='NO INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)}
                 $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
                 if($Role-eq'host'){
-                    $buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ALOJAR PARTIDA'};Kind='host'},[pscustomobject]@{Text='CARPETA';Kind='folder'},[pscustomobject]@{Text='BORRAR';Kind='delete'})
+                    $buttonSpecs=@(
+                        [pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ABRIR'};Kind='host'},
+                        [pscustomobject]@{Text='CARPETA';Kind='folder'},
+                        [pscustomobject]@{Text='BORRAR';Kind='delete'}
+                    )
                 }else{
                     if($usage.Installed){
                         $liveHostExp=if($global:CocoLauncherLiveHostSession){[string]$global:CocoLauncherLiveHostSession.Experience.id}else{''}
@@ -2523,8 +2527,8 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                         $playKind=if($isHostPlayingThis){'join'}else{'play'}
                         $buttonSpecs=@(
                             [pscustomobject]@{Text=$playText;Kind=$playKind},
-                            [pscustomobject]@{Text='CAMBIAR CARPETA';Kind='install'},
-                            [pscustomobject]@{Text='LIBERAR ESPACIO';Kind='delete'}
+                            [pscustomobject]@{Text='CARPETA';Kind='install'},
+                            [pscustomobject]@{Text='BORRAR';Kind='delete'}
                         )
                     }else{
                         $buttonSpecs=@([pscustomobject]@{Text='INSTALAR';Kind='install'})
@@ -2564,9 +2568,9 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                     }
                 }
             }
-            $actionAreaWidth=[Math]::Max((Get-CocoLauncherUiMetric 140),$cardWidth-(2*$actionPadding));$buttonCount=$buttonSpecs.Count;$usableButtonWidth=[Math]::Max((Get-CocoLauncherUiMetric 100),$actionAreaWidth-([Math]::Max(0,$buttonCount-1)*$actionGap));$maxPerButton=[int][Math]::Floor($usableButtonWidth/[Math]::Max(1,$buttonCount));$buttonWidth=[int][Math]::Min($maxPerButton,(Get-CocoLauncherUiMetric $(if($buttonCount-eq1){118}else{108})));$buttonGroupWidth=($buttonCount*$buttonWidth)+([Math]::Max(0,$buttonCount-1)*$actionGap);$buttonX=$cardWidth-$actionPadding-$buttonGroupWidth;$buttonY=$gradientHeight-$actionHeight-(Get-CocoLauncherUiMetric 4);$buttonIndex=0
+            $actionAreaWidth=[Math]::Max((Get-CocoLauncherUiMetric 140),$cardWidth-(2*$actionPadding));$buttonCount=$buttonSpecs.Count;$usableButtonWidth=[Math]::Max((Get-CocoLauncherUiMetric 100),$actionAreaWidth-([Math]::Max(0,$buttonCount-1)*$actionGap));$maxPerButton=[int][Math]::Floor($usableButtonWidth/[Math]::Max(1,$buttonCount));$buttonWidth=if($buttonCount-eq1){[int][Math]::Min($usableButtonWidth,(Get-CocoLauncherUiMetric 140))}else{$maxPerButton};$buttonGroupWidth=($buttonCount*$buttonWidth)+([Math]::Max(0,$buttonCount-1)*$actionGap);$buttonX=$cardWidth-$actionPadding-$buttonGroupWidth;$buttonY=$gradientHeight-$actionHeight-(Get-CocoLauncherUiMetric 6);$buttonIndex=0
             foreach($spec in $buttonSpecs){
-                $button=New-Object Windows.Forms.Button;$button.Text=[string]$spec.Text;$button.Size=New-Object Drawing.Size($buttonWidth,$actionHeight);$button.Location=New-Object Drawing.Point($buttonX,$buttonY);$button.Tag=$cardInfo;$button.TabStop=$false
+                $button=New-Object Windows.Forms.Button;$button.Text=[string]$spec.Text;$button.Size=New-Object Drawing.Size($buttonWidth,$actionHeight);$button.Location=New-Object Drawing.Point($buttonX,$buttonY);$button.Tag=$cardInfo;$button.TabStop=$false;$button.UseCompatibleTextRendering=$false
                 if($spec.Kind-eq'delete'){$enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled;if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}}
                 elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}
                 elseif($spec.Kind-eq'play'){
@@ -2578,7 +2582,23 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 }
                 elseif($spec.Kind-eq'folder'){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))}
                 else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)}
-                if([string]$spec.Text-in@('CAMBIAR CARPETA','LIBERAR ESPACIO','ALOJAR PARTIDA','EN EJECUCION','VER PELICULA','JUGAR','UNIRSE')){$button.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6))}
+                $buttonFontSize=if($buttonCount-ge3){(Get-CocoLauncherUiFontSize 8.5 6.5)}else{(Get-CocoLauncherUiFontSize 9 7)}
+                $button.Font=New-Object Drawing.Font('Segoe UI Semibold',$buttonFontSize)
+                $button.UseCompatibleTextRendering=$false
+                if($script:CocoExperienceCardsToolTip){
+                    $tipText=switch($spec.Kind){
+                        'host'{if($cardInfo.IsRunning){'La partida ya esta en ejecucion.'}else{'Abrir y alojar partida para tus amigos.'}}
+                        'play'{if($cardInfo.IsRunning){'La partida ya esta en ejecucion.'}else{'Iniciar la experiencia localmente.'}}
+                        'join'{'Unirse a la partida que tiene abierta el host.'}
+                        'install'{if($cardInfo.Usage.Installed){'Cambiar carpeta o mover la instalacion.'}else{'Descargar e instalar esta experiencia.'}}
+                        'folder'{if($cardInfo.IsMedia){'Abrir la carpeta de descargas en el Explorador.'}else{'Cambiar carpeta o mover la instalacion.'}}
+                        'delete'{'Desinstalar esta experiencia para liberar espacio en disco.'}
+                        'movie'{'Reproducir pelicula.'}
+                        'episode'{'Ver episodios disponibles.'}
+                        default{[string]$spec.Text}
+                    }
+                    $script:CocoExperienceCardsToolTip.SetToolTip($button,$tipText)
+                }
                 if($spec.Kind-eq'movie'){$button.Add_Click({param($sender,$eventArgs)& $mediaMovieUiCommand $sender.Tag.Experience}.GetNewClosure())}
                 elseif($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}
                 elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){&$mediaOpenFolderUiCommand $sender.Tag.Experience}else{&$experienceChangeLocationUiCommand $sender.Tag}}.GetNewClosure())}
@@ -6095,9 +6115,9 @@ function Set-CocoFlatButtonStyle($Button,[Drawing.Color]$BackColor,[Drawing.Colo
     $Button.ForeColor=$ForeColor
     $Button.Cursor=[Windows.Forms.Cursors]::Hand
     $scale=if($script:CocoUiScale){[double]$script:CocoUiScale}else{1.0}
-    $fontSize=[single][Math]::Max(7,[Math]::Round(10*$scale,1))
+    $fontSize=[single][Math]::Max(7,[Math]::Round(9*$scale,1))
     $Button.Font=New-Object Drawing.Font('Segoe UI Semibold',$fontSize)
-    $Button.UseCompatibleTextRendering=$true
+    $Button.UseCompatibleTextRendering=$false
 }
 
 function Get-CocoLauncherUiMetric([double]$Value){

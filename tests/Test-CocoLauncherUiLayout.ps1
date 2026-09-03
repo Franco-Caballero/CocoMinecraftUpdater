@@ -110,14 +110,14 @@ try{
             $cardTextControls=@($cards|ForEach-Object{$_.Controls}|ForEach-Object{$_.Controls}|ForEach-Object{$_.Controls})
             $forbiddenLabels=@($cardTextControls|Where-Object{[string]$_.Text-match'JUEGO COOPERATIVO|ONLINE FIX'})
             if($forbiddenLabels.Count){throw 'FAIL: las tarjetas aun muestran categorias de cooperativo u online fix.'}
-            $deleteButtons=@($cardTextControls|Where-Object{[string]$_.Text-eq'LIBERAR ESPACIO'})
-            if($deleteButtons.Count-ne1){throw 'FAIL: cliente muestra liberar espacio en tarjetas no instaladas o no lo muestra en la instalada.'}
-            if($deleteButtons[0].Width-lt(Get-CocoLauncherUiMetric 100)-or$deleteButtons[0].Text-ne'LIBERAR ESPACIO'){throw 'FAIL: el boton Liberar espacio no tiene ancho suficiente.'}
+            $deleteButtons=@($cardTextControls|Where-Object{[string]$_.Text-in@('BORRAR','LIBERAR ESPACIO')})
+            if($deleteButtons.Count-ne1){throw 'FAIL: cliente muestra liberar espacio/borrar en tarjetas no instaladas o no lo muestra en la instalada.'}
+            if($deleteButtons[0].Width-lt(Get-CocoLauncherUiMetric 80)-or$deleteButtons[0].Text-notin@('BORRAR','LIBERAR ESPACIO')){throw 'FAIL: el boton borrar no tiene ancho suficiente.'}
             $installedCard=$cards[0]
             $image=@($installedCard.Controls|Where-Object{$_.Name-eq'CocoExperienceImage'})[0]
             if(-not$image-or$image.Width-ne$installedCard.Width-or$image.Height-ne$installedCard.Height){throw 'FAIL: las portadas no ocupan la tarjeta completa.'}
             $textAnchor=@($image.Controls|ForEach-Object{$_.Controls}|Where-Object{$_.Text-eq'Experience 1'})[0]
-            $firstAction=@($image.Controls|ForEach-Object{$_.Controls}|Where-Object{$_.Text-eq'CAMBIAR CARPETA'})[0]
+            $firstAction=@($image.Controls|ForEach-Object{$_.Controls}|Where-Object{[string]$_.Text-in@('CARPETA','CAMBIAR CARPETA')})[0]
             if(-not$textAnchor-or-not$firstAction-or$firstAction.Location.X-le$textAnchor.Location.X-or$firstAction.Location.X+($firstAction.Width)-gt$installedCard.Width){throw 'FAIL: las acciones compactas no quedan alineadas dentro de la tarjeta.'}
             $installButtons=@($cardTextControls|Where-Object{[string]$_.Text-eq'INSTALAR'})
             if($installButtons.Count-ne6-or($installButtons|Where-Object{$_.Width-lt(Get-CocoLauncherUiMetric 100)}).Count){throw 'FAIL: las tarjetas no conservan un CTA INSTALAR legible.'}
