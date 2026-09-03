@@ -391,6 +391,15 @@ function Get-AllReleases {
     return @($result)
 }
 function Send-CocoReleaseAsset($Release,$Asset){
+    $tag = [string]$Release.tag_name
+    if(-not$tag){$tag = "v$Version"}
+    $ghCli = Get-Command gh -ErrorAction SilentlyContinue
+    if($ghCli){
+        try{
+            & gh release upload $tag $Asset.FullName --clobber
+            if($LASTEXITCODE -eq 0){return}
+        }catch{}
+    }
     $upload="https://uploads.github.com/repos/$Repository/releases/$($Release.id)/assets?name=$([Uri]::EscapeDataString($Asset.Name))"
     for($attempt=1;$attempt-le4;$attempt++){
         try{
