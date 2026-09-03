@@ -81,7 +81,7 @@ $timer.Add_Tick({
             if($headerControl.Visible-or$footerControl.Visible-or$window.Bounds-ne$screenBounds){$script:CocoUiFailure=('El boton no activo correctamente la pantalla completa real. header={0}; footer={1}; window={2}; screen={3}; state={4}' -f $headerControl.Visible,$footerControl.Visible,$window.Bounds,$screenBounds,$window.WindowState)}
             else{
                 $toggleAction=if($window.Tag-and$window.Tag.PSObject.Properties.Name-contains'ToggleFullscreen'){[System.Management.Automation.ScriptBlock]$window.Tag.ToggleFullscreen}else{$null}
-                if($toggleAction){&$toggleAction;Start-Sleep -Milliseconds 400;&$toggleAction}else{$footerControl.Visible=$true;$fullscreenControl.PerformClick()}
+                if($toggleAction){Start-Sleep -Milliseconds 550; &$toggleAction}else{$footerControl.Visible=$true;$fullscreenControl.PerformClick()}
                 [Windows.Forms.Application]::DoEvents()
                 if($fullscreenControl-and$fullscreenControl.Text-ne'PANTALLA COMPLETA'){$script:CocoUiFailure='Escape no restauro el texto de pantalla completa.'}
                 if(($headerControl-and-not$headerControl.Visible)-or($footerControl-and-not$footerControl.Visible)){$script:CocoUiFailure='El reproductor no pudo salir de pantalla completa.'}

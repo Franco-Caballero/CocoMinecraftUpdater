@@ -832,7 +832,7 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     $experienceName=[string]$Experience.name
     $dialog=New-Object Windows.Forms.Form
     $dialog.Name='CocoInstallLocationDialog';$dialog.Text=("Instalar {0}"-f$experienceName);$dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='None';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.KeyPreview=$true;$dialog.ShowInTaskbar=$false;$dialog.TopMost=$true;$dialog.BackColor=[Drawing.Color]::FromArgb(53,35,67);$dialog.Padding=New-Object Windows.Forms.Padding(1);$dialog.ClientSize=New-Object Drawing.Size(660,315);$dialog.MinimumSize=New-Object Drawing.Size(660,315)
-    $dialog.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(84,59,106),1);$eventArgs.Graphics.DrawRectangle($pen,0,0,$sender.ClientSize.Width-1,$sender.ClientSize.Height-1);$pen.Dispose()}.GetNewClosure())
+    $dialog.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(84,59,106),1);try{$eventArgs.Graphics.DrawRectangle($pen,0,0,$sender.ClientSize.Width-1,$sender.ClientSize.Height-1)}finally{$pen.Dispose()}}.GetNewClosure())
 
     $header=New-Object Windows.Forms.Panel;$header.Name='CocoInstallLocationHeader';$header.Dock='Top';$header.Height=78;$header.BackColor=[Drawing.Color]::FromArgb(27,19,38)
     $accent=New-Object Windows.Forms.Panel;$accent.Name='CocoInstallLocationAccent';$accent.Dock='Left';$accent.Width=5;$accent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
@@ -1734,7 +1734,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         # Ignorar el segundo evento de la misma transicion evita entrar y salir
         # de pantalla completa en el mismo gesto.
         $now=[DateTime]::UtcNow
-        if(($now-$state.LastFullscreenToggleUtc).TotalMilliseconds-lt350){return}
+        if(($now-$state.LastFullscreenToggleUtc).TotalMilliseconds-lt500){return}
         $state.LastFullscreenToggleUtc=$now
         $entering=-not$state.Fullscreen
         try{
@@ -1919,7 +1919,7 @@ function Invoke-CocoMediaEpisodeUi($Experience){
     Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
     $dialog=New-Object Windows.Forms.Form
     $dialog.Name='CocoMediaEpisodeSelector';$dialog.Text=[string]$Experience.name;$dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='None';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.KeyPreview=$true;$dialog.ShowInTaskbar=$false;$dialog.BackColor=[Drawing.Color]::FromArgb(27,19,38);$dialog.Padding=New-Object Windows.Forms.Padding(1);$dialog.ClientSize=New-Object Drawing.Size(760,380);$dialog.MinimumSize=New-Object Drawing.Size(660,340)
-    $dialog.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(84,59,106),1);$eventArgs.Graphics.DrawRectangle($pen,0,0,$sender.ClientSize.Width-1,$sender.ClientSize.Height-1);$pen.Dispose()}.GetNewClosure())
+    $dialog.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(84,59,106),1);try{$eventArgs.Graphics.DrawRectangle($pen,0,0,$sender.ClientSize.Width-1,$sender.ClientSize.Height-1)}finally{$pen.Dispose()}}.GetNewClosure())
 
     $header=New-Object Windows.Forms.Panel;$header.Name='CocoMediaSelectorHeader';$header.Dock='Top';$header.Height=82;$header.BackColor=[Drawing.Color]::FromArgb(27,19,38)
     $accent=New-Object Windows.Forms.Panel;$accent.Dock='Left';$accent.Width=5;$accent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
@@ -1929,7 +1929,7 @@ function Invoke-CocoMediaEpisodeUi($Experience){
     $header.Controls.AddRange(@($accent,$heading,$badge,$closeButton))
 
     $body=New-Object Windows.Forms.Panel;$body.Name='CocoMediaSelectorBody';$body.Dock='Fill';$body.BackColor=[Drawing.Color]::FromArgb(22,13,34);$body.Padding=New-Object Windows.Forms.Padding(20,8,20,8)
-    $list=New-Object Windows.Forms.Panel;$list.Name='CocoMediaEpisodeList';$list.Dock='Fill';$list.AutoScroll=$true;$list.BackColor=[Drawing.Color]::FromArgb(22,13,34);$list.Padding=New-Object Windows.Forms.Padding(0)
+    $list=New-Object Windows.Forms.Panel;$list.Name='CocoMediaEpisodeList';$list.Dock='Fill';$list.AutoScroll=$true;$list.BackColor=[Drawing.Color]::FromArgb(22,13,34);$list.Padding=New-Object Windows.Forms.Padding(0);Set-CocoControlDoubleBuffered $list
     $list.HorizontalScroll.Enabled=$false;$list.HorizontalScroll.Visible=$false
     $body.Controls.Add($list)
 
@@ -1940,7 +1940,7 @@ function Invoke-CocoMediaEpisodeUi($Experience){
     $progress.Add_Paint(({
         param($sender,$eventArgs)
         $width=[Math]::Max(0,[int](($sender.ClientSize.Width-2)*([int]$sender.Tag/100.0)))
-        $brush=New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(177,92,255));if($width-gt0){$eventArgs.Graphics.FillRectangle($brush,1,1,$width,([Math]::Max(1,$sender.ClientSize.Height-2)))};$brush.Dispose()
+        $brush=New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(177,92,255));try{if($width-gt0){$eventArgs.Graphics.FillRectangle($brush,1,1,$width,([Math]::Max(1,$sender.ClientSize.Height-2)))}}finally{$brush.Dispose()}
     }.GetNewClosure()))
     $cancelButton=New-Object Windows.Forms.Button;$cancelButton.Name='CocoMediaCancelButton';$cancelButton.Text='CANCELAR';$cancelButton.Size=New-Object Drawing.Size(110,34);Set-CocoMediaButtonStyle $cancelButton ([Drawing.Color]::FromArgb(58,36,81)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(105,52,75))
     $footer.Controls.AddRange(@($footerLine,$progress,$cancelButton))
@@ -1974,7 +1974,7 @@ function Invoke-CocoMediaEpisodeUi($Experience){
     $rowY=8
     foreach($episode in @($Experience.content.episodes)){
         $rowWidth=[Math]::Max(520,[int]$list.ClientSize.Width-6)
-        $row=New-Object Windows.Forms.Panel;$row.Name='CocoMediaEpisodeRow';$row.Location=New-Object Drawing.Point(0,$rowY);$row.Size=New-Object Drawing.Size($rowWidth,76);$row.BackColor=[Drawing.Color]::FromArgb(43,27,67);$row.Padding=New-Object Windows.Forms.Padding(1)
+        $row=New-Object Windows.Forms.Panel;$row.Name='CocoMediaEpisodeRow';$row.Location=New-Object Drawing.Point(0,$rowY);$row.Size=New-Object Drawing.Size($rowWidth,76);$row.BackColor=[Drawing.Color]::FromArgb(43,27,67);$row.Padding=New-Object Windows.Forms.Padding(1);Set-CocoControlDoubleBuffered $row
         $rowAccent=New-Object Windows.Forms.Panel;$rowAccent.Dock='Left';$rowAccent.Width=4;$rowAccent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
         $title=New-Object Windows.Forms.Label;$title.Text=[string]$episode.title;$title.Font=New-Object Drawing.Font('Segoe UI Semibold',9.5);$title.ForeColor=[Drawing.Color]::White;$title.AutoEllipsis=$true
         $file=New-Object Windows.Forms.Label;$file.Text=[string]$episode.fileName;$file.Font=New-Object Drawing.Font('Segoe UI',7.5);$file.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$file.AutoEllipsis=$true
@@ -1991,8 +1991,10 @@ function Invoke-CocoMediaEpisodeUi($Experience){
     }
     $list.Add_Resize(({
         $targetWidth=[Math]::Max(520,[int]$list.ClientSize.Width-6)
+        try{$list.HorizontalScroll.Enabled=$false;$list.HorizontalScroll.Visible=$false}catch{}
         foreach($episodeRow in @($list.Controls|Where-Object Name -eq 'CocoMediaEpisodeRow')){if($episodeRow.Width-ne$targetWidth){$episodeRow.Width=$targetWidth}}
     }.GetNewClosure()))
+    try{Register-CocoNativeScrollWheel $list $list}catch{}
     $dialog.Add_FormClosing(({
         param($sender,$eventArgs)
         if($script:CocoMediaDownloadInProgress){$eventArgs.Cancel=$true;$script:CocoMediaCancelRequested=$true;$statusLabel.Text='Cancelando...'}
@@ -2318,11 +2320,11 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 param($sender,$eventArgs)
                 $rectangle=New-Object Drawing.Rectangle(0,0,$sender.ClientSize.Width,$sender.ClientSize.Height)
                 $brush=[Drawing.Drawing2D.LinearGradientBrush]::new($rectangle,[Drawing.Color]::FromArgb(72,0,0,0),[Drawing.Color]::FromArgb(255,0,0,0),[Drawing.Drawing2D.LinearGradientMode]::Vertical)
-                $eventArgs.Graphics.FillRectangle($brush,$rectangle);$brush.Dispose()
+                try{$eventArgs.Graphics.FillRectangle($brush,$rectangle)}finally{$brush.Dispose()}
             }.GetNewClosure()))
             $imageBox.Controls.Add($gradient);$gradient.BringToFront()
-            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 12 8));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.BackColor=[Drawing.Color]::Transparent;$nameLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 4));$nameLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 43));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$true;$nameLabel.TextAlign=[Drawing.ContentAlignment]::BottomLeft
-            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$detailLabel.BackColor=[Drawing.Color]::Transparent;$detailLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 51));$detailLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 16));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false
+            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 12 8));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.BackColor=[Drawing.Color]::Transparent;$nameLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 4));$nameLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 43));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$true;$nameLabel.TextAlign=[Drawing.ContentAlignment]::BottomLeft;Set-CocoControlDoubleBuffered $nameLabel
+            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$detailLabel.BackColor=[Drawing.Color]::Transparent;$detailLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 51));$detailLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 16));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false;Set-CocoControlDoubleBuffered $detailLabel
             $buttonSpecs=@();$cardInfo=$null
             if(Test-CocoMediaExperience $exp){
                 $mediaStatus=Get-CocoMediaExperienceStatus $exp;$mediaRoot=[string]$mediaStatus.Root;$streamAvailable=@($exp.content.episodes|Where-Object{[string]$_.streamUrl-match'^https://'}).Count-gt0;$detailLabel.Text=if($streamAvailable-or$mediaStatus.Verified-gt0){'LISTO PARA VER'}else{'NO DISPONIBLE'};$detailLabel.ForeColor=if($streamAvailable-or$mediaStatus.Verified-gt0){[Drawing.Color]::FromArgb(183,239,194)}else{[Drawing.Color]::FromArgb(180,170,195)}
@@ -2396,9 +2398,24 @@ function Test-CocoSafeRelativePath([string]$Path){
 
 function Test-CocoManagedGameRunning([string]$InstanceRoot, [string]$ExecutableName=''){
     if([string]::IsNullOrWhiteSpace($InstanceRoot)){return $false}
+    # Las instancias no instaladas son la mayoría: sin carpeta no hay juego
+    # vivo y se evita una consulta WMI por tarjeta en cada refresh.
+    try{if(-not(Test-Path -LiteralPath $InstanceRoot -PathType Container)){return $false}}catch{return $false}
     $full=[IO.Path]::GetFullPath($InstanceRoot)
     try{
-        $all=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+        # El refresh de tarjetas llamaba a WMI una vez por experiencia (N
+        # consultas seguidas en el hilo UI = congelamiento). Se cachea el
+        # snapshot unos segundos y cada tarjeta filtra en memoria.
+        $now=[DateTime]::UtcNow
+        $cacheValid=$false
+        try{
+            $cacheValid=($script:CocoProcessSnapshotAt-and$script:CocoProcessSnapshot-and(($now-$script:CocoProcessSnapshotAt).TotalSeconds-lt3))
+        }catch{$cacheValid=$false}
+        if($cacheValid){$all=@($script:CocoProcessSnapshot)}
+        else{
+            $all=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+            try{$script:CocoProcessSnapshot=$all;$script:CocoProcessSnapshotAt=$now}catch{}
+        }
         $matches=@($all|Where-Object{
             if([string]::IsNullOrWhiteSpace($_.CommandLine)-and[string]::IsNullOrWhiteSpace($_.ExecutablePath)){return $false}
             $inLine=-not[string]::IsNullOrWhiteSpace($_.CommandLine)-and$_.CommandLine.IndexOf($full,[StringComparison]::OrdinalIgnoreCase)-ge0
@@ -5897,10 +5914,14 @@ function Format-CocoExperienceCardTitle([string]$Text,[int]$MaximumLineLength=27
 # V4 del scroll de experiencias. El viewport usa exclusivamente el
 # AutoScroll nativo de WinForms y su única barra nativa. No hay thumb
 # superpuesto, timer de animación ni repintado manual durante el arrastre.
+# La rueda usa exactamente la misma ruta nativa que la barra (AutoScrollPosition
+# con invalidación de hijos) para no dejar fantasmas de las portadas.
 function Set-CocoExperienceCardsNativeScrollStyle($DynamicPanel){
-    # Compatibilidad con llamadas antiguas. No se alteran estilos HWND: hacerlo
-    # mientras AutoScroll recalcula la superficie era la causa de la barra doble.
-    return
+    if(-not$DynamicPanel-or$DynamicPanel.IsDisposed){return}
+    try{
+        Set-CocoControlDoubleBuffered $DynamicPanel
+        try{$DynamicPanel.BackColor=[Drawing.Color]::FromArgb(22,13,34)}catch{}
+    }catch{}
 }
 
 function Get-CocoExperienceCardsNativeMaximum($DynamicPanel,[int]$FallbackMaximum=0){
@@ -5984,16 +6005,14 @@ function Update-CocoExperienceCardsScrollBar($DynamicPanel){
 
 function Set-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset,[bool]$SyncTarget=$true,[bool]$ForcePaint=$false){
     $state=Get-CocoExperienceCardsScrollState $DynamicPanel
-    if(-not$state){return}
+    if(-not$state-or$DynamicPanel.IsDisposed){return}
     try{
-        $DynamicPanel.AutoScroll=$true
+        if(-not$DynamicPanel.AutoScroll){$DynamicPanel.AutoScroll=$true}
         $DynamicPanel.PerformLayout()
     }catch{}
     $metrics=Get-CocoExperienceCardsScrollMetrics $DynamicPanel
     $clamped=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,[int]$Offset))
     try{
-        # VerticalScroll.Value es el mecanismo nativo de WinForms: el thumb y
-        # la superficie se actualizan juntos incluso con el botón presionado.
         $DynamicPanel.VerticalScroll.Value=$clamped
         $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)
     }catch{
@@ -6003,7 +6022,6 @@ function Set-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset,[bool]$S
     $actual=try{[int]$DynamicPanel.VerticalScroll.Value}catch{[int]$clamped}
     $state.Offset=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,$actual))
     if($SyncTarget){$state.PendingOffset=$state.Offset;$state.TargetOffset=$state.Offset}
-    $DynamicPanel.Invalidate($false)
     if($ForcePaint){try{$DynamicPanel.Update()}catch{}}
 }
 
@@ -6040,29 +6058,15 @@ function Set-CocoExperienceCardsScrollContent($DynamicPanel,[int]$ContentHeight)
 }
 
 function Register-CocoExperienceScrollWheel($Control,$DynamicPanel){
-    if(-not$Control-or$Control.IsDisposed-or-not$DynamicPanel-or$DynamicPanel.IsDisposed){return}
-    # El panel raíz ya recibe el comportamiento nativo. En los hijos se añade
-    # un puente mínimo porque PictureBox/Button pueden consumir la rueda antes
-    # de que llegue al ScrollableControl.
-    if($Control-ne$DynamicPanel-and[string]$Control.AccessibleName-ne'CocoLauncherNativeWheelBoundV4'){
-        $Control.AccessibleName='CocoLauncherNativeWheelBoundV4'
-        $Control.Add_MouseWheel(({
-            param($sender,$eventArgs)
-            try{
-                $state=Get-CocoExperienceCardsScrollState $DynamicPanel
-                $delta=[int]$eventArgs.Delta
-                if(-not$state-or$delta-eq0){return}
-                $step=[Math]::Max(48,[int][Math]::Round([Math]::Abs($delta)*0.85))
-                $direction=if($delta-gt0){-1}else{1}
-                $metrics=Get-CocoExperienceCardsScrollMetrics $DynamicPanel
-                $base=[int]$DynamicPanel.VerticalScroll.Value
-                $next=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,$base+($direction*$step)))
-                Set-CocoExperienceCardsScrollOffset $DynamicPanel $next $true $false
-                if($eventArgs.PSObject.Properties.Name-contains'Handled'){$eventArgs.Handled=$true}
-            }catch{}
-        }.GetNewClosure()))
-    }
-    foreach($child in @($Control.Controls)){Register-CocoExperienceScrollWheel $child $DynamicPanel}
+    # El viewport usa AutoScroll nativo de WinForms. Windows Forms y Win32 propagan
+    # automáticamente los mensajes WM_MOUSEWHEEL desde los controles hijos hacia el panel
+    # contenedor (DynamicPanel), moviendo la superficie y la barra con la misma lógica nativa.
+    # No registrar handlers manuales redundantes en los hijos evita saltos multiplicados,
+    # artefactos de portadas repetidas y que el scroll se pegue.
+}
+
+function Register-CocoNativeScrollWheel($Control,$Viewport){
+    # Viewports con AutoScroll nativo ya procesan la rueda a través de DefWindowProc.
 }
 
 function Set-CocoExperienceCardsScrollBehavior($DynamicPanel){
@@ -6071,6 +6075,8 @@ function Set-CocoExperienceCardsScrollBehavior($DynamicPanel){
     $DynamicPanel.AutoScroll=$true
     $DynamicPanel.HorizontalScroll.Enabled=$false
     $DynamicPanel.HorizontalScroll.Visible=$false
+    # Activa el doble búfer del viewport sin tocar HWND de scroll.
+    try{Set-CocoExperienceCardsNativeScrollStyle $DynamicPanel}catch{}
     $state=Get-CocoExperienceCardsScrollState $DynamicPanel
     $state.ScrollBar=$null;$state.ApplyTimer=$null
     if($DynamicPanel.Parent){
@@ -6082,7 +6088,7 @@ function Set-CocoExperienceCardsScrollBehavior($DynamicPanel){
         $DynamicPanel.AccessibleName='CocoLauncherNativeResizeBoundV4'
         $DynamicPanel.Add_Resize(({
             param($sender,$eventArgs)
-            try{$sender.AutoScroll=$true;$sender.PerformLayout();Update-CocoExperienceCardsScrollBar $sender}catch{}
+            try{$sender.AutoScroll=$true;$sender.HorizontalScroll.Enabled=$false;$sender.HorizontalScroll.Visible=$false;$sender.PerformLayout();Update-CocoExperienceCardsScrollBar $sender}catch{}
         }.GetNewClosure()))
     }
     Update-CocoExperienceCardsScrollBar $DynamicPanel
