@@ -2503,7 +2503,23 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 $instanceId=[string]$exp.instanceId;if(-not$instanceId){$instanceId=[string]$exp.id};$instanceRoot=Get-CocoExperienceInstanceRoot $exp $expRoot $locationPath;$usage=Get-CocoExperienceDiskUsage $instanceRoot;$isRunning=Test-CocoManagedGameRunning $instanceRoot;Write-CocoStorageDiagnostic 'card.state' @{role=$Role;experienceId=$exp.id;instanceId=$instanceId;root=$instanceRoot;installed=$usage.Installed;usage=$usage.Label;running=$isRunning}
                 if($isRunning){$detailLabel.Text='EN EJECUCION';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)}elseif($usage.Installed){$detailLabel.Text='INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(183,239,194)}else{$detailLabel.Text='NO INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)}
                 $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
-                if($Role-eq'host'){$buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ALOJAR PARTIDA'};Kind='host'},[pscustomobject]@{Text='CARPETA';Kind='folder'},[pscustomobject]@{Text='BORRAR';Kind='delete'})}else{$buttonSpecs=@([pscustomobject]@{Text=if($usage.Installed){'CAMBIAR CARPETA'}else{'INSTALAR'};Kind='install'});if($usage.Installed){$buttonSpecs+=,[pscustomobject]@{Text='LIBERAR ESPACIO';Kind='delete'}}}
+                if($Role-eq'host'){
+                    $buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ALOJAR PARTIDA'};Kind='host'},[pscustomobject]@{Text='CARPETA';Kind='folder'},[pscustomobject]@{Text='BORRAR';Kind='delete'})
+                }else{
+                    if($usage.Installed){
+                        $liveHostExp=if($global:CocoLauncherLiveHostSession){[string]$global:CocoLauncherLiveHostSession.Experience.id}else{''}
+                        $isHostPlayingThis=$liveHostExp-and$liveHostExp-eq[string]$exp.id
+                        $playText=if($isRunning){'EN EJECUCION'}elseif($isHostPlayingThis){'UNIRSE'}else{'JUGAR'}
+                        $playKind=if($isHostPlayingThis){'join'}else{'play'}
+                        $buttonSpecs=@(
+                            [pscustomobject]@{Text=$playText;Kind=$playKind},
+                            [pscustomobject]@{Text='CAMBIAR CARPETA';Kind='install'},
+                            [pscustomobject]@{Text='LIBERAR ESPACIO';Kind='delete'}
+                        )
+                    }else{
+                        $buttonSpecs=@([pscustomobject]@{Text='INSTALAR';Kind='install'})
+                    }
+                }
             }
             $card.Controls.Add($imageBox);$gradient.Controls.Add($nameLabel);$gradient.Controls.Add($detailLabel);$script:CocoExperienceCardsToolTip.SetToolTip($card,"$([string]$exp.name)`r`n$([string]$exp.description)");$script:CocoExperienceCardsToolTip.SetToolTip($nameLabel,[string]$exp.name);$script:CocoExperienceCardsToolTip.SetToolTip($imageBox,[string]$exp.name)
             if($cardInfo.IsMedia){
@@ -2514,14 +2530,53 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                     $control.Add_Click($mediaAction)
                 }
             }else{
-                foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){&$experienceStorageInstallUiCommand $info}}.GetNewClosure())}
+                foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){
+                    $control.Tag=$cardInfo
+                    if(-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){
+                        $control.Cursor=[Windows.Forms.Cursors]::Hand
+                        $control.Add_Click({
+                            param($sender,$eventArgs)
+                            $info=$sender.Tag
+                            if(-not$info-or$info.IsRunning){return}
+                            if($info.Usage.Installed){
+                                $liveHostExp=if($global:CocoLauncherLiveHostSession){[string]$global:CocoLauncherLiveHostSession.Experience.id}else{''}
+                                if($liveHostExp-and$liveHostExp-eq[string]$info.ExperienceId){
+                                    $script:CocoLauncherClientJoinRequested=[string]$info.ExperienceId
+                                    $global:CocoLauncherClientJoinRequested=[string]$info.ExperienceId
+                                }else{
+                                    $script:CocoLauncherClientRequestedExperience=[string]$info.ExperienceId
+                                    $global:CocoLauncherClientRequestedExperience=[string]$info.ExperienceId
+                                }
+                            }else{
+                                &$experienceStorageInstallUiCommand $info
+                            }
+                        })
+                    }
+                }
             }
             $actionAreaWidth=[Math]::Max((Get-CocoLauncherUiMetric 140),$cardWidth-(2*$actionPadding));$buttonCount=$buttonSpecs.Count;$usableButtonWidth=[Math]::Max((Get-CocoLauncherUiMetric 100),$actionAreaWidth-([Math]::Max(0,$buttonCount-1)*$actionGap));$maxPerButton=[int][Math]::Floor($usableButtonWidth/[Math]::Max(1,$buttonCount));$buttonWidth=[int][Math]::Min($maxPerButton,(Get-CocoLauncherUiMetric $(if($buttonCount-eq1){118}else{108})));$buttonGroupWidth=($buttonCount*$buttonWidth)+([Math]::Max(0,$buttonCount-1)*$actionGap);$buttonX=$cardWidth-$actionPadding-$buttonGroupWidth;$buttonY=$gradientHeight-$actionHeight-(Get-CocoLauncherUiMetric 4);$buttonIndex=0
             foreach($spec in $buttonSpecs){
                 $button=New-Object Windows.Forms.Button;$button.Text=[string]$spec.Text;$button.Size=New-Object Drawing.Size($buttonWidth,$actionHeight);$button.Location=New-Object Drawing.Point($buttonX,$buttonY);$button.Tag=$cardInfo;$button.TabStop=$false
-                if($spec.Kind-eq'delete'){$enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled;if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}}elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}elseif($spec.Kind-eq'folder'){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)}
-                if([string]$spec.Text-in@('CAMBIAR CARPETA','LIBERAR ESPACIO','ALOJAR PARTIDA','EN EJECUCION','VER PELICULA')){$button.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6))}
-                if($spec.Kind-eq'movie'){$button.Add_Click({param($sender,$eventArgs)& $mediaMovieUiCommand $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){&$mediaOpenFolderUiCommand $sender.Tag.Experience}else{&$experienceChangeLocationUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag}.GetNewClosure())}elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)&$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())}
+                if($spec.Kind-eq'delete'){$enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled;if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}}
+                elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}
+                elseif($spec.Kind-eq'play'){
+                    if($cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}
+                    else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,115)) ([Drawing.Color]::White)}
+                }
+                elseif($spec.Kind-eq'join'){
+                    Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(40,110,65)) ([Drawing.Color]::White)
+                }
+                elseif($spec.Kind-eq'folder'){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))}
+                else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)}
+                if([string]$spec.Text-in@('CAMBIAR CARPETA','LIBERAR ESPACIO','ALOJAR PARTIDA','EN EJECUCION','VER PELICULA','JUGAR','UNIRSE')){$button.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6))}
+                if($spec.Kind-eq'movie'){$button.Add_Click({param($sender,$eventArgs)& $mediaMovieUiCommand $sender.Tag.Experience}.GetNewClosure())}
+                elseif($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}
+                elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){&$mediaOpenFolderUiCommand $sender.Tag.Experience}else{&$experienceChangeLocationUiCommand $sender.Tag}}.GetNewClosure())}
+                elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag;$global:CocoLauncherSelectedExperience=[string]$sender.Tag})}
+                elseif($spec.Kind-eq'play'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed-and-not$sender.Tag.IsRunning){$script:CocoLauncherClientRequestedExperience=[string]$sender.Tag.ExperienceId;$global:CocoLauncherClientRequestedExperience=[string]$sender.Tag.ExperienceId}})}
+                elseif($spec.Kind-eq'join'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed-and-not$sender.Tag.IsRunning){$script:CocoLauncherClientJoinRequested=[string]$sender.Tag.ExperienceId;$global:CocoLauncherClientJoinRequested=[string]$sender.Tag.ExperienceId}})}
+                elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}}.GetNewClosure())}
+                elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)&$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())}
                 $gradient.Controls.Add($button);$buttonIndex++;$buttonX+=$buttonWidth+$actionGap
             }
             $cardsContent.Controls.Add($card);$cardIndex++
@@ -3113,13 +3168,33 @@ function Invoke-CocoPortableMcPreparation(
     throw "PortableMC no pudo preparar '$ExperienceId' despues de $MaximumAttempts intentos: $lastDetail"
 }
 
+function Get-CocoHostPreferencesPath {
+    $root=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater'
+    Join-Path $root 'host-preferences.json'
+}
+
+function Read-CocoHostPreferences {
+    $path=Get-CocoHostPreferencesPath
+    if(Test-Path -LiteralPath $path -PathType Leaf){
+        try{return Get-Content -LiteralPath $path -Raw|ConvertFrom-Json}catch{}
+    }
+    return [pscustomobject]@{forceJoin=$true}
+}
+
+function Save-CocoHostPreferences([bool]$ForceJoin){
+    $path=Get-CocoHostPreferencesPath
+    New-Item -ItemType Directory -Path (Split-Path $path -Parent) -Force -ErrorAction SilentlyContinue|Out-Null
+    [ordered]@{forceJoin=$ForceJoin;updatedAt=(Get-Date).ToString('o')}|ConvertTo-Json|Set-Content -LiteralPath $path -Encoding UTF8
+}
+
 function Publish-CocoSessionAnnouncement(
     $Catalog,
     [string]$ExperienceId,
     [ValidateSet('preparing','ready','stopping')][string]$State,
     [string]$SessionId,
     [string]$Path,
-    [int]$TtlSeconds=30
+    [int]$TtlSeconds=30,
+    [bool]$ForceJoin=$true
 ){
     if($SessionId-notmatch'^[a-fA-F0-9-]{32,36}$'){throw 'El sessionId Coco no es valido.'}
     $experience=@($Catalog.experiences|Where-Object id -eq $ExperienceId|Select-Object -First 1)[0]
@@ -3131,6 +3206,7 @@ function Publish-CocoSessionAnnouncement(
     $payload=[ordered]@{
         schemaVersion=1;sessionId=$SessionId;state=$State;experienceId=[string]$experience.id
         packVersion=[string]$experience.pack.version;host=[string]$experience.hosting.host;port=[int]$experience.hosting.port
+        forceJoin=$ForceJoin
         issuedAtUtc=$now.ToString('o');expiresAtUtc=$now.AddSeconds($TtlSeconds).ToString('o')
     }
     $parent=Split-Path $Path -Parent
@@ -3194,10 +3270,17 @@ function Get-CocoSessionAnnouncement($Catalog){
 
 function Get-CocoClientSessionAction($Session){
     if(-not$Session-or$Session.State-eq'offline'){return [pscustomobject]@{Action='wait';Message='No hay ninguna partida Coco online';Experience=$null}}
+    $forceJoin=if($Session.Announcement-and$Session.Announcement.PSObject.Properties.Name-contains'forceJoin'){$Session.Announcement.forceJoin-ne$false}else{$true}
     switch([string]$Session.State){
-        'preparing'{return [pscustomobject]@{Action='prepare';Message=("El host esta preparando {0}"-f$Session.Experience.name);Experience=$Session.Experience}}
-        'ready'{return [pscustomobject]@{Action='launch';Message=("Entrando a {0}"-f$Session.Experience.name);Experience=$Session.Experience}}
-        'stopping'{return [pscustomobject]@{Action='wait';Message='La partida Coco esta terminando';Experience=$Session.Experience}}
+        'preparing'{
+            $act=if($forceJoin){'prepare'}else{'optional-prepare'}
+            return [pscustomobject]@{Action=$act;Message=("El host esta preparando {0}"-f$Session.Experience.name);Experience=$Session.Experience;ForceJoin=$forceJoin}
+        }
+        'ready'{
+            $act=if($forceJoin){'launch'}else{'optional-ready'}
+            return [pscustomobject]@{Action=$act;Message=("El host esta jugando a {0}"-f$Session.Experience.name);Experience=$Session.Experience;ForceJoin=$forceJoin}
+        }
+        'stopping'{return [pscustomobject]@{Action='wait';Message='La partida Coco esta terminando';Experience=$Session.Experience;ForceJoin=$forceJoin}}
         default{throw 'El cliente recibio un estado de sesion no soportado.'}
     }
 }
@@ -6387,6 +6470,10 @@ function Set-CocoLauncherUiLayout {
         if($script:CocoSkinTile-and-not$script:CocoSkinTile.IsDisposed){
             $script:CocoSkinTile.Location=New-Object Drawing.Point((&$metric 500),(&$metric 34));$script:CocoSkinTile.Size=New-Object Drawing.Size((&$metric 315),(&$metric 92))
         }
+        if($script:CocoHostForceButton-and-not$script:CocoHostForceButton.IsDisposed){
+            $script:CocoHostForceButton.Size=New-Object Drawing.Size((&$metric 170),(&$metric 28))
+            $script:CocoHostForceButton.Location=New-Object Drawing.Point((&$metric 564),(&$metric 2))
+        }
         if($script:CocoIdentityButton-and-not$script:CocoIdentityButton.IsDisposed){
             $script:CocoIdentityButton.Size=New-Object Drawing.Size((&$metric 74),(&$metric 28));$script:CocoIdentityButton.Location=New-Object Drawing.Point((&$metric 742),(&$metric 2))
         }
@@ -6592,7 +6679,8 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
         throw 'El puerto Coco 25565 ya esta ocupado. Cierra la partida anterior antes de iniciar otra.'
     }
     $sessionId=[guid]::NewGuid().ToString()
-    [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id preparing $sessionId $Paths.SessionStatePath 30)
+    $forceJoin=if($script:CocoHostForceJoin-ne$null){[bool]$script:CocoHostForceJoin}else{$true}
+    [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id preparing $sessionId $Paths.SessionStatePath 30 $forceJoin)
     $service=$null;$launch=$null
     try{
         $service=Start-CocoSessionService (Join-Path $script:CocoEngineRoot 'CocoSessionService.ps1') $Paths.SessionStatePath $Paths.SessionLogPath $PID $Paths.SkinRoot
@@ -6607,15 +6695,16 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
         if($Experience.managementMode-eq'managed'-and$Experience.launch.workflow-eq'coco-managed'){[void](Set-CocoManagedLanWorldConfigurations $instanceRoot $Experience)}
         if($Experience.launch.workflow-eq'coco-standalone'){
             Write-CocoLog "Proceso standalone iniciado (PID: $($launch.Process.Id)). Supervisando ejecucion..."
-            Set-CocoLauncherStep 9 'JUEGO STANDALONE ABIERTO' ("{0} esta ejecutandose. Tus amigos entraran al detectar tu sesion."-f$Experience.name) 95
+            Set-CocoLauncherStep 9 'JUEGO STANDALONE ABIERTO' ("{0} esta ejecutandose. Tus amigos podran entrar al detectar tu sesion."-f$Experience.name) 95
             try{$script:CocoForm.TopMost=$false}catch{}
             $ready=$true;$lastPublish=[DateTime]::MinValue
             while(-not$launch.Process.HasExited){
                 [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
                 if((Get-Date)-gt$lastPublish.AddSeconds(8)){
-                    [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id 'ready' $sessionId $Paths.SessionStatePath 30)
+                    [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id 'ready' $sessionId $Paths.SessionStatePath 30 $forceJoin)
                     $lastPublish=Get-Date
-                    Set-CocoLauncherStep 10 'PARTIDA ONLINE' ("{0} esta lista; tus amigos entraran automaticamente."-f$Experience.name) 100
+                    $statusMsg=if($forceJoin){"{0} esta lista; tus amigos entraran automaticamente."-f$Experience.name}else{"{0} esta lista; tus amigos podran unirse desde su launcher."-f$Experience.name}
+                    Set-CocoLauncherStep 10 'PARTIDA ONLINE' $statusMsg 100
                 }
             }
             Stop-CocoStandalonePopupGate
@@ -6642,9 +6731,12 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
                     Set-CocoLauncherStep 9 'REABRE LA PARTIDA LAN' 'La LAN se abrio antes de cargar el modo local. Cierra la LAN, espera la confirmacion de Coco y vuelve a abrirla.' 95
                 }
                 if((Get-Date)-gt$lastPublish.AddSeconds(8)){
-                    [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id $(if($ready){'ready'}else{'preparing'}) $sessionId $Paths.SessionStatePath 30)
+                    [void](Publish-CocoSessionAnnouncement $Catalog $Experience.id $(if($ready){'ready'}else{'preparing'}) $sessionId $Paths.SessionStatePath 30 $forceJoin)
                     $lastPublish=Get-Date
-                    if($ready){Set-CocoLauncherStep 10 'PARTIDA ONLINE' ("{0} esta lista; tus amigos entraran automaticamente."-f$Experience.name) 100}
+                    if($ready){
+                        $statusMsg=if($forceJoin){"{0} esta lista; tus amigos entraran automaticamente."-f$Experience.name}else{"{0} esta lista; tus amigos podran unirse desde su launcher."-f$Experience.name}
+                        Set-CocoLauncherStep 10 'PARTIDA ONLINE' $statusMsg 100
+                    }
                 }
             }
         }
@@ -6860,6 +6952,33 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     $close.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(218,210,229),1.5);$eventArgs.Graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias;$inset=11;$eventArgs.Graphics.DrawLine($pen,$inset,$inset,$sender.ClientSize.Width-$inset,$sender.ClientSize.Height-$inset);$eventArgs.Graphics.DrawLine($pen,$sender.ClientSize.Width-$inset,$inset,$inset,$sender.ClientSize.Height-$inset);$pen.Dispose()}.GetNewClosure())
     $launcherCloseCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Request-CocoLauncherClose -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $close.Add_Click({&$launcherCloseCommand}.GetNewClosure());$script:CocoLauncherCloseButton=$close;$script:CocoPanel.Controls.Add($close)
+    if($role-eq'host'){
+        $hostPrefs=Read-CocoHostPreferences
+        $script:CocoHostForceJoin=if($hostPrefs.PSObject.Properties.Name-contains'forceJoin'){[bool]$hostPrefs.forceJoin}else{$true}
+        $hostForceButton=New-Object Windows.Forms.Button
+        $hostForceButton.Name='CocoHostForceButton'
+        $hostForceButton.TabStop=$false
+        $hostForceButton.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6))
+        $updateForceButtonUi={
+            if($script:CocoHostForceJoin){
+                $hostForceButton.Text='FORZAR CLIENTES: SI'
+                $hostForceButton.AccessibleDescription='Los clientes entraran automaticamente cuando abras una partida.'
+                Set-CocoFlatButtonStyle $hostForceButton ([Drawing.Color]::FromArgb(45,28,68)) ([Drawing.Color]::FromArgb(183,239,194))
+            }else{
+                $hostForceButton.Text='FORZAR CLIENTES: NO'
+                $hostForceButton.AccessibleDescription='Los clientes veran la partida pero podran unirse o jugar solos.'
+                Set-CocoFlatButtonStyle $hostForceButton ([Drawing.Color]::FromArgb(35,22,48)) ([Drawing.Color]::FromArgb(200,180,215))
+            }
+        }
+        & $updateForceButtonUi
+        $hostForceButton.Add_Click({
+            $script:CocoHostForceJoin=-not$script:CocoHostForceJoin
+            & $updateForceButtonUi
+            Save-CocoHostPreferences $script:CocoHostForceJoin
+        }.GetNewClosure())
+        $script:CocoHostForceButton=$hostForceButton
+        $script:CocoPanel.Controls.Add($hostForceButton)
+    }
     Set-CocoLauncherUiLayout
     $script:CocoMediaInteraction=$false
     $managedExperiences=@($catalog.experiences|Where-Object{$_.managementMode-eq'managed'})
@@ -6888,13 +7007,11 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     }else{
         Update-CocoExperienceCardsUi $dynamic $catalog $paths 'client'
         $prepared=@{};$launched=$false;$session=$null;$clientFailureCount=0
-        for($attempt=0;$attempt-lt3;$attempt++){
+        for($attempt=0;$attempt-lt2;$attempt++){
             $session=Get-CocoSessionAnnouncement $catalog
             if($session.State-ne'offline'){break}
-            if($attempt-lt2){
-                Set-CocoLauncherStep 3 'BUSCANDO PARTIDA COCO' 'Consultando la unica sesion administrada activa...' 22
-                $until=(Get-Date).AddSeconds(1);while((Get-Date)-lt$until-and-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
-            }
+            Set-CocoLauncherStep 3 'BUSCANDO PARTIDA COCO' 'Consultando la sesion administrada activa...' 22
+            $until=(Get-Date).AddSeconds(1);while((Get-Date)-lt$until-and-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
         }
         if($script:CocoForm.IsDisposed){return}
         if($script:CocoMediaInteraction){
@@ -6902,41 +7019,106 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
             return
         }
-        if($session.State-eq'offline'){
-            if($mediaExperiences.Count-gt0){
-                Set-CocoLauncherIdleState 'Selecciona una experiencia para instalarla, alojar una partida o reproducir contenido.' 100
-                while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
-                return
-            }
-            Set-CocoLauncherStep 3 'NO HAY EXPERIENCIA ESPECIAL ONLINE' 'Coco actualizara el mundo original, que sigues abriendo con tu launcher habitual.' 25
-            $close.Enabled=$false
-            try{$legacy=Sync-CocoLegacyInstanceForLauncher $LegacyMinecraftRoot $Manifest}finally{$identityText.Enabled=$true;$skinTile.Enabled=$true;$close.Enabled=$true}
-            if($legacy.Present){
-                $skinSync=Sync-CocoOriginalSkinRegistry $catalog $paths $LegacyMinecraftRoot ([string]$legacy.Role) 0
-                $currentIdentity=try{Read-CocoLauncherIdentityState $paths.IdentityPath}catch{$null}
-                Set-CocoSkinTilePreview $skinPicture $skinLabel $paths.SkinRoot $(if($currentIdentity){[string]$currentIdentity.username}else{''}) ([bool]$skinSync.Pending)
-                Set-CocoLauncherStep 10 'COCO ORIGINAL LISTO' $(if($legacy.Updated){'El pack fue actualizado. Ya puedes abrir Minecraft con tu launcher habitual.'}else{'Ya estabas actualizado. Abre Minecraft con tu launcher habitual.'}) 100
+
+        $action=Get-CocoClientSessionAction $session
+        $mustForceJoin=$session-and$session.State-eq'ready'-and($session.Announcement.forceJoin-ne$false)
+
+        if(-not$mustForceJoin){
+            if($session-and$session.State-eq'ready'-and$session.Experience){
+                $global:CocoLauncherLiveHostSession=$session
+                Set-CocoLauncherIdleState ("{0} esta alojando {1}. Puedes unirte desde su tarjeta o jugar por tu cuenta."-f'El host',$session.Experience.name) 100
             }else{
-                Set-CocoLauncherStep 3 'FALTA LA INSTALACION ORIGINAL' 'No se encontro Coco original. Abre esa version una vez con tu launcher habitual y vuelve a ejecutar Coco.' 25
+                $global:CocoLauncherLiveHostSession=$null
+                Set-CocoLauncherIdleState 'Selecciona una experiencia para instalarla, jugar o reproducir contenido.' 100
             }
-            # --- Experience Storage Manager UI ---
-            Update-CocoExperienceStorageManagerUi $dynamic $catalog $paths
-            $devPrompt=$global:CocoUiDevTestLocationPrompt
-            if(-not$devPrompt){$devPrompt=$script:CocoUiDevTestLocationPrompt}
-            if($devPrompt){
-            $promptCard=@(Get-CocoExperienceCardControls $dynamic|Where-Object{$_.Tag-and-not$_.Tag.Usage.Installed}|Select-Object -First 1)[0]
-                if($promptCard){
-                    Set-CocoLauncherStep 3 'ELIGE DONDE INSTALAR' 'Esta es la prueba visual de una instancia que aun no esta instalada.' 28
-                    Invoke-CocoExperienceStorageInstallUi $promptCard.Tag
+            Update-CocoExperienceCardsUi $dynamic $catalog $paths 'client'
+
+            $lastHostPoll=[DateTime]::MinValue
+            while(-not$script:CocoForm.IsDisposed){
+                [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100
+
+                if((Get-Date)-gt$lastHostPoll.AddSeconds(4)){
+                    $lastHostPoll=Get-Date
+                    $polled=Get-CocoSessionAnnouncement $catalog
+                    if($polled-and$polled.State-eq'ready'-and($polled.Announcement.forceJoin-ne$false)){
+                        $session=$polled
+                        $mustForceJoin=$true
+                        break
+                    }
+                    $prevHostId=if($global:CocoLauncherLiveHostSession){[string]$global:CocoLauncherLiveHostSession.Experience.id}else{''}
+                    $newHostId=if($polled-and$polled.State-eq'ready'-and$polled.Experience){[string]$polled.Experience.id}else{''}
+                    if($prevHostId-ne$newHostId){
+                        $global:CocoLauncherLiveHostSession=if($polled-and$polled.State-eq'ready'){$polled}else{$null}
+                        if($global:CocoLauncherLiveHostSession){
+                            Set-CocoLauncherIdleState ("{0} esta alojando {1}. Puedes unirte desde su tarjeta o jugar por tu cuenta."-f'El host',$polled.Experience.name) 100
+                        }else{
+                            Set-CocoLauncherIdleState 'Selecciona una experiencia para instalarla, jugar o reproducir contenido.' 100
+                        }
+                        Update-CocoExperienceCardsUi $dynamic $catalog $paths 'client'
+                    }
                 }
-                $global:CocoUiDevTestLocationPrompt=$false
-                $script:CocoUiDevTestLocationPrompt=$false
+
+                if($script:CocoLauncherClientJoinRequested){
+                    $joinExpId=[string]$script:CocoLauncherClientJoinRequested
+                    $script:CocoLauncherClientJoinRequested=''
+                    $fresh=Get-CocoSessionAnnouncement $catalog
+                    if($fresh-and$fresh.State-eq'ready'-and[string]$fresh.Experience.id-eq$joinExpId){
+                        $session=$fresh
+                        $mustForceJoin=$true
+                        break
+                    }else{
+                        Set-CocoLauncherIdleState 'La partida del host ya no esta disponible.' 100
+                        $global:CocoLauncherLiveHostSession=$null
+                        Update-CocoExperienceCardsUi $dynamic $catalog $paths 'client'
+                    }
+                }
+
+                if($script:CocoLauncherClientRequestedExperience){
+                    $playExpId=[string]$script:CocoLauncherClientRequestedExperience
+                    $script:CocoLauncherClientRequestedExperience=''
+                    $targetExp=@($catalog.experiences|Where-Object id -eq $playExpId|Select-Object -First 1)[0]
+                    if($targetExp){
+                        Set-CocoExperienceCardsEnabled $dynamic $false
+                        $close.Enabled=$false
+                        try{
+                            $identity=Resolve-CocoLauncherIdentityUi $catalog $LegacyMinecraftRoot $paths 7 88
+                            $clientSkinSync=Sync-CocoSkinRegistry $catalog $paths $identity
+                            if($script:CocoSkinTile){Set-CocoSkinTilePreview $script:CocoSkinPicture $script:CocoSkinLabel $paths.SkinRoot ([string]$identity.username) ([bool]$clientSkinSync.Pending)}
+                            Set-CocoLauncherStep 8 'ABRIENDO EXPERIENCIA' ("Iniciando {0} en modo independiente..."-f$targetExp.name) 90
+                            $launch=Start-CocoLauncherExperience $catalog $targetExp $identity client $paths $LegacyMinecraftRoot -DisableAutoJoin
+                            if([string]$targetExp.launch.workflow-eq'coco-standalone'){
+                                Set-CocoLauncherStep 9 'JUEGO STANDALONE ABIERTO' ("{0} esta ejecutandose."-f$targetExp.name) 96
+                                $script:CocoForm.Hide()
+                                while(-not$launch.Process.HasExited){
+                                    [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+                                }
+                                Stop-CocoStandalonePopupGate
+                                $exitCode=$launch.Process.ExitCode
+                                if($launch.Process){$launch.Process.Dispose()}
+                                $script:CocoForm.Show();$script:CocoForm.Activate()
+                            }else{
+                                $instanceRoot=if($launch.Installation){[string]$launch.Installation.InstanceRoot}else{''}
+                                [void](Wait-CocoManagedMinecraftWindow $instanceRoot $launch.Process 90)
+                                Set-CocoLauncherStep 9 'MINECRAFT ABIERTO' 'Partida local iniciada.' 96
+                                $script:CocoForm.Hide()
+                                $exitCode=Wait-CocoPortableMcGame $launch.Process -PumpUi -Dispose
+                                $script:CocoForm.Show();$script:CocoForm.Activate()
+                            }
+                            Set-CocoLauncherIdleState 'Partida terminada. Puedes iniciar otra experiencia.' 100
+                        }catch{
+                            Write-CocoLog "ERROR Launcher client play: $($_|Out-String)"
+                            Set-CocoState 'NO SE PUDO INICIAR LA PARTIDA' (Get-CocoLauncherFailureDetail $_) 0 $true 'failure'
+                        }finally{
+                            Set-CocoExperienceCardsEnabled $dynamic $true
+                            Update-CocoExperienceCardsUi $dynamic $catalog $paths 'client'
+                            $close.Enabled=$true
+                        }
+                    }
+                }
             }
-            while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
-            return
         }
 
-        while(-not$script:CocoForm.IsDisposed-and-not$launched){
+        if($mustForceJoin-and-not$script:CocoForm.IsDisposed){
             try{
                 $action=Get-CocoClientSessionAction $session
                 if($action.Action-eq'wait'){Set-CocoLauncherStep 3 ([string]$action.Message).ToUpperInvariant() 'Coco seguira buscando mientras esta ventana permanezca abierta.' 24}

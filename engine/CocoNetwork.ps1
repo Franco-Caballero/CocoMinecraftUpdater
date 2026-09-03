@@ -280,7 +280,8 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
 }
 
 function Wait-CocoZeroTierReady($NetworkConfig,[string]$Role){
-    $timeout=if($NetworkConfig.authorizationTimeoutSeconds){[int]$NetworkConfig.authorizationTimeoutSeconds}else{120}
+    $defaultTimeout=if($NetworkConfig.authorizationTimeoutSeconds){[int]$NetworkConfig.authorizationTimeoutSeconds}else{120}
+    $timeout=if($Role-eq'client'){3}else{$defaultTimeout}
     $watch=[Diagnostics.Stopwatch]::StartNew()
     while($watch.Elapsed.TotalSeconds-lt$timeout){
         $cli=Get-CocoZeroTierCli
@@ -298,8 +299,12 @@ function Wait-CocoZeroTierReady($NetworkConfig,[string]$Role){
             if($Role-ne'host'-or$addresses-contains([string]$NetworkConfig.hostAddress)){return $network}
         }
         $remaining=[Math]::Max(0,$timeout-[int]$watch.Elapsed.TotalSeconds)
-        Set-CocoState 'Conectando red Coco' "Esperando autorizacion automatica del host... $remaining s" 22
-        Start-Sleep -Seconds 2
+        if(Get-Command Set-CocoState -ErrorAction SilentlyContinue){Set-CocoState 'Conectando red Coco' "Esperando autorizacion automatica del host... $remaining s" 22}
+        Start-Sleep -Milliseconds 500
+    }
+    if($Role-eq'client'){
+        Write-CocoLog 'ZeroTier: red del host offline o autorizacion pendiente; continuando en modo independiente.'
+        return [pscustomobject]@{id=[string]$NetworkConfig.networkId;status='OFFLINE';assignedAddresses=@()}
     }
     if($script:CocoNetworkRebootRequired){throw 'ZeroTier necesita reiniciar Windows para terminar. Reinicia y vuelve a ejecutar CocoUpdater.'}
     throw 'El host no autorizo esta PC a tiempo. Deja Minecraft del host abierto y vuelve a ejecutar CocoUpdater.'
