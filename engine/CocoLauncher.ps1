@@ -593,6 +593,12 @@ $script:CocoPopupGateDefaults=[pscustomobject]@{
     dialogClasses=@('#32770')
 }
 
+$script:CocoIdentityButton=$null
+$script:CocoIdentityTextBox=$null
+$script:CocoIdentityStatus=$null
+$script:CocoIdentityOpenAction=$null
+$script:CocoIdentityConfirmedName=''
+
 function Get-CocoPopupGateConfig($Experience){
     $config=[ordered]@{
         markers=@($script:CocoPopupGateDefaults.markers)
@@ -642,6 +648,7 @@ function Stop-CocoStandalonePopupGate{
     try{[CocoPopupGate]::StopSessionWatcher()}catch{}
 }
 
+$script:CocoLogPath=''
 if(-not(Get-Command Write-CocoLog -ErrorAction SilentlyContinue)){
     function Write-CocoLog([string]$Text){
         if($script:CocoLogPath){
@@ -1128,10 +1135,13 @@ function Invoke-CocoExperienceStorageInstallUi($Info){
         $dummy=[pscustomobject]@{mode='offline';username='CocoPrepare';uuid=''}
         [void](Invoke-CocoManagedExperienceLaunch $Info.Catalog $Info.ExperienceId $dummy $Info.Role $Info.Paths.CatalogRoot $Info.Paths.CacheRoot $Info.Paths.ExperiencesRoot -Dry -InstanceLocationsPath $locationPath)
         Write-CocoStorageDiagnostic 'install.ui.complete' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;role=$Info.Role;locationPath=$locationPath}
+        Set-CocoLauncherIdleState ("'{0}' se instalo correctamente. Ya puedes jugar."-f $Info.Name) 100
         Update-CocoExperienceCardsUi $Info.DynamicPanel $Info.Catalog $Info.Paths $Info.Role
     }catch{
         Write-CocoStorageDiagnostic 'install.ui.error' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;role=$Info.Role;error=$_.Exception.Message;detail=($_|Out-String)}
         if([string]$_.Exception.Message -match 'fue cancelada'){return}
+        Set-CocoLauncherIdleState 'No se pudo completar la instalacion.' 0
+        Update-CocoExperienceCardsUi $Info.DynamicPanel $Info.Catalog $Info.Paths $Info.Role
         if($script:CocoForm-and-not$script:CocoForm.IsDisposed){
             [Windows.Forms.MessageBox]::Show(("No se pudo instalar '{0}': {1}"-f$Info.Name,$_.Exception.Message),'Error',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Error)|Out-Null
         }
@@ -4018,7 +4028,8 @@ function Ensure-CocoSteamRunning([switch]$Quiet){
     }
 
     if([string]::IsNullOrWhiteSpace($steamExe)){
-        throw "No se encontro Steam en esta PC. Por favor abre Steam antes de iniciar la experiencia standalone."
+        Write-CocoLog "Aviso: No se encontro Steam en el registro ni en rutas habituales. Continuando ejecucion standalone por si no requiere Steam o el usuario lo inicia por separado."
+        return $false
     }
 
     Write-CocoLog "Iniciando Steam minimizado a la bandeja desde '$steamExe'..."
@@ -4029,7 +4040,8 @@ function Ensure-CocoSteamRunning([switch]$Quiet){
     try{
         Start-Process -FilePath $steamExe -ArgumentList '-silent' -ErrorAction Stop
     }catch{
-        throw "No se pudo ejecutar Steam desde '$steamExe': $($_.Exception.Message)"
+        Write-CocoLog "No se pudo ejecutar Steam desde '$steamExe': $($_.Exception.Message). Continuando ejecucion standalone."
+        return $false
     }
 
     $started=$false
@@ -4044,7 +4056,7 @@ function Ensure-CocoSteamRunning([switch]$Quiet){
     }
 
     if(-not$started){
-        Write-CocoLog "Steam fue iniciado pero tardo mas de 15s en registrar su proceso."
+        Write-CocoLog "Steam fue iniciado pero tardo mas de 15s en registrar su proceso; continuando."
     }else{
         Write-CocoLog "Steam iniciado con exito minimizado en la bandeja. Esperando estabilizacion de IPC..."
         for($j=0; $j-lt5; $j++){
@@ -4844,8 +4856,16 @@ function Ensure-CocoDefenderExclusion($Experience,[string]$InstanceRoot){
         try{
             $escaped=$full.Replace("'","''")
             $command="Add-MpPreference -ExclusionPath '$escaped' -ErrorAction Stop"
-            $elevated=Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',$command) -WindowStyle Hidden -Wait -PassThru -ErrorAction Stop
-            if($elevated.ExitCode-ne0){Write-CocoLog "El proceso de exclusion devolvio codigo $($elevated.ExitCode)."}
+            $elevated=Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',$command) -WindowStyle Hidden -PassThru -ErrorAction Stop
+            if($elevated){
+                $finished=$elevated.WaitForExit(3500)
+                if(-not$finished){
+                    try{$elevated.Kill()}catch{}
+                    Write-CocoLog "El proceso de exclusion de Defender tardo mas de 3.5s; continuando sin bloquear."
+                }elseif($elevated.ExitCode-ne0){
+                    Write-CocoLog "El proceso de exclusion devolvio codigo $($elevated.ExitCode)."
+                }
+            }
         }catch{
             Write-CocoLog "No se pudo elevar para agregar exclusion de Defender o el usuario cancelo la operacion: $($_.Exception.Message)"
         }
@@ -5463,7 +5483,7 @@ function Invoke-CocoManagedExperienceLaunch(
 
     if([string]$experience.launch.workflow-eq'coco-standalone'-or[string]$experience.runtime.type-eq'standalone'){
         $installed=Install-CocoStandaloneExperience $experience $ExperiencesRoot $CacheRoot $InstanceLocationsPath $Role
-        $defenderStatus=Ensure-CocoDefenderExclusion $experience $installed.InstanceRoot
+        $defenderStatus = if(-not $Dry){ Ensure-CocoDefenderExclusion $experience $installed.InstanceRoot } else { 'skipped-dry' }
         if($experience.hosting.host -and [string]$experience.hosting.mode -ne 'p2p'){
             $hostIp=[string]$experience.hosting.host
             [IO.File]::WriteAllText((Join-Path $installed.InstanceRoot 'ip.txt'),$hostIp,(New-Object Text.UTF8Encoding($false)))
@@ -6562,39 +6582,65 @@ function Show-CocoUsernamePanel([string]$Suggested='',[switch]$AllowCancel){
 # autenticacion Microsoft. Todos usan una identidad local estable en la red
 # privada, incluso si poseen una licencia oficial.
 function Resolve-CocoLauncherIdentityUi($Catalog,[string]$LegacyMinecraftRoot,$Paths,[int]$PromptStage=3,[int]$PromptProgress=24){
-    if($script:CocoIdentityTextBox-and-not$script:CocoIdentityTextBox.IsDisposed){
-        while(-not$script:CocoForm.IsDisposed){
-            $candidate=([string]$script:CocoIdentityTextBox.Text).Trim()
-            $current=try{Read-CocoLauncherIdentityState $Paths.IdentityPath}catch{$null}
-            if((Test-CocoMinecraftUsername $candidate)-and$current-and[string]$current.username-eq$candidate){
-                if($script:CocoIdentityStatus){
-                    $script:CocoIdentityStatus.Text='Nombre valido.'
-                    $script:CocoIdentityStatus.ForeColor=[Drawing.Color]::FromArgb(78,214,132)
-                }
-                return $current
-            }
-            Set-CocoLauncherStep $PromptStage 'FALTA TU NOMBRE' 'Escribelo en la tarjeta y pulsa Enter para abrir Minecraft.' $PromptProgress
-            if($script:CocoIdentityStatus){
-                $script:CocoIdentityStatus.Text=if(Test-CocoMinecraftUsername $candidate){'Pulsa Enter para confirmar.'}else{'3-16 letras, numeros o _.'}
-                $script:CocoIdentityStatus.ForeColor=if(Test-CocoMinecraftUsername $candidate){[Drawing.Color]::FromArgb(224,190,255)}else{[Drawing.Color]::FromArgb(255,139,151)}
-            }
-            if($script:CocoIdentityOpenAction){& $script:CocoIdentityOpenAction}
-            [void]$script:CocoIdentityTextBox.Focus()
-            [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50
+    # 1. Si ya existe una identidad valida guardada en disco, reutilizarla de inmediato sin bloquear
+    $current=try{Read-CocoLauncherIdentityState $Paths.IdentityPath}catch{$null}
+    if($current -and (Test-CocoMinecraftUsername ([string]$current.username))){
+        if($script:CocoIdentityTextBox-and-not$script:CocoIdentityTextBox.IsDisposed){
+            $script:CocoIdentityTextBox.Text=[string]$current.username
         }
-        throw 'Coco se cerro antes de configurar el jugador.'
+        if($script:CocoIdentityButton-and-not$script:CocoIdentityButton.IsDisposed){
+            $script:CocoIdentityButton.Text='JUGADOR'
+            $script:CocoIdentityButton.AccessibleDescription="Jugador: $($current.username)"
+        }
+        return $current
     }
-    $resolved=Resolve-CocoLauncherIdentity $Paths.IdentityPath $LegacyMinecraftRoot
-    if($resolved.Status-eq'configured'){
-        if($script:CocoIdentityButton){$script:CocoIdentityButton.Text='JUGADOR';$script:CocoIdentityButton.AccessibleDescription="Jugador: $($resolved.Identity.username)"}
+
+    # 2. Si el usuario ya escribio un nombre valido en la caja de texto, guardarlo y usarlo
+    $candidate=''
+    if($script:CocoIdentityTextBox-and-not$script:CocoIdentityTextBox.IsDisposed){
+        $candidate=([string]$script:CocoIdentityTextBox.Text).Trim()
+    }
+    if(Test-CocoMinecraftUsername $candidate){
+        $identity=Save-CocoLauncherIdentityState $Paths.IdentityPath offline $candidate '' 'launcher-textbox'
+        if($script:CocoIdentityButton-and-not$script:CocoIdentityButton.IsDisposed){
+            $script:CocoIdentityButton.Text='JUGADOR'
+            $script:CocoIdentityButton.AccessibleDescription="Jugador: $candidate"
+        }
+        return $identity
+    }
+
+    # 3. Si no hay nombre aun, auto-resolver sin bloquear ni interrumpir al usuario
+    $resolved=try{Resolve-CocoLauncherIdentity $Paths.IdentityPath $LegacyMinecraftRoot}catch{$null}
+    if($resolved-and$resolved.Status-eq'configured'-and$resolved.Identity){
+        if($script:CocoIdentityTextBox-and-not$script:CocoIdentityTextBox.IsDisposed){
+            $script:CocoIdentityTextBox.Text=[string]$resolved.Identity.username
+        }
+        if($script:CocoIdentityButton-and-not$script:CocoIdentityButton.IsDisposed){
+            $script:CocoIdentityButton.Text='JUGADOR'
+            $script:CocoIdentityButton.AccessibleDescription="Jugador: $($resolved.Identity.username)"
+        }
         return $resolved.Identity
     }
-    $suggested=if($resolved.Hint){[string]$resolved.Hint.Username}else{''}
-    Set-CocoLauncherStep $PromptStage 'CONFIGURA TU JUGADOR' 'Elige el nombre con el que entraras a la partida.' $PromptProgress
-    $username=Show-CocoUsernamePanel $suggested
-    $identity=Save-CocoLauncherIdentityState $Paths.IdentityPath offline $username '' 'user-onboarding'
-    if($script:CocoIdentityButton){$script:CocoIdentityButton.Text='JUGADOR';$script:CocoIdentityButton.AccessibleDescription="Jugador: $username"}
-    $identity
+
+    $suggested=if($resolved-and$resolved.Hint){[string]$resolved.Hint.Username}else{''}
+    if(-not(Test-CocoMinecraftUsername $suggested)){
+        $rawUser=[regex]::Replace(([string]$env:USERNAME),'[^a-zA-Z0-9_]','')
+        if($rawUser.Length-gt16){$rawUser=$rawUser.Substring(0,16)}
+        if($rawUser.Length-lt3){$rawUser="Player_$PID"}
+        if($rawUser.Length-gt16){$rawUser=$rawUser.Substring(0,16)}
+        $suggested=if(Test-CocoMinecraftUsername $rawUser){$rawUser}else{("Coco_"+(Get-Random -Minimum 1000 -Maximum 9999))}
+    }
+
+    $identity=Save-CocoLauncherIdentityState $Paths.IdentityPath offline $suggested '' 'auto-resolved'
+    Write-CocoLog "Identidad auto-resuelta sin bloqueo: $suggested"
+    if($script:CocoIdentityTextBox-and-not$script:CocoIdentityTextBox.IsDisposed){
+        $script:CocoIdentityTextBox.Text=$suggested
+    }
+    if($script:CocoIdentityButton-and-not$script:CocoIdentityButton.IsDisposed){
+        $script:CocoIdentityButton.Text='JUGADOR'
+        $script:CocoIdentityButton.AccessibleDescription="Jugador: $suggested"
+    }
+    return $identity
 }
 
 function Invoke-CocoLauncherIdentityButton($IdentityCard,$IdentityText){
@@ -6602,7 +6648,10 @@ function Invoke-CocoLauncherIdentityButton($IdentityCard,$IdentityText){
         if(-not$IdentityCard-or$IdentityCard.IsDisposed){return}
         if($IdentityCard.Visible){$IdentityCard.Visible=$false;return}
         $IdentityCard.Visible=$true;$IdentityCard.BringToFront()
-        if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Activate()}
+        try{
+            $form=$IdentityCard.FindForm()
+            if($form-and-not$form.IsDisposed){$form.Activate()}
+        }catch{}
         if($IdentityText-and-not$IdentityText.IsDisposed){[void]$IdentityText.Focus();$IdentityText.SelectAll()}
     }catch{
         try{Write-CocoLog "No se pudo abrir el popup de identidad: $($_.Exception.Message)"}catch{}
@@ -6656,18 +6705,25 @@ function Invoke-CocoLauncherClientSession($Catalog,$Session,$Paths,[string]$Lega
     }
     $fresh=Get-CocoSessionAnnouncement $Catalog
     if($fresh.State-ne'ready'-or[string]$fresh.Announcement.sessionId-ne$sessionId){return $null}
-    $identity=Resolve-CocoLauncherIdentityUi $Catalog $LegacyMinecraftRoot $Paths 7 88
+    $isStandalone=[string]$action.Experience.launch.workflow-eq'coco-standalone'-or[string]$action.Experience.runtime.type-eq'standalone'
+    $identity=if(-not$isStandalone){
+        Resolve-CocoLauncherIdentityUi $Catalog $LegacyMinecraftRoot $Paths 7 88
+    }else{
+        [pscustomobject]@{mode='offline';username='CocoPlayer';uuid=''}
+    }
     $fresh=Get-CocoSessionAnnouncement $Catalog
     if($fresh.State-ne'ready'-or[string]$fresh.Announcement.sessionId-ne$sessionId){return $null}
-    $skinSync=Sync-CocoSkinRegistry $Catalog $Paths $identity
-    $instanceRoot=Get-CocoExperienceInstanceRoot $action.Experience $Paths.ExperiencesRoot (Get-CocoLauncherInstanceLocationsPath $Paths)
-    [void](Install-CocoSkinRegistry $Paths.SkinRoot $instanceRoot)
-    [void](Install-CocoSkinRegistry $Paths.SkinRoot $LegacyMinecraftRoot)
-    if($script:CocoSkinTile){Set-CocoSkinTilePreview $script:CocoSkinPicture $script:CocoSkinLabel $Paths.SkinRoot ([string]$identity.username) ([bool]$skinSync.Pending)}
+    if(-not$isStandalone){
+        $skinSync=Sync-CocoSkinRegistry $Catalog $Paths $identity
+        $instanceRoot=Get-CocoExperienceInstanceRoot $action.Experience $Paths.ExperiencesRoot (Get-CocoLauncherInstanceLocationsPath $Paths)
+        [void](Install-CocoSkinRegistry $Paths.SkinRoot $instanceRoot)
+        [void](Install-CocoSkinRegistry $Paths.SkinRoot $LegacyMinecraftRoot)
+        if($script:CocoSkinTile){Set-CocoSkinTilePreview $script:CocoSkinPicture $script:CocoSkinLabel $Paths.SkinRoot ([string]$identity.username) ([bool]$skinSync.Pending)}
+    }
     if($script:CocoIdentityTextBox){$script:CocoIdentityTextBox.Enabled=$false}
     if($script:CocoSkinTile){$script:CocoSkinTile.Enabled=$false}
     Set-CocoLauncherStep 7 'JUGADOR LISTO' ("Entraras como {0}"-f$identity.username) 89
-    Set-CocoLauncherStep 8 'ABRIENDO MINECRAFT' ("{0} se conectara automaticamente a {1}:{2}."-f$action.Experience.name,$action.Experience.hosting.host,$action.Experience.hosting.port) 90
+    Set-CocoLauncherStep 8 'ABRIENDO JUEGO' ("{0} se iniciara para conectarse a la partida."-f$action.Experience.name) 90
     Start-CocoLauncherExperience $Catalog $action.Experience $identity client $Paths $LegacyMinecraftRoot
 }
 
@@ -6687,9 +6743,16 @@ function Invoke-CocoLauncherHostSession($Catalog,$Experience,$Paths,[string]$Leg
         Set-CocoLauncherStep 4 'VERIFICANDO EL PACK DEL HOST' ("Instalando {0} en una instancia aislada..."-f$Experience.name) 30
         $dummy=[pscustomobject]@{mode='offline';username='CocoPrepare';uuid=''}
         [void](Invoke-CocoManagedExperienceLaunch $Catalog $Experience.id $dummy host $Paths.CatalogRoot $Paths.CacheRoot $Paths.ExperiencesRoot -Dry -DisableAutoJoin -InstanceLocationsPath:(Get-CocoLauncherInstanceLocationsPath $Paths))
-        $identity=Resolve-CocoLauncherIdentityUi $Catalog $LegacyMinecraftRoot $Paths 7 88
-        $hostSkinSync=Sync-CocoSkinRegistry $Catalog $Paths $identity
-        if($script:CocoSkinTile){Set-CocoSkinTilePreview $script:CocoSkinPicture $script:CocoSkinLabel $Paths.SkinRoot ([string]$identity.username) ([bool]$hostSkinSync.Pending)}
+        $isStandalone=[string]$Experience.launch.workflow-eq'coco-standalone'-or[string]$Experience.runtime.type-eq'standalone'
+        $identity=if(-not$isStandalone){
+            Resolve-CocoLauncherIdentityUi $Catalog $LegacyMinecraftRoot $Paths 7 88
+        }else{
+            [pscustomobject]@{mode='offline';username='CocoPlayer';uuid=''}
+        }
+        if(-not$isStandalone){
+            $hostSkinSync=Sync-CocoSkinRegistry $Catalog $Paths $identity
+            if($script:CocoSkinTile){Set-CocoSkinTilePreview $script:CocoSkinPicture $script:CocoSkinLabel $Paths.SkinRoot ([string]$identity.username) ([bool]$hostSkinSync.Pending)}
+        }
         $launch=Start-CocoLauncherExperience $Catalog $Experience $identity host $Paths $LegacyMinecraftRoot -DisableAutoJoin
         $instanceRoot=if($launch.Installation){[string]$launch.Installation.InstanceRoot}elseif($launch.InstanceRoot){[string]$launch.InstanceRoot}else{$LegacyMinecraftRoot}
         if($Experience.managementMode-eq'managed'-and$Experience.launch.workflow-eq'coco-managed'){[void](Set-CocoManagedLanWorldConfigurations $instanceRoot $Experience)}
@@ -6928,9 +6991,17 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         $control.Add_Click($chooseSkin.GetNewClosure());$control.Add_DragEnter($dragEnter.GetNewClosure());$control.Add_DragDrop($dragDrop.GetNewClosure())
     }
     $showIdentity={
-        if($identityCard.IsDisposed){return}
-        $identityCard.Visible=$true;$identityCard.BringToFront();$script:CocoForm.Activate();[void]$identityText.Focus();$identityText.SelectAll()
-    }.GetNewClosure()
+        if(-not$identityCard-or$identityCard.IsDisposed){return}
+        $identityCard.Visible=$true
+        $identityCard.BringToFront()
+        try{
+            $form=$identityCard.FindForm()
+            if($form-and-not$form.IsDisposed){$form.Activate()}
+        }catch{}
+        try{
+            if($identityText-and-not$identityText.IsDisposed){[void]$identityText.Focus();$identityText.SelectAll()}
+        }catch{}
+    }
     $script:CocoIdentityOpenAction=$showIdentity
     $identityToggleCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoLauncherIdentityButton -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $identityButton=New-Object Windows.Forms.Button;$identityButton.Name='CocoLauncherIdentityButton';$identityButton.Text='JUGADOR';$identityButton.AccessibleName='Abrir identidad';$identityButton.AccessibleDescription=if($savedIdentity){"Jugador: $($savedIdentity.username)"}else{'Configurar jugador'};$identityButton.TabStop=$false
@@ -7081,28 +7152,42 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                         Set-CocoExperienceCardsEnabled $dynamic $false
                         $close.Enabled=$false
                         try{
-                            $identity=Resolve-CocoLauncherIdentityUi $catalog $LegacyMinecraftRoot $paths 7 88
-                            $clientSkinSync=Sync-CocoSkinRegistry $catalog $paths $identity
-                            if($script:CocoSkinTile){Set-CocoSkinTilePreview $script:CocoSkinPicture $script:CocoSkinLabel $paths.SkinRoot ([string]$identity.username) ([bool]$clientSkinSync.Pending)}
+                            $isStandalone=[string]$targetExp.launch.workflow-eq'coco-standalone'-or[string]$targetExp.runtime.type-eq'standalone'
+                            $identity=if(-not$isStandalone){
+                                Resolve-CocoLauncherIdentityUi $catalog $LegacyMinecraftRoot $paths 7 88
+                            }else{
+                                [pscustomobject]@{mode='offline';username='CocoPlayer';uuid=''}
+                            }
+                            if(-not$isStandalone){
+                                $clientSkinSync=Sync-CocoSkinRegistry $catalog $paths $identity
+                                if($script:CocoSkinTile){Set-CocoSkinTilePreview $script:CocoSkinPicture $script:CocoSkinLabel $paths.SkinRoot ([string]$identity.username) ([bool]$clientSkinSync.Pending)}
+                            }
                             Set-CocoLauncherStep 8 'ABRIENDO EXPERIENCIA' ("Iniciando {0} en modo independiente..."-f$targetExp.name) 90
                             $launch=Start-CocoLauncherExperience $catalog $targetExp $identity client $paths $LegacyMinecraftRoot -DisableAutoJoin
-                            if([string]$targetExp.launch.workflow-eq'coco-standalone'){
+                            if($isStandalone){
+                                if(-not$launch-or-not$launch.Process){throw "No se pudo iniciar el proceso ejecutable de '$($targetExp.name)'."}
                                 Set-CocoLauncherStep 9 'JUEGO STANDALONE ABIERTO' ("{0} esta ejecutandose."-f$targetExp.name) 96
-                                $script:CocoForm.Hide()
-                                while(-not$launch.Process.HasExited){
-                                    [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+                                try{
+                                    try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Hide()}}catch{}
+                                    while(-not$launch.Process.HasExited){
+                                        [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+                                    }
+                                }finally{
+                                    Stop-CocoStandalonePopupGate
+                                    try{$exitCode=$launch.Process.ExitCode}catch{$exitCode=0}
+                                    try{if($launch.Process){$launch.Process.Dispose()}}catch{}
+                                    try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Show();$script:CocoForm.Activate()}}catch{}
                                 }
-                                Stop-CocoStandalonePopupGate
-                                $exitCode=$launch.Process.ExitCode
-                                if($launch.Process){$launch.Process.Dispose()}
-                                $script:CocoForm.Show();$script:CocoForm.Activate()
                             }else{
                                 $instanceRoot=if($launch.Installation){[string]$launch.Installation.InstanceRoot}else{''}
                                 [void](Wait-CocoManagedMinecraftWindow $instanceRoot $launch.Process 90)
                                 Set-CocoLauncherStep 9 'MINECRAFT ABIERTO' 'Partida local iniciada.' 96
-                                $script:CocoForm.Hide()
-                                $exitCode=Wait-CocoPortableMcGame $launch.Process -PumpUi -Dispose
-                                $script:CocoForm.Show();$script:CocoForm.Activate()
+                                try{
+                                    try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Hide()}}catch{}
+                                    $exitCode=Wait-CocoPortableMcGame $launch.Process -PumpUi -Dispose
+                                }finally{
+                                    try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Show();$script:CocoForm.Activate()}}catch{}
+                                }
                             }
                             Set-CocoLauncherIdleState 'Partida terminada. Puedes iniciar otra experiencia.' 100
                         }catch{
@@ -7131,15 +7216,18 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                         $launched=$true
                         if([string]$launch.Experience.launch.workflow-eq'coco-standalone'){
                             Set-CocoLauncherStep 9 'JUEGO STANDALONE ABIERTO' ("{0} se inicio automaticamente."-f$launch.Experience.name) 96
-                            $script:CocoForm.Hide()
-                            while(-not$launch.Process.HasExited){
-                                [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+                            try{
+                                try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Hide()}}catch{}
+                                while(-not$launch.Process.HasExited){
+                                    [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+                                }
+                            }finally{
+                                Stop-CocoStandalonePopupGate
+                                try{$exitCode=$launch.Process.ExitCode}catch{$exitCode=0}
+                                try{if($launch.Process){$launch.Process.Dispose()}}catch{}
+                                try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Show();$script:CocoForm.Activate()}}catch{}
                             }
-                            Stop-CocoStandalonePopupGate
-                            $exitCode=$launch.Process.ExitCode
-                            if($launch.Process){$launch.Process.Dispose()}
                             if($exitCode-ne0){
-                                $script:CocoForm.Show();$script:CocoForm.Activate()
                                 throw "El juego standalone '$($launch.Experience.name)' termino con codigo de error $exitCode."
                             }
                             $script:CocoAllowClose=$true;$script:CocoForm.Close();break
