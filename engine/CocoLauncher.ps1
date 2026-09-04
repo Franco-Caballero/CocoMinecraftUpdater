@@ -1,8 +1,9 @@
-if(-not([System.Management.Automation.PSTypeName]'CocoPopupGate').Type){
+﻿if(-not([System.Management.Automation.PSTypeName]'CocoPopupGate').Type){
     try{
         Add-Type -TypeDefinition @"
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -21,19 +22,11 @@ public class CocoPopupGate {
     [DllImport("user32.dll", CharSet = CharSet.Auto)] private static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
     [DllImport("user32.dll")] private static extern int GetSystemMetrics(int nIndex);
+    [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)] private static extern bool Process32FirstW(IntPtr hSnapshot, ref PROCESSENTRY32W lppe);
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)] private static extern bool Process32NextW(IntPtr hSnapshot, ref PROCESSENTRY32W lppe);
     [DllImport("kernel32.dll", SetLastError = true)] private static extern bool CloseHandle(IntPtr hObject);
-    [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
-    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool GetExitCodeProcess(IntPtr hProcess, out uint lpExitCode);
-    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool TerminateProcess(IntPtr hProcess, uint uExitCode);
-    [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-    [DllImport("user32.dll")] private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc, WinEventProc pfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
-    [DllImport("user32.dll")] private static extern bool UnhookWinEvent(IntPtr hWinEventHook);
-    [DllImport("user32.dll")] private static extern int GetMessage(out NativeMessage lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
-    [DllImport("user32.dll")] private static extern bool PostThreadMessage(uint idThread, uint msg, IntPtr wParam, IntPtr lParam);
-    [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
     [DllImport("shcore.dll")] private static extern int SetProcessDpiAwareness(int awareness);
     [DllImport("user32.dll")] private static extern bool SetProcessDPIAware();
     [DllImport("uxtheme.dll", ExactSpelling = true, CharSet = CharSet.Unicode)] public static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string pszSubIdList);
@@ -47,17 +40,11 @@ public class CocoPopupGate {
         try { SetWindowTheme(hWnd, "DarkMode_Explorer", null); } catch {}
     }
 
-    private delegate void WinEventProc(IntPtr hHook, uint evt, IntPtr hwnd, long idObject, long idChild, uint dwEventThread, uint dwmsEventTime);
-    [StructLayout(LayoutKind.Sequential)] private struct NativeMessage { public IntPtr handle; public uint message; public IntPtr wParam; public IntPtr lParam; public uint time; public int ptX; public int ptY; }
-
-    private const uint EVENT_OBJECT_SHOW = 0x8002;
-    private const uint WINEVENT_OUTOFCONTEXT = 0x00000000;
-    private const uint WM_QUIT = 0x0012;
     private const int SW_HIDE = 0;
     private const int SW_SHOW = 5;
-    private const long OBJID_WINDOW = 0;
 
     [StructLayout(LayoutKind.Sequential)] private struct RECT { public int Left, Top, Right, Bottom; }
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct PROCESSENTRY32W {
         public uint dwSize; public uint cntUsage; public uint th32ProcessID; public IntPtr th32DefaultHeapID;
@@ -70,14 +57,8 @@ public class CocoPopupGate {
     private const uint WM_COMMAND = 0x0111;
     private const uint BM_CLICK = 0x00F5;
     private const int IDOK = 1;
-    private const int PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
-    private const int PROCESS_TERMINATE = 0x0001;
-    private const uint STILL_ACTIVE = 259;
 
     private static Thread worker;
-    private static Thread hookThread;
-    private static uint hookThreadId;
-    private static IntPtr eventHook;
     private static readonly object treeLock = new object();
     private static HashSet<int> treeCache = new HashSet<int>();
     private static readonly Dictionary<long, DateTime> clickedPending = new Dictionary<long, DateTime>();
@@ -89,14 +70,12 @@ public class CocoPopupGate {
     private static string[] dialogClasses = new string[0];
     private static readonly Dictionary<long, DateTime> actedOn = new Dictionary<long, DateTime>();
     private static readonly List<string> diagnostics = new List<string>();
-    private static readonly HashSet<int> baselineBrowserPids = new HashSet<int>();
     private static DateTime startedUtc = DateTime.UtcNow;
 
     public static long ClickedCount;
     public static long ClosedCount;
     public static long HiddenCount;
     public static string LastAction = "";
-    private static readonly WinEventProc winEventHandler = new WinEventProc(OnWindowShown);
 
     public static bool IsRunning() { return running; }
 
@@ -108,75 +87,11 @@ public class CocoPopupGate {
         }
     }
 
-    private static void HookThreadLoop(int myGeneration) {
-        try {
-            hookThreadId = GetCurrentThreadId();
-            eventHook = SetWinEventHook(EVENT_OBJECT_SHOW, EVENT_OBJECT_SHOW, IntPtr.Zero, winEventHandler, 0, 0, WINEVENT_OUTOFCONTEXT);
-            NativeMessage msg;
-            while (running && myGeneration == generation) {
-                int result = GetMessage(out msg, IntPtr.Zero, 0, 0);
-                if (result <= 0) break;
-            }
-        } catch {}
-        finally {
-            if (eventHook != IntPtr.Zero) { try { UnhookWinEvent(eventHook); } catch {} eventHook = IntPtr.Zero; }
-        }
-    }
-
-    private static void OnWindowShown(IntPtr hHook, uint evt, IntPtr hwnd, long idObject, long idChild, uint eventThread, uint eventTimeMs) {
-        try {
-            if (idObject != OBJID_WINDOW || hwnd == IntPtr.Zero || !IsWindow(hwnd) || !IsWindowVisible(hwnd)) return;
-            HashSet<int> pids;
-            lock (treeLock) { pids = treeCache; }
-            uint pid;
-            GetWindowThreadProcessId(hwnd, out pid);
-            int managedPid = unchecked((int)pid);
-            bool inTree = rootPid != 0 && managedPid == rootPid;
-            if (!inTree && pids != null && pids.Count > 0) inTree = pids.Contains(managedPid);
-            else if (!inTree && pids != null && pids.Count == 0 && rootPid != 0) { inTree = CollectTreePids(rootPid).Contains(managedPid); }
-            if (!inTree) {
-                if ((DateTime.UtcNow - startedUtc).TotalSeconds < 90) {
-                    StringBuilder t = new StringBuilder(512);
-                    GetWindowText(hwnd, t, 512);
-                    string tStr = (t.ToString() ?? "").ToLowerInvariant();
-                    bool hit = false;
-                    foreach (string rm in redirectTitleMarkers) {
-                        if (tStr.Contains(rm)) { hit = true; break; }
-                    }
-                    if (hit) {
-                        ShowWindow(hwnd, SW_HIDE);
-                        PostMessage(hwnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-                        LastAction = "hook-close-redirect-win:" + tStr;
-                    }
-                }
-                return;
-            }
-            WindowInfo info = new WindowInfo();
-            info.Handle = hwnd;
-            info.Pid = pid;
-            StringBuilder cls = new StringBuilder(256);
-            GetClassName(hwnd, cls, 256);
-            info.Class = cls.ToString();
-            StringBuilder title = new StringBuilder(512);
-            GetWindowText(hwnd, title, 512);
-            info.Title = title.ToString();
-            RECT rect;
-            if (GetWindowRect(hwnd, out rect)) info.Area = (long)Math.Max(0, rect.Right - rect.Left) * Math.Max(0, rect.Bottom - rect.Top);
-            CollectChildren(info);
-            TryAct(info);
-        } catch {}
-    }
-
     public static void StartSessionWatcher(int pid, string markersCsv, string labelsCsv, string dialogsCsv) {
         Thread oldWorker = worker;
         if (oldWorker != null && oldWorker.IsAlive) {
             running = false;
             try { oldWorker.Join(2500); } catch {}
-        }
-        Thread oldHook = hookThread;
-        if (oldHook != null && oldHook.IsAlive && hookThreadId != 0) {
-            try { PostThreadMessage(hookThreadId, WM_QUIT, IntPtr.Zero, IntPtr.Zero); } catch {}
-            try { oldHook.Join(1500); } catch {}
         }
         markers = SplitCsv(markersCsv);
         labels = SplitCsv(labelsCsv);
@@ -187,16 +102,9 @@ public class CocoPopupGate {
         actedOn.Clear();
         clickedPending.Clear();
         lock (treeLock) { treeCache = new HashSet<int>(); if (pid != 0) treeCache.Add(pid); }
-        lock (baselineBrowserPids) {
-            baselineBrowserPids.Clear();
-            foreach (int p in SnapshotBrowserPids()) baselineBrowserPids.Add(p);
-        }
         ClickedCount = 0; ClosedCount = 0; HiddenCount = 0; LastAction = "";
         int currentGeneration = ++generation;
         running = true;
-        hookThread = new Thread(delegate() { HookThreadLoop(currentGeneration); });
-        hookThread.IsBackground = true;
-        hookThread.Start();
         worker = new Thread(delegate() { Loop(currentGeneration); });
         worker.IsBackground = true;
         worker.Start();
@@ -204,7 +112,6 @@ public class CocoPopupGate {
 
     public static void StopSessionWatcher() {
         running = false;
-        if (hookThreadId != 0) { try { PostThreadMessage(hookThreadId, WM_QUIT, IntPtr.Zero, IntPtr.Zero); } catch {} }
     }
 
     public static string Describe() {
@@ -232,17 +139,10 @@ public class CocoPopupGate {
     }
 
     private static bool IsPidAlive(int pid) {
+        if (pid == 0) return true;
         try {
-            IntPtr handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
-            if (handle == IntPtr.Zero) {
-                System.Diagnostics.Process probe = System.Diagnostics.Process.GetProcessById(pid);
-                return probe != null && !probe.HasExited;
-            }
-            try {
-                uint code;
-                if (GetExitCodeProcess(handle, out code)) return code == STILL_ACTIVE;
-                return false;
-            } finally { CloseHandle(handle); }
+            Process probe = Process.GetProcessById(pid);
+            return probe != null && !probe.HasExited;
         } catch { return false; }
     }
 
@@ -291,7 +191,7 @@ public class CocoPopupGate {
                 }
                 Sweep();
             } catch {}
-            Thread.Sleep(400);
+            Thread.Sleep(150);
         }
         if (myGeneration == generation) running = false;
     }
@@ -307,82 +207,9 @@ public class CocoPopupGate {
         public List<string> OtherTexts = new List<string>();
     }
 
-    private static readonly string[] browserNames = new string[] {
-        "chrome.exe", "msedge.exe", "firefox.exe", "zen.exe", "arc.exe", "brave.exe", "opera.exe", "opera_gx.exe",
-        "iexplore.exe", "browser.exe", "waterfox.exe", "vivaldi.exe", "floorp.exe", "thorium.exe", "librewolf.exe",
-        "chromium.exe", "epic.exe", "sidekick.exe", "yandex.exe", "whale.exe", "maxthon.exe"
-    };
-
-    private static readonly string[] redirectTitleMarkers = new string[] {
-        "online-fix", "onlinefix", "online fix", "ofme", "freesteam", "steamrip", "free steam", "credits", "créditos", "the fix is made by", "cs.rin.ru"
-    };
-
-    private static HashSet<int> SnapshotBrowserPids() {
-        HashSet<int> result = new HashSet<int>();
-        IntPtr snapshot = IntPtr.Zero;
-        try {
-            snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-            if (snapshot != IntPtr.Zero && snapshot != (IntPtr)(-1)) {
-                PROCESSENTRY32W entry = new PROCESSENTRY32W();
-                entry.dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32W));
-                if (Process32FirstW(snapshot, ref entry)) {
-                    do {
-                        int pid = unchecked((int)entry.th32ProcessID);
-                        string exe = (entry.szExeFile ?? "").ToLowerInvariant();
-                        foreach (string b in browserNames) {
-                            if (exe == b || exe.EndsWith(b)) { result.Add(pid); break; }
-                        }
-                    } while (Process32NextW(snapshot, ref entry));
-                }
-            }
-        } catch {}
-        finally { if (snapshot != IntPtr.Zero && snapshot != (IntPtr)(-1)) CloseHandle(snapshot); }
-        return result;
-    }
-
-    private static void SuppressRedirectProcesses(HashSet<int> treePids) {
-        IntPtr snapshot = IntPtr.Zero;
-        try {
-            snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-            if (snapshot != IntPtr.Zero && snapshot != (IntPtr)(-1)) {
-                PROCESSENTRY32W entry = new PROCESSENTRY32W();
-                entry.dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32W));
-                if (Process32FirstW(snapshot, ref entry)) {
-                    do {
-                        int pid = unchecked((int)entry.th32ProcessID);
-                        if (pid != rootPid) {
-                            string exe = (entry.szExeFile ?? "").ToLowerInvariant();
-                            bool isBrowser = false;
-                            foreach (string b in browserNames) {
-                                if (exe == b || exe.EndsWith(b)) { isBrowser = true; break; }
-                            }
-                            if (isBrowser) {
-                                bool inTree = treePids != null && treePids.Contains(pid);
-                                bool newSpawn = false;
-                                lock (baselineBrowserPids) {
-                                    newSpawn = (DateTime.UtcNow - startedUtc).TotalSeconds < 75 && !baselineBrowserPids.Contains(pid);
-                                }
-                                if (inTree || newSpawn) {
-                                    IntPtr hProc = OpenProcess(PROCESS_TERMINATE, false, pid);
-                                    if (hProc != IntPtr.Zero) {
-                                        try { TerminateProcess(hProc, 0); } catch {}
-                                        finally { CloseHandle(hProc); }
-                                        LastAction = "kill-redirect-proc:" + exe + "(" + pid + ")";
-                                    }
-                                }
-                            }
-                        }
-                    } while (Process32NextW(snapshot, ref entry));
-                }
-            }
-        } catch {}
-        finally { if (snapshot != IntPtr.Zero && snapshot != (IntPtr)(-1)) CloseHandle(snapshot); }
-    }
-
     private static void Sweep() {
         HashSet<int> pids = CollectTreePids(rootPid);
         lock (treeLock) { treeCache = pids; }
-        SuppressRedirectProcesses(pids);
         RestoreStuckWindows();
         List<WindowInfo> windows = new List<WindowInfo>();
         EnumWindows(delegate(IntPtr hWnd, IntPtr lParam) {
@@ -390,25 +217,12 @@ public class CocoPopupGate {
                 if (!IsWindow(hWnd) || !IsWindowVisible(hWnd)) return true;
                 uint pid;
                 GetWindowThreadProcessId(hWnd, out pid);
+                if (!pids.Contains(unchecked((int)pid))) return true;
+
                 StringBuilder title = new StringBuilder(512);
                 GetWindowText(hWnd, title, 512);
                 string titleStr = title.ToString();
-                string lowerTitle = titleStr.ToLowerInvariant();
 
-                bool inTree = pids.Contains(unchecked((int)pid));
-                if (!inTree && (DateTime.UtcNow - startedUtc).TotalSeconds < 90) {
-                    bool isRedirect = false;
-                    foreach (string rm in redirectTitleMarkers) {
-                        if (lowerTitle.Contains(rm)) { isRedirect = true; break; }
-                    }
-                    if (isRedirect) {
-                        ShowWindow(hWnd, SW_HIDE);
-                        PostMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-                        LastAction = "close-redirect-win:" + titleStr;
-                        return true;
-                    }
-                }
-                if (!inTree) return true;
                 WindowInfo info = new WindowInfo();
                 info.Handle = hWnd;
                 info.Pid = pid;
