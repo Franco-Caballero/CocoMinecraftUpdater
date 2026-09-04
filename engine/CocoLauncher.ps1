@@ -1141,11 +1141,11 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $volume=New-Object Windows.Forms.Panel;$volume.Name='CocoMediaVolumeBar';$volume.TabStop=$true;$volume.Cursor=[Windows.Forms.Cursors]::Hand;$volume.BackColor=[Drawing.Color]::FromArgb(27,19,38);$volume.AccessibleName='Volumen';$volume.AccessibleRole=[Windows.Forms.AccessibleRole]::Slider
     $fullscreen=New-Object Windows.Forms.Button;$fullscreen.Name='CocoMediaFullscreenButton';$fullscreen.Text='PANTALLA COMPLETA';$fullscreen.AccessibleName='Pantalla completa';$fullscreen.Font=New-Object Drawing.Font('Segoe UI Semibold',8);$fullscreen.TextAlign='MiddleCenter';$fullscreen.Size=New-Object Drawing.Size(174,36);Set-CocoMediaButtonStyle $fullscreen ([Drawing.Color]::FromArgb(38,27,52)) ([Drawing.Color]::FromArgb(235,228,241)) ([Drawing.Color]::FromArgb(67,46,88))
     $toolTip=New-Object Windows.Forms.ToolTip;$toolTip.AutoPopDelay=4000;$toolTip.InitialDelay=400;$toolTip.ReshowDelay=100
-    $toolTip.SetToolTip($play,'Pausar / reproducir (Espacio)');$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)');$toolTip.SetToolTip($seek,'Busca una posicion en el episodio');$toolTip.SetToolTip($volume,'Volumen')
+    $toolTip.SetToolTip($play,'Pausar / reproducir (Espacio)');$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11 / Esc)');$toolTip.SetToolTip($seek,'Busca una posicion en el episodio (Flechas Izq/Der)');$toolTip.SetToolTip($volume,'Volumen (Flechas Arriba/Abajo, rueda del raton, M: silenciar)')
     $statusLabel.TextAlign='MiddleLeft';$statusLabel.BackColor=[Drawing.Color]::FromArgb(38,27,52);$statusLabel.Padding=New-Object Windows.Forms.Padding(10,0,6,0)
     $controls.Controls.AddRange(@($controlLine,$play,$statusLabel,$position,$seek,$volumeLabel,$volume,$fullscreen));$form.Controls.Add($videoHost);$form.Controls.Add($controls);$form.Controls.Add($chrome)
     $savedPlayback=Get-CocoMediaPlaybackState $Experience $Episode
-    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost}
+    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;PreviousVolume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost}
     $formatTime={param([double]$Seconds)&$formatTimeCommand $Seconds}.GetNewClosure()
     $layoutChrome={
         $width=[Math]::Max(1,[int]$chrome.ClientSize.Width)
@@ -1235,9 +1235,27 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         param($sender,$eventArgs)
         if($state.Duration-gt0-and$eventArgs.KeyCode-in @([Windows.Forms.Keys]::Left,[Windows.Forms.Keys]::Right)){$delta=if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Left){-5.0}else{5.0};$state.SeekPreviewSeconds=[Math]::Max(0.0,[Math]::Min($state.Duration-1,$media.Position.TotalSeconds+$delta));$media.Position=[TimeSpan]::FromSeconds($state.SeekPreviewSeconds);$state.Completed=$false;&$savePlayback $true;$sender.Invalidate();$eventArgs.Handled=$true}
     }.GetNewClosure()))
+    $adjustVolume = {
+        param([double]$Delta)
+        $state.Volume = [Math]::Max(0.0, [Math]::Min(1.0, $state.Volume + $Delta))
+        if ($state.Volume -gt 0) { $state.PreviousVolume = $state.Volume }
+        $media.Volume = $state.Volume
+        $volume.Invalidate()
+    }.GetNewClosure()
+    $toggleMute = {
+        if ($state.Volume -gt 0) {
+            $state.PreviousVolume = $state.Volume
+            $state.Volume = 0.0
+        } else {
+            $restore = if ($state.PreviousVolume -gt 0) { $state.PreviousVolume } else { 0.5 }
+            $state.Volume = $restore
+        }
+        $media.Volume = $state.Volume
+        $volume.Invalidate()
+    }.GetNewClosure()
     $setVolumeFromX={
         param([int]$X)
-        $usable=[Math]::Max(1,$volume.ClientSize.Width-8);$state.Volume=[Math]::Max(0.0,[Math]::Min(1.0,($X-4)/[double]$usable));$media.Volume=$state.Volume;$volume.Invalidate()
+        $usable=[Math]::Max(1,$volume.ClientSize.Width-8);$state.Volume=[Math]::Max(0.0,[Math]::Min(1.0,($X-4)/[double]$usable));if($state.Volume -gt 0){$state.PreviousVolume=$state.Volume};$media.Volume=$state.Volume;$volume.Invalidate()
     }.GetNewClosure()
     $volume.Add_Paint(({
         param($sender,$eventArgs)
@@ -1252,9 +1270,21 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         param($sender,$eventArgs)
         if($eventArgs.Button-eq[Windows.Forms.MouseButtons]::Left){&$setVolumeFromX $eventArgs.X}
     }.GetNewClosure()))
+    $volume.Add_MouseWheel(({
+        param($sender,$eventArgs)
+        $delta=if($eventArgs.Delta-gt 0){0.05}else{-0.05}
+        &$adjustVolume $delta
+    }.GetNewClosure()))
     $volume.Add_KeyDown(({
         param($sender,$eventArgs)
-        if($eventArgs.KeyCode-in @([Windows.Forms.Keys]::Left,[Windows.Forms.Keys]::Right)){$delta=if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Left){-0.05}else{0.05};$state.Volume=[Math]::Max(0.0,[Math]::Min(1.0,$state.Volume+$delta));$media.Volume=$state.Volume;$sender.Invalidate();$eventArgs.Handled=$true}
+        if($eventArgs.KeyCode-in @([Windows.Forms.Keys]::Left,[Windows.Forms.Keys]::Down,[Windows.Forms.Keys]::OemMinus,[Windows.Forms.Keys]::Subtract)){&$adjustVolume -0.05;$eventArgs.Handled=$true}
+        elseif($eventArgs.KeyCode-in @([Windows.Forms.Keys]::Right,[Windows.Forms.Keys]::Up,[Windows.Forms.Keys]::Oemplus,[Windows.Forms.Keys]::Add)){&$adjustVolume 0.05;$eventArgs.Handled=$true}
+        elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::M){&$toggleMute;$eventArgs.Handled=$true}
+    }.GetNewClosure()))
+    $videoHost.Add_MouseWheel(({
+        param($sender,$eventArgs)
+        $delta=if($eventArgs.Delta-gt 0){0.05}else{-0.05}
+        &$adjustVolume $delta
     }.GetNewClosure()))
     $timer=New-Object Windows.Forms.Timer;$timer.Interval=250
     $startTimer=New-Object Windows.Forms.Timer;$startTimer.Interval=250
@@ -1360,12 +1390,23 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         param($sender,$eventArgs)
         if($eventArgs.ClickCount-ge2){&$toggleFullscreen;$eventArgs.Handled=$true}
     }.GetNewClosure()))
+    $media.Add_MouseWheel(({
+        param($sender,$eventArgs)
+        $delta=if($eventArgs.Delta-gt 0){0.05}else{-0.05}
+        &$adjustVolume $delta;$eventArgs.Handled=$true
+    }.GetNewClosure()))
     $media.Add_KeyDown(({
         param($sender,$eventArgs)
         if($eventArgs.Key-in @([Windows.Input.Key]::Escape,[Windows.Input.Key]::F11)){
             &$toggleFullscreen;$eventArgs.Handled=$true
         }elseif($eventArgs.Key-eq[Windows.Input.Key]::Space){
             $play.PerformClick();$eventArgs.Handled=$true
+        }elseif($eventArgs.Key-eq[Windows.Input.Key]::M){
+            &$toggleMute;$eventArgs.Handled=$true
+        }elseif($eventArgs.Key-in @([Windows.Input.Key]::Up,[Windows.Input.Key]::OemPlus,[Windows.Input.Key]::Add)){
+            &$adjustVolume 0.05;$eventArgs.Handled=$true
+        }elseif($eventArgs.Key-in @([Windows.Input.Key]::Down,[Windows.Input.Key]::OemMinus,[Windows.Input.Key]::Subtract)){
+            &$adjustVolume -0.05;$eventArgs.Handled=$true
         }elseif($eventArgs.Key-eq[Windows.Input.Key]::Left -and $state.Duration-gt 0){
             $newPos=[Math]::Max(0.0,$media.Position.TotalSeconds-5.0)
             $media.Position=[TimeSpan]::FromSeconds($newPos)
@@ -1381,6 +1422,20 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Space){$play.PerformClick();$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true}
         elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::F11-or($state.Fullscreen-and$eventArgs.KeyCode-eq[Windows.Forms.Keys]::Escape)){
             &$toggleFullscreen;$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::M){
+            &$toggleMute;$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($eventArgs.KeyCode-in @([Windows.Forms.Keys]::Up,[Windows.Forms.Keys]::Oemplus,[Windows.Forms.Keys]::Add)){
+            &$adjustVolume 0.05;$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($eventArgs.KeyCode-in @([Windows.Forms.Keys]::Down,[Windows.Forms.Keys]::OemMinus,[Windows.Forms.Keys]::Subtract)){
+            &$adjustVolume -0.05;$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Left -and $state.Duration-gt 0){
+            $newPos=[Math]::Max(0.0,$media.Position.TotalSeconds-5.0)
+            $media.Position=[TimeSpan]::FromSeconds($newPos)
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Right -and $state.Duration-gt 0){
+            $newPos=[Math]::Min([Math]::Max(0.0,$state.Duration-1.0),$media.Position.TotalSeconds+5.0)
+            $media.Position=[TimeSpan]::FromSeconds($newPos)
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
         }
     }.GetNewClosure()))
     $form.Add_FormClosing(({
@@ -2896,8 +2951,8 @@ function Get-CocoSessionAnnouncement($Catalog){
         while($offset-lt$length){$read=$stream.Read($bytes,$offset,$length-$offset);if($read-le0){throw 'La respuesta Coco termino incompleta.'};$offset+=$read}
         try{$announcement=[Text.Encoding]::UTF8.GetString($bytes)|ConvertFrom-Json}catch{throw 'El servicio Coco no devolvio JSON valido.'}
         Test-CocoSessionAnnouncement $Catalog $announcement
-    }catch [Net.Sockets.SocketException]{
-        [pscustomobject]@{State='offline';Experience=$null;Reason='unreachable'}
+    }catch{
+        [pscustomobject]@{State='offline';Experience=$null;Reason=$_.Exception.Message}
     }finally{$client.Dispose()}
 }
 
@@ -3274,7 +3329,7 @@ function Get-CocoLockedAssetCachePath([string]$CacheRoot,$Asset){
     Join-Path (Join-Path $CacheRoot 'objects') (([string]$Asset.sha256).ToLowerInvariant()+$extension)
 }
 
-function Get-CocoLockedAsset([string]$CacheRoot,$Asset,[hashtable]$ProgressContext){
+function Get-CocoLockedAsset([string]$CacheRoot,$Asset,$ProgressContext){
     if([string]$Asset.sha256-notmatch'^[a-fA-F0-9]{64}$'-or[int64]$Asset.size-le0){throw 'El asset no tiene hash o tamano valido.'}
     if($ProgressContext){
         $ProgressContext.Index=[int]$ProgressContext.Index+1
@@ -3346,28 +3401,41 @@ function Get-CocoLockedAssetsParallel($CacheRoot, $Assets, $ProgressContext) {
             $parent = Split-Path $dest -Parent
             [System.IO.Directory]::CreateDirectory($parent) | Out-Null
             $temp = Join-Path $parent ("download-$PID-$([guid]::NewGuid().ToString('N')).tmp")
-            try {
-                $web = [System.Net.WebClient]::new()
-                $web.Headers.Add("User-Agent", "CocoMinecraftUpdater/1.0")
-                $web.DownloadFile([string]$Asset.sourceUrl, $temp)
-                $web.Dispose()
-                
-                $fileInfo = [System.IO.FileInfo]::new($temp)
-                if ($fileInfo.Length -ne [int64]$Asset.size) { throw "Tamano invalido: $($Asset.name)" }
-                
-                $shaAlg = [System.Security.Cryptography.SHA256]::Create()
-                $stream = [System.IO.File]::OpenRead($temp)
-                $hashBytes = $shaAlg.ComputeHash($stream)
-                $stream.Dispose(); $shaAlg.Dispose()
-                $shaStr = ([BitConverter]::ToString($hashBytes) -replace '-','').ToLowerInvariant()
-                if ($shaStr -ne $sha.ToLowerInvariant()) { throw "Hash invalido: $($Asset.name)" }
-                
-                if (Test-Path -LiteralPath $dest) { Remove-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue }
-                [System.IO.File]::Move($temp, $dest)
-                return [pscustomobject]@{ sha256 = $sha.ToLowerInvariant(); path = $dest; size = [int64]$Asset.size; name = [string]$Asset.name }
-            } finally {
-                if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue }
+            $maxRetries = 2
+            $lastError = $null
+            for ($attempt = 0; $attempt -le $maxRetries; $attempt++) {
+                try {
+                    if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue }
+                    $web = [System.Net.WebClient]::new()
+                    try {
+                        $web.Headers.Add("User-Agent", "CocoMinecraftUpdater/1.0")
+                        $web.DownloadFile([string]$Asset.sourceUrl, $temp)
+                    } finally {
+                        $web.Dispose()
+                    }
+
+                    $fileInfo = [System.IO.FileInfo]::new($temp)
+                    if ($fileInfo.Length -ne [int64]$Asset.size) { throw "Tamano invalido: $($Asset.name)" }
+
+                    $shaAlg = [System.Security.Cryptography.SHA256]::Create()
+                    $stream = [System.IO.File]::OpenRead($temp)
+                    $hashBytes = $shaAlg.ComputeHash($stream)
+                    $stream.Dispose(); $shaAlg.Dispose()
+                    $shaStr = ([BitConverter]::ToString($hashBytes) -replace '-','').ToLowerInvariant()
+                    if ($shaStr -ne $sha.ToLowerInvariant()) { throw "Hash invalido: $($Asset.name)" }
+
+                    if (Test-Path -LiteralPath $dest) { Remove-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue }
+                    [System.IO.File]::Move($temp, $dest)
+                    return [pscustomobject]@{ sha256 = $sha.ToLowerInvariant(); path = $dest; size = [int64]$Asset.size; name = [string]$Asset.name }
+                } catch {
+                    $lastError = $_
+                    if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue }
+                    if ($attempt -lt $maxRetries) {
+                        [System.Threading.Thread]::Sleep(350 * ($attempt + 1))
+                    }
+                }
             }
+            throw $lastError
         }
         
         foreach ($mAsset in $missing) {
@@ -3376,28 +3444,39 @@ function Get-CocoLockedAssetsParallel($CacheRoot, $Assets, $ProgressContext) {
             [void]$tasks.Add([pscustomobject]@{ PS = $ps; Handle = $ps.BeginInvoke(); Asset = $mAsset })
         }
         
-        foreach ($task in $tasks) {
-            try {
-                while (-not $task.Handle.IsCompleted) {
-                    if ('System.Windows.Forms.Application' -as [type]) { [Windows.Forms.Application]::DoEvents() }
-                    [void]$task.Handle.AsyncWaitHandle.WaitOne(50)
+        $pendingTasks = [Collections.Generic.List[object]]::new($tasks)
+        while ($pendingTasks.Count -gt 0) {
+            $completedIndex = -1
+            for ($i = 0; $i -lt $pendingTasks.Count; $i++) {
+                if ($pendingTasks[$i].Handle.IsCompleted) {
+                    $completedIndex = $i
+                    break
                 }
-                $res = $task.PS.EndInvoke($task.Handle)
-                if ($res -and $res.Count) {
-                    $item = $res[0]
-                    $cachedResults[[string]$item.sha256] = [string]$item.path
-                    if ($ProgressContext) {
-                        $ProgressContext.CompletedBytes = [int64]$ProgressContext.CompletedBytes + [int64]$item.size
-                        $ProgressContext.Index = [int]$ProgressContext.Index + 1
-                        $pct = [int]($ProgressContext.ProgressStart + ($ProgressContext.ProgressEnd - $ProgressContext.ProgressStart) * [int64]$ProgressContext.CompletedBytes / [Math]::Max(1, [int64]$ProgressContext.TotalBytes))
-                        Set-CocoLauncherStep ([int]$ProgressContext.Step) ([string]$ProgressContext.Title) ("Descargando en paralelo (hilo $($ProgressContext.Index)/$($ProgressContext.Count)): $($task.Asset.name)") $pct
+            }
+            if ($completedIndex -ge 0) {
+                $task = $pendingTasks[$completedIndex]
+                $pendingTasks.RemoveAt($completedIndex)
+                try {
+                    $res = $task.PS.EndInvoke($task.Handle)
+                    if ($res -and $res.Count) {
+                        $item = $res[0]
+                        $cachedResults[[string]$item.sha256] = [string]$item.path
+                        if ($ProgressContext) {
+                            $ProgressContext.CompletedBytes = [int64]$ProgressContext.CompletedBytes + [int64]$item.size
+                            $ProgressContext.Index = [int]$ProgressContext.Index + 1
+                            $pct = [int]($ProgressContext.ProgressStart + ($ProgressContext.ProgressEnd - $ProgressContext.ProgressStart) * [int64]$ProgressContext.CompletedBytes / [Math]::Max(1, [int64]$ProgressContext.TotalBytes))
+                            Set-CocoLauncherStep ([int]$ProgressContext.Step) ([string]$ProgressContext.Title) ("Descargando en paralelo ($($ProgressContext.Index)/$($ProgressContext.Count)): $($task.Asset.name)") $pct
+                        }
                     }
+                } catch {
+                    $single = Get-CocoLockedAsset $CacheRoot $task.Asset $ProgressContext
+                    $cachedResults[([string]$task.Asset.sha256).ToLowerInvariant()] = $single
+                } finally {
+                    $task.PS.Dispose()
                 }
-            } catch {
-                $single = Get-CocoLockedAsset $CacheRoot $task.Asset $ProgressContext
-                $cachedResults[([string]$task.Asset.sha256).ToLowerInvariant()] = $single
-            } finally {
-                $task.PS.Dispose()
+            } else {
+                if ('System.Windows.Forms.Application' -as [type]) { [Windows.Forms.Application]::DoEvents() }
+                [System.Threading.Thread]::Sleep(30)
             }
         }
         $pool.Close(); $pool.Dispose()
@@ -3587,9 +3666,9 @@ function Set-CocoGlobalSkinAssets($GlobalPolicies,$Experience,[string]$InstanceR
 
 function Ensure-CocoSteamRunning([switch]$Quiet){
     Write-CocoLog "Verificando ejecucion de Steam..."
-    $running=@(Get-CimInstance Win32_Process -Filter "Name='steam.exe'" -ErrorAction SilentlyContinue)
+    $running=@(Get-Process -Name 'steam' -ErrorAction SilentlyContinue)
     if($running.Count-gt0){
-        Write-CocoLog "Steam ya se encuentra en ejecucion (PID: $($running[0].ProcessId))."
+        Write-CocoLog "Steam ya se encuentra en ejecucion (PID: $($running[0].Id))."
         return $true
     }
 
@@ -3675,7 +3754,7 @@ function Ensure-CocoSteamRunning([switch]$Quiet){
     for($i=0; $i-lt30; $i++){
         Start-Sleep -Milliseconds 500
         if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
-        $running=@(Get-CimInstance Win32_Process -Filter "Name='steam.exe'" -ErrorAction SilentlyContinue)
+        $running=@(Get-Process -Name 'steam' -ErrorAction SilentlyContinue)
         if($running.Count-gt0){
             $started=$true
             break
@@ -5135,8 +5214,8 @@ function Invoke-CocoManagedExperienceLaunch(
         $diagLines.Add("InstanceRoot: $($installed.InstanceRoot)")
         foreach($requiredItem in $requiredStatus){$diagLines.Add("REQUIRED FILE: $($requiredItem.path) = $($requiredItem.status)")}
         $diagLines.Add("DEFENDER EXCLUSION: $defenderStatus")
-        $steamProc = @(Get-CimInstance Win32_Process -Filter "Name='steam.exe'" -ErrorAction SilentlyContinue)
-        $diagLines.Add("Steam running: $(if ($steamProc) { 'True (PID ' + $steamProc[0].ProcessId + ')' } else { 'False' })")
+        $steamProc = @(Get-Process -Name 'steam' -ErrorAction SilentlyContinue)
+        $diagLines.Add("Steam running: $(if ($steamProc) { 'True (PID ' + $steamProc[0].Id + ')' } else { 'False' })")
         
         [System.IO.File]::WriteAllText($diagLog, ($diagLines -join "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
         Write-CocoLog "Diagnostico standalone guardado en '$diagLog'."
