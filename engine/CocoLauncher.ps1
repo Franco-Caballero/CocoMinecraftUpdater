@@ -1364,6 +1364,16 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         param($sender,$eventArgs)
         if($eventArgs.Key-in @([Windows.Input.Key]::Escape,[Windows.Input.Key]::F11)){
             &$toggleFullscreen;$eventArgs.Handled=$true
+        }elseif($eventArgs.Key-eq[Windows.Input.Key]::Space){
+            $play.PerformClick();$eventArgs.Handled=$true
+        }elseif($eventArgs.Key-eq[Windows.Input.Key]::Left -and $state.Duration-gt 0){
+            $newPos=[Math]::Max(0.0,$media.Position.TotalSeconds-5.0)
+            $media.Position=[TimeSpan]::FromSeconds($newPos)
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true
+        }elseif($eventArgs.Key-eq[Windows.Input.Key]::Right -and $state.Duration-gt 0){
+            $newPos=[Math]::Min([Math]::Max(0.0,$state.Duration-1.0),$media.Position.TotalSeconds+5.0)
+            $media.Position=[TimeSpan]::FromSeconds($newPos)
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true
         }
     }.GetNewClosure()))
     $form.Add_KeyDown(({
@@ -2728,7 +2738,7 @@ function Wait-CocoPortableMcGame($Process,[switch]$PumpUi,[switch]$Dispose){
     try{
         while(-not$Process.HasExited){
             if($PumpUi-and('System.Windows.Forms.Application'-as[type])){[Windows.Forms.Application]::DoEvents()}
-            Start-Sleep -Milliseconds 100
+            Start-Sleep -Milliseconds 250
         }
         # La segunda espera permite que los lectores asincronos terminen de
         # vaciar stdout/stderr antes de consultar el codigo o cerrar Coco.
@@ -2762,7 +2772,7 @@ function Wait-CocoManagedMinecraftWindow([string]$InstanceRoot,$PortableProcess,
             $lastSecond=$second
             Set-CocoLauncherStep 8 'ABRIENDO MINECRAFT' ("Windows esta iniciando Java y la ventana del juego | {0:mm\:ss}"-f$watch.Elapsed) (89+[int](5*[Math]::Min(.95,$watch.Elapsed.TotalSeconds/$TimeoutSeconds)))
         }
-        [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 250
+        [Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 400
     }
     throw "Minecraft no aparecio despues de $TimeoutSeconds segundos."
 }
