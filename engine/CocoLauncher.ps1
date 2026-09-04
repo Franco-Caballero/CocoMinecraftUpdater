@@ -5772,11 +5772,21 @@ function Set-CocoPictureBoxCoverImage($Picture,[string]$Path,[int]$TargetWidth,[
         try{
             if($Picture.Image){$old=$Picture.Image;$Picture.Image=$null;$old.Dispose()}
             if([string]::IsNullOrWhiteSpace($Path)-or-not(Test-Path -LiteralPath $Path -PathType Leaf)){return}
+            $width=[Math]::Max(1,$TargetWidth);$height=[Math]::Max(1,$TargetHeight)
+            if(-not $script:CocoCoverImageCache){$script:CocoCoverImageCache=@{}}
+            $cacheKey="$Path|$width|$height"
+            $cached=$script:CocoCoverImageCache[$cacheKey]
+            if($cached){
+                try{
+                    $Picture.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Normal
+                    $Picture.Image=New-Object Drawing.Bitmap $cached
+                    return
+                }catch{$script:CocoCoverImageCache.Remove($cacheKey)}
+            }
             $bytes=[IO.File]::ReadAllBytes($Path);$stream=$null;$source=$null;$bitmap=$null;$graphics=$null
             try{
                 $stream=[IO.MemoryStream]::new($bytes,$false)
                 $source=[Drawing.Image]::FromStream($stream,$true,$true)
-                $width=[Math]::Max(1,$TargetWidth);$height=[Math]::Max(1,$TargetHeight)
                 $bitmap=New-Object Drawing.Bitmap($width,$height)
                 $graphics=[Drawing.Graphics]::FromImage($bitmap)
                 $graphics.Clear([Drawing.Color]::FromArgb(30,20,42))
@@ -5788,8 +5798,10 @@ function Set-CocoPictureBoxCoverImage($Picture,[string]$Path,[int]$TargetWidth,[
                 $graphics.PixelOffsetMode=[Drawing.Drawing2D.PixelOffsetMode]::HighQuality
                 $graphics.CompositingQuality=[Drawing.Drawing2D.CompositingQuality]::HighQuality
                 $graphics.DrawImage($source,(New-Object Drawing.Rectangle($drawX,$drawY,$drawWidth,$drawHeight)),(New-Object Drawing.Rectangle(0,0,$sourceWidth,$sourceHeight)),[Drawing.GraphicsUnit]::Pixel)
+                $script:CocoCoverImageCache[$cacheKey]=$bitmap
                 $Picture.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Normal
-                $Picture.Image=$bitmap;$bitmap=$null
+                $Picture.Image=New-Object Drawing.Bitmap $bitmap
+                $bitmap=$null
             }finally{
                 if($graphics){$graphics.Dispose()}
                 if($bitmap){$bitmap.Dispose()}
@@ -5923,19 +5935,37 @@ function Set-CocoExperienceCardsScrollOffset($DynamicPanel,[int]$Offset,[bool]$S
     if($clamped-eq$current){
         $state.Offset=$clamped
         if($SyncTarget){$state.PendingOffset=$clamped;$state.TargetOffset=$clamped}
+        if($clamped-eq 0){
+            $surface=@($state.Items|Where-Object{$_.Control-and-not$_.Control.IsDisposed}|Select-Object -First 1)[0]
+            if($surface-and$surface.Control-and$surface.Control.Top-ne 0){
+                try{
+                    $DynamicPanel.AutoScroll=$false
+                    $surface.Control.Location=[Drawing.Point]::new(0,0)
+                    $DynamicPanel.AutoScroll=$true
+                    $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,0)
+                }catch{}
+            }
+        }
         return
     }
     try{
+        $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)
         $DynamicPanel.VerticalScroll.Value=$clamped
     }catch{
-        try{$DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)}catch{}
+        try{$DynamicPanel.VerticalScroll.Value=$clamped}catch{}
     }
     try{$DynamicPanel.PerformLayout()}catch{}
     $actual=try{[int]$DynamicPanel.VerticalScroll.Value}catch{[int]$clamped}
-    if($actual-ne$clamped){
-        try{$DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,$clamped)}catch{}
-        try{$DynamicPanel.PerformLayout()}catch{}
-        $actual=try{[int]$DynamicPanel.VerticalScroll.Value}catch{[int]$clamped}
+    if($clamped-eq 0 -and $actual-ne 0){
+        try{
+            $DynamicPanel.AutoScroll=$false
+            $DynamicPanel.VerticalScroll.Value=0
+            $surface=@($state.Items|Where-Object{$_.Control-and-not$_.Control.IsDisposed}|Select-Object -First 1)[0]
+            if($surface-and$surface.Control){$surface.Control.Location=[Drawing.Point]::new(0,0)}
+            $DynamicPanel.AutoScroll=$true
+            $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,0)
+            $actual=0
+        }catch{}
     }
     $state.Offset=[Math]::Max(0,[Math]::Min([int]$metrics.Maximum,$actual))
     try{
@@ -5962,21 +5992,17 @@ function Set-CocoExperienceCardsScrollContent($DynamicPanel,[int]$ContentHeight)
     $state.Items=@()
     foreach($control in @($DynamicPanel.Controls)){$state.Items+=,[pscustomobject]@{Control=$control;X=[int]$control.Left;Y=[int]$control.Top}}
     try{
-        $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,0)
+        $DynamicPanel.AutoScroll=$false
         $DynamicPanel.VerticalScroll.Value=0
         $DynamicPanel.HorizontalScroll.Value=0
-        $DynamicPanel.AutoScroll=$true
-        $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,[int]$state.ContentHeight)
-        $DynamicPanel.PerformLayout()
-        # El vertical nativo reduce ClientSize.Width. Ajustar solo la superficie
-        # contenedora evita que aparezca un segundo riel horizontal; las tarjetas
-        # conservan exactamente sus tamaños y posiciones.
         $surface=@($state.Items|Where-Object{$_.Control-and-not$_.Control.IsDisposed}|Select-Object -First 1)[0]
         if($surface-and$surface.Control){
             $surface.Control.Width=[Math]::Max(1,[int]$DynamicPanel.ClientSize.Width)
             $surface.Control.Location=[Drawing.Point]::new(0,0)
         }
         $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,[int]$state.ContentHeight)
+        $DynamicPanel.AutoScroll=$true
+        $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,0)
         $DynamicPanel.HorizontalScroll.Enabled=$false;$DynamicPanel.HorizontalScroll.Visible=$false
         $DynamicPanel.PerformLayout()
     }catch{}
@@ -6490,6 +6516,10 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                     $script:CocoTrayIcon.Visible=$false
                     $script:CocoTrayIcon.Dispose()
                     $script:CocoTrayIcon=$null
+                }
+                if($script:CocoCoverImageCache){
+                    foreach($img in @($script:CocoCoverImageCache.Values)){try{$img.Dispose()}catch{}}
+                    $script:CocoCoverImageCache.Clear()
                 }
             }catch{}
         })

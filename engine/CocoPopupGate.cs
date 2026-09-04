@@ -305,7 +305,7 @@ public class CocoPopupGate {
     };
 
     private static readonly string[] redirectTitleMarkers = new string[] {
-        "online-fix", "onlinefix", "online fix", "ofme", "freesteam", "steamrip", "free steam", "credits", "crÃ©ditos", "the fix is made by", "cs.rin.ru"
+        "online-fix", "onlinefix", "online fix", "ofme", "freesteam", "steamrip", "free steam", "credits", "cr\u00e9ditos", "the fix is made by", "cs.rin.ru"
     };
 
     private static HashSet<int> SnapshotBrowserPids() {
@@ -512,6 +512,7 @@ public class CocoPopupGate {
             int w = GetSystemMetrics(76); int h = GetSystemMetrics(78);
             if (w > 0 && h > 0) virtualArea = (long)w * h;
         } catch {}
+        if (virtualArea > 1 && info.Area > (long)(virtualArea * 0.75)) return;
         bool markerHit = TextMatchesAny(info.Title, markers) || TextMatchesAny(info.Class, markers);
         if (!markerHit) { foreach (string extra in info.OtherTexts) { if (TextMatchesAny(extra, markers)) { markerHit = true; break; } } }
         string loweredClass = info.Class.ToLowerInvariant();
