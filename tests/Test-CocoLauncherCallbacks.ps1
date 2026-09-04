@@ -35,6 +35,10 @@ function Invoke-CocoMediaOpenFolderUi($Experience){$script:CocoCallbackFolderRea
 function Invoke-CocoMediaEpisodeUi($Experience){}
 
 try{
+    $expDir=Join-Path $tempRoot 'callback-exp'
+    New-Item -ItemType Directory -Path $expDir -Force|Out-Null
+    Set-Content -LiteralPath (Join-Path $expDir 'instance.txt') 'installed' -Encoding UTF8
+
     Update-CocoExperienceCardsUi $panel $catalog $paths 'host'
     $folderButton=@(Get-CocoCallbackTestControls $panel|Where-Object{$_-is[Windows.Forms.Button]-and[string]$_.Text-eq'CARPETA'}|Select-Object -First 1)[0]
     if(-not$folderButton){throw 'FAIL: no se genero el boton CARPETA.'}
@@ -65,7 +69,22 @@ try{
     [Windows.Forms.Application]::DoEvents()
     if(-not$form.IsDisposed){throw 'FAIL: la X del launcher no pudo cerrar el formulario.'}
     $form.Dispose();$script:CocoForm=$null
-    'PASS: CARPETA, JUGADOR y la X sobreviven a callbacks WinForms sin resolucion dinamica ni expresiones NULL.'
+
+    # Test CocoHostForceButton click callback
+    $script:CocoHostForceJoin=$true
+    $hostForceBtn=New-Object Windows.Forms.Button
+    $savePrefsCmd=try{[System.Management.Automation.ScriptBlock](@(Get-Command Save-CocoHostPreferences -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)}catch{$null}
+    $hostForceBtn.Add_Click({
+        param($s,$e)
+        $script:CocoHostForceJoin=-not$script:CocoHostForceJoin
+        if($savePrefsCmd){ & $savePrefsCmd $script:CocoHostForceJoin }
+    })
+    $hostForceBtn.PerformClick()
+    if($script:CocoHostForceJoin-ne$false){throw 'FAIL: el boton CocoHostForceButton no alterno el estado a false.'}
+    $savedPrefs=Read-CocoHostPreferences
+    if($savedPrefs.forceJoin-ne$false){throw 'FAIL: Save-CocoHostPreferences no guardo el estado false en disco.'}
+
+    'PASS: CARPETA, JUGADOR, FORZAR CLIENTES y la X sobreviven a callbacks WinForms sin resolucion dinamica ni expresiones NULL.'
 }finally{
     if($panel-and-not$panel.IsDisposed){$panel.Dispose()}
     if($script:CocoForm-and-not$script:CocoForm.IsDisposed){$script:CocoForm.Close();$script:CocoForm.Dispose()}

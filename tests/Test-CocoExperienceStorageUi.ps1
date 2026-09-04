@@ -72,13 +72,12 @@ try{
     $panel.Controls.Clear()
     Update-CocoExperienceCardsUi $panel $catalog $paths 'host'
     $hostCards=@(Get-TestDescendantControls $panel|Where-Object{$_-is[Windows.Forms.Panel]-and$_.Tag-and[string]$_.Name-eq'CocoExperienceCard'})
-    foreach($hostCard in $hostCards){
-        $buttons=@(Get-TestDescendantButtons $hostCard)
-        if($buttons.Count-ne3){throw 'La UI host no muestra ALOJAR, CARPETA y BORRAR en cada tarjeta.'}
-    }
+    $installedHost=@($hostCards|Where-Object{$_.Tag.ExperienceId-eq'installed'})[0]
+    $installedButtons=@(Get-TestDescendantButtons $installedHost)
+    if($installedButtons.Count-ne3){throw 'La UI host no muestra ABRIR, CARPETA y BORRAR en la tarjeta instalada.'}
     $missingHost=@($hostCards|Where-Object{$_.Tag.ExperienceId-eq'missing'})[0]
-    $missingDelete=@(Get-TestDescendantButtons $missingHost|Where-Object Text -eq 'BORRAR')[0]
-    if($missingDelete.Enabled){throw 'BORRAR debe estar deshabilitado para una instancia no instalada.'}
+    $missingButtons=@(Get-TestDescendantButtons $missingHost)
+    if($missingButtons.Count-ne1-or$missingButtons[0].Text-ne'INSTALAR'){throw 'La UI host debe mostrar solo INSTALAR en una instancia no instalada.'}
     $panel.Dispose()
     'PASS: tarjetas cliente/host, rutas, estados y botones de almacenamiento validados.'
 }finally{

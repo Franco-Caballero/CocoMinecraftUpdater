@@ -744,6 +744,20 @@ function Remove-CocoStaleExperienceStages([string]$InstanceRoot){
     return $removed
 }
 
+function Get-CocoCompactPath([string]$Path,[int]$MaxLength=38){
+    if([string]::IsNullOrWhiteSpace($Path)){return ''}
+    $cleanPath=$Path.TrimEnd('\')
+    if($cleanPath.Length -le $MaxLength){return $cleanPath}
+    $drive=[IO.Path]::GetPathRoot($cleanPath)
+    $leaf=Split-Path $cleanPath -Leaf
+    $parent=Split-Path (Split-Path $cleanPath -Parent) -Leaf
+    if($parent){
+        $candidate="$drive...\$parent\$leaf"
+        if($candidate.Length -le $MaxLength){return $candidate}
+    }
+    return "$drive...\$leaf"
+}
+
 function Get-CocoInstanceLocationsStorePath([string]$StorePath='') {
     if([string]::IsNullOrWhiteSpace($StorePath)-and-not[string]::IsNullOrWhiteSpace([string]$script:CocoInstanceLocationsPath)){
         $StorePath=[string]$script:CocoInstanceLocationsPath
@@ -2455,6 +2469,11 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
     $script:CocoExperienceCardsToolTip=New-Object Windows.Forms.ToolTip
     $DynamicPanel.SuspendLayout()
     try{
+        try{
+            $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,0)
+            $DynamicPanel.VerticalScroll.Value=0
+            $DynamicPanel.HorizontalScroll.Value=0
+        }catch{}
         $DynamicPanel.AutoScroll=$false;$DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,0)
         foreach($oldControl in @($DynamicPanel.Controls)){
             try{$DynamicPanel.Controls.Remove($oldControl);$oldControl.Dispose()}catch{}
@@ -2511,14 +2530,28 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 }
             }else{
                 $instanceId=[string]$exp.instanceId;if(-not$instanceId){$instanceId=[string]$exp.id};$instanceRoot=Get-CocoExperienceInstanceRoot $exp $expRoot $locationPath;$usage=Get-CocoExperienceDiskUsage $instanceRoot;$isRunning=Test-CocoManagedGameRunning $instanceRoot;Write-CocoStorageDiagnostic 'card.state' @{role=$Role;experienceId=$exp.id;instanceId=$instanceId;root=$instanceRoot;installed=$usage.Installed;usage=$usage.Label;running=$isRunning}
-                if($isRunning){$detailLabel.Text='EN EJECUCION';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)}elseif($usage.Installed){$detailLabel.Text='INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(183,239,194)}else{$detailLabel.Text='NO INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)}
+                $compactPath=Get-CocoCompactPath $instanceRoot
+                if($isRunning){
+                    $detailLabel.Text="EN EJECUCION • $($usage.Label)"
+                    $detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)
+                }elseif($usage.Installed){
+                    $detailLabel.Text="INSTALADO • $($usage.Label) • $compactPath"
+                    $detailLabel.ForeColor=[Drawing.Color]::FromArgb(183,239,194)
+                }else{
+                    $detailLabel.Text='NO INSTALADO'
+                    $detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)
+                }
                 $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
                 if($Role-eq'host'){
-                    $buttonSpecs=@(
-                        [pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ABRIR'};Kind='host'},
-                        [pscustomobject]@{Text='CARPETA';Kind='folder'},
-                        [pscustomobject]@{Text='BORRAR';Kind='delete'}
-                    )
+                    if($usage.Installed){
+                        $buttonSpecs=@(
+                            [pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ABRIR'};Kind='host'},
+                            [pscustomobject]@{Text='CARPETA';Kind='folder'},
+                            [pscustomobject]@{Text='BORRAR';Kind='delete'}
+                        )
+                    }else{
+                        $buttonSpecs=@([pscustomobject]@{Text='INSTALAR';Kind='install'})
+                    }
                 }else{
                     if($usage.Installed){
                         $liveHostExp=if($global:CocoLauncherLiveHostSession){[string]$global:CocoLauncherLiveHostSession.Experience.id}else{''}
@@ -2535,7 +2568,17 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                     }
                 }
             }
-            $card.Controls.Add($imageBox);$gradient.Controls.Add($nameLabel);$gradient.Controls.Add($detailLabel);$script:CocoExperienceCardsToolTip.SetToolTip($card,"$([string]$exp.name)`r`n$([string]$exp.description)");$script:CocoExperienceCardsToolTip.SetToolTip($nameLabel,[string]$exp.name);$script:CocoExperienceCardsToolTip.SetToolTip($imageBox,[string]$exp.name)
+            $card.Controls.Add($imageBox);$gradient.Controls.Add($nameLabel);$gradient.Controls.Add($detailLabel)
+            $cardTip="$([string]$exp.name)`r`n$([string]$exp.description)"
+            if($cardInfo.Usage.Installed){
+                $cardTip+="`r`n`r`nEstado: Instalado ($($cardInfo.Usage.Label))`r`nRuta: $($cardInfo.InstanceRoot)"
+            }else{
+                $cardTip+="`r`n`r`nEstado: No instalado`r`nRuta destino: $($cardInfo.InstanceRoot)"
+            }
+            $script:CocoExperienceCardsToolTip.SetToolTip($card,$cardTip)
+            $script:CocoExperienceCardsToolTip.SetToolTip($nameLabel,$cardTip)
+            $script:CocoExperienceCardsToolTip.SetToolTip($detailLabel,$cardTip)
+            $script:CocoExperienceCardsToolTip.SetToolTip($imageBox,$cardTip)
             if($cardInfo.IsMedia){
                 $mediaAction=if($cardInfo.IsMovie){ {param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaMovieUiCommand $info.Experience}}.GetNewClosure() }
                              else{ {param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure() }
@@ -2590,9 +2633,9 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                         'host'{if($cardInfo.IsRunning){'La partida ya esta en ejecucion.'}else{'Abrir y alojar partida para tus amigos.'}}
                         'play'{if($cardInfo.IsRunning){'La partida ya esta en ejecucion.'}else{'Iniciar la experiencia localmente.'}}
                         'join'{'Unirse a la partida que tiene abierta el host.'}
-                        'install'{if($cardInfo.Usage.Installed){'Cambiar carpeta o mover la instalacion.'}else{'Descargar e instalar esta experiencia.'}}
-                        'folder'{if($cardInfo.IsMedia){'Abrir la carpeta de descargas en el Explorador.'}else{'Cambiar carpeta o mover la instalacion.'}}
-                        'delete'{'Desinstalar esta experiencia para liberar espacio en disco.'}
+                        'install'{if($cardInfo.Usage.Installed){"Mover instalacion:`r`n$($cardInfo.InstanceRoot)"}else{"Descargar e instalar en:`r`n$($cardInfo.InstanceRoot)"}}
+                        'folder'{if($cardInfo.IsMedia){'Abrir carpeta de descargas en el Explorador.'}else{"Ubicacion:`r`n$($cardInfo.InstanceRoot)`r`nClick para mover a otra carpeta."}}
+                        'delete'{"Desinstalar y liberar $($cardInfo.Usage.Label) en disco."}
                         'movie'{'Reproducir pelicula.'}
                         'episode'{'Ver episodios disponibles.'}
                         default{[string]$spec.Text}
@@ -2611,9 +2654,20 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
             }
             $cardsContent.Controls.Add($card);$cardIndex++
         }
-            $logicalRows=[int][Math]::Ceiling($managedExperiences.Count/2.0);$gridContentHeight=[int](Get-CocoLauncherUiMetric 22)+($logicalRows*$cardHeight)+([Math]::Max(0,$logicalRows-1)*$gap)+(Get-CocoLauncherUiMetric 8);$cardsContent.Size=[Drawing.Size]::new([Math]::Max(1,[int]$DynamicPanel.ClientSize.Width),[Math]::Max(1,[int]$gridContentHeight));$DynamicPanel.Controls.Add($cardsContent);$DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new((Get-CocoLauncherUiMetric 0),[Math]::Max($gridContentHeight,(Get-CocoLauncherUiMetric ($managedExperiences.Count*70+22))));$DynamicPanel.AutoScroll=$false
+            $logicalRows=[int][Math]::Ceiling($managedExperiences.Count/2.0);$gridContentHeight=[int](Get-CocoLauncherUiMetric 22)+($logicalRows*$cardHeight)+([Math]::Max(0,$logicalRows-1)*$gap)+(Get-CocoLauncherUiMetric 8);
+            $cardsContent.Size=[Drawing.Size]::new([Math]::Max(1,[int]$DynamicPanel.ClientSize.Width),[Math]::Max(1,[int]$gridContentHeight));
+            $cardsContent.Location=[Drawing.Point]::new(0,0)
+            $DynamicPanel.Controls.Add($cardsContent);
+            $cardsContent.Location=[Drawing.Point]::new(0,0)
+            $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new((Get-CocoLauncherUiMetric 0),[Math]::Max($gridContentHeight,(Get-CocoLauncherUiMetric ($managedExperiences.Count*70+22))));
+            $DynamicPanel.AutoScroll=$false
     }finally{$DynamicPanel.ResumeLayout($true)}
-    try{$DynamicPanel.PerformLayout();Set-CocoExperienceCardsScrollContent $DynamicPanel $gridContentHeight;$DynamicPanel.Invalidate()}catch{}
+    try{
+        $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,0)
+        $DynamicPanel.PerformLayout();
+        Set-CocoExperienceCardsScrollContent $DynamicPanel $gridContentHeight;
+        $DynamicPanel.Invalidate()
+    }catch{}
     Register-CocoExperienceScrollWheel $DynamicPanel $DynamicPanel
     Set-CocoExperienceCardsNativeScrollStyle $DynamicPanel
     Update-CocoExperienceCardsScrollBar $DynamicPanel
@@ -6365,6 +6419,9 @@ function Set-CocoExperienceCardsScrollContent($DynamicPanel,[int]$ContentHeight)
     $state.Items=@()
     foreach($control in @($DynamicPanel.Controls)){$state.Items+=,[pscustomobject]@{Control=$control;X=[int]$control.Left;Y=[int]$control.Top}}
     try{
+        $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,0)
+        $DynamicPanel.VerticalScroll.Value=0
+        $DynamicPanel.HorizontalScroll.Value=0
         $DynamicPanel.AutoScroll=$true
         $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,[int]$state.ContentHeight)
         $DynamicPanel.PerformLayout()
@@ -6372,7 +6429,10 @@ function Set-CocoExperienceCardsScrollContent($DynamicPanel,[int]$ContentHeight)
         # contenedora evita que aparezca un segundo riel horizontal; las tarjetas
         # conservan exactamente sus tamaños y posiciones.
         $surface=@($state.Items|Where-Object{$_.Control-and-not$_.Control.IsDisposed}|Select-Object -First 1)[0]
-        if($surface-and$surface.Control){$surface.Control.Width=[Math]::Max(1,[int]$DynamicPanel.ClientSize.Width)}
+        if($surface-and$surface.Control){
+            $surface.Control.Width=[Math]::Max(1,[int]$DynamicPanel.ClientSize.Width)
+            $surface.Control.Location=[Drawing.Point]::new(0,0)
+        }
         $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,[int]$state.ContentHeight)
         $DynamicPanel.HorizontalScroll.Enabled=$false;$DynamicPanel.HorizontalScroll.Visible=$false
         $DynamicPanel.PerformLayout()
@@ -7050,23 +7110,35 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         $hostForceButton.Name='CocoHostForceButton'
         $hostForceButton.TabStop=$false
         $hostForceButton.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6))
+        $savePrefsCommand=try{[System.Management.Automation.ScriptBlock](@(Get-Command Save-CocoHostPreferences -CommandType Function -ErrorAction SilentlyContinue|Select-Object -First 1)[0].ScriptBlock)}catch{$null}
         $updateForceButtonUi={
-            if($script:CocoHostForceJoin){
-                $hostForceButton.Text='FORZAR CLIENTES: SI'
-                $hostForceButton.AccessibleDescription='Los clientes entraran automaticamente cuando abras una partida.'
-                Set-CocoFlatButtonStyle $hostForceButton ([Drawing.Color]::FromArgb(45,28,68)) ([Drawing.Color]::FromArgb(183,239,194))
-            }else{
-                $hostForceButton.Text='FORZAR CLIENTES: NO'
-                $hostForceButton.AccessibleDescription='Los clientes veran la partida pero podran unirse o jugar solos.'
-                Set-CocoFlatButtonStyle $hostForceButton ([Drawing.Color]::FromArgb(35,22,48)) ([Drawing.Color]::FromArgb(200,180,215))
-            }
+            try{
+                if($script:CocoHostForceJoin){
+                    $hostForceButton.Text='FORZAR CLIENTES: SI'
+                    $hostForceButton.AccessibleDescription='Los clientes entraran automaticamente cuando abras una partida.'
+                    Set-CocoFlatButtonStyle $hostForceButton ([Drawing.Color]::FromArgb(45,28,68)) ([Drawing.Color]::FromArgb(183,239,194))
+                }else{
+                    $hostForceButton.Text='FORZAR CLIENTES: NO'
+                    $hostForceButton.AccessibleDescription='Los clientes veran la partida pero podran unirse o jugar solos.'
+                    Set-CocoFlatButtonStyle $hostForceButton ([Drawing.Color]::FromArgb(35,22,48)) ([Drawing.Color]::FromArgb(200,180,215))
+                }
+            }catch{}
         }
         & $updateForceButtonUi
         $hostForceButton.Add_Click({
-            $script:CocoHostForceJoin=-not$script:CocoHostForceJoin
-            & $updateForceButtonUi
-            Save-CocoHostPreferences $script:CocoHostForceJoin
-        }.GetNewClosure())
+            param($sender,$eventArgs)
+            try{
+                $script:CocoHostForceJoin=-not$script:CocoHostForceJoin
+                & $updateForceButtonUi
+                if($savePrefsCommand){
+                    & $savePrefsCommand $script:CocoHostForceJoin
+                }else{
+                    Save-CocoHostPreferences $script:CocoHostForceJoin
+                }
+            }catch{
+                Write-CocoLog "Error al guardar preferencia de forzar clientes: $($_.Exception.Message)"
+            }
+        })
         $script:CocoHostForceButton=$hostForceButton
         $script:CocoPanel.Controls.Add($hostForceButton)
     }
