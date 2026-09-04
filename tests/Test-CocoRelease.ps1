@@ -56,7 +56,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $engineArchive=[IO.Compression.ZipFile]::OpenRead((Resolve-Path $engine))
 try{
     $entryNames=@($engineArchive.Entries|ForEach-Object{$_.FullName-replace'\\','/'})
-    foreach($required in 'CocoUpdater.ps1','CocoLauncher.ps1','CocoSessionService.ps1','CocoNetwork.ps1','CocoNetworkElevated.ps1','CocoNetworkAuthorizer.ps1','CocoDefenderControl.ps1','launcher/catalog.json','assets/fullbody.png','assets/reynaico.ico'){
+    foreach($required in 'CocoUpdater.ps1','CocoLauncher.ps1','CocoSessionService.ps1','CocoNetwork.ps1','CocoNetworkElevated.ps1','CocoNetworkAuthorizer.ps1','CocoDefenderControl.ps1','CocoPopupGate.dll','launcher/catalog.json','assets/fullbody.png','assets/reynaico.ico'){
         if($entryNames-notcontains$required){throw "Falta $required en el engine."}
     }
     $launcherCatalog=Get-Content -LiteralPath 'launcher\catalog.template.json' -Raw|ConvertFrom-Json

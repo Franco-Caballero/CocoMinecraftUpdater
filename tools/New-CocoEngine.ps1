@@ -9,7 +9,7 @@ $projectRoot = Split-Path $PSScriptRoot -Parent
 $stage = Join-Path $env:TEMP "coco-engine-$([guid]::NewGuid())"
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'engine\CocoUpdater.ps1') -Destination (Join-Path $stage 'CocoUpdater.ps1') -Force
-foreach($helper in 'CocoNetwork.ps1','CocoNetworkElevated.ps1','CocoNetworkAuthorizer.ps1','CocoDefenderControl.ps1','CocoLauncher.ps1','CocoSessionService.ps1'){
+foreach($helper in 'CocoNetwork.ps1','CocoNetworkElevated.ps1','CocoNetworkAuthorizer.ps1','CocoDefenderControl.ps1','CocoLauncher.ps1','CocoSessionService.ps1','CocoPopupGate.dll'){
     Copy-Item -LiteralPath (Join-Path $projectRoot "engine\$helper") -Destination (Join-Path $stage $helper) -Force
 }
 $launcherStage=Join-Path $stage 'launcher';New-Item -ItemType Directory -Path (Join-Path $launcherStage 'experiences') -Force|Out-Null

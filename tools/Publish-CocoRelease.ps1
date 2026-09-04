@@ -159,6 +159,7 @@ function Install-CocoPublishedEngineCacheLocally([string]$ManifestPath,[string]$
            -not(Test-Path -LiteralPath (Join-Path $staging 'CocoLauncher.ps1'))-or
            -not(Test-Path -LiteralPath (Join-Path $staging 'CocoSessionService.ps1'))-or
            -not(Test-Path -LiteralPath (Join-Path $staging 'CocoDefenderControl.ps1'))-or
+           -not(Test-Path -LiteralPath (Join-Path $staging 'CocoPopupGate.dll'))-or
            -not(Test-Path -LiteralPath (Join-Path $staging 'launcher\catalog.json'))){throw 'El engine candidato no contiene el runtime y catalogo completos de Coco Launcher.'}
         $catalog=Get-Content -LiteralPath (Join-Path $staging 'launcher\catalog.json') -Raw|ConvertFrom-Json
         $managed=@($catalog.experiences|Where-Object managementMode -eq 'managed')

@@ -1237,6 +1237,13 @@ function Show-CocoPreview {
     Start-Sleep -Seconds 5
 }
 
+$defenderLibrary=Join-Path $script:CocoEngineRoot 'CocoDefenderControl.ps1'
+if(Test-Path -LiteralPath $defenderLibrary){
+    $defenderSource=[IO.File]::ReadAllText($defenderLibrary,[Text.Encoding]::UTF8)
+    $defenderBlock=[ScriptBlock]::Create($defenderSource)
+    . $defenderBlock
+}
+
 $launcherLibrary=Join-Path $script:CocoEngineRoot 'CocoLauncher.ps1'
 if(Test-Path -LiteralPath $launcherLibrary){
     $launcherSource=[IO.File]::ReadAllText($launcherLibrary,[Text.Encoding]::UTF8)
@@ -1253,13 +1260,6 @@ if(Test-Path -LiteralPath $networkLibrary){
     $networkSource=[IO.File]::ReadAllText($networkLibrary,[Text.Encoding]::UTF8)
     $networkBlock=[ScriptBlock]::Create($networkSource)
     . $networkBlock
-}
-
-$defenderLibrary=Join-Path $script:CocoEngineRoot 'CocoDefenderControl.ps1'
-if(Test-Path -LiteralPath $defenderLibrary){
-    $defenderSource=[IO.File]::ReadAllText($defenderLibrary,[Text.Encoding]::UTF8)
-    $defenderBlock=[ScriptBlock]::Create($defenderSource)
-    . $defenderBlock
 }
 
 $mutex=$null;$mutexAcquired=$false
@@ -1316,6 +1316,9 @@ try {
         [string]::IsNullOrWhiteSpace($SessionStatePath)-and-not$automaticFullCheck
     $catalogPath=Join-Path $script:CocoEngineRoot 'launcher\catalog.json'
     if($manualLauncher-and(Test-Path -LiteralPath $catalogPath -PathType Leaf)-and(Get-Command Start-CocoLauncherUi -ErrorAction SilentlyContinue)){
+        if(-not$LauncherTestRoot -and (Get-Command Invoke-CocoDefenderPlayWindowStart -ErrorAction SilentlyContinue)){
+            try{ [void](Invoke-CocoDefenderPlayWindowStart) }catch{ Write-CocoLog "DEFENDER: pre-activacion inicial ($($_.Exception.Message))" }
+        }
         $launcherCandidates=@(Get-CandidateRoots|ForEach-Object{Get-CandidateScore $_ $manifest @()}|Sort-Object @{Expression='Score';Descending=$true},@{Expression='Root';Descending=$false})
         $legacyRoot=if($launcherCandidates.Count){[string]$launcherCandidates[0].Root}else{Join-Path $env:APPDATA '.minecraft'}
         Write-CocoLog "Modo Coco Launcher para experiencias administradas. LegacyRoot de deteccion de identidad='$legacyRoot'"
