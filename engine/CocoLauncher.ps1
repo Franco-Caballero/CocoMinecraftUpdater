@@ -1143,27 +1143,40 @@ function Get-CocoExperienceCardControls($Control){
 function Invoke-CocoExperienceStorageInstallUi($Info){
     if(-not$Info-or$script:CocoStorageInstallInProgress){return}
     $script:CocoStorageInstallInProgress=$true
+    $script:CocoInstallingExperienceId=[string]$Info.ExperienceId
+    $script:CocoInstallingExperienceName=[string]$Info.Name
     Write-CocoStorageDiagnostic 'install.ui.start' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;name=$Info.Name;role=$Info.Role;currentRoot=$Info.CurrentRoot;experiencesRoot=$Info.ExperiencesRoot;locationPath=(Get-CocoLauncherInstanceLocationsPath $Info.Paths)}
     try{
+        Set-CocoLauncherStep 4 'INICIANDO INSTALACION' ("Preparando instalacion de {0}..."-f$Info.Name) 5
+        if($Info.DynamicPanel-and-not$Info.DynamicPanel.IsDisposed){
+            Update-CocoExperienceCardsUi $Info.DynamicPanel $Info.Catalog $Info.Paths $Info.Role
+        }
+        if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
         $locationPath=Get-CocoLauncherInstanceLocationsPath $Info.Paths
         $dummy=[pscustomobject]@{mode='offline';username='CocoPrepare';uuid=''}
         [void](Invoke-CocoManagedExperienceLaunch $Info.Catalog $Info.ExperienceId $dummy $Info.Role $Info.Paths.CatalogRoot $Info.Paths.CacheRoot $Info.Paths.ExperiencesRoot -Dry -InstanceLocationsPath $locationPath)
         Write-CocoStorageDiagnostic 'install.ui.complete' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;role=$Info.Role;locationPath=$locationPath}
         Set-CocoLauncherIdleState ("'{0}' se instalo correctamente. Ya puedes jugar."-f $Info.Name) 100
-        Update-CocoExperienceCardsUi $Info.DynamicPanel $Info.Catalog $Info.Paths $Info.Role
     }catch{
         Write-CocoStorageDiagnostic 'install.ui.error' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;role=$Info.Role;error=$_.Exception.Message;detail=($_|Out-String)}
         if([string]$_.Exception.Message -match 'fue cancelada'){return}
         Set-CocoLauncherIdleState 'No se pudo completar la instalacion.' 0
-        Update-CocoExperienceCardsUi $Info.DynamicPanel $Info.Catalog $Info.Paths $Info.Role
         if($script:CocoForm-and-not$script:CocoForm.IsDisposed){
             [Windows.Forms.MessageBox]::Show(("No se pudo instalar '{0}': {1}"-f$Info.Name,$_.Exception.Message),'Error',[Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Error)|Out-Null
         }
-    }finally{$script:CocoStorageInstallInProgress=$false}
+    }finally{
+        $script:CocoStorageInstallInProgress=$false
+        $script:CocoInstallingExperienceId=''
+        $script:CocoInstallingExperienceName=''
+        if($Info.DynamicPanel-and-not$Info.DynamicPanel.IsDisposed){
+            Update-CocoExperienceCardsUi $Info.DynamicPanel $Info.Catalog $Info.Paths $Info.Role
+        }
+        if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+    }
 }
 
 function Invoke-CocoExperienceChangeLocationUi($Info){
-    if(-not$Info-or$Info.IsRunning){return}
+    if(-not$Info-or$Info.IsRunning-or$script:CocoStorageInstallInProgress){return}
     Write-CocoStorageDiagnostic 'move.ui.start' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;name=$Info.Name;role=$Info.Role;currentRoot=$Info.CurrentRoot;installed=$Info.Usage.Installed;running=$Info.IsRunning}
     $dialog=New-Object Windows.Forms.FolderBrowserDialog
     try{
@@ -1193,7 +1206,7 @@ function Invoke-CocoExperienceChangeLocationUi($Info){
 }
 
 function Invoke-CocoExperienceFreeSpaceUi($Info){
-    if(-not$Info-or-not$Info.Usage.Installed-or$Info.IsRunning){return}
+    if(-not$Info-or-not$Info.Usage.Installed-or$Info.IsRunning-or$script:CocoStorageInstallInProgress){return}
     Write-CocoStorageDiagnostic 'delete.ui.start' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;name=$Info.Name;role=$Info.Role;instanceRoot=$Info.InstanceRoot;usage=$Info.Usage.Label;running=$Info.IsRunning}
     $confirm=[Windows.Forms.MessageBox]::Show(("Esto eliminara la instalacion de '{0}' ({1}).`r`n`r`nUbicacion: {2}`r`n`r`nLos mundos, playerdata, estadisticas y avances se respaldaran antes de liberar el espacio.`r`n`r`nContinuar?"-f$Info.Name,$Info.Usage.Label,$Info.InstanceRoot),'Liberar espacio',[Windows.Forms.MessageBoxButtons]::YesNo,[Windows.Forms.MessageBoxIcon]::Warning)
     Write-CocoStorageDiagnostic 'delete.ui.confirmation' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;confirmation=$confirm}
@@ -2461,9 +2474,12 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
     $experienceFreeSpaceUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceFreeSpaceUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $expRoot=if($Paths-is[hashtable]){[string]$Paths['ExperiencesRoot']}elseif($Paths-and$Paths.ExperiencesRoot){[string]$Paths.ExperiencesRoot}else{[string]$Paths}
     $locationPath=Get-CocoLauncherInstanceLocationsPath $Paths
+    $isInstallingAny=[bool]$script:CocoStorageInstallInProgress
+    $installingExpId=if($script:CocoInstallingExperienceId){[string]$script:CocoInstallingExperienceId}else{''}
+    $installingExpName=if($script:CocoInstallingExperienceName){[string]$script:CocoInstallingExperienceName}else{'otro juego'}
     $managedExperiences=@($Catalog.experiences|Where-Object{ $_.managementMode-eq'managed'-and($_.launch.workflow-eq'coco-managed'-or$_.launch.workflow-eq'coco-standalone'-or$_.launch.workflow-eq'coco-media') })
     if($managedExperiences.Count-eq0){return}
-    Write-CocoStorageDiagnostic 'cards.refresh' @{role=$Role;experienceCount=$managedExperiences.Count;experiencesRoot=$expRoot;locationPath=$locationPath;panelSize=$DynamicPanel.Size}
+    Write-CocoStorageDiagnostic 'cards.refresh' @{role=$Role;experienceCount=$managedExperiences.Count;experiencesRoot=$expRoot;locationPath=$locationPath;panelSize=$DynamicPanel.Size;installing=$isInstallingAny;installingExpId=$installingExpId}
     Set-CocoExperienceCardsScrollBehavior $DynamicPanel
     if($script:CocoExperienceCardsToolTip){try{$script:CocoExperienceCardsToolTip.Dispose()}catch{}}
     $script:CocoExperienceCardsToolTip=New-Object Windows.Forms.ToolTip
@@ -2512,7 +2528,10 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
             $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 12 8));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.BackColor=[Drawing.Color]::Transparent;$nameLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 4));$nameLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 40));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$true;$nameLabel.TextAlign=[Drawing.ContentAlignment]::BottomLeft;Set-CocoControlDoubleBuffered $nameLabel
             $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$detailLabel.BackColor=[Drawing.Color]::Transparent;$detailLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 46));$detailLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 18));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false;Set-CocoControlDoubleBuffered $detailLabel
             $buttonSpecs=@();$cardInfo=$null
-            if(Test-CocoMediaExperience $exp){
+            $isMedia=Test-CocoMediaExperience $exp
+            $isThisInstalling=($isInstallingAny -and -not $isMedia -and [string]$exp.id -eq $installingExpId)
+            $isOtherGameInstalling=($isInstallingAny -and -not $isMedia -and -not $isThisInstalling)
+            if($isMedia){
                 $isMovie=Test-CocoMovieExperience $exp
                 $mediaItems=@(Get-CocoMediaItems $exp)
                 $mediaStatus=Get-CocoMediaExperienceStatus $exp;$mediaRoot=[string]$mediaStatus.Root
@@ -2531,46 +2550,94 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
             }else{
                 $instanceId=[string]$exp.instanceId;if(-not$instanceId){$instanceId=[string]$exp.id};$instanceRoot=Get-CocoExperienceInstanceRoot $exp $expRoot $locationPath;$usage=Get-CocoExperienceDiskUsage $instanceRoot;$isRunning=Test-CocoManagedGameRunning $instanceRoot;Write-CocoStorageDiagnostic 'card.state' @{role=$Role;experienceId=$exp.id;instanceId=$instanceId;root=$instanceRoot;installed=$usage.Installed;usage=$usage.Label;running=$isRunning}
                 $compactPath=Get-CocoCompactPath $instanceRoot
-                if($isRunning){
-                    $detailLabel.Text="EN EJECUCION • $($usage.Label)"
+                if($isThisInstalling){
+                    $detailLabel.Text='INSTALANDO ARCHIVOS...'
                     $detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)
-                }elseif($usage.Installed){
-                    $detailLabel.Text="INSTALADO • $($usage.Label) • $compactPath"
-                    $detailLabel.ForeColor=[Drawing.Color]::FromArgb(183,239,194)
-                }else{
-                    $detailLabel.Text='NO INSTALADO'
-                    $detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)
-                }
-                $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
-                if($Role-eq'host'){
-                    if($usage.Installed){
-                        $buttonSpecs=@(
-                            [pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ABRIR'};Kind='host'},
-                            [pscustomobject]@{Text='CARPETA';Kind='folder'},
-                            [pscustomobject]@{Text='BORRAR';Kind='delete'}
-                        )
+                    $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$false;IsInstalling=$true;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+                    $buttonSpecs=@([pscustomobject]@{Text='INSTALANDO...';Kind='installing'})
+                }elseif($isOtherGameInstalling){
+                    if($isRunning){
+                        $detailLabel.Text="EN EJECUCION • $($usage.Label)"
+                        $detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)
+                    }elseif($usage.Installed){
+                        $detailLabel.Text="INSTALADO • $($usage.Label) • $compactPath"
+                        $detailLabel.ForeColor=[Drawing.Color]::FromArgb(150,140,160)
                     }else{
-                        $buttonSpecs=@([pscustomobject]@{Text='INSTALAR';Kind='install'})
+                        $detailLabel.Text='NO INSTALADO'
+                        $detailLabel.ForeColor=[Drawing.Color]::FromArgb(130,120,140)
+                    }
+                    $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning;IsInstalling=$false;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+                    if($Role-eq'host'){
+                        if($usage.Installed){
+                            $buttonSpecs=@(
+                                [pscustomobject]@{Text='ABRIR';Kind='host'},
+                                [pscustomobject]@{Text='CARPETA';Kind='folder'},
+                                [pscustomobject]@{Text='BORRAR';Kind='delete'}
+                            )
+                        }else{
+                            $buttonSpecs=@([pscustomobject]@{Text='INSTALAR';Kind='install'})
+                        }
+                    }else{
+                        if($usage.Installed){
+                            $buttonSpecs=@(
+                                [pscustomobject]@{Text='JUGAR';Kind='play'},
+                                [pscustomobject]@{Text='CARPETA';Kind='install'},
+                                [pscustomobject]@{Text='BORRAR';Kind='delete'}
+                            )
+                        }else{
+                            $buttonSpecs=@([pscustomobject]@{Text='INSTALAR';Kind='install'})
+                        }
                     }
                 }else{
-                    if($usage.Installed){
-                        $liveHostExp=if($global:CocoLauncherLiveHostSession){[string]$global:CocoLauncherLiveHostSession.Experience.id}else{''}
-                        $isHostPlayingThis=$liveHostExp-and$liveHostExp-eq[string]$exp.id
-                        $playText=if($isRunning){'EN EJECUCION'}elseif($isHostPlayingThis){'UNIRSE'}else{'JUGAR'}
-                        $playKind=if($isHostPlayingThis){'join'}else{'play'}
-                        $buttonSpecs=@(
-                            [pscustomobject]@{Text=$playText;Kind=$playKind},
-                            [pscustomobject]@{Text='CARPETA';Kind='install'},
-                            [pscustomobject]@{Text='BORRAR';Kind='delete'}
-                        )
+                    if($isRunning){
+                        $detailLabel.Text="EN EJECUCION • $($usage.Label)"
+                        $detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)
+                    }elseif($usage.Installed){
+                        $detailLabel.Text="INSTALADO • $($usage.Label) • $compactPath"
+                        $detailLabel.ForeColor=[Drawing.Color]::FromArgb(183,239,194)
                     }else{
-                        $buttonSpecs=@([pscustomobject]@{Text='INSTALAR';Kind='install'})
+                        $detailLabel.Text='NO INSTALADO'
+                        $detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)
+                    }
+                    $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning;IsInstalling=$false;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
+                    if($Role-eq'host'){
+                        if($usage.Installed){
+                            $buttonSpecs=@(
+                                [pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ABRIR'};Kind='host'},
+                                [pscustomobject]@{Text='CARPETA';Kind='folder'},
+                                [pscustomobject]@{Text='BORRAR';Kind='delete'}
+                            )
+                        }else{
+                            $buttonSpecs=@([pscustomobject]@{Text='INSTALAR';Kind='install'})
+                        }
+                    }else{
+                        if($usage.Installed){
+                            $liveHostExp=if($global:CocoLauncherLiveHostSession){[string]$global:CocoLauncherLiveHostSession.Experience.id}else{''}
+                            $isHostPlayingThis=$liveHostExp-and$liveHostExp-eq[string]$exp.id
+                            $playText=if($isRunning){'EN EJECUCION'}elseif($isHostPlayingThis){'UNIRSE'}else{'JUGAR'}
+                            $playKind=if($isHostPlayingThis){'join'}else{'play'}
+                            $buttonSpecs=@(
+                                [pscustomobject]@{Text=$playText;Kind=$playKind},
+                                [pscustomobject]@{Text='CARPETA';Kind='install'},
+                                [pscustomobject]@{Text='BORRAR';Kind='delete'}
+                            )
+                        }else{
+                            $buttonSpecs=@([pscustomobject]@{Text='INSTALAR';Kind='install'})
+                        }
                     }
                 }
             }
             $card.Controls.Add($imageBox);$gradient.Controls.Add($nameLabel);$gradient.Controls.Add($detailLabel)
             $cardTip="$([string]$exp.name)`r`n$([string]$exp.description)"
-            if($cardInfo.Usage.Installed){
+            if($isMedia){
+                if($isInstallingAny){
+                    $cardTip+="`r`n`r`n(Contenido multimedia disponible para reproducir mientras se instala un juego en segundo plano)."
+                }
+            }elseif($isThisInstalling){
+                $cardTip+="`r`n`r`nEstado: Instalando archivos...`r`nRuta destino: $($cardInfo.InstanceRoot)`r`n(Puedes ver series o peliculas mientras se completa la instalacion)."
+            }elseif($isOtherGameInstalling){
+                $cardTip+="`r`n`r`nEstado: Bloqueado temporalmente`r`nInstalacion en curso: espera a que termine de instalar '$installingExpName' para abrir o instalar este juego.`r`n(Puedes ver series o peliculas mientras tanto)."
+            }elseif($cardInfo.Usage.Installed){
                 $cardTip+="`r`n`r`nEstado: Instalado ($($cardInfo.Usage.Label))`r`nRuta: $($cardInfo.InstanceRoot)"
             }else{
                 $cardTip+="`r`n`r`nEstado: No instalado`r`nRuta destino: $($cardInfo.InstanceRoot)"
@@ -2589,10 +2656,11 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
             }else{
                 foreach($control in @($card,$imageBox,$gradient,$nameLabel,$detailLabel)){
                     $control.Tag=$cardInfo
-                    if(-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){
+                    if(-not$isInstallingAny-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){
                         $control.Cursor=[Windows.Forms.Cursors]::Hand
                         $control.Add_Click({
                             param($sender,$eventArgs)
+                            if($script:CocoStorageInstallInProgress){return}
                             $info=$sender.Tag
                             if(-not$info-or$info.IsRunning){return}
                             if($info.Usage.Installed){
@@ -2608,14 +2676,32 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                                 &$experienceStorageInstallUiCommand $info
                             }
                         })
+                    }else{
+                        $control.Cursor=[Windows.Forms.Cursors]::Default
                     }
                 }
             }
             $actionAreaWidth=[Math]::Max((Get-CocoLauncherUiMetric 140),$cardWidth-(2*$actionPadding));$buttonCount=$buttonSpecs.Count;$usableButtonWidth=[Math]::Max((Get-CocoLauncherUiMetric 100),$actionAreaWidth-([Math]::Max(0,$buttonCount-1)*$actionGap));$maxPerButton=[int][Math]::Floor($usableButtonWidth/[Math]::Max(1,$buttonCount));$buttonWidth=if($buttonCount-eq1){[int][Math]::Min($usableButtonWidth,(Get-CocoLauncherUiMetric 140))}else{$maxPerButton};$buttonGroupWidth=($buttonCount*$buttonWidth)+([Math]::Max(0,$buttonCount-1)*$actionGap);$buttonX=$cardWidth-$actionPadding-$buttonGroupWidth;$buttonY=$gradientHeight-$actionHeight-(Get-CocoLauncherUiMetric 6);$buttonIndex=0
             foreach($spec in $buttonSpecs){
                 $button=New-Object Windows.Forms.Button;$button.Text=[string]$spec.Text;$button.Size=New-Object Drawing.Size($buttonWidth,$actionHeight);$button.Location=New-Object Drawing.Point($buttonX,$buttonY);$button.Tag=$cardInfo;$button.TabStop=$false;$button.UseCompatibleTextRendering=$false
-                if($spec.Kind-eq'delete'){$enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled;if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}}
-                elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}
+                if($spec.Kind-eq'installing'){
+                    $button.Enabled=$false
+                    Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(65,45,25)) ([Drawing.Color]::FromArgb(255,215,0))
+                    $button.Cursor=[Windows.Forms.Cursors]::Default
+                }
+                elseif($isOtherGameInstalling){
+                    $button.Enabled=$false
+                    Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(44,36,50)) ([Drawing.Color]::FromArgb(140,130,150))
+                    $button.Cursor=[Windows.Forms.Cursors]::Default
+                }
+                elseif($spec.Kind-eq'delete'){
+                    $enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled
+                    if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}
+                    else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}
+                }
+                elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){
+                    $button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))
+                }
                 elseif($spec.Kind-eq'play'){
                     if($cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}
                     else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,115)) ([Drawing.Color]::White)}
@@ -2623,33 +2709,43 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 elseif($spec.Kind-eq'join'){
                     Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(40,110,65)) ([Drawing.Color]::White)
                 }
-                elseif($spec.Kind-eq'folder'){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))}
-                else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)}
+                elseif($spec.Kind-eq'folder'){
+                    Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))
+                }
+                else{
+                    Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)
+                }
                 $buttonFontSize=if($buttonCount-ge3){(Get-CocoLauncherUiFontSize 8.5 6.5)}else{(Get-CocoLauncherUiFontSize 9 7)}
                 $button.Font=New-Object Drawing.Font('Segoe UI Semibold',$buttonFontSize)
                 $button.UseCompatibleTextRendering=$false
                 if($script:CocoExperienceCardsToolTip){
-                    $tipText=switch($spec.Kind){
-                        'host'{if($cardInfo.IsRunning){'La partida ya esta en ejecucion.'}else{'Abrir y alojar partida para tus amigos.'}}
-                        'play'{if($cardInfo.IsRunning){'La partida ya esta en ejecucion.'}else{'Iniciar la experiencia localmente.'}}
-                        'join'{'Unirse a la partida que tiene abierta el host.'}
-                        'install'{if($cardInfo.Usage.Installed){"Mover instalacion:`r`n$($cardInfo.InstanceRoot)"}else{"Descargar e instalar en:`r`n$($cardInfo.InstanceRoot)"}}
-                        'folder'{if($cardInfo.IsMedia){'Abrir carpeta de descargas en el Explorador.'}else{"Ubicacion:`r`n$($cardInfo.InstanceRoot)`r`nClick para mover a otra carpeta."}}
-                        'delete'{"Desinstalar y liberar $($cardInfo.Usage.Label) en disco."}
-                        'movie'{'Reproducir pelicula.'}
-                        'episode'{'Ver episodios disponibles.'}
-                        default{[string]$spec.Text}
+                    $tipText=if($spec.Kind-eq'installing'){
+                        "Instalando $($exp.name)... Puedes ver series o peliculas mientras se completa la instalacion."
+                    }elseif($isOtherGameInstalling){
+                        "Instalacion en curso: espera a que termine de instalar '$installingExpName' para abrir o instalar este juego.`r`n(Puedes ver series o peliculas mientras tanto)."
+                    }else{
+                        switch($spec.Kind){
+                            'host'{if($cardInfo.IsRunning){'La partida ya esta en ejecucion.'}else{'Abrir y alojar partida para tus amigos.'}}
+                            'play'{if($cardInfo.IsRunning){'La partida ya esta en ejecucion.'}else{'Iniciar la experiencia localmente.'}}
+                            'join'{'Unirse a la partida que tiene abierta el host.'}
+                            'install'{if($cardInfo.Usage.Installed){"Mover instalacion:`r`n$($cardInfo.InstanceRoot)"}else{"Descargar e instalar en:`r`n$($cardInfo.InstanceRoot)"}}
+                            'folder'{if($cardInfo.IsMedia){'Abrir carpeta de descargas en el Explorador.'}else{"Ubicacion:`r`n$($cardInfo.InstanceRoot)`r`nClick para mover a otra carpeta."}}
+                            'delete'{"Desinstalar y liberar $($cardInfo.Usage.Label) en disco."}
+                            'movie'{'Reproducir pelicula.'}
+                            'episode'{'Ver episodios disponibles.'}
+                            default{[string]$spec.Text}
+                        }
                     }
                     $script:CocoExperienceCardsToolTip.SetToolTip($button,$tipText)
                 }
                 if($spec.Kind-eq'movie'){$button.Add_Click({param($sender,$eventArgs)& $mediaMovieUiCommand $sender.Tag.Experience}.GetNewClosure())}
                 elseif($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}
-                elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){&$mediaOpenFolderUiCommand $sender.Tag.Experience}else{&$experienceChangeLocationUiCommand $sender.Tag}}.GetNewClosure())}
-                elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag;$global:CocoLauncherSelectedExperience=[string]$sender.Tag})}
-                elseif($spec.Kind-eq'play'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed-and-not$sender.Tag.IsRunning){$script:CocoLauncherClientRequestedExperience=[string]$sender.Tag.ExperienceId;$global:CocoLauncherClientRequestedExperience=[string]$sender.Tag.ExperienceId}})}
-                elseif($spec.Kind-eq'join'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed-and-not$sender.Tag.IsRunning){$script:CocoLauncherClientJoinRequested=[string]$sender.Tag.ExperienceId;$global:CocoLauncherClientJoinRequested=[string]$sender.Tag.ExperienceId}})}
-                elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}}.GetNewClosure())}
-                elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)&$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())}
+                elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($script:CocoStorageInstallInProgress){return};if($sender.Tag.IsMedia){&$mediaOpenFolderUiCommand $sender.Tag.Experience}else{&$experienceChangeLocationUiCommand $sender.Tag}}.GetNewClosure())}
+                elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)if($script:CocoStorageInstallInProgress){return};$script:CocoLauncherSelectedExperience=[string]$sender.Tag;$global:CocoLauncherSelectedExperience=[string]$sender.Tag})}
+                elseif($spec.Kind-eq'play'){$button.Add_Click({param($sender,$eventArgs)if($script:CocoStorageInstallInProgress){return};if($sender.Tag.Usage.Installed-and-not$sender.Tag.IsRunning){$script:CocoLauncherClientRequestedExperience=[string]$sender.Tag.ExperienceId;$global:CocoLauncherClientRequestedExperience=[string]$sender.Tag.ExperienceId}})}
+                elseif($spec.Kind-eq'join'){$button.Add_Click({param($sender,$eventArgs)if($script:CocoStorageInstallInProgress){return};if($sender.Tag.Usage.Installed-and-not$sender.Tag.IsRunning){$script:CocoLauncherClientJoinRequested=[string]$sender.Tag.ExperienceId;$global:CocoLauncherClientJoinRequested=[string]$sender.Tag.ExperienceId}})}
+                elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($script:CocoStorageInstallInProgress){return};if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}}.GetNewClosure())}
+                elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)if($script:CocoStorageInstallInProgress){return};&$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())}
                 $gradient.Controls.Add($button);$buttonIndex++;$buttonX+=$buttonWidth+$actionGap
             }
             $cardsContent.Controls.Add($card);$cardIndex++
@@ -3829,6 +3925,10 @@ function Get-CocoLockedAssetsParallel($CacheRoot, $Assets, $ProgressContext) {
         
         foreach ($task in $tasks) {
             try {
+                while (-not $task.Handle.IsCompleted) {
+                    if ('System.Windows.Forms.Application' -as [type]) { [Windows.Forms.Application]::DoEvents() }
+                    [void]$task.Handle.AsyncWaitHandle.WaitOne(50)
+                }
                 $res = $task.PS.EndInvoke($task.Handle)
                 if ($res -and $res.Count) {
                     $item = $res[0]
