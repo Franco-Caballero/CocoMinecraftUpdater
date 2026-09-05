@@ -4300,6 +4300,10 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             $realAppId = '4001890'
             $hash0 = '58117ec53dd4075dec9b9d0c2e1cfd942c856c0d89c4a1491998eec52a4ca39619e3fecf0bd47fe3c1e389f3bca67dcc6f639704ecd040f66f8e812596acaf93'
             $hash1337 = 'b0418265dcf6d7ef61587b9e10fc7b3870ed81828c9639f085964144572770a1a33d8dd6c9951396003acbad154fdac6477603fa1dccbc716ea5df818405f206'
+        }elseif($expId -eq 'twisted-party' -or $appId -eq '4332910'){
+            $realAppId = '4332910'
+            $hash0 = 'cb28afa5f9c092688461199f7352822cdbe97804978e909aaa62c8d0e1db7f769ba688cd6d294b71415df2d8e72f28ab612cf19f3e0fd8183300162c712d9b67'
+            $hash1337 = '675370ec952359a8fade7bb65dad65b59d9b1c0f3ff0e2cfd155ffbb67f621364d8063dee6f3923d4999bbb554a3317e94af8fd264f4221ddff7e97d1fa274af'
         }elseif($appId){
             $realAppId = $appId
             $hash0 = 'b4353c02359f2a29161f863d31d525227f958c269c51a920a5a6c14c37dbd0f0d9a0ede86cf0a35fa608ecccdfa1cbcc712d762d1cc62f3a64d74506c056a476'
@@ -4360,6 +4364,9 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                 }elseif($content -match '(?i)RealAppId\s*=\s*4001890'){
                     $targetHash0 = '58117ec53dd4075dec9b9d0c2e1cfd942c856c0d89c4a1491998eec52a4ca39619e3fecf0bd47fe3c1e389f3bca67dcc6f639704ecd040f66f8e812596acaf93'
                     $targetHash1337 = 'b0418265dcf6d7ef61587b9e10fc7b3870ed81828c9639f085964144572770a1a33d8dd6c9951396003acbad154fdac6477603fa1dccbc716ea5df818405f206'
+                }elseif($content -match '(?i)RealAppId\s*=\s*4332910'){
+                    $targetHash0 = 'cb28afa5f9c092688461199f7352822cdbe97804978e909aaa62c8d0e1db7f769ba688cd6d294b71415df2d8e72f28ab612cf19f3e0fd8183300162c712d9b67'
+                    $targetHash1337 = '675370ec952359a8fade7bb65dad65b59d9b1c0f3ff0e2cfd155ffbb67f621364d8063dee6f3923d4999bbb554a3317e94af8fd264f4221ddff7e97d1fa274af'
                 }elseif(-not $targetHash1337){
                     if($content -match '(?i)1337\s*=\s*([a-f0-9]{128})'){
                         $targetHash1337 = $matches[1]

@@ -1448,6 +1448,80 @@
                 "serverName": "Coco - How to Fish"
             },
             "files": []
+        },
+        {
+            "id": "twisted-party",
+            "name": "Twisted Party",
+            "ui": {
+                "imagePath": "assets/experiences/twisted-party.jpg"
+            },
+            "description": "Juego cooperativo de minijuegos retro y supervivencia letal para 2 a 8 jugadores.",
+            "instanceId": "twisted-party",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "Twisted Party.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Twisted Party.exe",
+                        "sha256": "2b2c93695e2305ff197daad26f422fbca88b39f14a5d7307abc1a18ffba1d5ea",
+                        "size": 667136,
+                        "archiveSha256": "3cf277c541275f933e2485a898760c0eb2307f7a2cbd9a67092bb212a7405e96"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "fe45ada8cc8f25bc6809dc2de345fb4b7a6a194afd13cb38da9698b4ae84461a",
+                        "size": 13401600,
+                        "archiveSha256": "3cf277c541275f933e2485a898760c0eb2307f7a2cbd9a67092bb212a7405e96"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "350b435820a94644fac0116b841f5bb2b9c6ff632e8079429e4df16a1983dab4",
+                        "size": 502272,
+                        "archiveSha256": "3cf277c541275f933e2485a898760c0eb2307f7a2cbd9a67092bb212a7405e96"
+                    },
+                    {
+                        "path": "SteamOverlay64.dll",
+                        "sha256": "79fe22578b43b625831968f333cc90c66b4edc8cbf039c86f3debbe761ba8f79",
+                        "size": 117248,
+                        "archiveSha256": "3cf277c541275f933e2485a898760c0eb2307f7a2cbd9a67092bb212a7405e96"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "09984dec142d37c269640d46c79e74b37f120cb2ccb2ee85c347729c4e59851c",
+                        "size": 36595112,
+                        "archiveSha256": "3cf277c541275f933e2485a898760c0eb2307f7a2cbd9a67092bb212a7405e96"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "4332910"
+            },
+            "pack": {
+                "packId": "standalone-twisted-party",
+                "lockPath": "launcher/experiences/twisted-party.lock.json",
+                "version": "1.0.7",
+                "sha256": "3cf277c541275f933e2485a898760c0eb2307f7a2cbd9a67092bb212a7405e96",
+                "size": 250258212,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.156/Twisted-Party.zip",
+                        "sha256": "3cf277c541275f933e2485a898760c0eb2307f7a2cbd9a67092bb212a7405e96",
+                        "size": 250258212
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Twisted Party"
+            },
+            "files": []
         }
     ]
 }
