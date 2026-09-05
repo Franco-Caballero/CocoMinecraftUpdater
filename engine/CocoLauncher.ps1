@@ -91,7 +91,8 @@ function Stop-CocoStandalonePopupGate{
     try{[CocoPopupGate]::StopSessionWatcher()}catch{}
 }
 
-$script:CocoLogPath=''
+$cocoLogVar=Get-Variable -Name 'CocoLogPath' -Scope Script -ErrorAction SilentlyContinue
+if(-not$cocoLogVar-or-not$cocoLogVar.Value){$script:CocoLogPath=''}
 if(-not(Get-Command Write-CocoLog -ErrorAction SilentlyContinue)){
     function Write-CocoLog([string]$Text){
         if($script:CocoLogPath){
@@ -382,7 +383,7 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     
     $experienceName=[string]$Experience.name
     $dialog=New-Object Windows.Forms.Form
-    $dialog.Name='CocoInstallLocationDialog';$dialog.Text=("Instalar {0}"-f$experienceName);$dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='None';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.KeyPreview=$true;$dialog.ShowInTaskbar=$false;$dialog.TopMost=$true;$dialog.BackColor=[Drawing.Color]::FromArgb(53,35,67);$dialog.Padding=New-Object Windows.Forms.Padding(1);$dialog.ClientSize=New-Object Drawing.Size(660,315);$dialog.MinimumSize=New-Object Drawing.Size(660,315)
+    $dialog.Name='CocoInstallLocationDialog';$dialog.Text=("Instalar {0}"-f$experienceName);$dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='None';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.KeyPreview=$true;$dialog.ShowInTaskbar=$false;$dialog.TopMost=$false;$dialog.BackColor=[Drawing.Color]::FromArgb(53,35,67);$dialog.Padding=New-Object Windows.Forms.Padding(1);$dialog.ClientSize=New-Object Drawing.Size(660,315);$dialog.MinimumSize=New-Object Drawing.Size(660,315)
     $dialog.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(84,59,106),1);try{$eventArgs.Graphics.DrawRectangle($pen,0,0,$sender.ClientSize.Width-1,$sender.ClientSize.Height-1)}finally{$pen.Dispose()}}.GetNewClosure())
 
     $header=New-Object Windows.Forms.Panel;$header.Name='CocoInstallLocationHeader';$header.Dock='Top';$header.Height=78;$header.BackColor=[Drawing.Color]::FromArgb(27,19,38)
@@ -474,6 +475,19 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     [pscustomobject]@{Confirmed=$true;Cancelled=$false;Choice='custom';Root=$choice}
 }
 
+function Get-CocoFileSha256([string]$Path){
+    if([string]::IsNullOrWhiteSpace($Path)-or-not(Test-Path -LiteralPath $Path -PathType Leaf)){return ''}
+    $sha=[Security.Cryptography.SHA256]::Create()
+    $stream=[IO.File]::OpenRead($Path)
+    try{
+        [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-','').ToLowerInvariant()
+    }finally{
+        $stream.Dispose()
+        $sha.Dispose()
+    }
+}
+function Get-Sha256([string]$Path){ Get-CocoFileSha256 $Path }
+
 function Test-CocoDirectoryCopyComplete([string]$Source,[string]$Destination){
     $sourceFull=[IO.Path]::GetFullPath($Source).TrimEnd('\')
     $destinationFull=[IO.Path]::GetFullPath($Destination).TrimEnd('\')
@@ -486,8 +500,8 @@ function Test-CocoDirectoryCopyComplete([string]$Source,[string]$Destination){
         if(-not(Test-Path -LiteralPath $destinationFile -PathType Leaf)){throw "Falta el archivo copiado '$relative'."}
         $destinationInfo=Get-Item -LiteralPath $destinationFile -Force
         if($sourceFile.Length-ne$destinationInfo.Length){throw "El tamano de '$relative' no coincide despues de copiar."}
-        $sourceHash=(Get-FileHash -LiteralPath $sourceFile.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-        $destinationHash=(Get-FileHash -LiteralPath $destinationFile -Algorithm SHA256).Hash.ToLowerInvariant()
+        $sourceHash=Get-CocoFileSha256 $sourceFile.FullName
+        $destinationHash=Get-CocoFileSha256 $destinationFile
         if($sourceHash-ne$destinationHash){throw "El hash de '$relative' no coincide despues de copiar."}
     }
     return $true
@@ -952,137 +966,290 @@ function Get-CocoMediaContentType([string]$FileName){
     }
 }
 
+if(-not('CocoMediaHttpProxyServer' -as [type])){
+    Add-Type -TypeDefinition @'
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Collections.Concurrent;
+
+public sealed class CocoMediaHttpProxyServer : IDisposable
+{
+    private readonly TcpListener listener;
+    private readonly string upstreamUrl;
+    private readonly string routeToken;
+    private readonly string mimeType;
+    private readonly string mediaExtension;
+    private readonly CancellationTokenSource cts = new CancellationTokenSource();
+    private readonly ConcurrentDictionary<int, IDisposable> activeRequests = new ConcurrentDictionary<int, IDisposable>();
+    private int requestIdCounter = 0;
+    private bool disposed = false;
+
+    public int Port { get; private set; }
+    public string Url { get; private set; }
+    public string RemoteUrl { get { return upstreamUrl; } }
+    public string Token { get { return routeToken; } }
+
+    public CocoMediaHttpProxyServer(string upstreamUrl, string fileName)
+    {
+        if (string.IsNullOrEmpty(upstreamUrl) || !upstreamUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("El streaming remoto de media debe usar HTTPS.", "upstreamUrl");
+
+        this.upstreamUrl = upstreamUrl;
+        this.routeToken = Guid.NewGuid().ToString("N");
+
+        string ext = Path.GetExtension(fileName ?? "").ToLowerInvariant();
+        if (!Regex.IsMatch(ext, @"^\.(mp4|m4v|mkv|webm)$"))
+            ext = ".bin";
+        this.mediaExtension = ext;
+
+        switch (ext)
+        {
+            case ".mp4": case ".m4v": this.mimeType = "video/mp4"; break;
+            case ".mkv": this.mimeType = "video/x-matroska"; break;
+            case ".webm": this.mimeType = "video/webm"; break;
+            default: this.mimeType = "application/octet-stream"; break;
+        }
+
+        ServicePointManager.DefaultConnectionLimit = Math.Max(ServicePointManager.DefaultConnectionLimit, 64);
+        this.listener = new TcpListener(IPAddress.Loopback, 0);
+        this.listener.Start();
+        this.Port = ((IPEndPoint)this.listener.LocalEndpoint).Port;
+        this.Url = string.Format("http://127.0.0.1:{0}/coco-media/{1}/media{2}", this.Port, this.routeToken, this.mediaExtension);
+
+        ThreadPool.QueueUserWorkItem(AcceptLoop);
+    }
+
+    private void AcceptLoop(object state)
+    {
+        while (!disposed && !cts.IsCancellationRequested)
+        {
+            try
+            {
+                TcpClient client = listener.AcceptTcpClient();
+                ThreadPool.QueueUserWorkItem(ClientWorker, client);
+            }
+            catch
+            {
+                if (disposed) break;
+            }
+        }
+    }
+
+    private void ClientWorker(object state)
+    {
+        TcpClient client = (TcpClient)state;
+        int reqId = Interlocked.Increment(ref requestIdCounter);
+        HttpWebResponse upstreamResponse = null;
+        NetworkStream clientStream = null;
+
+        try
+        {
+            client.NoDelay = true;
+            client.ReceiveTimeout = 30000;
+            client.SendTimeout = 30000;
+            clientStream = client.GetStream();
+
+            StreamReader reader = new StreamReader(clientStream, Encoding.ASCII, false, 8192, true);
+            string requestLine = reader.ReadLine();
+            if (string.IsNullOrEmpty(requestLine)) return;
+
+            string[] parts = requestLine.Split(' ');
+            if (parts.Length < 2) { SendError(clientStream, 400, "Bad Request", "Solicitud HTTP invalida."); return; }
+
+            string method = parts[0].ToUpperInvariant();
+            string requestPath = parts[1];
+
+            string rangeHeader = null;
+            string line;
+            while (!string.IsNullOrEmpty(line = reader.ReadLine()))
+            {
+                int colon = line.IndexOf(':');
+                if (colon > 0)
+                {
+                    string headerName = line.Substring(0, colon).Trim();
+                    string headerVal = line.Substring(colon + 1).Trim();
+                    if (string.Equals(headerName, "Range", StringComparison.OrdinalIgnoreCase))
+                    {
+                        rangeHeader = headerVal;
+                    }
+                }
+            }
+
+            string expectedPath = string.Format("/coco-media/{0}/media{1}", routeToken, mediaExtension);
+            if (!string.Equals(requestPath, expectedPath, StringComparison.OrdinalIgnoreCase))
+            {
+                SendError(clientStream, 404, "Not Found", "Ruta de media no encontrada.");
+                return;
+            }
+
+            if (method != "GET" && method != "HEAD")
+            {
+                SendError(clientStream, 405, "Method Not Allowed", "Solo se admite GET o HEAD.");
+                return;
+            }
+
+            bool hasRange = false;
+            long rangeStart = 0;
+            long rangeEnd = -1;
+
+            if (!string.IsNullOrEmpty(rangeHeader))
+            {
+                Match m = Regex.Match(rangeHeader, @"^bytes=(\d+)-(\d*)$");
+                if (m.Success)
+                {
+                    hasRange = true;
+                    rangeStart = long.Parse(m.Groups[1].Value);
+                    if (!string.IsNullOrEmpty(m.Groups[2].Value))
+                    {
+                        rangeEnd = long.Parse(m.Groups[2].Value);
+                    }
+                }
+                else
+                {
+                    SendError(clientStream, 416, "Range Not Satisfiable", "Solo se admite un rango HTTP simple.");
+                    return;
+                }
+            }
+
+            HttpWebRequest upstreamRequest = (HttpWebRequest)WebRequest.Create(upstreamUrl);
+            upstreamRequest.Method = method;
+            upstreamRequest.UserAgent = "CocoLauncher/HeartSignal";
+            upstreamRequest.AllowAutoRedirect = true;
+            upstreamRequest.KeepAlive = false;
+            upstreamRequest.Timeout = 30000;
+            upstreamRequest.ReadWriteTimeout = 30000;
+
+            if (hasRange)
+            {
+                if (rangeEnd >= rangeStart) upstreamRequest.AddRange(rangeStart, rangeEnd);
+                else upstreamRequest.AddRange(rangeStart);
+            }
+
+            try
+            {
+                upstreamResponse = (HttpWebResponse)upstreamRequest.GetResponse();
+            }
+            catch (WebException wex)
+            {
+                HttpWebResponse remoteResp = wex.Response as HttpWebResponse;
+                if (remoteResp != null)
+                {
+                    SendError(clientStream, (int)remoteResp.StatusCode, remoteResp.StatusDescription, "El asset remoto rechazo la solicitud.");
+                    remoteResp.Dispose();
+                    return;
+                }
+                SendError(clientStream, 502, "Bad Gateway", "No se pudo conectar con el asset remoto.");
+                return;
+            }
+
+            activeRequests[reqId] = upstreamResponse;
+
+            int upstreamStatus = (int)upstreamResponse.StatusCode;
+            if (hasRange && upstreamStatus != 206)
+            {
+                SendError(clientStream, 502, "Bad Gateway", string.Format("El asset remoto no devolvio contenido parcial (HTTP {0}).", upstreamStatus));
+                return;
+            }
+
+            long length = upstreamResponse.ContentLength;
+            if (length < 0)
+            {
+                SendError(clientStream, 502, "Bad Gateway", "El asset remoto no informo Content-Length.");
+                return;
+            }
+
+            string statusLine = (upstreamStatus == 206) ? "HTTP/1.1 206 Partial Content" : "HTTP/1.1 200 OK";
+            StringBuilder respHeaders = new StringBuilder();
+            respHeaders.Append(statusLine).Append("\r\n");
+            respHeaders.Append("Content-Type: ").Append(mimeType).Append("\r\n");
+            respHeaders.Append("Accept-Ranges: bytes\r\n");
+            respHeaders.Append("Cache-Control: no-store\r\n");
+            respHeaders.Append("Connection: close\r\n");
+            respHeaders.Append("Content-Length: ").Append(length).Append("\r\n");
+
+            string contentRange = upstreamResponse.Headers["Content-Range"];
+            if (!string.IsNullOrEmpty(contentRange))
+            {
+                respHeaders.Append("Content-Range: ").Append(contentRange).Append("\r\n");
+            }
+            respHeaders.Append("\r\n");
+
+            byte[] headerBytes = Encoding.ASCII.GetBytes(respHeaders.ToString());
+            clientStream.Write(headerBytes, 0, headerBytes.Length);
+
+            if (method == "HEAD") return;
+
+            using (Stream upStream = upstreamResponse.GetResponseStream())
+            {
+                byte[] buffer = new byte[65536];
+                int read;
+                while (!disposed && !cts.IsCancellationRequested && (read = upStream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    clientStream.Write(buffer, 0, read);
+                }
+            }
+        }
+        catch
+        {
+            // Client closed connection or seek occurred
+        }
+        finally
+        {
+            IDisposable disp;
+            activeRequests.TryRemove(reqId, out disp);
+            if (upstreamResponse != null) try { upstreamResponse.Dispose(); } catch { }
+            if (clientStream != null) try { clientStream.Dispose(); } catch { }
+            if (client != null) try { client.Close(); } catch { }
+        }
+    }
+
+    private static void SendError(Stream stream, int code, string reason, string message)
+    {
+        try
+        {
+            byte[] body = Encoding.UTF8.GetBytes(message ?? "");
+            string header = string.Format(
+                "HTTP/1.1 {0} {1}\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: {2}\r\n\r\n",
+                code, reason, body.Length);
+            byte[] hBytes = Encoding.ASCII.GetBytes(header);
+            stream.Write(hBytes, 0, hBytes.Length);
+            if (body.Length > 0) stream.Write(body, 0, body.Length);
+        }
+        catch { }
+    }
+
+    public void Dispose()
+    {
+        if (disposed) return;
+        disposed = true;
+        cts.Cancel();
+        try { listener.Stop(); } catch { }
+        foreach (var kvp in activeRequests)
+        {
+            try { kvp.Value.Dispose(); } catch { }
+        }
+        activeRequests.Clear();
+    }
+}
+'@
+}
+
 function Start-CocoMediaHttpProxy([string]$RemoteUrl,[string]$FileName){
     if($RemoteUrl-notmatch'^https://'){throw 'El streaming remoto de media debe usar HTTPS.'}
     $extension=[IO.Path]::GetExtension($FileName).ToLowerInvariant()
     if($extension-notmatch'^\.(mp4|m4v|mkv|webm)$'){$extension='.bin'}
-    $contentType=Get-CocoMediaContentType $FileName
-    $probe=$null;$job=$null
-    try{
-        $probe=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,0)
-        $probe.Start()
-        $port=[int]$probe.LocalEndpoint.Port
-        $probe.Stop();$probe=$null
-        $token=([Guid]::NewGuid().ToString('N'))
-        $job=Start-Job -ArgumentList @($RemoteUrl,$port,$token,$contentType,$extension) -ScriptBlock {
-            param([string]$UpstreamUrl,[int]$ListenPort,[string]$RouteToken,[string]$MimeType,[string]$MediaExtension)
-            $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,$ListenPort)
-            $crlf=[string][char]13+[string][char]10
-            function Send-CocoProxyError($Stream,[int]$Code,[string]$Reason,[string]$Message){
-                $body=[Text.Encoding]::UTF8.GetBytes($Message)
-                $header=@(
-                    "HTTP/1.1 $Code $Reason"
-                    'Content-Type: text/plain; charset=utf-8'
-                    'Cache-Control: no-store'
-                    'Connection: close'
-                    "Content-Length: $($body.Length)"
-                    ''
-                    ''
-                )-join$script:crlf
-                $bytes=[Text.Encoding]::ASCII.GetBytes($header)
-                [void]$Stream.Write($bytes,0,$bytes.Length)
-                if($body.Length-gt0){[void]$Stream.Write($body,0,$body.Length)}
-            }
-            try{
-                $listener.Start()
-                while($true){
-                    while(-not$listener.Pending()){Start-Sleep -Milliseconds 100}
-                    $client=$null;$stream=$null;$reader=$null;$upstream=$null;$upstreamStream=$null
-                    try{
-                        $client=$listener.AcceptTcpClient()
-                        $client.NoDelay=$true;$client.ReceiveTimeout=30000;$client.SendTimeout=30000
-                        $stream=$client.GetStream()
-                        $reader=[IO.StreamReader]::new($stream,[Text.Encoding]::ASCII,$false,8192,$true)
-                        $requestLine=$reader.ReadLine()
-                        if([string]::IsNullOrWhiteSpace($requestLine)){continue}
-                        $parts=$requestLine.Split(' ')
-                        if($parts.Count-lt2){throw 'Solicitud HTTP invalida.'}
-                        $method=$parts[0].ToUpperInvariant();$requestPath=$parts[1]
-                        $headers=@{}
-                        while($true){
-                            $line=$reader.ReadLine()
-                            if($null-eq$line-or$line-eq''){break}
-                            $colon=$line.IndexOf(':')
-                            if($colon-gt0){$headers[$line.Substring(0,$colon).Trim()]=$line.Substring($colon+1).Trim()}
-                        }
-                        $expectedPath="/coco-media/$RouteToken/media$MediaExtension"
-                        if($requestPath-ne$expectedPath){Send-CocoProxyError $stream 404 'Not Found' 'Ruta de media no encontrada.';continue}
-                        if($method-notin @('GET','HEAD')){Send-CocoProxyError $stream 405 'Method Not Allowed' 'Solo se admite GET o HEAD.';continue}
-                        $rangeHeader=[string]$headers['Range'];$hasRange=$false;$rangeStart=[int64]0;$rangeEnd=[int64]-1
-                        if(-not[string]::IsNullOrWhiteSpace($rangeHeader)){
-                            if($rangeHeader-match'^bytes=(\d+)-(\d*)$'){
-                                $hasRange=$true;$rangeStart=[int64]$Matches[1]
-                                if(-not[string]::IsNullOrWhiteSpace($Matches[2])){$rangeEnd=[int64]$Matches[2]}
-                            }else{
-                                Send-CocoProxyError $stream 416 'Range Not Satisfiable' 'Solo se admite un rango HTTP simple.';continue
-                            }
-                        }
-                        $request=[Net.HttpWebRequest]::Create($UpstreamUrl)
-                        $request.Method=$method;$request.UserAgent='CocoLauncher/HeartSignal';$request.AllowAutoRedirect=$true;$request.KeepAlive=$false;$request.Timeout=30000;$request.ReadWriteTimeout=30000
-                        if($hasRange){
-                            if($rangeEnd-ge$rangeStart){$request.AddRange($rangeStart,$rangeEnd)}else{$request.AddRange($rangeStart)}
-                        }
-                        try{$upstream=$request.GetResponse()}catch{
-                            $remoteResponse=$_.Exception.Response
-                            if($remoteResponse){$code=[int]$remoteResponse.StatusCode;$reason=[string]$remoteResponse.StatusDescription;Send-CocoProxyError $stream $code $reason 'El asset remoto rechazo la solicitud.';$remoteResponse.Dispose();continue}
-                            throw
-                        }
-                        $upstreamStatus=[int]$upstream.StatusCode
-                        if($hasRange-and$upstreamStatus-ne206){throw "El asset remoto no devolvio contenido parcial (HTTP $upstreamStatus)."}
-                        $length=[int64]$upstream.ContentLength
-                        if($length-lt0){throw 'El asset remoto no informo Content-Length.'}
-                        $statusLine=if($upstreamStatus-eq206){'HTTP/1.1 206 Partial Content'}else{'HTTP/1.1 200 OK'}
-                        $responseHeaders=@(
-                            $statusLine
-                            "Content-Type: $MimeType"
-                            'Accept-Ranges: bytes'
-                            'Cache-Control: no-store'
-                            'Connection: close'
-                            "Content-Length: $length"
-                        )
-                        $contentRange=[string]$upstream.Headers['Content-Range']
-                        if(-not[string]::IsNullOrWhiteSpace($contentRange)){$responseHeaders+="Content-Range: $contentRange"}
-                        $responseBytes=[Text.Encoding]::ASCII.GetBytes((($responseHeaders+@('',''))-join$crlf))
-                        [void]$stream.Write($responseBytes,0,$responseBytes.Length)
-                        if($method-eq'HEAD'){continue}
-                        $upstreamStream=$upstream.GetResponseStream()
-                        $buffer=New-Object byte[] (1MB)
-                        while(($read=$upstreamStream.Read($buffer,0,$buffer.Length))-gt0){[void]$stream.Write($buffer,0,$read)}
-                    }catch{
-                        if($stream){
-                            try{Send-CocoProxyError $stream 502 'Bad Gateway' 'No se pudo obtener el asset remoto.'}catch{}
-                        }
-                    }finally{
-                        if($upstreamStream){$upstreamStream.Dispose()}
-                        if($upstream){$upstream.Dispose()}
-                        if($reader){$reader.Dispose()}
-                        if($stream){$stream.Dispose()}
-                        if($client){$client.Dispose()}
-                    }
-                }
-            }finally{if($listener){$listener.Stop()}}
-        }
-        $deadline=[DateTime]::UtcNow.AddSeconds(8);$ready=$false
-        while([DateTime]::UtcNow-lt$deadline){
-            if($job.State-in @('Failed','Stopped','Completed')){throw "No se pudo iniciar el proxy de streaming local (estado $($job.State))."}
-            $client=$null
-            try{$client=[Net.Sockets.TcpClient]::new();$client.Connect('127.0.0.1',$port);$ready=$true;break}catch{}finally{if($client){$client.Dispose()}}
-            Start-Sleep -Milliseconds 100
-        }
-        if(-not$ready){throw 'El proxy de streaming local no comenzo a escuchar a tiempo.'}
-        [pscustomobject]@{Job=$job;Port=$port;Token=$token;Url="http://127.0.0.1:$port/coco-media/$token/media$extension";RemoteUrl=$RemoteUrl}
-    }catch{
-        if($probe){try{$probe.Stop()}catch{}}
-        if($job){
-            try{Stop-Job -Job $job -ErrorAction SilentlyContinue}catch{}
-            try{Remove-Job -Job $job -Force -ErrorAction SilentlyContinue}catch{}
-        }
-        throw
-    }
+    $server=[CocoMediaHttpProxyServer]::new($RemoteUrl,$FileName)
+    [pscustomobject]@{Server=$server;Job=$null;Port=$server.Port;Token=$server.Token;Url=$server.Url;RemoteUrl=$server.RemoteUrl}
 }
 
 function Stop-CocoMediaHttpProxy($Proxy){
     if(-not$Proxy){return}
+    if($Proxy.Server){try{$Proxy.Server.Dispose()}catch{}}
     if($Proxy.Job){
         try{Stop-Job -Job $Proxy.Job -ErrorAction SilentlyContinue}catch{}
         try{Remove-Job -Job $Proxy.Job -Force -ErrorAction SilentlyContinue}catch{}
@@ -1120,11 +1287,12 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         Add-Type -AssemblyName WindowsFormsIntegration
     }catch{throw "Windows no pudo cargar el reproductor integrado: $($_.Exception.Message)"}
     $mediaExperienceName=if([string]::IsNullOrWhiteSpace([string]$Experience.name)){'COCO VIDEO'}else{[string]$Experience.name}
-    $form=New-Object Windows.Forms.Form;$form.Text=("{0} - {1}"-f$mediaExperienceName,[string]$Episode.title);$form.StartPosition='CenterParent';$form.FormBorderStyle='None';$form.MinimizeBox=$false;$form.MaximizeBox=$false;$form.KeyPreview=$true;$form.BackColor=[Drawing.Color]::FromArgb(53,35,67);$form.Padding=New-Object Windows.Forms.Padding(1);$form.ClientSize=New-Object Drawing.Size(1000,650);$form.MinimumSize=New-Object Drawing.Size(640,420)
+    $isMovie=Test-CocoMovieExperience $Experience
+    $form=New-Object Windows.Forms.Form;$form.Text=if($isMovie){[string]$Episode.title}else{("{0} - {1}"-f$mediaExperienceName,[string]$Episode.title)};$form.StartPosition='CenterParent';$form.FormBorderStyle='None';$form.MinimizeBox=$false;$form.MaximizeBox=$false;$form.KeyPreview=$true;$form.BackColor=[Drawing.Color]::FromArgb(53,35,67);$form.Padding=New-Object Windows.Forms.Padding(1);$form.ClientSize=New-Object Drawing.Size(1000,650);$form.MinimumSize=New-Object Drawing.Size(640,420)
     $chrome=New-Object Windows.Forms.Panel;$chrome.Name='CocoMediaHeader';$chrome.Dock='Top';$chrome.Height=46;$chrome.BackColor=[Drawing.Color]::FromArgb(27,19,38)
     $accent=New-Object Windows.Forms.Panel;$accent.Name='CocoMediaHeaderAccent';$accent.Dock='Left';$accent.Width=4;$accent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
     $titleLabel=New-Object Windows.Forms.Label;$titleLabel.Name='CocoMediaTitle';$titleLabel.Text=$mediaExperienceName.ToUpperInvariant();$titleLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',11);$titleLabel.ForeColor=[Drawing.Color]::White;$titleLabel.AutoEllipsis=$true
-    $subtitleLabel=New-Object Windows.Forms.Label;$subtitleLabel.Name='CocoMediaSubtitle';$subtitleLabel.Text=("Episodio {0}"-f[string]$Episode.title);$subtitleLabel.Font=New-Object Drawing.Font('Segoe UI',8);$subtitleLabel.ForeColor=[Drawing.Color]::FromArgb(177,162,193);$subtitleLabel.AutoEllipsis=$true
+    $subtitleLabel=New-Object Windows.Forms.Label;$subtitleLabel.Name='CocoMediaSubtitle';$subtitleLabel.Text=if($isMovie){[string]$Episode.title}else{("Episodio {0}"-f[string]$Episode.title)};$subtitleLabel.Font=New-Object Drawing.Font('Segoe UI',8);$subtitleLabel.ForeColor=[Drawing.Color]::FromArgb(177,162,193);$subtitleLabel.AutoEllipsis=$true
     $statusLabel=New-Object Windows.Forms.Label;$statusLabel.Name='CocoMediaStatus';$statusLabel.Text='Cargando video...';$statusLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',8);$statusLabel.ForeColor=[Drawing.Color]::FromArgb(168,236,168);$statusLabel.TextAlign='MiddleRight';$statusLabel.AutoEllipsis=$true
     $minimize=New-Object Windows.Forms.Button;$minimize.Name='CocoMediaMinimizeButton';$minimize.Text='-';$minimize.AccessibleName='Minimizar';$minimize.Font=New-Object Drawing.Font('Segoe UI',12);Set-CocoMediaButtonStyle $minimize ([Drawing.Color]::FromArgb(27,19,38)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(53,35,67))
     $close=New-Object Windows.Forms.Button;$close.Name='CocoMediaCloseButton';$close.Text='X';$close.AccessibleName='Cerrar';$close.Font=New-Object Drawing.Font('Segoe UI Semibold',10);Set-CocoMediaButtonStyle $close ([Drawing.Color]::FromArgb(27,19,38)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(150,48,70))
@@ -1141,11 +1309,11 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $volume=New-Object Windows.Forms.Panel;$volume.Name='CocoMediaVolumeBar';$volume.TabStop=$true;$volume.Cursor=[Windows.Forms.Cursors]::Hand;$volume.BackColor=[Drawing.Color]::FromArgb(27,19,38);$volume.AccessibleName='Volumen';$volume.AccessibleRole=[Windows.Forms.AccessibleRole]::Slider
     $fullscreen=New-Object Windows.Forms.Button;$fullscreen.Name='CocoMediaFullscreenButton';$fullscreen.Text='PANTALLA COMPLETA';$fullscreen.AccessibleName='Pantalla completa';$fullscreen.Font=New-Object Drawing.Font('Segoe UI Semibold',8);$fullscreen.TextAlign='MiddleCenter';$fullscreen.Size=New-Object Drawing.Size(174,36);Set-CocoMediaButtonStyle $fullscreen ([Drawing.Color]::FromArgb(38,27,52)) ([Drawing.Color]::FromArgb(235,228,241)) ([Drawing.Color]::FromArgb(67,46,88))
     $toolTip=New-Object Windows.Forms.ToolTip;$toolTip.AutoPopDelay=4000;$toolTip.InitialDelay=400;$toolTip.ReshowDelay=100
-    $toolTip.SetToolTip($play,'Pausar / reproducir (Espacio)');$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11 / Esc)');$toolTip.SetToolTip($seek,'Busca una posicion en el episodio (Flechas Izq/Der)');$toolTip.SetToolTip($volume,'Volumen (Flechas Arriba/Abajo, rueda del raton, M: silenciar)')
+    $toolTip.SetToolTip($play,'Pausar / reproducir (Espacio / K)');$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11 / Esc)');$toolTip.SetToolTip($seek,'Busca una posicion (Flechas Izq/Der, J/L: +-10s, 0-9: saltar %)');$toolTip.SetToolTip($volume,'Volumen (Flechas Arriba/Abajo, rueda del raton, M: silenciar)')
     $statusLabel.TextAlign='MiddleLeft';$statusLabel.BackColor=[Drawing.Color]::FromArgb(38,27,52);$statusLabel.Padding=New-Object Windows.Forms.Padding(10,0,6,0)
     $controls.Controls.AddRange(@($controlLine,$play,$statusLabel,$position,$seek,$volumeLabel,$volume,$fullscreen));$form.Controls.Add($videoHost);$form.Controls.Add($controls);$form.Controls.Add($chrome)
     $savedPlayback=Get-CocoMediaPlaybackState $Experience $Episode
-    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;PreviousVolume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost}
+    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;PreviousVolume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;CursorHidden=$false;LastMouseMoveUtc=[DateTime]::UtcNow}
     $formatTime={param([double]$Seconds)&$formatTimeCommand $Seconds}.GetNewClosure()
     $layoutChrome={
         $width=[Math]::Max(1,[int]$chrome.ClientSize.Width)
@@ -1300,8 +1468,29 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
             $seek.Invalidate()
             if($state.Started){&$savePlayback $false}
             if($media.DownloadProgress-lt1-and-not$state.Started){$statusLabel.Text=("Buffer {0}%"-f[int]($media.DownloadProgress*100))}elseif($state.Started-and$statusLabel.Text-like'Buffer*'){$statusLabel.Text='Reproduciendo'}
+            if($state.Fullscreen){
+                $idleSeconds=([DateTime]::UtcNow-$state.LastMouseMoveUtc).TotalSeconds
+                if($idleSeconds-ge2.5-and-not$state.CursorHidden){
+                    [Windows.Forms.Cursor]::Hide()
+                    $state.CursorHidden=$true
+                }
+            }elseif($state.CursorHidden){
+                [Windows.Forms.Cursor]::Show()
+                $state.CursorHidden=$false
+            }
         }catch{}
     }.GetNewClosure()))
+    $showCursorOnMove={
+        $state.LastMouseMoveUtc=[DateTime]::UtcNow
+        if($state.CursorHidden){
+            [Windows.Forms.Cursor]::Show()
+            $state.CursorHidden=$false
+        }
+    }.GetNewClosure()
+    $form.Add_MouseMove(({param($s,$e)&$showCursorOnMove}.GetNewClosure()))
+    $videoHost.Add_MouseMove(({param($s,$e)&$showCursorOnMove}.GetNewClosure()))
+    $controls.Add_MouseMove(({param($s,$e)&$showCursorOnMove}.GetNewClosure()))
+    $media.Add_MouseMove(({param($s,$e)&$showCursorOnMove}.GetNewClosure()))
     $media.Add_MediaOpened(({
         param($sender,$eventArgs)
         try{$state.MediaReady=$true;$play.Enabled=$true;if($media.NaturalDuration.HasTimeSpan){$state.Duration=$media.NaturalDuration.TimeSpan.TotalSeconds;&$applyResume}}catch{}
@@ -1313,7 +1502,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     }.GetNewClosure()))
     $media.Add_MediaFailed(({
         param($sender,$eventArgs)
-        $state.Started=$false;$state.MediaReady=$false;$play.Enabled=$true;$play.Text='REINTENTAR';$statusLabel.Text='No compatible';$statusLabel.ForeColor=[Drawing.Color]::FromArgb(255,139,151);$message=try{[string]$eventArgs.ErrorException.Message}catch{'El sistema no pudo decodificar este video.'};try{if($logCommand){&$logCommand "HEART SIGNAL: MediaElement fallo: $message"}}catch{}
+        $state.Started=$false;$state.MediaReady=$false;$play.Enabled=$true;$play.Text='REINTENTAR';$statusLabel.Text='No compatible';$statusLabel.ForeColor=[Drawing.Color]::FromArgb(255,139,151);$message=try{[string]$eventArgs.ErrorException.Message}catch{'El sistema no pudo decodificar este video.'};try{if($logCommand){&$logCommand "${mediaExperienceName}: MediaElement fallo: $message"}}catch{}
     }.GetNewClosure()))
     $play.Enabled=$false
     $play.Add_Click(({
@@ -1322,7 +1511,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
             if($play.Text-eq'REPETIR'){$media.Position=[TimeSpan]::Zero;$state.Completed=$false;$media.Play();$state.Started=$true;$play.Text='PAUSAR';$statusLabel.Text='Reproduciendo'}elseif($state.Started){$media.Pause();$state.Started=$false;$play.Text='REPRODUCIR';$statusLabel.Text='Pausado'}else{$state.Completed=$false;$media.Play();$state.Started=$true;$play.Text='PAUSAR';$statusLabel.Text='Reproduciendo'};&$savePlayback $true
         }catch{
             $detail=[string]$_.Exception.Message
-            try{Write-CocoLog "HEART SIGNAL: control del reproductor fallo: $detail"}catch{}
+            try{Write-CocoLog "${mediaExperienceName}: control del reproductor fallo: $detail"}catch{}
             $statusLabel.Text='No se pudo controlar el video.'
         }
     }.GetNewClosure()))
@@ -1371,10 +1560,14 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
                 $form.Bounds=$state.PreviousBounds
                 if($restoreWindowState-eq[Windows.Forms.FormWindowState]::Maximized){$form.WindowState=$restoreWindowState}
                 $state.Fullscreen=$false;$fullscreen.Text='PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)')
+                if($state.CursorHidden){
+                    [Windows.Forms.Cursor]::Show()
+                    $state.CursorHidden=$false
+                }
             }
             $chrome.Visible=(-not$state.Fullscreen);$controls.Visible=(-not$state.Fullscreen);&$layoutChrome;&$layoutPlayer
         }catch{
-            try{if($logCommand){&$logCommand "HEART SIGNAL: cambio de pantalla completa fallo: $($_.Exception.Message)"}}catch{}
+            try{if($logCommand){&$logCommand "${mediaExperienceName}: cambio de pantalla completa fallo: $($_.Exception.Message)"}}catch{}
         }finally{
             try{$form.ResumeLayout($true);$form.PerformLayout();$form.Refresh();$form.Activate();if($state.Fullscreen){$videoHost.Focus();$media.Focus()}}catch{}
         }
@@ -1399,7 +1592,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         param($sender,$eventArgs)
         if($eventArgs.Key-in @([Windows.Input.Key]::Escape,[Windows.Input.Key]::F11)){
             &$toggleFullscreen;$eventArgs.Handled=$true
-        }elseif($eventArgs.Key-eq[Windows.Input.Key]::Space){
+        }elseif($eventArgs.Key-in @([Windows.Input.Key]::Space,[Windows.Input.Key]::K)){
             $play.PerformClick();$eventArgs.Handled=$true
         }elseif($eventArgs.Key-eq[Windows.Input.Key]::M){
             &$toggleMute;$eventArgs.Handled=$true
@@ -1415,11 +1608,33 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
             $newPos=[Math]::Min([Math]::Max(0.0,$state.Duration-1.0),$media.Position.TotalSeconds+5.0)
             $media.Position=[TimeSpan]::FromSeconds($newPos)
             $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true
+        }elseif($eventArgs.Key-eq[Windows.Input.Key]::J -and $state.Duration-gt 0){
+            $newPos=[Math]::Max(0.0,$media.Position.TotalSeconds-10.0)
+            $media.Position=[TimeSpan]::FromSeconds($newPos)
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true
+        }elseif($eventArgs.Key-eq[Windows.Input.Key]::L -and $state.Duration-gt 0){
+            $newPos=[Math]::Min([Math]::Max(0.0,$state.Duration-1.0),$media.Position.TotalSeconds+10.0)
+            $media.Position=[TimeSpan]::FromSeconds($newPos)
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true
+        }elseif($eventArgs.Key-eq[Windows.Input.Key]::Home -and $state.Duration-gt 0){
+            $media.Position=[TimeSpan]::Zero
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true
+        }elseif($eventArgs.Key-eq[Windows.Input.Key]::End -and $state.Duration-gt 0){
+            $media.Position=[TimeSpan]::FromSeconds([Math]::Max(0.0,$state.Duration-1.0))
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true
+        }elseif($state.Duration-gt 0 -and ($eventArgs.Key -ge [Windows.Input.Key]::D0 -and $eventArgs.Key -le [Windows.Input.Key]::D9)){
+            $num=[int]$eventArgs.Key - [int][Windows.Input.Key]::D0
+            $media.Position=[TimeSpan]::FromSeconds([Math]::Min($state.Duration*($num*0.10),$state.Duration-1.0))
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true
+        }elseif($state.Duration-gt 0 -and ($eventArgs.Key -ge [Windows.Input.Key]::NumPad0 -and $eventArgs.Key -le [Windows.Input.Key]::NumPad9)){
+            $num=[int]$eventArgs.Key - [int][Windows.Input.Key]::NumPad0
+            $media.Position=[TimeSpan]::FromSeconds([Math]::Min($state.Duration*($num*0.10),$state.Duration-1.0))
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true
         }
     }.GetNewClosure()))
     $form.Add_KeyDown(({
         param($sender,$eventArgs)
-        if($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Space){$play.PerformClick();$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true}
+        if($eventArgs.KeyCode-in @([Windows.Forms.Keys]::Space,[Windows.Forms.Keys]::K)){$play.PerformClick();$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true}
         elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::F11-or($state.Fullscreen-and$eventArgs.KeyCode-eq[Windows.Forms.Keys]::Escape)){
             &$toggleFullscreen;$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
         }elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::M){
@@ -1436,10 +1651,33 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
             $newPos=[Math]::Min([Math]::Max(0.0,$state.Duration-1.0),$media.Position.TotalSeconds+5.0)
             $media.Position=[TimeSpan]::FromSeconds($newPos)
             $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::J -and $state.Duration-gt 0){
+            $newPos=[Math]::Max(0.0,$media.Position.TotalSeconds-10.0)
+            $media.Position=[TimeSpan]::FromSeconds($newPos)
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::L -and $state.Duration-gt 0){
+            $newPos=[Math]::Min([Math]::Max(0.0,$state.Duration-1.0),$media.Position.TotalSeconds+10.0)
+            $media.Position=[TimeSpan]::FromSeconds($newPos)
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::Home -and $state.Duration-gt 0){
+            $media.Position=[TimeSpan]::Zero
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($eventArgs.KeyCode-eq[Windows.Forms.Keys]::End -and $state.Duration-gt 0){
+            $media.Position=[TimeSpan]::FromSeconds([Math]::Max(0.0,$state.Duration-1.0))
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($state.Duration-gt 0 -and ($eventArgs.KeyCode -ge [Windows.Forms.Keys]::D0 -and $eventArgs.KeyCode -le [Windows.Forms.Keys]::D9)){
+            $num=[int]$eventArgs.KeyCode - [int][Windows.Forms.Keys]::D0
+            $media.Position=[TimeSpan]::FromSeconds([Math]::Min($state.Duration*($num*0.10),$state.Duration-1.0))
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
+        }elseif($state.Duration-gt 0 -and ($eventArgs.KeyCode -ge [Windows.Forms.Keys]::NumPad0 -and $eventArgs.KeyCode -le [Windows.Forms.Keys]::NumPad9)){
+            $num=[int]$eventArgs.KeyCode - [int][Windows.Forms.Keys]::NumPad0
+            $media.Position=[TimeSpan]::FromSeconds([Math]::Min($state.Duration*($num*0.10),$state.Duration-1.0))
+            $state.Completed=$false;try{&$savePlayback $true}catch{};$eventArgs.Handled=$true;$eventArgs.SuppressKeyPress=$true
         }
     }.GetNewClosure()))
     $form.Add_FormClosing(({
         param($sender,$eventArgs)
+        if($state.CursorHidden){try{[Windows.Forms.Cursor]::Show()}catch{}}
         try{&$savePlayback $true;$state.ClosingSaved=$true;$timer.Stop();$startTimer.Stop();$media.Stop()}catch{}
     }.GetNewClosure()))
     $proxy=$null
@@ -1534,7 +1772,15 @@ function Invoke-CocoMediaEpisodeAction($RowInfo){
         $status=Get-CocoMediaEpisodeLocalStatus $RowInfo.Experience $RowInfo.Episode
         if([string]$RowInfo.Episode.streamUrl-match'^https://'){
             Set-CocoMediaUiStatus 'Conectando con el streaming...' 5
-            Invoke-CocoMediaPlayerUi $RowInfo.Experience $RowInfo.Episode ([string]$RowInfo.Episode.streamUrl)
+            try{
+                Invoke-CocoMediaPlayerUi $RowInfo.Experience $RowInfo.Episode ([string]$RowInfo.Episode.streamUrl)
+            }catch{
+                if($status.Status-eq'verified'){
+                    try{Write-CocoLog "MEDIA [$([string]$RowInfo.Experience.name)]: streaming fallo, usando copia local verificada ($($_.Exception.Message))"}catch{}
+                    Set-CocoMediaUiStatus 'Streaming no disponible, abriendo copia local...' 90
+                    [void](Invoke-CocoMediaEpisodePlayback $RowInfo.Experience $RowInfo.Episode)
+                }else{throw}
+            }
         }elseif($status.Status-eq'verified'){
             Set-CocoMediaUiStatus 'Abriendo el reproductor integrado...' 100
             [void](Invoke-CocoMediaEpisodePlayback $RowInfo.Experience $RowInfo.Episode)
@@ -1681,297 +1927,6 @@ function Invoke-CocoMediaEpisodeUi($Experience){
     try{[void]$dialog.ShowDialog($script:CocoForm)}finally{$script:CocoMediaDialog=$null;$script:CocoMediaProgressBar=$null;$script:CocoMediaStatusLabel=$null;$dialog.Dispose();try{$statusLabel.Dispose()}catch{}}
 }
 
-function Update-CocoExperienceCardsUi($DynamicPanel, $Catalog, $Paths, [string]$Role = 'client') {
-    if (-not $DynamicPanel -or $DynamicPanel.IsDisposed -or -not $Catalog) { return }
-    $mediaEpisodeUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaEpisodeUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    $mediaMovieUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaMovieAction -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    $mediaOpenFolderUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaOpenFolderUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    $experienceChangeLocationUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceChangeLocationUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    $experienceStorageInstallUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceStorageInstallUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    $experienceFreeSpaceUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceFreeSpaceUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    
-    $expRoot = if ($Paths -is [hashtable]) {
-        [string]$Paths['ExperiencesRoot']
-    } elseif ($Paths-and$Paths.ExperiencesRoot) {
-        [string]$Paths.ExperiencesRoot
-    } else {
-        [string]$Paths
-    }
-    $locationPath=Get-CocoLauncherInstanceLocationsPath $Paths
-    
-    $managedExperiences = @($Catalog.experiences | Where-Object {
-        $_.managementMode -eq 'managed' -and ($_.launch.workflow -eq 'coco-managed' -or $_.launch.workflow -eq 'coco-standalone' -or $_.launch.workflow -eq 'coco-media')
-    })
-    if ($managedExperiences.Count -eq 0) { return }
-    Write-CocoStorageDiagnostic 'cards.refresh' @{role=$Role;experienceCount=$managedExperiences.Count;experiencesRoot=$expRoot;locationPath=$locationPath;panelSize=$DynamicPanel.Size}
-    
-    $DynamicPanel.Controls.Clear()
-    $DynamicPanel.AutoScroll = $true
-    
-    $storageHeader = New-Object Windows.Forms.Label
-    $storageHeader.Text = if ($Role -eq 'host') { 'EXPERIENCIAS Y GESTION DE INSTANCIAS' } else { 'INSTANCIAS Y ESPACIO EN DISCO' }
-    $storageHeader.Font = New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9 7))
-    $storageHeader.ForeColor = [Drawing.Color]::FromArgb(224, 190, 255)
-    $storageHeader.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric 0))
-    $storageHeader.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 550),(Get-CocoLauncherUiMetric 20))
-    $DynamicPanel.Controls.Add($storageHeader)
-    
-    $cardY = 22
-    $cardIndex = 0
-    foreach ($exp in $managedExperiences) {
-        if(Test-CocoMediaExperience $exp){
-            $isMovie=Test-CocoMovieExperience $exp
-            $mediaStatus=Get-CocoMediaExperienceStatus $exp;$mediaRoot=[string]$mediaStatus.Root
-            $card=New-Object Windows.Forms.Panel;$card.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric $cardY));$card.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 545),(Get-CocoLauncherUiMetric 64));$card.BackColor=[Drawing.Color]::FromArgb($(if($cardIndex%2-eq0){48}else{56}),30,72)
-            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=[string]$exp.name;$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9.5 7));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 3));$nameLabel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 20));$nameLabel.AutoEllipsis=$true
-            $pathLabel=New-Object Windows.Forms.Label;$pathLabel.Text="Descargas: $mediaRoot";$pathLabel.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6));$pathLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$pathLabel.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 23));$pathLabel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 18));$pathLabel.AutoEllipsis=$true
-            $detailLabel=New-Object Windows.Forms.Label
-            if($isMovie){
-                $detailLabel.Text="Pelicula | $(if($mediaStatus.Verified-gt0){'Disponible en este PC'}else{'Streaming directo'}) | CLIC PARA VER"
-                $detailLabel.ForeColor=if($mediaStatus.Verified-gt0){[Drawing.Color]::FromArgb(168,236,168)}else{[Drawing.Color]::FromArgb(183,239,194)}
-            }else{
-                $detailLabel.Text="Serie | $($mediaStatus.Verified)/$($mediaStatus.Total) episodios verificados | CLIC PARA VER"
-                $detailLabel.ForeColor=if($mediaStatus.Verified-eq$mediaStatus.Total){[Drawing.Color]::FromArgb(168,236,168)}else{[Drawing.Color]::FromArgb(180,170,195)}
-            }
-            $detailLabel.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6));$detailLabel.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 41));$detailLabel.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 18));$detailLabel.AutoEllipsis=$true
-            $cardInfo=[pscustomobject]@{InstanceId=[string]$exp.instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$mediaRoot;CurrentRoot=$mediaRoot;ExperiencesRoot=$expRoot;Usage=[pscustomobject]@{Installed=($mediaStatus.Verified-gt0);Bytes=$mediaStatus.Bytes;Label=if($isMovie){if($mediaStatus.Verified-gt0){'Pelicula lista'}else{'Streaming'}}else{("{0}/{1} episodios"-f$mediaStatus.Verified,$mediaStatus.Total)}};IsRunning=$false;IsMedia=$true;IsMovie=$isMovie;MediaRoot=$mediaRoot;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
-            $card.Controls.AddRange(@($nameLabel,$pathLabel,$detailLabel))
-            $mediaClickAction=if($isMovie){ {param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaMovieUiCommand $info.Experience}}.GetNewClosure() }
-                              else{ {param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure() }
-            foreach($control in @($card,$nameLabel,$pathLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click($mediaClickAction)}
-            $primaryMediaButton=New-Object Windows.Forms.Button;$primaryMediaButton.Text=if($isMovie){'VER PELICULA'}else{'EPISODIOS'};$primaryMediaButton.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 120),(Get-CocoLauncherUiMetric 28));$primaryMediaButton.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 280),(Get-CocoLauncherUiMetric 18));Set-CocoFlatButtonStyle $primaryMediaButton ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White);$primaryMediaButton.Tag=$cardInfo;$primaryMediaButton.Add_Click($mediaClickAction)
-            $folderButton=New-Object Windows.Forms.Button;$folderButton.Text='CARPETA';$folderButton.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 28));$folderButton.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 410),(Get-CocoLauncherUiMetric 18));Set-CocoFlatButtonStyle $folderButton ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255));$folderButton.Tag=$cardInfo;$folderButton.Add_Click({param($sender,$eventArgs)&$mediaOpenFolderUiCommand $sender.Tag.Experience}.GetNewClosure())
-            $card.Controls.AddRange(@($primaryMediaButton,$folderButton));$DynamicPanel.Controls.Add($card);$cardY+=70;$cardIndex++;continue
-        }
-        $instanceId = [string]$exp.instanceId
-        if (-not $instanceId) { $instanceId = [string]$exp.id }
-        $instanceRoot = Get-CocoExperienceInstanceRoot $exp $expRoot $locationPath
-        $usage = Get-CocoExperienceDiskUsage $instanceRoot
-        $expType = if ([string]$exp.launch.workflow -eq 'coco-standalone') { 'Standalone' } else { 'Minecraft' }
-        $isRunning = Test-CocoManagedGameRunning $instanceRoot
-        Write-CocoStorageDiagnostic 'card.state' @{role=$Role;experienceId=$exp.id;instanceId=$instanceId;root=$instanceRoot;installed=$usage.Installed;usage=$usage.Label;running=$isRunning}
-        
-        $card = New-Object Windows.Forms.Panel
-        $card.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric $cardY))
-        $card.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 545),(Get-CocoLauncherUiMetric 64))
-        $card.BackColor = [Drawing.Color]::FromArgb($(if ($cardIndex % 2 -eq 0) { 48 } else { 56 }), 30, 72)
-        
-        $nameLabel = New-Object Windows.Forms.Label
-        $nameLabel.Text = [string]$exp.name
-        $nameLabel.Font = New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9.5 7))
-        $nameLabel.ForeColor = [Drawing.Color]::White
-        $nameLabel.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 3))
-        $nameLabel.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 20))
-        $nameLabel.AutoEllipsis = $true
-        
-        $pathLabel = New-Object Windows.Forms.Label
-        $pathLabel.Text = "Ruta: $instanceRoot"
-        $pathLabel.Font = New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6))
-        $pathLabel.ForeColor = [Drawing.Color]::FromArgb(224, 190, 255)
-        $pathLabel.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 23))
-        $pathLabel.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 18))
-        $pathLabel.AutoEllipsis = $true
-        
-        $detailLabel = New-Object Windows.Forms.Label
-        $detailLabel.Font = New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6))
-        $detailLabel.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 8),(Get-CocoLauncherUiMetric 41))
-        $detailLabel.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 250),(Get-CocoLauncherUiMetric 18))
-        $detailLabel.AutoEllipsis = $true
-        if ($isRunning) {
-            $detailLabel.Text = "$expType  |  En ejecucion"
-            $detailLabel.ForeColor = [Drawing.Color]::FromArgb(255, 215, 0)
-        } elseif ($usage.Installed) {
-            $detailLabel.Text = "$expType  |  $($usage.Label) en disco"
-            $detailLabel.ForeColor = [Drawing.Color]::FromArgb(168, 236, 168)
-        } else {
-            $detailLabel.Text = "$expType  |  No instalado  |  CLIC PARA INSTALAR"
-            $detailLabel.ForeColor = [Drawing.Color]::FromArgb(180, 170, 195)
-        }
-        
-        $card.Controls.AddRange(@($nameLabel, $pathLabel, $detailLabel))
-        $cardInfo=[pscustomobject]@{
-            InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name
-            InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning
-            DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role
-        }
-        foreach($control in @($card,$nameLabel,$pathLabel,$detailLabel)){
-            $control.Tag=$cardInfo
-            if(-not$usage.Installed-and-not$isRunning){$control.Cursor=[Windows.Forms.Cursors]::Hand}
-            $control.Add_Click({param($sender,$eventArgs)
-                $info=$sender.Tag
-                if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){
-                    &$experienceStorageInstallUiCommand $info
-                }
-            })
-        }
-        $pathTip=New-Object Windows.Forms.ToolTip
-        $pathTip.SetToolTip($pathLabel,[string]$instanceRoot)
-        
-        if ($Role -eq 'host') {
-            $hostBtn = New-Object Windows.Forms.Button
-            $hostBtn.Font = New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6))
-            $hostBtn.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 115),(Get-CocoLauncherUiMetric 28))
-            $hostBtn.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 265),(Get-CocoLauncherUiMetric 18))
-            if ($isRunning) {
-                $hostBtn.Text = 'EN EJECUCION'
-                $hostBtn.Enabled = $false
-                Set-CocoFlatButtonStyle $hostBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))
-            } else {
-                $hostBtn.Text = 'ABRIR'
-                Set-CocoFlatButtonStyle $hostBtn ([Drawing.Color]::FromArgb(83, 47, 117)) ([Drawing.Color]::White)
-            }
-            $hostBtn.Tag = [string]$exp.id
-            $hostBtn.Add_Click({ param($sender, $eventArgs)
-                $script:CocoLauncherSelectedExperience = [string]$sender.Tag
-            }.GetNewClosure())
-            $card.Controls.Add($hostBtn)
-            
-            $dirBtn = New-Object Windows.Forms.Button
-            $dirBtn.Text = 'CARPETA'
-            $dirBtn.Font = New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6))
-            $dirBtn.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 75),(Get-CocoLauncherUiMetric 28))
-            $dirBtn.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 386),(Get-CocoLauncherUiMetric 18))
-            if($isRunning){
-                $dirBtn.Enabled=$false
-                Set-CocoFlatButtonStyle $dirBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))
-            }else{Set-CocoFlatButtonStyle $dirBtn ([Drawing.Color]::FromArgb(75, 45, 105)) ([Drawing.Color]::FromArgb(224, 190, 255))}
-            $dirBtn.Tag = $cardInfo
-            $dirBtn.Add_Click({ param($sender, $eventArgs) &$experienceChangeLocationUiCommand $sender.Tag }.GetNewClosure())
-            $card.Controls.Add($dirBtn)
-            
-            $deleteBtn = New-Object Windows.Forms.Button
-            $deleteBtn.Text = 'BORRAR'
-            $deleteBtn.Font = New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6))
-            $deleteBtn.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 70),(Get-CocoLauncherUiMetric 28))
-            $deleteBtn.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 467),(Get-CocoLauncherUiMetric 18))
-            $deleteBtn.Enabled=$usage.Installed-and-not$isRunning
-            if($deleteBtn.Enabled){Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(140, 40, 55)) ([Drawing.Color]::White)}
-            else{Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))}
-            $deleteBtn.Tag=$cardInfo
-            $deleteBtn.Add_Click({param($sender,$eventArgs) &$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())
-            $card.Controls.Add($deleteBtn)
-        } else {
-            $dirBtn = New-Object Windows.Forms.Button
-            $dirBtn.Text = if($usage.Installed){'CARPETA'}else{'INSTALAR'}
-            $dirBtn.Font = New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6))
-            $dirBtn.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 120),(Get-CocoLauncherUiMetric 28))
-            $dirBtn.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 280),(Get-CocoLauncherUiMetric 18))
-            if($isRunning){
-                $dirBtn.Enabled=$false
-                Set-CocoFlatButtonStyle $dirBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))
-            }else{Set-CocoFlatButtonStyle $dirBtn ([Drawing.Color]::FromArgb(75, 45, 105)) ([Drawing.Color]::FromArgb(224, 190, 255))}
-            $dirBtn.Tag = $cardInfo
-            $dirBtn.Add_Click({
-                param($sender, $eventArgs)
-                if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}
-            }.GetNewClosure())
-            $card.Controls.Add($dirBtn)
-            
-            $deleteBtn = New-Object Windows.Forms.Button
-            $deleteBtn.Text = 'BORRAR'
-            $deleteBtn.Font = New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6))
-            $deleteBtn.Size = New-Object Drawing.Size((Get-CocoLauncherUiMetric 120),(Get-CocoLauncherUiMetric 28))
-            $deleteBtn.Location = New-Object Drawing.Point((Get-CocoLauncherUiMetric 410),(Get-CocoLauncherUiMetric 18))
-            $deleteBtn.Enabled=$usage.Installed-and-not$isRunning
-            if($deleteBtn.Enabled){Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(140, 40, 55)) ([Drawing.Color]::White)}
-            else{Set-CocoFlatButtonStyle $deleteBtn ([Drawing.Color]::FromArgb(60, 50, 60)) ([Drawing.Color]::FromArgb(150, 150, 150))}
-            $deleteBtn.Tag = $cardInfo
-            $deleteBtn.Add_Click({ param($sender, $eventArgs) &$experienceFreeSpaceUiCommand $sender.Tag }.GetNewClosure())
-            $card.Controls.Add($deleteBtn)
-        }
-        
-        $DynamicPanel.Controls.Add($card)
-        $cardY += 70
-        $cardIndex++
-    }
-    $hostExperiences=$managedExperiences
-    $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric ($hostExperiences.Count*70+22)))
-}
-
-function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths, [int]$OffsetY = 0) {
-    Update-CocoExperienceCardsUi $DynamicPanel $Catalog $Paths 'client'
-}
-
-# Layout moderno de la biblioteca: esta definicion queda despues del flujo
-# historico para mantener compatibilidad con herramientas que cargan el
-# engine por partes. Las tarjetas se dibujan en dos columnas y cada una tiene
-# una imagen local, texto con salto por palabra y tooltips para el contenido
-# completo.
-function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Role='client'){
-    if(-not$DynamicPanel-or$DynamicPanel.IsDisposed-or-not$Catalog){return}
-    $mediaEpisodeUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaEpisodeUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    $mediaOpenFolderUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaOpenFolderUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    $experienceChangeLocationUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceChangeLocationUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    $experienceStorageInstallUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceStorageInstallUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    $experienceFreeSpaceUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoExperienceFreeSpaceUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
-    $expRoot=if($Paths-is[hashtable]){[string]$Paths['ExperiencesRoot']}elseif($Paths-and$Paths.ExperiencesRoot){[string]$Paths.ExperiencesRoot}else{[string]$Paths}
-    $locationPath=Get-CocoLauncherInstanceLocationsPath $Paths
-    $managedExperiences=@($Catalog.experiences|Where-Object{ $_.managementMode-eq'managed'-and($_.launch.workflow-eq'coco-managed'-or$_.launch.workflow-eq'coco-standalone'-or$_.launch.workflow-eq'coco-media') })
-    if($managedExperiences.Count-eq0){return}
-    Write-CocoStorageDiagnostic 'cards.refresh' @{role=$Role;experienceCount=$managedExperiences.Count;experiencesRoot=$expRoot;locationPath=$locationPath;panelSize=$DynamicPanel.Size}
-    Set-CocoExperienceCardsScrollBehavior $DynamicPanel
-    if($script:CocoExperienceCardsToolTip){try{$script:CocoExperienceCardsToolTip.Dispose()}catch{}}
-    $script:CocoExperienceCardsToolTip=New-Object Windows.Forms.ToolTip
-    $DynamicPanel.SuspendLayout()
-    try{
-        $DynamicPanel.AutoScroll=$false;$DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,0)
-        foreach($oldControl in @($DynamicPanel.Controls)){
-            try{$DynamicPanel.Controls.Remove($oldControl);$oldControl.Dispose()}catch{}
-        }
-        $DynamicPanel.AutoScroll=$false;$DynamicPanel.HorizontalScroll.Visible=$false;$DynamicPanel.HorizontalScroll.Enabled=$false
-        $storageHeader=New-Object Windows.Forms.Label
-        $storageHeader.Text=if($Role-eq'host'){'EXPERIENCIAS Y GESTION DE INSTANCIAS'}else{'EXPERIENCIAS DISPONIBLES'}
-        $storageHeader.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9 7));$storageHeader.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$storageHeader.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric 0));$storageHeader.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 810),(Get-CocoLauncherUiMetric 20));$storageHeader.AutoEllipsis=$true
-        $DynamicPanel.Controls.Add($storageHeader)
-        $columns=2;$gap=Get-CocoLauncherUiMetric 12;$cardHeight=Get-CocoLauncherUiMetric 150;$availableWidth=[Math]::Max((Get-CocoLauncherUiMetric 500),$DynamicPanel.ClientSize.Width-(Get-CocoLauncherUiMetric 18));$cardWidth=[Math]::Max((Get-CocoLauncherUiMetric 240),[Math]::Floor(($availableWidth-$gap)/$columns));$imageWidth=Get-CocoLauncherUiMetric 140;$textX=$imageWidth+(Get-CocoLauncherUiMetric 12);$textWidth=[Math]::Max((Get-CocoLauncherUiMetric 110),$cardWidth-$textX-(Get-CocoLauncherUiMetric 4));$buttonY=$cardHeight-(Get-CocoLauncherUiMetric 38);$buttonGap=Get-CocoLauncherUiMetric 8
-        $cardIndex=0
-        foreach($exp in $managedExperiences){
-            $rowIndex=[int][Math]::Floor($cardIndex/$columns);$columnIndex=$cardIndex%$columns;$cardX=[int]($columnIndex*($cardWidth+$gap));$cardTop=[int]((Get-CocoLauncherUiMetric 22)+$rowIndex*($cardHeight+$gap))
-            $card=New-Object Windows.Forms.Panel;$card.Location=New-Object Drawing.Point($cardX,$cardTop);$card.Size=New-Object Drawing.Size($cardWidth,$cardHeight);$card.BackColor=[Drawing.Color]::FromArgb($(if($cardIndex%2-eq0){48}else{56}),30,72);$card.BorderStyle=[Windows.Forms.BorderStyle]::FixedSingle;Set-CocoControlDoubleBuffered $card
-            $imageBox=New-Object Windows.Forms.PictureBox;$imageBox.Name='CocoExperienceImage';$imageBox.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 7),(Get-CocoLauncherUiMetric 7));$imageHeight=[int]$cardHeight;$imageHeight-=(Get-CocoLauncherUiMetric 14);$imageBox.Size=[Drawing.Size]::new([int]$imageWidth,[int]$imageHeight);$imageBox.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Zoom;$imageBox.BackColor=[Drawing.Color]::FromArgb(30,20,42);$imageBox.BorderStyle=[Windows.Forms.BorderStyle]::FixedSingle;$imageBox.TabStop=$false;Set-CocoPictureBoxImage $imageBox (Get-CocoExperienceImagePath $exp)
-            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9.5 7));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.Location=New-Object Drawing.Point($textX,(Get-CocoLauncherUiMetric 8));$nameLabel.Size=New-Object Drawing.Size($textWidth,(Get-CocoLauncherUiMetric 38));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$true;$nameLabel.TextAlign=[Drawing.ContentAlignment]::TopLeft
-            $metaLabel=New-Object Windows.Forms.Label;$metaLabel.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 7.5 6));$metaLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$metaLabel.Location=New-Object Drawing.Point($textX,(Get-CocoLauncherUiMetric 51));$metaLabel.Size=New-Object Drawing.Size($textWidth,(Get-CocoLauncherUiMetric 18));$metaLabel.AutoEllipsis=$true;$metaLabel.AutoSize=$false;$metaLabel.Visible=$false
-            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.Location=New-Object Drawing.Point($textX,(Get-CocoLauncherUiMetric 60));$detailLabel.Size=New-Object Drawing.Size($textWidth,(Get-CocoLauncherUiMetric 20));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false
-            $cardInfo=$null;$buttonSpecs=@()
-            if(Test-CocoMediaExperience $exp){
-                $mediaStatus=Get-CocoMediaExperienceStatus $exp;$mediaRoot=[string]$mediaStatus.Root;$metaLabel.Text='';$detailLabel.Text=if($mediaStatus.Verified-gt0){'LISTO PARA VER'}else{'NO DISPONIBLE'};$detailLabel.ForeColor=if($mediaStatus.Verified-gt0){[Drawing.Color]::FromArgb(168,236,168)}else{[Drawing.Color]::FromArgb(180,170,195)}
-                $cardInfo=[pscustomobject]@{InstanceId=[string]$exp.instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$mediaRoot;CurrentRoot=$mediaRoot;ExperiencesRoot=$expRoot;Usage=[pscustomobject]@{Installed=($mediaStatus.Verified-gt0);Bytes=$mediaStatus.Bytes;Label=("{0}/{1} partes"-f$mediaStatus.Verified,$mediaStatus.Total)};IsRunning=$false;IsMedia=$true;MediaRoot=$mediaRoot;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
-                $buttonSpecs=@([pscustomobject]@{Text='EPISODIOS';Width=104;Kind='episode'},[pscustomobject]@{Text='CARPETA';Width=86;Kind='folder'})
-            }else{
-                $instanceId=[string]$exp.instanceId;if(-not$instanceId){$instanceId=[string]$exp.id};$instanceRoot=Get-CocoExperienceInstanceRoot $exp $expRoot $locationPath;$usage=Get-CocoExperienceDiskUsage $instanceRoot;$isRunning=Test-CocoManagedGameRunning $instanceRoot;Write-CocoStorageDiagnostic 'card.state' @{role=$Role;experienceId=$exp.id;instanceId=$instanceId;root=$instanceRoot;installed=$usage.Installed;usage=$usage.Label;running=$isRunning}
-                $metaLabel.Text=''
-                if($isRunning){$detailLabel.Text='EN EJECUCION';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(255,215,0)}elseif($usage.Installed){$detailLabel.Text='INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(168,236,168)}else{$detailLabel.Text='NO INSTALADO';$detailLabel.ForeColor=[Drawing.Color]::FromArgb(180,170,195)}
-                $cardInfo=[pscustomobject]@{InstanceId=$instanceId;ExperienceId=[string]$exp.id;Experience=$exp;Name=[string]$exp.name;InstanceRoot=$instanceRoot;CurrentRoot=$instanceRoot;ExperiencesRoot=$expRoot;Usage=$usage;IsRunning=$isRunning;DynamicPanel=$DynamicPanel;Catalog=$Catalog;Paths=$Paths;Role=$Role}
-                if($Role-eq'host'){$buttonSpecs=@([pscustomobject]@{Text=if($isRunning){'EN EJECUCION'}else{'ABRIR'};Width=100;Kind='host'},[pscustomobject]@{Text='CARPETA';Width=70;Kind='folder'},[pscustomobject]@{Text='BORRAR';Width=54;Kind='delete'})}else{$buttonSpecs=@([pscustomobject]@{Text=if($usage.Installed){'CARPETA'}else{'INSTALAR'};Width=if($usage.Installed){116}else{240};Kind='install'});if($usage.Installed){$buttonSpecs+=,[pscustomobject]@{Text='BORRAR';Width=116;Kind='delete'}}}
-            }
-            $card.Controls.AddRange(@($imageBox,$nameLabel,$detailLabel));$script:CocoExperienceCardsToolTip.SetToolTip($card,"$([string]$exp.name)`r`n$([string]$exp.description)");$script:CocoExperienceCardsToolTip.SetToolTip($nameLabel,[string]$exp.name);$script:CocoExperienceCardsToolTip.SetToolTip($imageBox,[string]$exp.name)
-            if(Test-CocoMediaExperience $exp){foreach($control in @($card,$imageBox,$nameLabel,$metaLabel,$detailLabel)){$control.Tag=$cardInfo;$control.Cursor=[Windows.Forms.Cursors]::Hand;$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and$info.IsMedia){& $mediaEpisodeUiCommand $info.Experience}}.GetNewClosure())}}else{foreach($control in @($card,$imageBox,$nameLabel,$metaLabel,$detailLabel)){$control.Tag=$cardInfo;if(-not$cardInfo.Usage.Installed-and-not$cardInfo.IsRunning-and[string]$cardInfo.Role-eq'client'){$control.Cursor=[Windows.Forms.Cursors]::Hand};$control.Add_Click({param($sender,$eventArgs)$info=$sender.Tag;if($info-and-not$info.Usage.Installed-and-not$info.IsRunning-and[string]$info.Role-eq'client'){&$experienceStorageInstallUiCommand $info}}.GetNewClosure())}}
-            $totalButtonWidth=[int](($buttonSpecs|ForEach-Object{Get-CocoLauncherUiMetric ([int]$_.Width)}|Measure-Object -Sum).Sum)+[Math]::Max(0,$buttonSpecs.Count-1)*$buttonGap;$buttonX=$textX;$buttonRightPadding=Get-CocoLauncherUiMetric 4
-            if($buttonX+$totalButtonWidth-gt$cardWidth-$buttonRightPadding){$buttonX=[Math]::Max((Get-CocoLauncherUiMetric 7),$cardWidth-$buttonRightPadding-$totalButtonWidth)}
-            foreach($spec in $buttonSpecs){
-                $button=New-Object Windows.Forms.Button;$button.Text=[string]$spec.Text;$button.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric ([int]$spec.Width)),(Get-CocoLauncherUiMetric 28));$button.Location=New-Object Drawing.Point($buttonX,$buttonY);$button.Tag=$cardInfo;$button.TabStop=$false
-                if($spec.Kind-eq'delete'){$enabled=[bool]($cardInfo.Usage.Installed-and-not$cardInfo.IsRunning);$button.Enabled=$enabled;if($enabled){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(140,40,55)) ([Drawing.Color]::White)}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}}elseif($spec.Kind-eq'host'-and$cardInfo.IsRunning){$button.Enabled=$false;Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(60,50,60)) ([Drawing.Color]::FromArgb(150,150,150))}elseif($spec.Kind-eq'folder'){Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(75,45,105)) ([Drawing.Color]::FromArgb(224,190,255))}else{Set-CocoFlatButtonStyle $button ([Drawing.Color]::FromArgb(83,47,117)) ([Drawing.Color]::White)}
-                if([string]$spec.Text-in@('CAMBIAR CARPETA','LIBERAR ESPACIO','ALOJAR PARTIDA','EN EJECUCION')){$button.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6))}
-                if($spec.Kind-eq'episode'){$button.Add_Click({param($sender,$eventArgs)& $mediaEpisodeUiCommand $sender.Tag.Experience}.GetNewClosure())}elseif($spec.Kind-eq'folder'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.IsMedia){&$mediaOpenFolderUiCommand $sender.Tag.Experience}else{&$experienceChangeLocationUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'host'){$button.Tag=[string]$exp.id;$button.Add_Click({param($sender,$eventArgs)$script:CocoLauncherSelectedExperience=[string]$sender.Tag}.GetNewClosure())}elseif($spec.Kind-eq'install'){$button.Add_Click({param($sender,$eventArgs)if($sender.Tag.Usage.Installed){&$experienceChangeLocationUiCommand $sender.Tag}else{&$experienceStorageInstallUiCommand $sender.Tag}}.GetNewClosure())}elseif($spec.Kind-eq'delete'){$button.Add_Click({param($sender,$eventArgs)&$experienceFreeSpaceUiCommand $sender.Tag}.GetNewClosure())}
-                $card.Controls.Add($button);$buttonX+=$button.Width+$buttonGap
-            }
-            $DynamicPanel.Controls.Add($card);$cardIndex++
-        }
-        $hostExperiences=$managedExperiences;$logicalRows=[int][Math]::Ceiling($hostExperiences.Count/2.0);$gridContentHeight=Get-CocoLauncherUiMetric (22+($logicalRows*150)+([Math]::Max(0,$logicalRows-1)*12)+8);$DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new((Get-CocoLauncherUiMetric 0),[Math]::Max($gridContentHeight,(Get-CocoLauncherUiMetric ($hostExperiences.Count*70+22))));$DynamicPanel.AutoScroll=$true
-    }finally{$DynamicPanel.ResumeLayout($true)}
-    try{
-        $DynamicPanel.PerformLayout()
-        $DynamicPanel.VerticalScroll.Value=0
-        $DynamicPanel.AutoScrollPosition=[Drawing.Point]::Empty
-        $DynamicPanel.ScrollControlIntoView($storageHeader)
-        $DynamicPanel.VerticalScroll.Value=0
-        $DynamicPanel.Invalidate()
-    }catch{}
-}
-
-# Overhaul visual de las tarjetas: la portada ocupa toda la tarjeta y las
-# acciones viven sobre un degradado inferior. Asi se elimina la caja interna
-# y se aprovecha el espacio sin perder legibilidad.
 function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Role='client'){
     if(-not$DynamicPanel-or$DynamicPanel.IsDisposed-or-not$Catalog){return}
     $mediaEpisodeUiCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoMediaEpisodeUi -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
@@ -2258,12 +2213,12 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
             }
             $cardsContent.Controls.Add($card);$cardIndex++
         }
-            $logicalRows=[int][Math]::Ceiling($managedExperiences.Count/2.0);$gridContentHeight=[int](Get-CocoLauncherUiMetric 22)+($logicalRows*$cardHeight)+([Math]::Max(0,$logicalRows-1)*$gap)+(Get-CocoLauncherUiMetric 8);
+            $hostExperiences=$managedExperiences;$logicalRows=[int][Math]::Ceiling($hostExperiences.Count/2.0);$gridContentHeight=[int](Get-CocoLauncherUiMetric 22)+($logicalRows*$cardHeight)+([Math]::Max(0,$logicalRows-1)*$gap)+(Get-CocoLauncherUiMetric 8);
             $cardsContent.Size=[Drawing.Size]::new([Math]::Max(1,[int]$DynamicPanel.ClientSize.Width),[Math]::Max(1,[int]$gridContentHeight));
             $cardsContent.Location=[Drawing.Point]::new(0,0)
             $DynamicPanel.Controls.Add($cardsContent);
             $cardsContent.Location=[Drawing.Point]::new(0,0)
-            $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new((Get-CocoLauncherUiMetric 0),[Math]::Max($gridContentHeight,(Get-CocoLauncherUiMetric ($managedExperiences.Count*70+22))));
+            $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new((Get-CocoLauncherUiMetric 0),[Math]::Max($gridContentHeight,(Get-CocoLauncherUiMetric ($hostExperiences.Count*70+22))));
             $DynamicPanel.AutoScroll=$false
     }finally{$DynamicPanel.ResumeLayout($true)}
     try{
@@ -2275,6 +2230,10 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
     Register-CocoExperienceScrollWheel $DynamicPanel $DynamicPanel
     Set-CocoExperienceCardsNativeScrollStyle $DynamicPanel
     Update-CocoExperienceCardsScrollBar $DynamicPanel
+}
+
+function Update-CocoExperienceStorageManagerUi($DynamicPanel, $Catalog, $Paths, [int]$OffsetY = 0) {
+    Update-CocoExperienceCardsUi $DynamicPanel $Catalog $Paths 'client'
 }
 
 function Set-CocoLauncherStep(
@@ -2517,7 +2476,7 @@ function Test-CocoSkinPng([string]$Path){
         if($image.Width-ne64-or$image.Height-notin@(32,64)){throw 'La skin debe medir exactamente 64x64 o 64x32 pixeles.'}
         [pscustomobject]@{
             Path=$item.FullName;Width=$image.Width;Height=$image.Height;Size=[int64]$item.Length
-            Sha256=(Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            Sha256=Get-CocoFileSha256 $item.FullName
         }
     }finally{if($image){$image.Dispose()};$stream.Dispose()}
 }
@@ -2850,7 +2809,11 @@ function Invoke-CocoPortableMcPreparation(
             if(Get-Command Set-CocoState -ErrorAction SilentlyContinue){
                 Set-CocoLauncherStep 6 'REINTENTANDO PREPARAR MINECRAFT' ("Intento {0}/{1}; se reutilizan todas las descargas verificadas."-f($attempt+1),$MaximumAttempts) 82
             }
-            Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))
+            $sleepUntil=[DateTime]::UtcNow.AddSeconds([Math]::Pow(2,$attempt-1))
+            while([DateTime]::UtcNow -lt $sleepUntil){
+                if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+                Start-Sleep -Milliseconds 100
+            }
         }
     }
     throw "PortableMC no pudo preparar '$ExperienceId' despues de $MaximumAttempts intentos: $lastDetail"
@@ -2930,7 +2893,14 @@ function Get-CocoSessionAnnouncement($Catalog){
     $client=[Net.Sockets.TcpClient]::new()
     try{
         $connect=$client.BeginConnect([string]$discovery.host,[int]$discovery.port,$null,$null)
-        if(-not$connect.AsyncWaitHandle.WaitOne([int]$discovery.connectTimeoutMs)){return [pscustomobject]@{State='offline';Experience=$null;Reason='unreachable'}}
+        $timeout=[int]$discovery.connectTimeoutMs
+        $sw=[Diagnostics.Stopwatch]::StartNew()
+        while(-not$connect.AsyncWaitHandle.WaitOne(25)){
+            if($sw.ElapsedMilliseconds-ge$timeout){return [pscustomobject]@{State='offline';Experience=$null;Reason='unreachable'}}
+            if($script:CocoForm-and-not$script:CocoForm.IsDisposed){
+                try{[Windows.Forms.Application]::DoEvents()}catch{}
+            }
+        }
         $client.EndConnect($connect)
         $stream=$client.GetStream()
         $stream.ReadTimeout=[Math]::Max(1000,[int]$discovery.connectTimeoutMs)
@@ -2998,10 +2968,12 @@ function Start-CocoSessionService(
         do{
             if($process.HasExited){throw "El servicio de sesion Coco termino antes de escuchar (codigo $($process.ExitCode)). El puerto 25564 puede estar ocupado."}
             if(Test-CocoTcpEndpoint '10.77.37.1' 25564 250){
+                if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
                 Start-Sleep -Milliseconds 150
                 if($process.HasExited){throw "El servicio de sesion Coco no pudo conservar el puerto 25564 (codigo $($process.ExitCode))."}
                 return $process
             }
+            if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
             Start-Sleep -Milliseconds 100
         }while((Get-Date)-lt$deadline)
         throw 'El servicio de sesion Coco no comenzo a escuchar en 10.77.37.1:25564 dentro de 5 segundos.'
@@ -3339,7 +3311,7 @@ function Get-CocoLockedAsset([string]$CacheRoot,$Asset,$ProgressContext){
         $itemStart=[Math]::Max(0,[Math]::Min(100,$rawStart))
     }
     $destination=Get-CocoLockedAssetCachePath $CacheRoot $Asset
-    if((Test-Path -LiteralPath $destination -PathType Leaf)-and(Get-Item -LiteralPath $destination).Length-eq[int64]$Asset.size-and(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq([string]$Asset.sha256).ToLowerInvariant()){
+    if((Test-Path -LiteralPath $destination -PathType Leaf)-and(Get-Item -LiteralPath $destination).Length-eq[int64]$Asset.size-and(Get-CocoFileSha256 $destination)-eq([string]$Asset.sha256).ToLowerInvariant()){
         if($ProgressContext){
             $ProgressContext.CompletedBytes=[int64]$ProgressContext.CompletedBytes+[int64]$Asset.size
             Set-CocoLauncherStep ([int]$ProgressContext.Step) ([string]$ProgressContext.Title) "$itemPrefix`r`nVerificado y reutilizado desde la cache local." $itemStart
@@ -3359,7 +3331,7 @@ function Get-CocoLockedAsset([string]$CacheRoot,$Asset,$ProgressContext){
             Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $temporary
         }
         if((Get-Item -LiteralPath $temporary).Length-ne[int64]$Asset.size){throw "El asset '$($Asset.name)' no coincide con el tamano fijado."}
-        if((Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash.ToLowerInvariant()-ne([string]$Asset.sha256).ToLowerInvariant()){throw "El asset '$($Asset.name)' no coincide con el SHA-256 fijado."}
+        if((Get-CocoFileSha256 $temporary)-ne([string]$Asset.sha256).ToLowerInvariant()){throw "El asset '$($Asset.name)' no coincide con el SHA-256 fijado."}
         Move-Item -LiteralPath $temporary -Destination $destination -Force
     }finally{Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}
     if($ProgressContext){
@@ -3575,7 +3547,7 @@ function Sync-CocoSkinRegistry($Catalog,$Paths,$Identity){
             $username=[string]$profile.username;$hash=([string]$profile.sha256).ToLowerInvariant();$size=[int64]$profile.size
             if(-not(Test-CocoMinecraftUsername $username)-or$hash-notmatch'^[a-f0-9]{64}$'-or$size-lt67-or$size-gt1048576){throw 'Entrada de skin remota invalida.'}
             $destination=Join-Path $Paths.SkinRoot "$username.png"
-            if((Test-Path -LiteralPath $destination -PathType Leaf)-and(Get-Item -LiteralPath $destination).Length-eq$size-and(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq$hash){continue}
+            if((Test-Path -LiteralPath $destination -PathType Leaf)-and(Get-Item -LiteralPath $destination).Length-eq$size-and(Get-CocoFileSha256 $destination)-eq$hash){continue}
             $bytes=Invoke-CocoSkinWireRequest $Catalog "COCO-SKINS 1 GET $username"
             $temporary="$destination.new-$PID";[IO.File]::WriteAllBytes($temporary,$bytes)
             $validated=Test-CocoSkinPng $temporary
@@ -3639,7 +3611,7 @@ function Set-CocoGlobalSkinAssets($GlobalPolicies,$Experience,[string]$InstanceR
     $variant=Get-CocoCustomSkinLoaderVariant $GlobalPolicies $Experience
     $selectedJar=Join-Path $InstanceRoot (([string]$variant.path)-replace'/','\')
     if(-not(Test-Path -LiteralPath $selectedJar -PathType Leaf)-or
-        (Get-FileHash -LiteralPath $selectedJar -Algorithm SHA256).Hash.ToLowerInvariant()-ne[string]$variant.sha256){
+        (Get-CocoFileSha256 $selectedJar)-ne[string]$variant.sha256){
         throw "CustomSkinLoader no quedo instalado correctamente para Minecraft $($Experience.runtime.minecraftVersion)."
     }
     foreach($jar in @(Get-ChildItem -LiteralPath (Join-Path $InstanceRoot 'mods') -File -Filter 'CustomSkinLoader_*.jar' -ErrorAction SilentlyContinue)){
@@ -3651,13 +3623,13 @@ function Set-CocoGlobalSkinAssets($GlobalPolicies,$Experience,[string]$InstanceR
     foreach($skin in @($GlobalPolicies.customSkinLoader.localSkins)){
         $embedded=Join-Path $EngineRoot (([string]$skin.embeddedPath)-replace'/','\')
         if(-not(Test-Path -LiteralPath $embedded -PathType Leaf)-or
-            (Get-FileHash -LiteralPath $embedded -Algorithm SHA256).Hash.ToLowerInvariant()-ne[string]$skin.sha256){
+            (Get-CocoFileSha256 $embedded)-ne[string]$skin.sha256){
             throw "La skin global de '$($skin.username)' falta o no coincide con el engine."
         }
         $destination=Join-Path $InstanceRoot ("CustomSkinLoader\LocalSkin\skins\{0}.png"-f[string]$skin.username)
         New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force|Out-Null
         if((Test-Path -LiteralPath $destination -PathType Leaf)-and
-            (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq[string]$skin.sha256){continue}
+            (Get-CocoFileSha256 $destination)-eq[string]$skin.sha256){continue}
         $temporary="$destination.new-$PID"
         Copy-Item -LiteralPath $embedded -Destination $temporary -Force
         Move-Item -LiteralPath $temporary -Destination $destination -Force
@@ -3797,7 +3769,7 @@ function Install-CocoStandaloneExperienceFiles($Experience,[string]$InstanceRoot
             if(Test-Path -LiteralPath $cached -PathType Leaf){
                 $cachedInfo=Get-Item -LiteralPath $cached -Force
                 $cacheValid=([int64]$file.size-le0-or$cachedInfo.Length-eq[int64]$file.size)-and
-                    (Get-FileHash -LiteralPath $cached -Algorithm SHA256).Hash.ToLowerInvariant()-eq$sha
+                    (Get-CocoFileSha256 $cached)-eq$sha
                 if(-not$cacheValid){Remove-Item -LiteralPath $cached -Force}
             }
             if(-not$cacheValid){
@@ -3815,7 +3787,7 @@ function Install-CocoStandaloneExperienceFiles($Experience,[string]$InstanceRoot
                     }
                     $temporaryInfo=Get-Item -LiteralPath $temporary -Force
                     if(([int64]$file.size-gt0-and$temporaryInfo.Length-ne[int64]$file.size)-or
-                       (Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash.ToLowerInvariant()-ne$sha){
+                       (Get-CocoFileSha256 $temporary)-ne$sha){
                         throw "El archivo adicional '$($file.path)' de '$($Experience.id)' no coincide con su tamano o SHA-256 esperado."
                     }
                     Move-Item -LiteralPath $temporary -Destination $cached -Force
@@ -3834,7 +3806,7 @@ function Install-CocoStandaloneExperienceFiles($Experience,[string]$InstanceRoot
                         New-Item -ItemType Directory -Path (Split-Path $stagedPath -Parent) -Force|Out-Null
                         [IO.Compression.ZipFileExtensions]::ExtractToFile($entry,$stagedPath,$true)
                         $stagedInfo=Get-Item -LiteralPath $stagedPath -Force
-                        $record=[pscustomobject]@{path=$entryRelative;sha256=(Get-FileHash -LiteralPath $stagedPath -Algorithm SHA256).Hash.ToLowerInvariant();size=[int64]$stagedInfo.Length;mutable=(Test-CocoStandaloneMutableExtraPath $entryRelative);stagedPath=$stagedPath}
+                        $record=[pscustomobject]@{path=$entryRelative;sha256=(Get-CocoFileSha256 $stagedPath);size=[int64]$stagedInfo.Length;mutable=(Test-CocoStandaloneMutableExtraPath $entryRelative);stagedPath=$stagedPath}
                         $staged.Add($record)
                         if(-not$record.mutable){$manifest.Add([pscustomobject]@{path=$record.path;sha256=$record.sha256;size=$record.size})}
                     }
@@ -3874,7 +3846,7 @@ function Install-CocoStandaloneExperienceFiles($Experience,[string]$InstanceRoot
                 }
                 if((Test-Path -LiteralPath $destination -PathType Leaf)-and
                    (Get-Item -LiteralPath $destination -Force).Length-eq[int64]$item.size-and
-                   (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq[string]$item.sha256){continue}
+                   (Get-CocoFileSha256 $destination)-eq[string]$item.sha256){continue}
                 if(Test-Path -LiteralPath $destination -PathType Container){throw "Una carpeta impide instalar el archivo standalone '$($item.path)'."}
                 $backup=$null
                 if(Test-Path -LiteralPath $destination -PathType Leaf){
@@ -3910,7 +3882,7 @@ function Test-CocoStandaloneExtraManifest([string]$InstanceRoot,[object[]]$Manif
             if(-not(Test-Path -LiteralPath $target -PathType Leaf)){return $false}
             $targetInfo=Get-Item -LiteralPath $target -Force
             if([int64]$targetInfo.Length-ne[int64]$item.size){return $false}
-            $actual=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+            $actual=(Get-CocoFileSha256 $target)
             if($actual-ne([string]$item.sha256).ToLowerInvariant()){return $false}
         }
         return $true
@@ -4007,7 +3979,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
 
         if(Test-Path -LiteralPath $archive){
             Set-CocoLauncherStep 4 'VERIFICANDO HASH DEL ARCHIVO DESCARGADO' ("Calculando SHA-256 parte {0}/{1} ({2:N1} MB)..."-f $partIndex, $archiveItems.Count, ((Get-Item -LiteralPath $archive).Length / 1MB)) 32
-            $actualSha=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            $actualSha=Get-CocoFileSha256 $archive
             if($actualSha-eq$itemSha){
                 $archiveValid=$true
                 Write-CocoLog "Archivo en cache verificado con exito: $archive"
@@ -4037,7 +4009,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                         if(Test-Path -LiteralPath $partialArchive -PathType Leaf){
                             $partialSize=[int64](Get-Item -LiteralPath $partialArchive).Length
                             if($partialSize -eq [int64]$itemSize){
-                                $partialHash=(Get-FileHash -LiteralPath $partialArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+                                $partialHash=Get-CocoFileSha256 $partialArchive
                                 if($partialHash -eq $itemSha){
                                     Move-Item -LiteralPath $partialArchive -Destination $archive -Force
                                     $curlSuccess=$true
@@ -4072,7 +4044,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                             if(Test-Path -LiteralPath $partialArchive -PathType Leaf){
                                 $partialSize=[int64](Get-Item -LiteralPath $partialArchive).Length
                                 if($partialSize -eq [int64]$itemSize){
-                                    $partialHash=(Get-FileHash -LiteralPath $partialArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+                                    $partialHash=Get-CocoFileSha256 $partialArchive
                                     if($partialHash -eq $itemSha){
                                         Move-Item -LiteralPath $partialArchive -Destination $archive -Force
                                         $curlSuccess=$true
@@ -4127,7 +4099,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
             }
 
             Set-CocoLauncherStep 4 'VERIFICANDO INTEGRIDAD DEL PAQUETE' ("Comprobando hash SHA-256 parte {0}/{1}..."-f $partIndex, $archiveItems.Count) 62
-            $downloadedSha=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            $downloadedSha=Get-CocoFileSha256 $archive
             if($downloadedSha-ne$itemSha){
                 throw "El paquete descargado de '$($Experience.name)' (parte $partIndex) no coincide con el SHA-256 esperado (Obtenido: $downloadedSha, Esperado: $itemSha)."
             }
@@ -4435,7 +4407,7 @@ function Test-CocoStandaloneRequiredFile([string]$InstanceRoot,$RequiredFile){
         if(-not(Test-CocoPathWithin $target $InstanceRoot)-or-not(Test-Path -LiteralPath $target -PathType Leaf)){return $false}
         $item=Get-Item -LiteralPath $target -Force
         if($item.Length-ne[int64]$RequiredFile.size){return $false}
-        return (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()-eq([string]$RequiredFile.sha256).ToLowerInvariant()
+        return (Get-CocoFileSha256 $target)-eq([string]$RequiredFile.sha256).ToLowerInvariant()
     }catch{return $false}
 }
 
@@ -4447,7 +4419,7 @@ function Get-CocoStandaloneRepairArchive($Experience,$ArchiveItem,[string]$Cache
     $archive=Join-Path $downloadsDir "$archiveSha.zip"
     if(Test-Path -LiteralPath $archive -PathType Leaf){
         $cached=Get-Item -LiteralPath $archive -Force
-        if($cached.Length-eq$archiveSize-and(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()-eq$archiveSha){return $archive}
+        if($cached.Length-eq$archiveSize-and(Get-CocoFileSha256 $archive)-eq$archiveSha){return $archive}
         Remove-Item -LiteralPath $archive -Force
     }
 
@@ -4470,7 +4442,7 @@ function Get-CocoStandaloneRepairArchive($Experience,$ArchiveItem,[string]$Cache
         if(-not(Test-Path -LiteralPath $partial -PathType Leaf)-or(Get-Item -LiteralPath $partial -Force).Length-ne$archiveSize){
             throw 'El paquete de reparacion no tiene el tamano esperado.'
         }
-        $actual=(Get-FileHash -LiteralPath $partial -Algorithm SHA256).Hash.ToLowerInvariant()
+        $actual=Get-CocoFileSha256 $partial
         if($actual-ne$archiveSha){throw "El paquete de reparacion no coincide con su SHA-256 fijado (obtenido $actual)."}
         Move-Item -LiteralPath $partial -Destination $archive -Force
         return $archive
@@ -4503,26 +4475,29 @@ function Repair-CocoStandaloneRequiredFiles($Experience,[string]$InstanceRoot,[s
                 $backup="$target.coco-repair-backup-$([guid]::NewGuid().ToString('N'))"
                 New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force|Out-Null
                 try{
-                    [IO.Compression.ZipFileExtensions]::ExtractToFile($entries[0],$staging,$false)
                     $stagingItem = $null
                     $stagingHash = $null
-                    try{
-                        $stagingItem = Get-Item -LiteralPath $staging -Force
-                        $stagingHash = (Get-FileHash -LiteralPath $staging -Algorithm SHA256).Hash.ToLowerInvariant()
-                    }catch{
-                        if($_.Exception.Message -match '(?i)virus|potencialmente no deseado|operation did not complete|blocked'){
-                            Write-CocoLog "Windows Defender bloqueo '$staging'. Intentando aplicar exclusion de emergencia..."
-                            [void](Ensure-CocoDefenderExclusion $Experience $InstanceRoot)
-                            Start-Sleep -Milliseconds 600
-                            try{
-                                $stagingItem = Get-Item -LiteralPath $staging -Force
-                                $stagingHash = (Get-FileHash -LiteralPath $staging -Algorithm SHA256).Hash.ToLowerInvariant()
-                            }catch{
-                                throw "Windows Defender bloqueo la biblioteca '$entryName' en '$InstanceRoot'. Agrega la carpeta a las exclusiones de Windows Defender."
+                    $extracted = $false
+                    for($extractAttempt = 1; $extractAttempt -le 2; $extractAttempt++){
+                        try{
+                            if(Test-Path -LiteralPath $staging){ Remove-Item -LiteralPath $staging -Force -ErrorAction SilentlyContinue }
+                            [IO.Compression.ZipFileExtensions]::ExtractToFile($entries[0],$staging,$true)
+                            $stagingItem = Get-Item -LiteralPath $staging -Force
+                            $stagingHash = (Get-CocoFileSha256 $staging)
+                            $extracted = $true
+                            break
+                        }catch{
+                            if($extractAttempt -eq 1 -and $_.Exception.Message -match '(?i)virus|potencialmente no deseado|operation did not complete|blocked|denied|acceso denegado'){
+                                Write-CocoLog "Windows Defender o permisos bloquearon '$staging'. Intentando aplicar exclusion de emergencia..."
+                                [void](Ensure-CocoDefenderExclusion $Experience $InstanceRoot)
+                                Start-Sleep -Milliseconds 600
+                            }else{
+                                throw "Windows Defender o el sistema bloqueo la biblioteca '$entryName' en '$InstanceRoot': $($_.Exception.Message)"
                             }
-                        }else{
-                            throw
                         }
+                    }
+                    if(-not$extracted -or -not$stagingItem){
+                        throw "No se pudo extraer '$entryName' en '$InstanceRoot'."
                     }
                     if($stagingItem.Length-ne[int64]$requiredFile.size-or $stagingHash-ne([string]$requiredFile.sha256).ToLowerInvariant()){
                         throw "El archivo extraido '$entryName' no coincide con su contrato."
@@ -4555,21 +4530,92 @@ function Ensure-CocoDefenderExclusion($Experience,[string]$InstanceRoot){
     $addPreference=Get-Command Add-MpPreference -ErrorAction SilentlyContinue
     if(-not$getPreference-or-not$addPreference){Write-CocoLog 'Windows Defender no expone cmdlets de exclusion en este equipo.';return 'unavailable'}
     $isPresent={
-        try{return @((Get-MpPreference -ErrorAction Stop).ExclusionPath|Where-Object{[string]$_-and[IO.Path]::GetFullPath([string]$_).TrimEnd('\').Equals($full,[StringComparison]::OrdinalIgnoreCase)}).Count-gt0}catch{return $false}
+        try{
+            $exclusions=@((Get-MpPreference -ErrorAction Stop).ExclusionPath|Where-Object{[string]$_}|ForEach-Object{[IO.Path]::GetFullPath([string]$_).TrimEnd('\')})
+            foreach($ex in $exclusions){
+                if($full.Equals($ex,[StringComparison]::OrdinalIgnoreCase) -or $full.StartsWith($ex + '\',[StringComparison]::OrdinalIgnoreCase)){
+                    return $true
+                }
+            }
+            return $false
+        }catch{return $false}
     }
     if(& $isPresent){return 'present'}
-    try{Add-MpPreference -ExclusionPath $full -ErrorAction Stop}catch{
+
+    $parent=Split-Path $full -Parent
+    $pathsToAdd=[Collections.Generic.List[string]]::new()
+    [void]$pathsToAdd.Add($full)
+    if($parent -and (Split-Path $full -Leaf) -ne 'CocoMinecraft'){
+        [void]$pathsToAdd.Add($parent)
+    }
+    $appDataCoco=[IO.Path]::GetFullPath((Join-Path $env:APPDATA 'CocoMinecraft')).TrimEnd('\')
+    $localCoco=[IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater')).TrimEnd('\')
+    [void]$pathsToAdd.Add($appDataCoco)
+    [void]$pathsToAdd.Add($localCoco)
+
+    # Incluir todas las ubicaciones personalizadas previas que el usuario o sus amigos hayan configurado
+    $locationsFile=if($StorePath){$StorePath}else{
+        $localAppData=[Environment]::GetFolderPath('LocalApplicationData')
+        if(-not$localAppData){$localAppData=$env:LOCALAPPDATA}
+        Join-Path $localAppData 'CocoMinecraftUpdater\instance-locations.json'
+    }
+    if(Test-Path -LiteralPath $locationsFile -PathType Leaf){
         try{
-            $escaped=$full.Replace("'","''")
-            $command="Add-MpPreference -ExclusionPath '$escaped' -ErrorAction Stop"
+            $locContent=Get-Content -LiteralPath $locationsFile -Raw -ErrorAction SilentlyContinue
+            if($locContent){
+                $locObj=$locContent|ConvertFrom-Json
+                if($locObj){
+                    foreach($prop in $locObj.PSObject.Properties){
+                        $val=[string]$prop.Value
+                        if(-not[string]::IsNullOrWhiteSpace($val)){
+                            $cFull=[IO.Path]::GetFullPath($val).TrimEnd('\')
+                            [void]$pathsToAdd.Add($cFull)
+                            $cParent=Split-Path $cFull -Parent
+                            if($cParent -and (Split-Path $cFull -Leaf) -ne 'CocoMinecraft'){
+                                [void]$pathsToAdd.Add($cParent)
+                            }
+                        }
+                    }
+                }
+            }
+        }catch{}
+    }
+    $uniquePaths=@($pathsToAdd|Select-Object -Unique)
+
+    try{
+        foreach($p in $uniquePaths){Add-MpPreference -ExclusionPath $p -ErrorAction Stop}
+    }catch{
+        try{
+            if(Get-Command Set-CocoLauncherStep -ErrorAction SilentlyContinue){
+                Set-CocoLauncherStep 4 'AUTORIZACIÓN DE WINDOWS' 'Pulsa "Sí" en la confirmación de Windows para autorizar la protección de carpetas...' 50
+            }elseif(Get-Command Set-CocoState -ErrorAction SilentlyContinue){
+                Set-CocoState 'AUTORIZACIÓN DE WINDOWS' 'Pulsa "Sí" en la confirmación de Windows para autorizar la protección de carpetas...' 50
+            }
+            if($script:CocoForm -and -not$script:CocoForm.IsDisposed){
+                $script:CocoForm.TopMost=$false
+                [Windows.Forms.Application]::DoEvents()
+            }
+        }catch{}
+
+        try{
+            $cmdParts=@($uniquePaths|ForEach-Object{"Add-MpPreference -ExclusionPath '$($_.Replace('''',''''''))' -ErrorAction SilentlyContinue"})
+            $command=$cmdParts -join ';'
             $elevated=Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',$command) -WindowStyle Hidden -PassThru -ErrorAction Stop
             if($elevated){
-                $finished=$elevated.WaitForExit(3500)
-                if(-not$finished){
-                    try{$elevated.Kill()}catch{}
-                    Write-CocoLog "El proceso de exclusion de Defender tardo mas de 3.5s; continuando sin bloquear."
-                }elseif($elevated.ExitCode-ne0){
-                    Write-CocoLog "El proceso de exclusion devolvio codigo $($elevated.ExitCode)."
+                try{
+                    $deadline=[DateTime]::UtcNow.AddSeconds(45)
+                    while(-not$elevated.HasExited -and [DateTime]::UtcNow -lt $deadline){
+                        if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+                        Start-Sleep -Milliseconds 100
+                    }
+                    if(-not$elevated.HasExited){
+                        try{$elevated.Kill()}catch{}
+                        Write-CocoLog 'El proceso de exclusion de Defender tardo mas de 45s; continuando sin bloquear.'
+                    }elseif($elevated.ExitCode-ne0){
+                        Write-CocoLog "El proceso de exclusion devolvio codigo $($elevated.ExitCode)."
+                    }
+                }finally{
+                    $elevated.Dispose()
                 }
             }
         }catch{
@@ -4578,8 +4624,18 @@ function Ensure-CocoDefenderExclusion($Experience,[string]$InstanceRoot){
     }
     if(& $isPresent){
         Write-CocoLog "Exclusion de Windows Defender confirmada para '$full'."
+        try{
+            if(Get-Command Set-CocoLauncherStep -ErrorAction SilentlyContinue){
+                Set-CocoLauncherStep 4 'PROTECCIÓN ACTIVADA' 'Carpetas de juego protegidas en Windows Defender.' 52
+            }
+        }catch{}
         return 'present'
     }
+    try{
+        if(Get-Command Set-CocoLauncherStep -ErrorAction SilentlyContinue){
+            Set-CocoLauncherStep 4 'PREPARANDO JUEGO' 'Continuando preparacion de la experiencia...' 52
+        }
+    }catch{}
     Write-CocoLog "Exclusion de Defender no activa para '$full'; continuando lanzamiento..."
     return 'skipped'
 }
@@ -4663,7 +4719,7 @@ function Install-CocoManagedExperience(
                 continue
             }
             $policy=if($relative-eq'options.txt'){'preserve'}else{'replace'}
-            $desired.Add([pscustomobject]@{path=$relative;sha256=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant();size=[int64]$file.Length;policy=$policy})
+            $desired.Add([pscustomobject]@{path=$relative;sha256=(Get-CocoFileSha256 $file.FullName);size=[int64]$file.Length;policy=$policy})
             [void]$desiredPaths.Add($relative)
         }
         [void](Get-CocoLockedAssetsParallel $CacheRoot $roleAssets $null)
@@ -4708,7 +4764,7 @@ function Install-CocoManagedExperience(
                     if($installIndex%10-eq0-or$installIndex-eq$installTotal){Set-CocoLauncherStep 5 'INSTALANDO LA INSTANCIA AISLADA' ("{0}/{1} | {2}: {3}"-f$installIndex,$installTotal,$outcome,$relative) (69+[int](9*$installIndex/$installTotal))}
                     continue
                 }
-                if((Test-Path -LiteralPath $destination -PathType Leaf)-and(Get-Item -LiteralPath $destination -Force).Length-eq[int64]$file.size-and(Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()-eq[string]$file.sha256){
+                if((Test-Path -LiteralPath $destination -PathType Leaf)-and(Get-Item -LiteralPath $destination -Force).Length-eq[int64]$file.size-and(Get-CocoFileSha256 $destination)-eq[string]$file.sha256){
                     $outcome='ya verificado'
                     if($installIndex%10-eq0-or$installIndex-eq$installTotal){Set-CocoLauncherStep 5 'INSTALANDO LA INSTANCIA AISLADA' ("{0}/{1} | {2}: {3}"-f$installIndex,$installTotal,$outcome,$relative) (69+[int](9*$installIndex/$installTotal))}
                     continue
@@ -5048,18 +5104,25 @@ function Set-CocoManagedInstancePreferences($Experience,[string]$InstanceRoot){
             foreach($tomlValue in @($tomlGroup.Group)){
                 $section=[string]$tomlValue.section
                 $key=[string]$tomlValue.key
+                $value=$tomlValue.value
+                $encoded=if($value-is[bool]){([string]$value).ToLowerInvariant()}elseif($value-is[string]){
+                    '"'+(([string]$value)-replace'\\','\\'-replace'"','\"')+'"'
+                }else{[Convert]::ToString($value,[Globalization.CultureInfo]::InvariantCulture)}
+
                 $sectionMatch=[regex]::Match($content,("(?m)^\s*\[{0}\]\s*\r?$"-f[regex]::Escape($section)))
-                if(-not$sectionMatch.Success){throw "No existe la seccion TOML '$section' en '$relative'."}
+                if(-not$sectionMatch.Success){
+                    $content=$content.TrimEnd()+"`r`n`r`n[$section]`r`n$key = $encoded`r`n"
+                    continue
+                }
                 $bodyStart=$sectionMatch.Index+$sectionMatch.Length
                 $nextSection=(New-Object regex '(?m)^\s*\[').Match($content,$bodyStart)
                 $bodyLength=if($nextSection.Success){$nextSection.Index-$bodyStart}else{$content.Length-$bodyStart}
                 $body=$content.Substring($bodyStart,$bodyLength)
                 $keyMatch=[regex]::Match($body,("(?m)^(\s*{0}\s*=\s*).*$"-f[regex]::Escape($key)))
-                if(-not$keyMatch.Success){throw "No existe la clave TOML '$section.$key' en '$relative'."}
-                $value=$tomlValue.value
-                $encoded=if($value-is[bool]){([string]$value).ToLowerInvariant()}elseif($value-is[string]){
-                    '"'+(([string]$value)-replace'\\','\\'-replace'"','\"')+'"'
-                }else{[Convert]::ToString($value,[Globalization.CultureInfo]::InvariantCulture)}
+                if(-not$keyMatch.Success){
+                    $content=$content.Insert($bodyStart,"`r`n$key = $encoded")
+                    continue
+                }
                 $replacement=$keyMatch.Groups[1].Value+$encoded
                 $absoluteIndex=$bodyStart+$keyMatch.Index
                 $content=$content.Remove($absoluteIndex,$keyMatch.Length).Insert($absoluteIndex,$replacement)
@@ -5285,7 +5348,7 @@ function Test-CocoLauncherBackendInstallation($Backend,[string]$RuntimeRoot){
     try{
         $item=Get-Item -LiteralPath $executable
         if([int64]$item.Length-ne[int64]$Backend.executableSize){return $false}
-        $hash=(Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash.ToLowerInvariant()
+        $hash=(Get-CocoFileSha256 $executable)
         if($hash-ne([string]$Backend.executableSha256).ToLowerInvariant()){return $false}
         $output=& $executable --version 2>&1|Out-String
         if($LASTEXITCODE-ne0){return $false}
@@ -5323,7 +5386,7 @@ function Install-CocoLauncherBackend($Catalog,[string]$CacheRoot,[string]$Archiv
     }
     if(-not(Test-Path -LiteralPath $archive -PathType Leaf)){throw 'No existe el archivo del backend Coco Launcher.'}
     if((Get-Item -LiteralPath $archive).Length-ne[int64]$backend.size){throw 'El archivo del backend no coincide con el tamano fijado.'}
-    if((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()-ne([string]$backend.sha256).ToLowerInvariant()){
+    if((Get-CocoFileSha256 $archive)-ne([string]$backend.sha256).ToLowerInvariant()){
         throw 'El archivo del backend no coincide con el SHA-256 fijado.'
     }
     $stage=Join-Path $runtimeParent ("$($backend.version).new-$([guid]::NewGuid().ToString('N'))")
@@ -5431,7 +5494,7 @@ function New-CocoLegacyLauncherArchiveHelper(
     $sessionRoot=Join-Path $CacheRoot 'session'
     $backupRoot=Join-Path $CacheRoot 'backups\legacy-launchers'
     New-Item -ItemType Directory -Path $sessionRoot,$backupRoot -Force|Out-Null
-    $sourceHash=(Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash.ToLowerInvariant()
+    $sourceHash=(Get-CocoFileSha256 $Source)
     $helper=Join-Path $sessionRoot "Archive-CocoLegacyLauncher-$PID-$([guid]::NewGuid().ToString('N')).ps1"
     $helperText=@'
 param([int64]$WaitPid,[string]$Source,[string]$Canonical,[string]$BackupRoot,[string]$ExpectedHash)
@@ -5611,7 +5674,7 @@ function Test-CocoManagedLanWorldConfigurations([string]$InstanceRoot,$Experienc
         $adapter=Join-Path $InstanceRoot 'mods\lanserverproperties-1.0.jar'
         return (Test-Path -LiteralPath $adapter -PathType Leaf)-and
             (Get-Item -LiteralPath $adapter).Length-eq7742-and
-            (Get-FileHash -LiteralPath $adapter -Algorithm SHA256).Hash.ToLowerInvariant()-eq'15577c28814cda5ce0d6c0e9039a093a6227e2c9ec3716dae9c840ec0a99e263'
+            (Get-CocoFileSha256 $adapter)-eq'15577c28814cda5ce0d6c0e9039a093a6227e2c9ec3716dae9c840ec0a99e263'
     }
     $saves=Join-Path $InstanceRoot 'saves'
     if(-not(Test-Path -LiteralPath $saves -PathType Container)){return $false}
@@ -6444,11 +6507,8 @@ function Invoke-CocoLauncherClientSession($Catalog,$Session,$Paths,[string]$Lega
     $fresh=Get-CocoSessionAnnouncement $Catalog
     if($fresh.State-ne'ready'-or[string]$fresh.Announcement.sessionId-ne$sessionId){return $null}
     $isStandalone=[string]$action.Experience.launch.workflow-eq'coco-standalone'-or[string]$action.Experience.runtime.type-eq'standalone'
-    $identity=if(-not$isStandalone){
-        Resolve-CocoLauncherIdentityUi $Catalog $LegacyMinecraftRoot $Paths 7 88
-    }else{
-        [pscustomobject]@{mode='offline';username='CocoPlayer';uuid=''}
-    }
+    $identity=Resolve-CocoLauncherIdentityUi $Catalog $LegacyMinecraftRoot $Paths 7 88
+    if($isStandalone){$identity=[pscustomobject]@{mode='offline';username='CocoPlayer';uuid=''}}
     $fresh=Get-CocoSessionAnnouncement $Catalog
     if($fresh.State-ne'ready'-or[string]$fresh.Announcement.sessionId-ne$sessionId){return $null}
     if(-not$isStandalone){
@@ -6957,7 +7017,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
             }
         }
 
-        if($mustForceJoin-and-not$script:CocoForm.IsDisposed){
+        while($mustForceJoin-and-not$launched-and-not$script:CocoForm.IsDisposed){
             try{
                 $action=Get-CocoClientSessionAction $session
                 if($action.Action-eq'wait'){Set-CocoLauncherStep 3 ([string]$action.Message).ToUpperInvariant() 'Coco seguira buscando mientras esta ventana permanezca abierta.' 24}
@@ -7014,7 +7074,10 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                 }else{Set-CocoState 'COCO DETECTO UN PROBLEMA' $failureText 0 $true 'failure'}
             }
             $until=(Get-Date).AddSeconds(3);while((Get-Date)-lt$until-and-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}
-            if(-not$script:CocoForm.IsDisposed){$session=Get-CocoSessionAnnouncement $catalog}
+            if(-not$script:CocoForm.IsDisposed){
+                $session=Get-CocoSessionAnnouncement $catalog
+                $mustForceJoin=$session-and$session.State-eq'ready'-and($session.Announcement.forceJoin-ne$false)
+            }
         }
     }
     if(-not$script:CocoForm.IsDisposed){while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}}

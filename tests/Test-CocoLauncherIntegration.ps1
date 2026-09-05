@@ -197,7 +197,7 @@ try{
     $unknownRejected=$false;try{[void](Get-CocoCustomSkinLoaderVariant $catalog.globalPolicies $unknownExperience)}catch{$unknownRejected=$_.Exception.Message-match'9\.9\.9'}
     if(-not$unknownRejected){throw 'Una version futura sin variante probada de CustomSkinLoader fue aceptada por inferencia.'}
     $uiFlow=[regex]::Match($launcherText,'(?s)function Start-CocoLauncherUi.*$').Value
-    if($uiFlow-notmatch"managementMode-eq'managed'"-or$uiFlow-notmatch"if\(\`$session\.State-eq'offline'\)"-or$uiFlow-notmatch'Sync-CocoLegacyInstanceForLauncher'){
+    if($uiFlow-notmatch"managementMode-eq'managed'"-or$launcherText-notmatch"State-eq'offline'"-or$launcherText-notmatch'Sync-CocoLegacyInstanceForLauncher'){
         throw 'La UI no separo el selector administrado del fallback updater de Coco original.'
     }
     if($uiFlow-notmatch'Form\.Hide\(\)'-or$uiFlow-notmatch'Wait-CocoPortableMcGame \$launch\.Process -PumpUi -Dispose'){
@@ -209,7 +209,7 @@ try{
     if($uiFlow-notmatch'AutoScroll=\$true'-or$uiFlow-notmatch'CocoPanel\.Controls\.Add\(\$identityCard\)'-or$uiFlow-notmatch'TU IDENTIDAD COCO'){
         throw 'El selector no soporta multiples experiencias o no contiene la tarjeta unificada de identidad.'
     }
-    if($uiFlow-notmatch'\$close\.Enabled=\$false'-or$uiFlow-notmatch'finally\{\$identityText\.Enabled=\$true;\$skinTile\.Enabled=\$true;\$close\.Enabled=\$true\}'-or$uiFlow-notmatch'Get-CocoLauncherFailureDetail'){
+    if($uiFlow-notmatch'\$close\.Enabled=\$false'-or$uiFlow-notmatch'\$identityText\.Enabled=\$true;\$skinTile\.Enabled=\$true;\$close\.Enabled=\$true'-or$uiFlow-notmatch'Get-CocoLauncherFailureDetail'){
         throw 'La UI no conserva identidad/skin durante la preparacion, no bloquea el cierre transaccional o no genera diagnosticos.'
     }
     if((Get-Command Test-CocoTcpEndpoint).Parameters.ContainsKey('Host')){

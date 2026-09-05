@@ -49,7 +49,9 @@ $script:CocoLastTimelineSignature=''
 $script:CocoLastTimelineAt=[DateTime]::MinValue
 $script:CocoDiagnosticContext=[ordered]@{component='engine';mode=if($NetworkOnly){'network-only'}elseif($DetectOnly){'detect-only'}else{'updater'};role='';experienceId='';packVersion='';instanceRoot='';stage='Engine iniciado'}
 function Write-CocoLog([string]$Text) {
-    try { Add-Content -LiteralPath $script:CocoLogPath -Value ("{0:o} {1}" -f (Get-Date),$Text) -Encoding UTF8 } catch { }
+    if(-not[string]::IsNullOrWhiteSpace($script:CocoLogPath)){
+        try { Add-Content -LiteralPath $script:CocoLogPath -Value ("{0:o} {1}" -f (Get-Date),$Text) -Encoding UTF8 } catch { }
+    }
 }
 function Set-CocoDiagnosticContext([hashtable]$Values){
     if(-not$Values){return}
@@ -522,7 +524,15 @@ function Write-Status([string]$Message) {
 }
 
 function Get-Sha256([string]$Path) {
-    (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    if([string]::IsNullOrWhiteSpace($Path)-or-not(Test-Path -LiteralPath $Path -PathType Leaf)){return ''}
+    $sha=[Security.Cryptography.SHA256]::Create()
+    $stream=[IO.File]::OpenRead($Path)
+    try{
+        [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-','').ToLowerInvariant()
+    }finally{
+        $stream.Dispose()
+        $sha.Dispose()
+    }
 }
 
 function Get-CocoFabricModId([string]$Path) {
@@ -840,7 +850,11 @@ function Download-VerifiedFile(
             Write-CocoLog "Descarga fallida (intento $attempt): $($_.Exception.Message) | mode=$retryMode | Parcial conservado: $partialBytes bytes"
             $retryPrefix=if($DetailPrefix){$DetailPrefix+' | '}else{''}
             Set-CocoState 'Reintentando descarga' ("{0}Intento {1} de 4; se conserva todo archivo ya verificado."-f$retryPrefix,($attempt+1)) ([Math]::Max($ProgressStart,$script:CocoCurrentProgress))
-            Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))
+            $sleepUntil=[DateTime]::UtcNow.AddSeconds([Math]::Pow(2,$attempt-1))
+            while([DateTime]::UtcNow -lt $sleepUntil){
+                if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+                Start-Sleep -Milliseconds 100
+            }
         }
     }
 }
@@ -1316,9 +1330,6 @@ try {
         [string]::IsNullOrWhiteSpace($SessionStatePath)-and-not$automaticFullCheck
     $catalogPath=Join-Path $script:CocoEngineRoot 'launcher\catalog.json'
     if($manualLauncher-and(Test-Path -LiteralPath $catalogPath -PathType Leaf)-and(Get-Command Start-CocoLauncherUi -ErrorAction SilentlyContinue)){
-        if(-not$LauncherTestRoot -and (Get-Command Invoke-CocoDefenderPlayWindowStart -ErrorAction SilentlyContinue)){
-            try{ [void](Invoke-CocoDefenderPlayWindowStart) }catch{ Write-CocoLog "DEFENDER: pre-activacion inicial ($($_.Exception.Message))" }
-        }
         $launcherCandidates=@(Get-CandidateRoots|ForEach-Object{Get-CandidateScore $_ $manifest @()}|Sort-Object @{Expression='Score';Descending=$true},@{Expression='Root';Descending=$false})
         $legacyRoot=if($launcherCandidates.Count){[string]$launcherCandidates[0].Root}else{Join-Path $env:APPDATA '.minecraft'}
         Write-CocoLog "Modo Coco Launcher para experiencias administradas. LegacyRoot de deteccion de identidad='$legacyRoot'"
@@ -1490,7 +1501,11 @@ try {
     if($diagnosticPath){$friendly+="`nEnvia por Discord: $([IO.Path]::GetFileName($diagnosticPath))"}
     if(Get-Command Get-CocoFailureClassification -ErrorAction SilentlyContinue){$kind=Get-CocoFailureClassification ([string]$_.Exception.Message);$friendly+="`nCodigo: $($kind.Code) | $($kind.Action)"}
     Set-CocoState 'NO SE PUDO COMPLETAR COCO' $friendly 0 $true 'failure'
-    Start-Sleep -Seconds 10
+    $until=[DateTime]::UtcNow.AddSeconds(10)
+    while([DateTime]::UtcNow -lt $until -and (-not$script:CocoForm -or -not$script:CocoForm.IsDisposed)){
+        if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+        Start-Sleep -Milliseconds 100
+    }
     exit 1
 } finally {
     if($networkMutex){

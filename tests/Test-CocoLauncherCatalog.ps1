@@ -174,8 +174,8 @@ if(-not$theDrama-or$theDrama.runtime.type-ne'media'-or$theDrama.launch.workflow-
 }
 $dramaMovie=$theDrama.content.movie
 if(-not$dramaMovie-or$dramaMovie.fileName-ne'The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4'-or
-   [int64]$dramaMovie.size-ne2021287571-or
-   $dramaMovie.sha256-ne'1cefd87737a4624cb171bea607cab7554fd94b240572153dafe771596d6b5d2c'-or
+   [int64]$dramaMovie.size-ne2020248036-or
+   $dramaMovie.sha256-ne'7a391022d6b6a3a6e9d902c6e4b3b2fb5b89a5377b694b0da689053f18152b19'-or
    $dramaMovie.streamUrl-notmatch'^https://'-or$dramaMovie.sourceUrl-notmatch'^https://'){
     throw 'The Drama no conserva la metadata o URL publicada.'
 }

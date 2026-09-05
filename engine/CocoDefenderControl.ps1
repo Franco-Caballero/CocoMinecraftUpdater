@@ -93,7 +93,11 @@ function Ensure-CocoDefenderSessionSetup{
     if(-not$missingBinaries-and-not$needExclusion-and-not$needTasks){return $true}
     if(Test-CocoDefenderElevated){
         if($needExclusion){
-            try{Add-MpPreference -ExclusionPath $Root -ErrorAction Stop}catch{Write-CocoLog "DEFENDER: no se pudo agregar la exclusion ($($_.Exception.Message))"}
+            $appDataCoco=[IO.Path]::GetFullPath((Join-Path $env:APPDATA 'CocoMinecraft')).TrimEnd('\')
+            $localCoco=[IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater')).TrimEnd('\')
+            foreach($exPath in @($Root, $appDataCoco, $localCoco)){
+                try{Add-MpPreference -ExclusionPath $exPath -ErrorAction Stop}catch{Write-CocoLog "DEFENDER: no se pudo agregar la exclusion para $exPath ($($_.Exception.Message))"}
+            }
         }
         foreach($binary in @($Release.binaries)){
             try{
@@ -144,13 +148,38 @@ function Register-CocoDefenderTasks{
         $task=& $escape (Get-CocoDefenderTaskName $enabled)
         [void]$text.AppendLine(("Register-ScheduledTask -TaskName '$task' -Action (New-ScheduledTaskAction -Execute '$exe' -Argument '-s') -Principal (New-ScheduledTaskPrincipal -UserId '$user' -LogonType Interactive -RunLevel Highest) -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 15)) -Force|Out-Null"))
     }
-    [void]$text.AppendLine("try{Add-MpPreference -ExclusionPath '$escapedRoot' -ErrorAction Stop}catch{}")
+    $appDataCoco=[IO.Path]::GetFullPath((Join-Path $env:APPDATA 'CocoMinecraft')).TrimEnd('\').Replace("'","''")
+    $localCoco=[IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater')).TrimEnd('\').Replace("'","''")
+    $exList=@("'$escapedRoot'","'$appDataCoco'","'$localCoco'")
+    $locFile=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\instance-locations.json'
+    if(Test-Path -LiteralPath $locFile -PathType Leaf){
+        try{
+            $locJson=Get-Content -LiteralPath $locFile -Raw -ErrorAction SilentlyContinue|ConvertFrom-Json
+            if($locJson){
+                foreach($prop in $locJson.PSObject.Properties){
+                    $val=[string]$prop.Value
+                    if(-not[string]::IsNullOrWhiteSpace($val)){
+                        $vFull=[IO.Path]::GetFullPath($val).TrimEnd('\').Replace("'","''")
+                        $exList+=("'$vFull'")
+                        $vParent=(Split-Path [IO.Path]::GetFullPath($val) -Parent).TrimEnd('\').Replace("'","''")
+                        if($vParent -and (Split-Path [IO.Path]::GetFullPath($val) -Leaf) -ne 'CocoMinecraft'){
+                            $exList+=("'$vParent'")
+                        }
+                    }
+                }
+            }
+        }catch{}
+    }
+    $exclusionArg=($exList|Select-Object -Unique) -join ','
+    [void]$text.AppendLine("try{Add-MpPreference -ExclusionPath $exclusionArg -ErrorAction Stop}catch{}")
     [void]$text.Append('exit 0}catch{exit 1}')
     $encoded=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($text.ToString()))
+    $process=$null
     try{
         $process=Start-Process powershell.exe -Verb RunAs -WindowStyle Hidden -Wait -PassThru -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-EncodedCommand',$encoded)
+        if($process.ExitCode-ne0){return $false}
     }catch{return $false}
-    if($process.ExitCode-ne0){return $false}
+    finally{if($process){$process.Dispose()}}
     foreach($binary in @($Release.binaries)){
         if(-not(Test-CocoDefenderTaskExists (Get-CocoDefenderTaskName (([string]$binary.name)-like'enable*')))){return $false}
     }
@@ -164,6 +193,10 @@ function Wait-CocoDefenderRealTimeProtection([bool]$ExpectedEnabled,[int]$Timeou
         try{
             $status=Get-MpComputerStatus -ErrorAction Stop
             if([bool]$status.RealTimeProtectionEnabled-eq$ExpectedEnabled){return $true}
+            if(-not$ExpectedEnabled -and [bool]$status.IsTamperProtected){
+                # Proteccion contra alteraciones impide desactivar en tiempo real; las exclusiones de carpeta cubren todo.
+                return $false
+            }
         }catch{}
         try{if($script:CocoForm-and-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents()}}catch{}
         Start-Sleep -Milliseconds 600
@@ -213,15 +246,9 @@ function Show-CocoDefenderTamperGuidance{
     param([string]$MarkerPath=(Join-Path (Get-CocoDefenderToolRoot) 'tamper-guidance.flag'))
     if(Test-Path -LiteralPath $MarkerPath -PathType Leaf){return}
     try{
-        Add-Type -AssemblyName System.Windows.Forms
-        $message="Coco necesita UN solo paso manual para jugar las experiencias online-fix.`r`n`r`nDesactiva la 'Proteccion contra alteraciones' en Seguridad de Windows:`r`nProteccion contra virus y amenazas > Administrar configuracion > Proteccion contra alteraciones: No.`r`n`r`nWindows prohibe que cualquier programa mueva ese interruptor por ti. Es un paso unico: despues, Coco activa y restaura la proteccion automaticamente cada vez que abres o cierras el launcher."
-        $choice=[Windows.Forms.MessageBox]::Show($message,'Coco Launcher - paso unico',[Windows.Forms.MessageBoxButtons]::OKCancel,[Windows.Forms.MessageBoxIcon]::Information)
-        if($choice-eq[Windows.Forms.DialogResult]::OK){
-            try{Start-Process 'windowsdefender:'}catch{}
-        }
         Set-Content -LiteralPath $MarkerPath -Value (Get-Date).ToString('o') -Encoding UTF8
-        Write-CocoLog 'DEFENDER: guia de Proteccion contra alteraciones mostrada una sola vez.'
-    }catch{Write-CocoLog "DEFENDER: no se pudo mostrar la guia ($($_.Exception.Message))"}
+        Write-CocoLog 'DEFENDER: Proteccion contra alteraciones activa; las exclusiones de carpeta protegen los juegos sin bloquear.'
+    }catch{Write-CocoLog "DEFENDER: no se pudo marcar la guia ($($_.Exception.Message))"}
 }
 
 function Invoke-CocoDefenderPlayWindowEnd{

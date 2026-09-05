@@ -43,7 +43,7 @@ release/mod downloads and the explicitly configured ZeroTier/LAN operation.
 
 As of 2026-09-03, the SignPath Foundation OSS certificate application was reviewed
 and deferred by SignPath due to project maturity/visibility requirements (stars/forks).
-To achieve zero friction without manual file unblocking or SmartScreen warnings,
+To achieve zero friction and SmartScreen-warning-free operation without manual file unblocking,
 the project provides official installers:
 - Web installer: `irm https://raw.githubusercontent.com/Franco-Caballero/CocoMinecraftUpdater/main/tools/install.ps1 | iex`
 - Batch installer: `tools/Instalar-Coco.bat` (and `Instalar-Coco.zip`)
