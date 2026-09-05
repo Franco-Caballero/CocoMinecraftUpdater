@@ -1313,7 +1313,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $statusLabel.TextAlign='MiddleLeft';$statusLabel.BackColor=[Drawing.Color]::FromArgb(38,27,52);$statusLabel.Padding=New-Object Windows.Forms.Padding(10,0,6,0)
     $controls.Controls.AddRange(@($controlLine,$play,$statusLabel,$position,$seek,$volumeLabel,$volume,$fullscreen));$form.Controls.Add($videoHost);$form.Controls.Add($controls);$form.Controls.Add($chrome)
     $savedPlayback=Get-CocoMediaPlaybackState $Experience $Episode
-    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;PreviousVolume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;CursorHidden=$false;LastMouseMoveUtc=[DateTime]::UtcNow}
+    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;PreviousVolume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;LastKnownPositionSeconds=0.0;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;CursorHidden=$false;LastMouseMoveUtc=[DateTime]::UtcNow}
     $formatTime={param([double]$Seconds)&$formatTimeCommand $Seconds}.GetNewClosure()
     $layoutChrome={
         $width=[Math]::Max(1,[int]$chrome.ClientSize.Width)
@@ -1358,6 +1358,8 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
             $now=[DateTime]::UtcNow
             if(-not$Force-and($now-$state.LastSavedUtc).TotalSeconds-lt2){return}
             $current=[Math]::Max(0.0,[double]$media.Position.TotalSeconds)
+            if($current-gt0){$state.LastKnownPositionSeconds=$current}
+            elseif($state.LastKnownPositionSeconds-gt0-and-not$state.Completed){$current=$state.LastKnownPositionSeconds}
             if($state.Duration-le0-and$current-le0){return}
             &$writePlaybackCommand $Experience $Episode $current $state.Duration $state.Completed
             $state.LastSavedUtc=$now
@@ -1543,6 +1545,8 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         if(($now-$state.LastFullscreenToggleUtc).TotalMilliseconds-lt500){return}
         $state.LastFullscreenToggleUtc=$now
         $entering=-not$state.Fullscreen
+        $savedPosition=[TimeSpan]::Zero
+        try{if($media -and $media.Position){$savedPosition=$media.Position}}catch{}
         try{
             $form.SuspendLayout()
             if($entering){
@@ -1569,7 +1573,13 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         }catch{
             try{if($logCommand){&$logCommand "${mediaExperienceName}: cambio de pantalla completa fallo: $($_.Exception.Message)"}}catch{}
         }finally{
-            try{$form.ResumeLayout($true);$form.PerformLayout();$form.Refresh();$form.Activate();if($state.Fullscreen){$videoHost.Focus();$media.Focus()}}catch{}
+            try{
+                $form.ResumeLayout($true);$form.PerformLayout();$form.Refresh();$form.Activate()
+                if($savedPosition.TotalSeconds -gt 0){
+                    try{$media.Position=$savedPosition}catch{}
+                }
+                if($state.Fullscreen){$videoHost.Focus();$media.Focus()}
+            }catch{}
         }
     }.GetNewClosure()
     $fullscreen.Add_Click(({

@@ -38,7 +38,10 @@ $script:CocoUiTimedOut=$false
 $timer=New-Object Windows.Forms.Timer
 $timer.Interval=100
 $startedAt=[DateTime]::UtcNow
+$script:CocoInTick=$false
 $timer.Add_Tick({
+    if($script:CocoInTick){return}
+    $script:CocoInTick=$true
     $window=$null
     try{
         $now=[DateTime]::UtcNow
@@ -46,7 +49,8 @@ $timer.Add_Tick({
         $window=@([Windows.Forms.Application]::OpenForms|Where-Object{$_.Text-eq$windowTitle}|Select-Object -First 1)[0]
         if($elapsed-ge35){
             $script:CocoUiTimedOut=$true;$script:CocoUiFailure=('La prueba del reproductor excedio el tiempo limite. paused={0}; resumed={1}; fullscreen={2}; position={3}; title={4}' -f $script:CocoUiPaused,$script:CocoUiResumed,$script:CocoUiFullscreenTested,$position,$windowTitle)
-            if($window-and-not$window.IsDisposed){$window.Close()};$timer.Stop();return
+            $timer.Stop()
+            if($window-and-not$window.IsDisposed){$window.Close()};return
         }
         if(-not$window){return}
         $videoHost=@($window.Controls|Where-Object{$_-is[Windows.Forms.Integration.ElementHost]}|Select-Object -First 1)[0]
@@ -90,14 +94,18 @@ $timer.Add_Tick({
             }
                 return
         }
-        if($script:CocoUiResumed-and($now-$script:CocoUiResumedAtUtc).TotalSeconds-ge3-or$elapsed-ge$PlaySeconds){
-            if($mediaView){$script:CocoUiPositionBeforeClose=$mediaView.Position.TotalSeconds}
-            $window.Close();$timer.Stop()
+        $allStepsCompleted = $script:CocoUiPaused -and $script:CocoUiResumed -and ($SkipFullscreen -or $script:CocoUiFullscreenTested)
+        if($allStepsCompleted -and (($now-$script:CocoUiResumedAtUtc).TotalSeconds -ge 2 -or $elapsed -ge $PlaySeconds)){
+            if($mediaView -and $mediaView.Position.TotalSeconds -gt 0){$script:CocoUiPositionBeforeClose=[double]$mediaView.Position.TotalSeconds}
+            $timer.Stop()
+            $window.Close()
         }
     }catch{
         $script:CocoUiFailure="La prueba del reproductor lanzo una excepcion: $($_.Exception.Message)"
-        if($window-and-not$window.IsDisposed){try{$window.Close()}catch{}}
         $timer.Stop()
+        if($window-and-not$window.IsDisposed){try{$window.Close()}catch{}}
+    }finally{
+        $script:CocoInTick=$false
     }
 })
 $playback=$null

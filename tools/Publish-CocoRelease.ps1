@@ -348,7 +348,7 @@ if(-not$Fast){
 }
 .\tests\Test-CocoMediaPlaybackState.ps1
 if(-not$Fast){
-    .\tests\Test-CocoMediaPlayerIntegration.ps1 -SourceUrl $mediaTestUrl -PlaySeconds 6
+    .\tests\Test-CocoMediaPlayerIntegration.ps1 -SourceUrl $mediaTestUrl -PlaySeconds 10
     .\tests\Test-CocoMediaPlayerSmoke.ps1 -SourceUrl $mediaTestUrl -TimeoutSeconds 30
 }
 .\tests\Test-CocoMediaSelectorAction.ps1
