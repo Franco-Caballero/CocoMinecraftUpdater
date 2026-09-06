@@ -1522,6 +1522,80 @@
                 "serverName": "Coco - Twisted Party"
             },
             "files": []
+        },
+        {
+            "id": "rhythm-doctor",
+            "name": "Rhythm Doctor",
+            "ui": {
+                "imagePath": "assets/experiences/rhythm-doctor.jpg"
+            },
+            "description": "Juego de ritmo donde curas pacientes al compás de los latidos de su corazón.",
+            "instanceId": "rhythm-doctor",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "Rhythm Doctor.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Rhythm Doctor.exe",
+                        "sha256": "d33a2e3a981ab64b40828058d90b6e6144d98490abc09b92e4acf4ae79fc2855",
+                        "size": 640000,
+                        "archiveSha256": "0db187688cdf2be63d7e4393bc02769819425bc451f7ad9234b0030bd7baaaee"
+                    },
+                    {
+                        "path": "OnlineFix.dll",
+                        "sha256": "befdaf7dff1e0c8efc8fc3a5aeec623efb9f2fc6e927aa987a9fab684f7c0b8a",
+                        "size": 4270592,
+                        "archiveSha256": "0db187688cdf2be63d7e4393bc02769819425bc451f7ad9234b0030bd7baaaee"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "5aa2611379356f7d7e26fdab57c0bdd990f2cc7c43503400a988877b2914bc7d",
+                        "size": 206960,
+                        "archiveSha256": "0db187688cdf2be63d7e4393bc02769819425bc451f7ad9234b0030bd7baaaee"
+                    },
+                    {
+                        "path": "SteamOverlay32.dll",
+                        "sha256": "4be6ce2b26cea97546f1d13ef5179be93a0ee89f5aab39fffc51e34a82d5abd6",
+                        "size": 82920,
+                        "archiveSha256": "0db187688cdf2be63d7e4393bc02769819425bc451f7ad9234b0030bd7baaaee"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "539980194f3a7c0058b02a9544d749e19376499e9397e15d86cdd8ecf8d15968",
+                        "size": 19935232,
+                        "archiveSha256": "0db187688cdf2be63d7e4393bc02769819425bc451f7ad9234b0030bd7baaaee"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "774181"
+            },
+            "pack": {
+                "packId": "standalone-rhythm-doctor",
+                "lockPath": "launcher/experiences/rhythm-doctor.lock.json",
+                "version": "0.10.1",
+                "sha256": "0db187688cdf2be63d7e4393bc02769819425bc451f7ad9234b0030bd7baaaee",
+                "size": 323722101,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.157/Rhythm-Doctor.zip",
+                        "sha256": "0db187688cdf2be63d7e4393bc02769819425bc451f7ad9234b0030bd7baaaee",
+                        "size": 323722101
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Rhythm Doctor"
+            },
+            "files": []
         }
     ]
 }
