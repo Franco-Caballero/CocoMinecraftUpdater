@@ -49,8 +49,15 @@ function Get-OfficialAsset([int64]$ModProjectId,[int64]$ModFileId,[string]$Role=
     $destination=Join-Path $directory $resolved.Name
     if(-not(Test-Path -LiteralPath $destination -PathType Leaf)){
         $temporary=Join-Path $directory ("download-$PID-$([guid]::NewGuid().ToString('N')).tmp")
-        try{Invoke-WebRequest -UseBasicParsing -Uri $resolved.Endpoint -OutFile $temporary;Move-Item -LiteralPath $temporary -Destination $destination -Force}
-        finally{Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}
+        # Reintento simple: el CDN de CurseForge responde 429/5xx transitorios y
+        # sin esto un pack de 300 assets moria al primer hipo de red.
+        $downloaded=$false;$lastDownloadError=''
+        for($attempt=1;$attempt-le3;$attempt++){
+            try{Invoke-WebRequest -UseBasicParsing -Uri $resolved.Endpoint -OutFile $temporary -TimeoutSec 120;Move-Item -LiteralPath $temporary -Destination $destination -Force;$downloaded=$true;break}
+            catch{$lastDownloadError=$_.Exception.Message;if($attempt-lt3){Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))}}
+            finally{Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue}
+        }
+        if(-not$downloaded){throw "No se pudo descargar $ModProjectId/$ModFileId tras 3 intentos: $lastDownloadError"}
     }
     $bytes=[IO.File]::ReadAllBytes($destination)
     if($bytes.Length-lt4-or$bytes[0]-ne0x50-or$bytes[1]-ne0x4b){throw "El asset $ModProjectId/$ModFileId no es ZIP/JAR."}
@@ -106,6 +113,15 @@ foreach($entry in @($manifest.files)){
     $assets.Add([pscustomobject]$asset)
 }
 Write-Progress -Activity "Importando $($manifest.name)" -Completed
+# Advertencia honesta: modlist.html y manifest.files solo se cruzan por POSICION
+# (CurseForge no incluye el slug en el manifiesto). Si el orden difiere, un
+# texture/shader pack puede quedar clasificado en mods/ o con projectPage
+# cruzada. Revisa la lista antes de publicar; el arranque real lo delata.
+$nonMods=@($assets|Where-Object{[string]$_.path-notlike'mods/*'})
+if($nonMods.Count){
+    Write-Warning "Clasificados fuera de mods/ (verifica que el orden modlist.html == manifest.files sea correcto):"
+    foreach($odd in $nonMods){Write-Warning "  $($odd.path) <- $($odd.projectPage)"}
+}
 
 $lock=[ordered]@{
     schemaVersion=1

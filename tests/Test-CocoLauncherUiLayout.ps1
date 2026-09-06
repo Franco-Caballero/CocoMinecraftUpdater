@@ -82,8 +82,14 @@ try{
         if(-not$content){throw "FAIL: $role no agrupa las tarjetas en una superficie de desplazamiento unica."}
         $scrollState=Get-CocoExperienceCardsScrollState $panel
         if(-not$scrollState-or$scrollState.Items.Count-ne1-or$scrollState.Items[0].Control-ne$content){throw "FAIL: $role aun reposiciona tarjetas individuales durante el scroll."}
-        $badCards=@($cards|Where-Object{$_.Width-le0-or$_.Height-ne$_.Width-or$_.Location.X-lt0-or$_.Location.Y-lt0})
-        if($badCards.Count){throw "FAIL: $role genero tarjetas fuera de escala."}
+        $badCards=@($cards|Where-Object{$_.Width-le0-or$_.Height-ne(Get-CocoExperienceCardHeight $_.Width)-or$_.Location.X-lt0-or$_.Location.Y-lt0})
+        if($badCards.Count){throw "FAIL: $role genero tarjetas fuera de escala (se esperan 16:9, imagen contenida)."}
+        # Sin scroll horizontal: nada puede desbordar el ancho del viewport.
+        if($panel.AutoScrollMinSize.Width-ne0){throw "FAIL: $role permite scroll horizontal (AutoScrollMinSize.Width=$($panel.AutoScrollMinSize.Width))."}
+        if($panel.HorizontalScroll.Visible){throw "FAIL: $role muestra scroll horizontal."}
+        if($content.Width-gt$panel.ClientSize.Width){throw "FAIL: $role desborda el contenido ($($content.Width) > $($panel.ClientSize.Width))."}
+        $wideCards=@($cards|Where-Object{$_.Right-gt$content.Width})
+        if($wideCards.Count){throw "FAIL: $role genero tarjetas mas anchas que el contenido."}
         if($cards[0].Location.X-eq$cards[1].Location.X-or$cards[0].Location.Y-ne$cards[1].Location.Y){throw "FAIL: $role no genero dos columnas."}
         for($first=0;$first-lt$cards.Count;$first++){
             for($second=$first+1;$second-lt$cards.Count;$second++){
@@ -121,8 +127,31 @@ try{
             if(-not$textAnchor-or-not$firstAction-or$firstAction.Location.X-le$textAnchor.Location.X-or$firstAction.Location.X+($firstAction.Width)-gt$installedCard.Width){throw 'FAIL: las acciones compactas no quedan alineadas dentro de la tarjeta.'}
             $installButtons=@($cardTextControls|Where-Object{[string]$_.Text-eq'INSTALAR'})
             if($installButtons.Count-ne6-or($installButtons|Where-Object{$_.Width-lt(Get-CocoLauncherUiMetric 100)}).Count){throw 'FAIL: las tarjetas no conservan un CTA INSTALAR legible.'}
+            # Anti-corte: cada boton debe medir dentro de su rectangulo en esta PC.
+            $buttonFlags=[Windows.Forms.TextFormatFlags]::SingleLine-bor[Windows.Forms.TextFormatFlags]::NoPadding-bor[Windows.Forms.TextFormatFlags]::NoPrefix
+            foreach($cardButton in @($cardTextControls|Where-Object{$_ -is [Windows.Forms.Button]})){
+                $measuredButton=[Windows.Forms.TextRenderer]::MeasureText([string]$cardButton.Text,$cardButton.Font,[Drawing.Size]::new(4096,4096),$buttonFlags)
+                if($measuredButton.Width-gt([int]$cardButton.ClientSize.Width-10)-or$measuredButton.Height-gt([int]$cardButton.ClientSize.Height-6)){throw "FAIL: el boton '$($cardButton.Text)' desborda su rectangulo ($($measuredButton.Width)x$($measuredButton.Height) en $($cardButton.ClientSize.Width)x$($cardButton.ClientSize.Height))."}
+            }
         }
     }
+
+    # Pantalla angosta (PC pequeno u otra DPI): una sola columna y ningun
+    # desborde horizontal, con tarjetas 16:9.
+    $narrowPanel=New-Object Windows.Forms.Panel
+    $narrowPanel.Size=New-Object Drawing.Size(300,500)
+    try{
+        Update-CocoExperienceCardsUi $narrowPanel $catalog $paths 'client'
+        $narrowContent=@($narrowPanel.Controls|Where-Object{[string]$_.Name-eq'CocoExperienceCardsContent'}|Select-Object -First 1)[0]
+        if(-not$narrowContent){throw 'FAIL: angosto no agrupa las tarjetas en una superficie unica.'}
+        $narrowCards=@(Get-LayoutDescendantControls $narrowPanel|Where-Object{$_ -is [Windows.Forms.Panel]-and[string]$_.Name-eq'CocoExperienceCard'})
+        if($narrowCards.Count-ne7){throw "FAIL: angosto debe mostrar 7 tarjetas, encontro $($narrowCards.Count)."}
+        if(@($narrowCards|Where-Object{$_.Location.X-ne0}).Count){throw 'FAIL: angosto no colapsa a una columna.'}
+        if($narrowPanel.AutoScrollMinSize.Width-ne0-or$narrowPanel.HorizontalScroll.Visible){throw 'FAIL: angosto muestra scroll horizontal.'}
+        if($narrowContent.Width-gt$narrowPanel.ClientSize.Width){throw 'FAIL: angosto desborda el contenido.'}
+        if(@($narrowCards|Where-Object{$_.Right-gt$narrowContent.Width}).Count){throw 'FAIL: angosto genero tarjetas mas anchas que el contenido.'}
+        if(@($narrowCards|Where-Object{$_.Height-ne(Get-CocoExperienceCardHeight $_.Width)}).Count){throw 'FAIL: angosto no conserva tarjetas 16:9.'}
+    }finally{if($narrowPanel-and-not$narrowPanel.IsDisposed){$narrowPanel.Dispose()}}
 
     'PASS: layout host/cliente escalado, scroll, estado, identidad y selector de skin caben sin solaparse.'
 }finally{

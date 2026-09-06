@@ -623,10 +623,28 @@ function Get-CandidateRoots([string[]]$PreferredRoots=@()) {
     return @($roots | Sort-Object)
 }
 
+# Snapshot compartido de procesos Java: 5 consultas WMI identicas corrian en
+# deteccion/Bridge (0.3-1.5s cada una). TTL 3s; ante un fallo WMI transitorio se
+# devuelve el ultimo snapshot en vez de vacio (estrictamente mas confiable).
+function Get-CocoJavaProcessSnapshot(){
+    try{
+        if($script:CocoJavaProcessSnapshotAt-and$script:CocoJavaProcessSnapshot-and(((Get-Date)-$script:CocoJavaProcessSnapshotAt).TotalSeconds-lt3)){
+            return @($script:CocoJavaProcessSnapshot)
+        }
+        $rows=@(Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction Stop)
+        $script:CocoJavaProcessSnapshot=$rows
+        $script:CocoJavaProcessSnapshotAt=(Get-Date)
+        return @($rows)
+    }catch{
+        if($script:CocoJavaProcessSnapshot){return @($script:CocoJavaProcessSnapshot)}
+        return @()
+    }
+}
+
 function Get-RunningMinecraftInstances($Manifest) {
     $instances=[System.Collections.Generic.List[object]]::new()
     try {
-        Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction Stop | ForEach-Object {
+        Get-CocoJavaProcessSnapshot | ForEach-Object {
             $commandLine=[string]$_.CommandLine
             $gameDir=$null;$versionId='desconocida'
             if($commandLine-match'(?i)--gameDir\s+"([^"]+)"'){$gameDir=$matches[1]}
@@ -657,7 +675,7 @@ function Get-RunningGameDirectories {
     # instancias compatibles de Get-RunningMinecraftInstances.
     $paths=[System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     try{
-        Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction Stop|ForEach-Object{
+        Get-CocoJavaProcessSnapshot|ForEach-Object{
             $commandLine=[string]$_.CommandLine
             if($commandLine-match'(?i)--gameDir\s+"([^"]+)"'){[void]$paths.Add($matches[1])}
             elseif($commandLine-match'(?i)--gameDir\s+([^\s]+)'){[void]$paths.Add($matches[1])}
@@ -932,7 +950,7 @@ function Test-RunningMinecraftPredatesInstalledPack([string]$Root,$Manifest) {
             $known=Get-Process -Id $MinecraftPid -ErrorAction SilentlyContinue
             if($known){$processes.Add($known)}
         }else{
-            Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction SilentlyContinue|ForEach-Object{
+            Get-CocoJavaProcessSnapshot|ForEach-Object{
                 $line=$_.CommandLine;$runningGameDir=$null
                 if($line-match'(?i)--gameDir\s+"([^"]+)"'){$runningGameDir=$matches[1]}
                 elseif($line-match'(?i)--gameDir\s+([^\s]+)'){$runningGameDir=$matches[1]}
@@ -967,7 +985,7 @@ function Request-ClientMinecraftClose([string]$Root) {
         if($requested){return $true}
     }
     try {
-        Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction Stop | ForEach-Object {
+        Get-CocoJavaProcessSnapshot | ForEach-Object {
             $line=$_.CommandLine
             $runningGameDir=$null
             if($line -match '(?i)--gameDir\s+"([^"]+)"'){$runningGameDir=$matches[1]}
@@ -985,12 +1003,26 @@ function Stop-ClientMinecraft([string]$Root) {
     if($MinecraftPid -gt 0){
         $process=Get-Process -Id $MinecraftPid -ErrorAction SilentlyContinue
         if($process){
-            Write-CocoLog "Minecraft no respondio al cierre normal; terminando PID $MinecraftPid."
-            Stop-Process -Id $MinecraftPid -Force -ErrorAction Stop
+            # Anti PID-reciclado: si Windows reutilizo el PID para un proceso que
+            # ya no es Minecraft, matarlo seria matar un inocente. Solo se omite
+            # el kill cuando WMI confirma positivamente otro ejecutable; ante
+            # cualquier duda se conserva el comportamiento anterior.
+            $stillMinecraft=$true
+            try{
+                $wmi=Get-CimInstance Win32_Process -Filter "ProcessId=$MinecraftPid" -ErrorAction Stop
+                if($wmi-and[string]$wmi.CommandLine -notmatch '(?i)net\.minecraft|fabric-loader|KnotClient|--gameDir|minecraft'){
+                    $stillMinecraft=$false
+                    Write-CocoLog "El PID $MinecraftPid ya no es Minecraft (PID reciclado); no se termina."
+                }
+            }catch{}
+            if($stillMinecraft){
+                Write-CocoLog "Minecraft no respondio al cierre normal; terminando PID $MinecraftPid."
+                Stop-Process -Id $MinecraftPid -Force -ErrorAction Stop
+            }
         }
         return
     }
-    Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" -ErrorAction SilentlyContinue | ForEach-Object {
+    Get-CocoJavaProcessSnapshot | ForEach-Object {
         $line=$_.CommandLine
         $runningGameDir=$null
         if($line -match '(?i)--gameDir\s+"([^"]+)"'){$runningGameDir=$matches[1]}
@@ -1186,6 +1218,7 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
 
     $markerPath = Join-Path $Root $Manifest.detector.markerPath
     New-Item -ItemType Directory -Path (Split-Path $markerPath -Parent) -Force | Out-Null
+    $markerTemporary="$markerPath.tmp-$PID"
     [pscustomobject]@{
         packId = $Manifest.packId
         version = $Manifest.version
@@ -1193,11 +1226,14 @@ function Install-StagedPackage([string]$Root, [string]$Stage, $Package, $Manifes
         installedAt = (Get-Date).ToString('o')
         target = $Root
         appliedClientSettingsMigrations = $appliedClientSettingsMigrations
-    } | ConvertTo-Json | Set-Content -LiteralPath $markerPath -Encoding UTF8
+    } | ConvertTo-Json | Set-Content -LiteralPath $markerTemporary -Encoding UTF8
+    Move-Item -LiteralPath $markerTemporary -Destination $markerPath -Force
     $targetPath = Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\target.json'
     New-Item -ItemType Directory -Path (Split-Path $targetPath -Parent) -Force | Out-Null
+    $targetTemporary="$targetPath.tmp-$PID"
     [pscustomobject]@{path=$Root;packId=$Manifest.packId;updatedAt=(Get-Date).ToString('o')} |
-        ConvertTo-Json | Set-Content -LiteralPath $targetPath -Encoding UTF8
+        ConvertTo-Json | Set-Content -LiteralPath $targetTemporary -Encoding UTF8
+    Move-Item -LiteralPath $targetTemporary -Destination $targetPath -Force
     Remove-Item -LiteralPath $Stage -Recurse -Force -ErrorAction SilentlyContinue
     Get-ChildItem -LiteralPath (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\downloads\jars') -File -ErrorAction SilentlyContinue |
         Remove-Item -Force -ErrorAction SilentlyContinue
@@ -1295,7 +1331,9 @@ try {
     $mutexName=if($NetworkOnly){'Local\CocoMinecraftUpdaterNetwork'}else{'Local\CocoMinecraftUpdaterUpdate'}
     $mutex = New-Object System.Threading.Mutex($false, $mutexName)
     $mutexAcquired=if($NetworkOnly){Enter-CocoMutex $mutex 0}else{Enter-CocoMutex $mutex 30000}
-    if (-not $mutexAcquired) { exit 0 }
+    # Salida silenciosa a proposito: otra instancia esta haciendo el trabajo; el
+    # exit 0 evita spam de error. El log distingue este salto de un exito real.
+    if (-not $mutexAcquired) { Write-CocoLog "Mutex $mutexName ocupado por otra ejecucion; esta instancia termina sin hacer cambios."; exit 0 }
     $engineParent=Split-Path $script:CocoEngineRoot -Parent
     if((Split-Path $engineParent -Leaf)-eq'engine'){
         $currentVer=try{[version](Split-Path $script:CocoEngineRoot -Leaf)}catch{$null}

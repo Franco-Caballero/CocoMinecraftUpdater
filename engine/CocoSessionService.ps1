@@ -18,6 +18,11 @@ if([string]::IsNullOrWhiteSpace($SkinRoot)){
     $SkinRoot=Join-Path (Split-Path (Split-Path $StatePath -Parent) -Parent) 'skins\profiles'
 }
 New-Item -ItemType Directory -Path $SkinRoot -Force|Out-Null
+# Anti PID-reciclado: Windows puede reutilizar el PID del padre muerto para un
+# proceso ajeno. Se fija la hora de inicio al arrancar y el watchdog exige la
+# misma; si difiere, el padre real murio y el servicio debe terminar.
+$parentStartTime=$null
+try{$parentStartTime=(Get-Process -Id $ParentPid -ErrorAction Stop).StartTime}catch{}
 
 function Write-SessionLog([string]$Message){
     if([string]::IsNullOrWhiteSpace($LogPath)){return}
@@ -85,7 +90,9 @@ function Write-SkinResponse($Stream,[string]$Status,[byte[]]$Body){
 
 function Read-ExactBytes($Stream,[int]$Length){
     $buffer=New-Object byte[] $Length;$offset=0
+    $bodyWatch=[Diagnostics.Stopwatch]::StartNew()
     while($offset-lt$Length){
+        if($bodyWatch.Elapsed.TotalSeconds-gt30){throw 'TIMEOUT'}
         $read=$Stream.Read($buffer,$offset,$Length-$offset)
         if($read-le0){throw 'BODY'}
         $offset+=$read
@@ -99,7 +106,12 @@ try{
     $listener.Start(8)
     Write-SessionLog "READY $BindAddress`:$Port ParentPid=$ParentPid"
     while($true){
-        if($ParentPid-gt0-and-not(Get-Process -Id $ParentPid -ErrorAction SilentlyContinue)){break}
+        $parentAlive=$false
+        try{
+            $parentProcess=Get-Process -Id $ParentPid -ErrorAction Stop
+            $parentAlive=($null-ne$parentStartTime-and$parentProcess.StartTime-eq$parentStartTime)
+        }catch{}
+        if($ParentPid-gt0-and-not$parentAlive){break}
         if(-not$listener.Pending()){Start-Sleep -Milliseconds 150;continue}
         $client=$listener.AcceptTcpClient()
         try{
@@ -107,8 +119,15 @@ try{
             $remoteAddress=$remote.Address.ToString()
             if(-not$TestMode-and$remoteAddress-notmatch'^10\.77\.37\.(?:[1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-4])$'){continue}
             $stream=$client.GetStream();$stream.ReadTimeout=2000;$stream.WriteTimeout=2000
+            # Deadline global por solicitud: el timeout por lectura no basta; un
+            # emisor a 1 byte/1.9s ocuparia el hilo unico ~8.5 min solo en la
+            # cabecera (y horas en un PUT de 1 MB). En LAN sana todo llega en ms.
+            $requestWatch=[Diagnostics.Stopwatch]::StartNew()
             $request=[Text.StringBuilder]::new()
-            while($request.Length-lt256){$value=$stream.ReadByte();if($value-lt0){break};if($value-eq10){break};if($value-ne13){[void]$request.Append([char]$value)}}
+            while($request.Length-lt256){
+                if($requestWatch.Elapsed.TotalSeconds-gt15){throw 'TIMEOUT'}
+                $value=$stream.ReadByte();if($value-lt0){break};if($value-eq10){break};if($value-ne13){[void]$request.Append([char]$value)}
+            }
             $line=$request.ToString()
             if($line-eq'COCO-SESSION 1'){
                 $body=[Text.Encoding]::UTF8.GetBytes((Get-SessionJson))
@@ -146,7 +165,10 @@ try{
                             $owner=Get-Content -LiteralPath $ownerPath -Raw|ConvertFrom-Json
                             if($remoteAddress-ne'10.77.37.1'-and[string]$owner.address-ne$remoteAddress){throw 'OWNER'}
                         }else{
-                            [IO.File]::WriteAllText($ownerPath,([ordered]@{schemaVersion=1;username=$parts[3];address=$remoteAddress;claimedAtUtc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json -Compress),(New-Object Text.UTF8Encoding($false)))
+                            $ownerJson=([ordered]@{schemaVersion=1;username=$parts[3];address=$remoteAddress;claimedAtUtc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json -Compress)
+                            $ownerTemporary="$ownerPath.new-$PID"
+                            [IO.File]::WriteAllText($ownerTemporary,$ownerJson,(New-Object Text.UTF8Encoding($false)))
+                            Move-Item -LiteralPath $ownerTemporary -Destination $ownerPath -Force
                         }
                         $destination=Join-Path $SkinRoot "$($parts[3]).png";$temporary="$destination.new-$PID"
                         [IO.File]::WriteAllBytes($temporary,$body);Move-Item -LiteralPath $temporary -Destination $destination -Force

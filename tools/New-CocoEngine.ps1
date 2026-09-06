@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)] [string]$Version,
+    [Parameter(Mandatory = $true)] [ValidatePattern('^\d+\.\d+\.\d+$')] [string]$Version,
     [Parameter(Mandatory = $true)] [string]$OutputDirectory
 )
 
@@ -55,7 +55,13 @@ if(-not$skinPolicy-or(Get-FileHash -LiteralPath $skinDestination -Algorithm SHA2
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $zip = Join-Path $OutputDirectory "coco-engine-$Version.zip"
 Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
-Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
+try{
+# Fastest a proposito: el payload ya viene comprimido (PNG/JPG/DLL/JAR) y
+# Optimal solo sumaba minutos de CPU; el hash se registra fresco igual.
+Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Fastest
 $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-Remove-Item -LiteralPath $stage -Recurse -Force
-[pscustomobject]@{ version = $Version; path = $zip; sha256 = $hash; size = (Get-Item $zip).Length } | ConvertTo-Json
+}finally{
+    # El stage GUID en TEMP no debe sobrevivir a un fallo de compresion/hash.
+    Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+}
+[pscustomobject]@{ version = $Version; path = $zip; sha256 = $hash; size = (Get-Item -LiteralPath $zip).Length } | ConvertTo-Json

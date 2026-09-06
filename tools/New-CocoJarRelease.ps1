@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)][string]$MinecraftRoot,
-    [Parameter(Mandatory=$true)][string]$Version,
+    [Parameter(Mandatory=$true)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
     [Parameter(Mandatory=$true)][string]$GitHubRepository,
     [Parameter(Mandatory=$true)][string]$ReleaseDirectory,
     [Parameter(Mandatory=$true)][string]$BridgeJar,
@@ -82,15 +82,16 @@ $managedConfigFiles=@(Get-ChildItem -LiteralPath $managedConfigRoot -Recurse -Fi
 })
 if(-not@($managedConfigFiles|Where-Object{$_.path-eq'config/Stackable.json'})){throw 'Falta managed-config\Stackable.json.'}
 $enginePath=Join-Path $ReleaseDirectory "coco-engine-$Version.zip"
-if(-not(Test-Path $enginePath)){throw "Falta $enginePath"}
+# LiteralPath a proposito: $Version podria interpretarse como wildcard.
+if(-not(Test-Path -LiteralPath $enginePath)){throw "Falta $enginePath"}
 $manifest=[ordered]@{
     schemaVersion=2; packId='coco-fabric-26.1.2'; version=$Version
     publishedAt=(Get-Date).ToUniversalTime().ToString('o')
     engine=[ordered]@{
         version=$Version
         url="https://github.com/$GitHubRepository/releases/download/$tag/coco-engine-$Version.zip"
-        sha256=(Get-FileHash $enginePath -Algorithm SHA256).Hash.ToLowerInvariant()
-        size=[int64](Get-Item $enginePath).Length
+        sha256=(Get-FileHash -LiteralPath $enginePath -Algorithm SHA256).Hash.ToLowerInvariant()
+        size=[int64](Get-Item -LiteralPath $enginePath).Length
     }
     bootstrap=[ordered]@{
         version=$Version

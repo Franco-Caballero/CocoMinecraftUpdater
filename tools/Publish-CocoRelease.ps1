@@ -18,6 +18,15 @@ $distDir=Join-Path $root 'dist'
 $KnownE4mcDomains=@($KnownE4mcDomainsCsv-split','|Where-Object{$_})
 Write-Output "Contexto: Repository=$Repository MinecraftRoot=$MinecraftRoot Domains=$($KnownE4mcDomains.Count)"
 
+# Definida arriba a proposito: PowerShell NO eleva definiciones de funcion, y
+# varios pasos tempranos (git fetch, API) ya la usan con reintento.
+function Invoke-WithRetry([scriptblock]$Operation,[string]$Description){
+    for($attempt=1;$attempt-le4;$attempt++){
+        try{return & $Operation}
+        catch{if($attempt-eq4){throw};Write-Progress -Activity "Publicando Coco Pack $Version" -Status "Reintentando $Description ($($attempt+1)/4)";Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))}
+    }
+}
+
 function Assert-CocoPublicationPreflight([int64]$AllowedPublisherPid=0){
     $blocked=[Collections.Generic.List[string]]::new()
     $standaloneNames=@()
@@ -74,7 +83,9 @@ foreach($jar in @(Get-ChildItem -LiteralPath (Join-Path $MinecraftRoot 'mods') -
 }
 
 $publishedManifest=try{Invoke-RestMethod -Uri "https://github.com/$Repository/releases/latest/download/latest.json" -UseBasicParsing -TimeoutSec 30}catch{
-    $latestRel=Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases/latest" -Headers $headers -UseBasicParsing
+    # Sin $headers a proposito: el endpoint publico no requiere auth y $headers
+    # aun no existe a esta altura del script. Timeout explicito para no colgar.
+    $latestRel=Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases/latest" -UseBasicParsing -TimeoutSec 30
     Invoke-RestMethod -Uri "https://github.com/$Repository/releases/download/$($latestRel.tag_name)/latest.json" -UseBasicParsing -TimeoutSec 30
 }
 $publishedVersion=[version]$publishedManifest.version
@@ -90,11 +101,20 @@ if(Test-Path -LiteralPath $launcherCatalogPath){
     }
 }
 
-git fetch origin main --quiet
-if($LASTEXITCODE){throw 'No se pudo actualizar origin/main antes de publicar.'}
+Invoke-WithRetry { git fetch origin main --quiet; if($LASTEXITCODE){throw 'git fetch devolvio error.'} } 'actualizar origin/main'
 $startingHead=(git rev-parse HEAD).Trim()
 $startingOrigin=(git rev-parse origin/main).Trim()
 if($startingHead-ne$startingOrigin){throw "Publicacion bloqueada: HEAD ($startingHead) no coincide con origin/main ($startingOrigin). Sincroniza el repositorio antes de publicar."}
+# Arbol: los cambios de funcionalidad sin commitear son el caso NORMAL (el commit
+# de publicacion los incluye via `git add .`). Lo que si bloquea es un bump de
+# version a medio aplicar de un intento anterior: re-bumpear encima confunde
+# versiones. Solo esos tres archivos deben estar limpios al partir.
+$bumpFiles=@('fabric-mod/gradle.properties','fabric-mod/src/main/java/cl/coco/minecraft/CocoProtocol.java','.github/workflows/build-bootstrapper.yml')
+$dirtyBump=@(git status --porcelain|Where-Object{
+    $raw=[string]$_
+    @($bumpFiles|Where-Object{$raw-match[regex]::Escape($_)}).Count-gt0
+})
+if($dirtyBump.Count){throw "Publicacion bloqueada: hay un bump de version sin commitear de un intento anterior:`r`n$($dirtyBump -join "`r`n")`r`nRevisa, commitea o revierte esos archivos antes de publicar."}
 
 function Get-PublishedFabricModId($Mod,[string]$JarDirectory){
     if($Mod.fabricId){return [string]$Mod.fabricId}
@@ -299,7 +319,9 @@ $experienceAssetDir=Join-Path $releaseDir 'experience-assets'
 $experienceBuilder=Join-Path $root 'tools\Build-CocoValorantTools.ps1'
 if(Test-Path -LiteralPath $experienceBuilder -PathType Leaf){
     & $experienceBuilder -OutputDirectory $experienceAssetDir
-    if($LASTEXITCODE){throw 'No se pudo compilar el asset de VALORANTCraft.'}
+    # El builder falla con throw (no fija $LASTEXITCODE al ser .ps1): la senal
+    # real de exito es el JAR esperado en disco, no el codigo residual.
+    if(-not@(Get-ChildItem -LiteralPath $experienceAssetDir -Filter 'coco-valorant-tools-*.jar' -File -ErrorAction SilentlyContinue).Count){throw 'No se pudo compilar el asset de VALORANTCraft: falta el JAR en experience-assets.'}
 }
 $mediaTestUrl=@($launcherCatalog.experiences|Where-Object{[string]$_.runtime.type-eq'media'}|ForEach-Object{$_.content.episodes}|Where-Object{[string]$_.streamUrl-match'^https://'}|Select-Object -ExpandProperty streamUrl -First 1)[0]
 if([string]::IsNullOrWhiteSpace([string]$mediaTestUrl)){throw 'No se encontro una URL HTTPS de media para las pruebas del reproductor.'}
@@ -359,14 +381,21 @@ if(-not$Fast){
 .\tests\Test-CocoMediaSplit.ps1 -AllowMissingLocal
 .\tests\Test-CocoMediaStreamingPriority.ps1
 
-git fetch origin main --quiet
-if($LASTEXITCODE){throw 'No se pudo volver a comprobar origin/main antes del commit.'}
+Invoke-WithRetry { git fetch origin main --quiet; if($LASTEXITCODE){throw 'git fetch devolvio error.'} } 'recomprobar origin/main antes del commit'
 $currentOrigin=(git rev-parse origin/main).Trim()
 if($currentOrigin-ne$startingOrigin){throw "Publicacion bloqueada: origin/main cambio durante la compilacion ($startingOrigin -> $currentOrigin). Reintenta desde el estado nuevo."}
 
 git add .
 git commit -m "Publish Coco Pack $Version"
 if($LASTEXITCODE -and $LASTEXITCODE -ne 1){throw 'Fallo git commit.'}
+if($LASTEXITCODE-eq1){
+    # Exit 1 tambien es "nothing to commit": solo se acepta si el arbol quedo
+    # limpio (reintento tras un push parcial donde el bump ya estaba commiteado).
+    # Si queda suciedad, el commit fallo de verdad y no se sigue a ciegas.
+    $leftover=@(git status --porcelain)
+    if($leftover.Count){throw "Fallo git commit con cambios pendientes:`r`n$($leftover -join "`r`n")"}
+    Write-Output 'git commit sin cambios nuevos (bump ya commiteado en un intento anterior); se continua al push.'
+}
 git push
 if($LASTEXITCODE){throw 'Fallo git push.'}
 
@@ -376,12 +405,6 @@ $credentialLines=try{@(cmd.exe /c "git credential fill < `"$credInputFile`"")}fi
 $credential=@{};foreach($line in $credentialLines){if($line-match'^([^=]+)=(.*)$'){$credential[$matches[1]]=$matches[2]}}
 if(-not$credential.password){throw 'Git Credential Manager no devolvio una credencial de GitHub.'}
 $headers=@{Authorization="Bearer $($credential.password)";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28';'User-Agent'='CocoPublisher'}
-function Invoke-WithRetry([scriptblock]$Operation,[string]$Description){
-    for($attempt=1;$attempt-le4;$attempt++){
-        try{return & $Operation}
-        catch{if($attempt-eq4){throw};Write-Progress -Activity "Publicando Coco Pack $Version" -Status "Reintentando $Description ($($attempt+1)/4)";Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))}
-    }
-}
 function Get-ReleaseAssets([int64]$ReleaseId){
     $result=[Collections.Generic.List[object]]::new()
     for($page=1;$page-le20;$page++){
@@ -408,6 +431,72 @@ function Get-AllReleases {
         if($batch.Count-lt100){break}
     }
     return @($result)
+}
+function Send-CocoReleaseAssetsParallel($Release,$Assets,[string]$TagOverride='',[int]$MaxWorkers=4){
+    $work=@($Assets)
+    if(-not$work.Count){return}
+    $tag=if($TagOverride){$TagOverride}else{[string]$Release.tag_name}
+    if(-not$tag){$tag="v$Version"}
+    $workers=[Math]::Min($MaxWorkers,[Math]::Max(1,$work.Count))
+    $pool=[runspacefactory]::CreateRunspacePool(1,$workers)
+    $pool.Open()
+    try{
+        # Cada worker sube UN asset distinto: gh --clobber y el fallback REST son
+        # independientes por archivo, sin estado compartido entre workers.
+        $worker={
+            param($Repository,$ReleaseId,$Tag,$AssetPath,$AssetName,$AssetLength,$Headers)
+            $result=[pscustomobject]@{Name=$AssetName;Ok=$false;Error=''}
+            try{
+                if(Get-Command gh -ErrorAction SilentlyContinue){
+                    & gh release upload $Tag $AssetPath --clobber 2>&1|Out-Null
+                    if($LASTEXITCODE-eq0){$result.Ok=$true;return $result}
+                    $result.Error="gh devolvio codigo $LASTEXITCODE"
+                }
+                # Limpieza idempotente como la via serial: sin este GET+DELETE un
+                # gh caido a mitad deja un parcial y el POST crearia un duplicado
+                # del mismo nombre (GitHub los permite), y la verificacion
+                # posterior podria leer el parcial con Select -First 1.
+                try{
+                    $existing=Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$Repository/releases/$ReleaseId/assets?per_page=100" -Headers $Headers -TimeoutSec 60
+                    foreach($dup in @($existing|Where-Object name -eq $AssetName)){
+                        if([int64]$dup.size-eq[int64]$AssetLength){$result.Ok=$true;$result.Error='';return $result}
+                        Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($dup.id)" -Headers $Headers -TimeoutSec 60|Out-Null
+                    }
+                }catch{$result.Error=$_.Exception.Message}
+                $upload="https://uploads.github.com/repos/$Repository/releases/$ReleaseId/assets?name=$([Uri]::EscapeDataString($AssetName))"
+                for($attempt=1;$attempt-le4;$attempt++){
+                    try{
+                        Invoke-RestMethod -Method Post -Uri $upload -Headers $Headers -ContentType 'application/octet-stream' -InFile $AssetPath -TimeoutSec 300|Out-Null
+                        $result.Ok=$true;$result.Error=''
+                        return $result
+                    }catch{
+                        $result.Error=$_.Exception.Message
+                        if($attempt-lt4){Start-Sleep -Seconds ([Math]::Pow(2,$attempt-1))}
+                    }
+                }
+            }catch{$result.Error=$_.Exception.Message}
+            $result
+        }
+        $tasks=@()
+        foreach($asset in $work){
+            $ps=[powershell]::Create().AddScript($worker).AddArgument($Repository).AddArgument([int64]$Release.id).AddArgument($tag).AddArgument($asset.FullName).AddArgument($asset.Name).AddArgument([int64]$asset.Length).AddArgument($headers)
+            $ps.RunspacePool=$pool
+            $tasks+=,[pscustomobject]@{PS=$ps;Handle=$ps.BeginInvoke();Asset=$asset}
+        }
+        $failures=[Collections.Generic.List[string]]::new()
+        foreach($task in $tasks){
+            try{
+                $res=$task.PS.EndInvoke($task.Handle)
+                $item=if($res-and$res.Count){$res[0]}else{$null}
+                if(-not$item-or-not$item.Ok){$failures.Add("$($task.Asset.Name): $(if($item-and$item.Error){$item.Error}else{'sin resultado'})")}
+            }catch{$failures.Add("$($task.Asset.Name): $($_.Exception.Message)")}
+            finally{$task.PS.Dispose()}
+        }
+        # Fail-fast: las verificaciones nombre+tamano posteriores son la puerta
+        # final, pero abortar aqui ahorra un ciclo de listado contra assets a
+        # medio subir.
+        if($failures.Count){throw "Subida en paralelo fallo en: $($failures -join '; ')"}
+    }finally{$pool.Close();$pool.Dispose()}
 }
 function Send-CocoReleaseAsset($Release,$Asset){
     $tag = [string]$Release.tag_name
@@ -442,23 +531,32 @@ $allReleases=@(Get-AllReleases)
 $assetRelease=@($allReleases|Where-Object tag_name -eq 'mod-assets'|Select-Object -First 1)
 if(-not$assetRelease){
     $assetBody=@{tag_name='mod-assets';target_commitish='main';name='Coco Mod Assets';body='Assets inmutables identificados por SHA-256.';draft=$true;prerelease=$true}|ConvertTo-Json
-    $assetRelease=Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$Repository/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $assetBody
+    $assetRelease=Invoke-WithRetry {
+        Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$Repository/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $assetBody -TimeoutSec 60
+    } 'crear release mod-assets'
 }
 $jarAssets=@(Get-ChildItem (Join-Path $releaseDir 'jars') -File)
 $remoteJarAssets=@(Get-ReleaseAssets $assetRelease.id)
+$jarsToUpload=[Collections.Generic.List[object]]::new()
 foreach($asset in $jarAssets){
     $uploaded=@($remoteJarAssets|Where-Object name -eq $asset.Name|Select-Object -First 1)
     if($uploaded -and [int64]$uploaded.size -eq [int64]$asset.Length){continue}
-    if($uploaded){Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($uploaded.id)" -Headers $headers|Out-Null}
-    Send-CocoReleaseAsset $assetRelease $asset
+    if($uploaded){Invoke-WithRetry { Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($uploaded.id)" -Headers $headers -TimeoutSec 60|Out-Null } "eliminar asset $($uploaded.name) para reemplazarlo"}
+    [void]$jarsToUpload.Add($asset)
 }
+# Los JARs son cientos de archivos pequenos: la subida serial con reintentos
+# dominaba el tiempo pared. 4 vias en paralelo; la verificacion posterior
+# confirma cada asset antes de visibilizar.
+Send-CocoReleaseAssetsParallel $assetRelease @($jarsToUpload) 'mod-assets' 4
 $remoteJarAssets=@(Get-ReleaseAssets $assetRelease.id)
 foreach($asset in $jarAssets){
     $match=@($remoteJarAssets|Where-Object name -eq $asset.Name|Select-Object -First 1)
     if(-not$match -or [int64]$match.size -ne [int64]$asset.Length){throw "No se publico correctamente el asset $($asset.Name)."}
 }
 if($assetRelease.draft){
-    $assetRelease=Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($assetRelease.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body (@{draft=$false;prerelease=$true}|ConvertTo-Json)
+    $assetRelease=Invoke-WithRetry {
+        Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($assetRelease.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body (@{draft=$false;prerelease=$true}|ConvertTo-Json) -TimeoutSec 60
+    } 'visibilizar release mod-assets'
 }
 
 $releaseNotes=@'
@@ -476,7 +574,9 @@ if($existing){
     if(-not$existing.draft){throw "El release v$Version ya esta publicado."}
     $release=$existing
 }else{
-    $release=Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$Repository/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body))
+    $release=Invoke-WithRetry {
+        Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$Repository/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body)) -TimeoutSec 60
+    } "crear release v$Version"
 }
 $experienceAssetDir=Join-Path $releaseDir 'experience-assets'
 $experienceBuilder=Join-Path $root 'tools\Build-CocoValorantTools.ps1'
@@ -515,18 +615,25 @@ if($hasGh){
     Write-Host "Subiendo $($assetPaths.Count) assets en paralelo con GitHub CLI..." -ForegroundColor Cyan
     try{
         & gh release upload $tag @assetPaths --clobber
-    }catch{}
+        if($LASTEXITCODE-ne0){Write-Warning "gh release upload termino con codigo $LASTEXITCODE; se verifica y repara asset por asset."}
+    }catch{
+        Write-Warning "gh release upload fallo ($($_.Exception.Message)); se verifica y repara asset por asset."
+    }
 }
 $remoteAssets=@(Get-ReleaseAssets $release.id)
+$assetsToUpload=[Collections.Generic.List[object]]::new()
 $index=0
 foreach($asset in $assets){
     $index++
     $match=@($remoteAssets|Where-Object name -eq $asset.Name|Select-Object -First 1)
     if($match -and [int64]$match.size -eq [int64]$asset.Length){continue}
     Write-Progress -Activity "Publicando Coco Pack $Version" -Status $asset.Name -PercentComplete (100*$index/$assets.Count)
-    if($match){Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($match.id)" -Headers $headers|Out-Null}
-    Send-CocoReleaseAsset $release $asset
+    if($match){Invoke-WithRetry { Invoke-RestMethod -Method Delete -Uri "https://api.github.com/repos/$Repository/releases/assets/$($match.id)" -Headers $headers -TimeoutSec 60|Out-Null } "eliminar asset $($match.name) para reemplazarlo"}
+    [void]$assetsToUpload.Add($asset)
 }
+# Reparacion en paralelo (maximo 3 vias para no saturar la subida con los
+# zips grandes); la verificacion posterior confirma cada asset.
+Send-CocoReleaseAssetsParallel $release @($assetsToUpload) $tag 3
 $remoteAssets=@(Get-ReleaseAssets $release.id)
 $missing=[Collections.Generic.List[string]]::new()
 foreach($asset in $assets){
@@ -534,6 +641,26 @@ foreach($asset in $assets){
     if(-not$match -or [int64]$match.size -ne [int64]$asset.Length){$missing.Add($asset.Name)}
 }
 if($missing.Count){throw "No se publicaron correctamente: $($missing -join ', ')"}
+# Verificacion de contenido (no solo tamano): un asset corrupto del mismo
+# tamano pasaria el gate anterior y los clientes lo rechazarian recien al
+# instalar. Se re-descarga con auth (los borradores no son anonimos) y se
+# compara SHA-256. Acotado a 100 MB por asset para no re-bajar GBs: esos se
+# verifican por hash en cada instalacion cliente de todas formas.
+$verifyDir=Join-Path $env:TEMP "coco-publish-verify-$PID"
+New-Item -ItemType Directory -Path $verifyDir -Force|Out-Null
+try{
+    foreach($asset in $assets){
+        if([int64]$asset.Length-gt100MB){Write-Output "Verificacion de contenido omitida por tamano ($([int64]$asset.Length) bytes): $($asset.Name)";continue}
+        $downloaded=Join-Path $verifyDir $asset.Name
+        Invoke-WithRetry {
+            Invoke-RestMethod -Uri "https://github.com/$Repository/releases/download/$tag/$([Uri]::EscapeDataString($asset.Name))" -Headers $headers -OutFile $downloaded -TimeoutSec 300
+        } "re-descargar $($asset.Name) para verificar contenido"
+        $remoteHash=(Get-FileHash -LiteralPath $downloaded -Algorithm SHA256).Hash.ToLowerInvariant()
+        $localHash=(Get-FileHash -LiteralPath $asset.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        if($remoteHash-ne$localHash){throw "El asset publicado '$($asset.Name)' no coincide en contenido (remoto $remoteHash, local $localHash). Eliminalo del borrador y reintenta."}
+        Write-Output "Contenido verificado: $($asset.Name)"
+    }
+}finally{Remove-Item -LiteralPath $verifyDir -Recurse -Force -ErrorAction SilentlyContinue}
 
 # Instala exactamente el mismo paquete en el host antes de hacerlo visible a los clientes.
 if(-not(Test-Path (Join-Path $MinecraftRoot 'config\coco-host.json'))){throw 'Falta config\coco-host.json en la instalacion host.'}
@@ -569,7 +696,9 @@ if($KeepDraft){
 }
 
 $publishBody=@{draft=$false;prerelease=$false;make_latest=$true}|ConvertTo-Json
-$release=Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($release.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $publishBody
+$release=Invoke-WithRetry {
+    Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Repository/releases/$($release.id)" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body $publishBody -TimeoutSec 60
+} "publicar release v$Version"
 Write-Progress -Activity "Publicando Coco Pack $Version" -Completed
 Write-Host "Publicado: $($release.html_url)"
 # No heredar un LASTEXITCODE antiguo de git/gradle al proceso que hospeda este

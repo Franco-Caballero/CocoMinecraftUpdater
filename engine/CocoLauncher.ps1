@@ -140,6 +140,15 @@ function Get-CocoExperienceButtonBounds([ValidateRange(0,999)][int]$Index){
 
 function Get-CocoExperienceDiskUsage([string]$InstanceRoot){
     if(-not$InstanceRoot-or-not(Test-Path -LiteralPath $InstanceRoot -PathType Container)){return [pscustomobject]@{Bytes=0;Label='No instalado';Installed=$false}}
+    # Cache TTL: las tarjetas consultan una vez por experiencia en cada refresh y
+    # recorrer GB/miles de archivos en el hilo UI congelaba la ventana. El estado
+    # se invalida al instalar, mover o eliminar (Clear-...).
+    try{
+        if(-not$script:CocoDiskUsageCache){$script:CocoDiskUsageCache=@{}}
+        $cacheKey=([IO.Path]::GetFullPath($InstanceRoot)).TrimEnd('\').ToLowerInvariant()
+        $cached=$script:CocoDiskUsageCache[$cacheKey]
+        if($cached-and([DateTime]::UtcNow-$cached.At).TotalSeconds-lt5){return $cached.Usage}
+    }catch{}
     $totalBytes=0
     $fileCount=0
     try{
@@ -152,7 +161,13 @@ function Get-CocoExperienceDiskUsage([string]$InstanceRoot){
     }
     if($fileCount-eq0){return [pscustomobject]@{Bytes=0;Label='No instalado';Installed=$false;FileCount=0}}
     $label=if($totalBytes-ge1GB){'{0:N1} GB'-f($totalBytes/1GB)}elseif($totalBytes-ge1MB){'{0:N0} MB'-f($totalBytes/1MB)}elseif($totalBytes-gt0){'{0:N0} KB'-f($totalBytes/1KB)}else{'Vacio'}
-    [pscustomobject]@{Bytes=$totalBytes;Label=$label;Installed=$true;FileCount=$fileCount}
+    $usage=[pscustomobject]@{Bytes=$totalBytes;Label=$label;Installed=$true;FileCount=$fileCount}
+    try{$script:CocoDiskUsageCache[$cacheKey]=[pscustomobject]@{At=[DateTime]::UtcNow;Usage=$usage}}catch{}
+    $usage
+}
+
+function Clear-CocoExperienceDiskUsageCache(){
+    try{if($script:CocoDiskUsageCache){$script:CocoDiskUsageCache.Clear()}}catch{}
 }
 
 function Test-CocoExperienceStagePath([string]$StagePath,[string]$InstanceRoot){
@@ -219,13 +234,27 @@ function Get-CocoInstanceLocationsStorePath([string]$StorePath='') {
 
 function Get-CocoInstanceCustomLocations([string]$StorePath='') {
     $store = Get-CocoInstanceLocationsStorePath $StorePath
+    # Cache TTL: cada tarjeta releia y parseaba este JSON en cada refresh.
+    try{
+        if(-not$script:CocoInstanceLocationsCache){$script:CocoInstanceLocationsCache=@{}}
+        $cacheKey=$store.ToLowerInvariant()
+        $cached=$script:CocoInstanceLocationsCache[$cacheKey]
+        if($cached-and([DateTime]::UtcNow-$cached.At).TotalSeconds-lt2){return $cached.Locations}
+    }catch{}
+    $locations=$null
     if (Test-Path -LiteralPath $store -PathType Leaf) {
         try {
             $json = Get-Content -LiteralPath $store -Raw -ErrorAction Stop | ConvertFrom-Json
-            if ($json) { return $json }
+            if ($json) { $locations = $json }
         } catch {}
     }
-    return [pscustomobject]@{}
+    if(-not$locations){$locations=[pscustomobject]@{}}
+    try{$script:CocoInstanceLocationsCache[$cacheKey]=[pscustomobject]@{At=[DateTime]::UtcNow;Locations=$locations}}catch{}
+    return $locations
+}
+
+function Clear-CocoInstanceLocationsCache(){
+    try{if($script:CocoInstanceLocationsCache){$script:CocoInstanceLocationsCache.Clear()}}catch{}
 }
 
 function Get-CocoExperienceInstanceRoot([object]$Experience, $DefaultExperiencesRoot, [string]$StorePath='') {
@@ -294,6 +323,8 @@ function Set-CocoExperienceInstanceRoot([string]$InstanceId, [string]$CustomPath
     try{
         [IO.File]::WriteAllText($temporary, $json, (New-Object Text.UTF8Encoding($false)))
         Move-Item -LiteralPath $temporary -Destination $storePath -Force
+        Clear-CocoInstanceLocationsCache
+        Clear-CocoExperienceDiskUsageCache
         Write-CocoStorageDiagnostic 'location.store.saved' @{instanceId=$InstanceId;customPath=$normalizedPath;storePath=$storePath;entryCount=$dict.Count}
     }catch{
         Write-CocoStorageDiagnostic 'location.store.error' @{instanceId=$InstanceId;customPath=$normalizedPath;storePath=$storePath;error=$_.Exception.Message}
@@ -354,6 +385,7 @@ function Remove-CocoInstalledExperience([string]$InstanceRoot, [string]$Experien
     $backup=Backup-CocoExperienceUserData $InstanceRoot $InstanceId $BackupRoot
     Write-CocoStorageDiagnostic 'delete.backup.complete' @{instanceId=$InstanceId;instanceRoot=$fullInstance;backupRoot=$backup}
     Remove-Item -LiteralPath $InstanceRoot -Recurse -Force
+    Clear-CocoExperienceDiskUsageCache
     Write-CocoLog "Experiencia eliminada para liberar espacio: $InstanceRoot"
     Write-CocoStorageDiagnostic 'delete.complete' @{instanceId=$InstanceId;instanceRoot=$fullInstance;backupRoot=$backup}
     [pscustomobject]@{Removed=$true;Reason='deleted';BackupRoot=$backup}
@@ -383,7 +415,7 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     
     $experienceName=[string]$Experience.name
     $dialog=New-Object Windows.Forms.Form
-    $dialog.Name='CocoInstallLocationDialog';$dialog.Text=("Instalar {0}"-f$experienceName);$dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='None';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.KeyPreview=$true;$dialog.ShowInTaskbar=$false;$dialog.TopMost=$false;$dialog.BackColor=[Drawing.Color]::FromArgb(53,35,67);$dialog.Padding=New-Object Windows.Forms.Padding(1);$dialog.ClientSize=New-Object Drawing.Size(660,315);$dialog.MinimumSize=New-Object Drawing.Size(660,315)
+    $dialog.Name='CocoInstallLocationDialog';$dialog.Text=("Instalar {0}"-f$experienceName);$dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='None';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.KeyPreview=$true;$dialog.ShowInTaskbar=$false;$dialog.TopMost=$false;$dialog.BackColor=[Drawing.Color]::FromArgb(53,35,67);$dialog.Padding=New-Object Windows.Forms.Padding(1);$dialog.ClientSize=New-Object Drawing.Size((Get-CocoLauncherUiMetric 660),(Get-CocoLauncherUiMetric 315));$dialog.MinimumSize=New-Object Drawing.Size((Get-CocoLauncherUiMetric 620),(Get-CocoLauncherUiMetric 300))
     $dialog.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(84,59,106),1);try{$eventArgs.Graphics.DrawRectangle($pen,0,0,$sender.ClientSize.Width-1,$sender.ClientSize.Height-1)}finally{$pen.Dispose()}}.GetNewClosure())
 
     $header=New-Object Windows.Forms.Panel;$header.Name='CocoInstallLocationHeader';$header.Dock='Top';$header.Height=78;$header.BackColor=[Drawing.Color]::FromArgb(27,19,38)
@@ -429,6 +461,16 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     $dialog.Add_Resize($layoutInstallDialog)
     $dialog.Controls.AddRange(@($body,$footer,$header))
     &$layoutInstallDialog
+    # Anti-corte: cada texto se mide en esta PC/DPI y la fuente baja hasta caber.
+    Set-CocoFittedLabelText $heading ([string]$heading.Text) 'Segoe UI Semibold' 14 9 ([Drawing.FontStyle]::Regular) $true
+    Set-CocoFittedLabelText $subHeading ([string]$subHeading.Text) 'Segoe UI' 8.5 6.5 ([Drawing.FontStyle]::Regular) $true
+    Set-CocoFittedLabelText $intro ([string]$intro.Text) 'Segoe UI Semibold' 8.5 6.5 ([Drawing.FontStyle]::Regular) $true
+    Set-CocoFittedLabelText $pathCaption ([string]$pathCaption.Text) 'Segoe UI Semibold' 7.5 6 ([Drawing.FontStyle]::Regular) $true
+    Set-CocoFittedLabelText $pathLabel ([string]$pathLabel.Text) 'Segoe UI Semibold' 9 6.5 ([Drawing.FontStyle]::Regular) $true
+    Set-CocoFittedLabelText $hint ([string]$hint.Text) 'Segoe UI' 8 6 ([Drawing.FontStyle]::Regular) $true
+    Set-CocoFittedButtonText $defaultBtn ([string]$defaultBtn.Text) 'Segoe UI Semibold' 9 6
+    Set-CocoFittedButtonText $customBtn ([string]$customBtn.Text) 'Segoe UI Semibold' 9 6
+    Set-CocoFittedButtonText $cancelBtn ([string]$cancelBtn.Text) 'Segoe UI Semibold' 9 6
     $dialog.AcceptButton=$defaultBtn;$dialog.CancelButton=$cancelBtn
     $dragState=@{Active=$false;Start=[Drawing.Point]::Empty;Origin=[Drawing.Point]::Empty}
     $beginDrag={param($sender,$eventArgs)if($eventArgs.Button-eq[Windows.Forms.MouseButtons]::Left){$dragState.Active=$true;$dragState.Start=[Windows.Forms.Cursor]::Position;$dragState.Origin=$dialog.Location}}.GetNewClosure()
@@ -465,6 +507,7 @@ function Prompt-CocoExperienceLocationChoice($Experience, [string]$DefaultExperi
     
     $result=$dialog.ShowDialog($script:CocoForm)
     $choice=[string]$dialog.Tag
+    try{$toolTip.Dispose()}catch{}
     $dialog.Dispose()
     Write-CocoStorageDiagnostic 'location.prompt.closed' @{experienceId=$expId;instanceId=$instanceId;dialogResult=$result;choice=$choice}
     if($result-ne[Windows.Forms.DialogResult]::OK){Write-CocoStorageDiagnostic 'location.prompt.cancelled' @{experienceId=$expId;instanceId=$instanceId};return [pscustomobject]@{Confirmed=$false;Cancelled=$true;Choice='cancelled';Root=$instanceRoot}}
@@ -599,11 +642,13 @@ function Get-CocoExperienceCardControls($Control){
 
 function Invoke-CocoExperienceStorageInstallUi($Info){
     if(-not$Info-or$script:CocoStorageInstallInProgress){return}
-    $script:CocoStorageInstallInProgress=$true
-    $script:CocoInstallingExperienceId=[string]$Info.ExperienceId
-    $script:CocoInstallingExperienceName=[string]$Info.Name
-    Write-CocoStorageDiagnostic 'install.ui.start' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;name=$Info.Name;role=$Info.Role;currentRoot=$Info.CurrentRoot;experiencesRoot=$Info.ExperiencesRoot;locationPath=(Get-CocoLauncherInstanceLocationsPath $Info.Paths)}
     try{
+        # La bandera vive dentro del try: si algo falla antes, el finally la
+        # libera igual y no queda el launcher bloqueado hasta reiniciar.
+        $script:CocoStorageInstallInProgress=$true
+        $script:CocoInstallingExperienceId=[string]$Info.ExperienceId
+        $script:CocoInstallingExperienceName=[string]$Info.Name
+        Write-CocoStorageDiagnostic 'install.ui.start' @{experienceId=$Info.ExperienceId;instanceId=$Info.InstanceId;name=$Info.Name;role=$Info.Role;currentRoot=$Info.CurrentRoot;experiencesRoot=$Info.ExperiencesRoot;locationPath=(Get-CocoLauncherInstanceLocationsPath $Info.Paths)}
         Set-CocoLauncherStep 4 'INICIANDO INSTALACION' ("Preparando instalacion de {0}..."-f$Info.Name) 5
         if($Info.DynamicPanel-and-not$Info.DynamicPanel.IsDisposed){
             Update-CocoExperienceCardsUi $Info.DynamicPanel $Info.Catalog $Info.Paths $Info.Role
@@ -1352,6 +1397,21 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $controls.Add_Resize($layoutPlayer)
     &$layoutChrome
     &$layoutPlayer
+    # Pre-ajuste con el texto mas largo de cada estado: los cambios posteriores
+    # (PAUSAR/REPRODUCIR/REINTENTAR/REPETIR, PANTALLA/SALIR, Buffer,
+    # "Continuando desde ...") reutilizan esta fuente y nunca desbordan en otra
+    # PC o DPI. Sin saltos de tamano entre estados.
+    Set-CocoFittedButtonText $play 'REPRODUCIR' 'Segoe UI Semibold' 9 6
+    $play.Text='PAUSAR'
+    Set-CocoFittedButtonText $fullscreen 'SALIR DE PANTALLA COMPLETA' 'Segoe UI Semibold' 8 6
+    $fullscreen.Text='PANTALLA COMPLETA'
+    Set-CocoFittedLabelText $statusLabel 'Continuando desde 00:00:00' 'Segoe UI Semibold' 8 6 ([Drawing.FontStyle]::Regular) $true
+    $statusLabel.Text='Cargando video...'
+    Set-CocoFittedLabelText $position '00:00:00 / 00:00:00' 'Segoe UI Semibold' 8.5 6.5 ([Drawing.FontStyle]::Regular) $true
+    $position.Text='00:00 / --:--'
+    Set-CocoFittedLabelText $titleLabel ([string]$titleLabel.Text) 'Segoe UI Semibold' 11 7 ([Drawing.FontStyle]::Regular) $true
+    Set-CocoFittedLabelText $subtitleLabel ([string]$subtitleLabel.Text) 'Segoe UI' 8 6.5 ([Drawing.FontStyle]::Regular) $true
+    Set-CocoFittedLabelText $volumeLabel ([string]$volumeLabel.Text) 'Segoe UI Semibold' 7.5 6 ([Drawing.FontStyle]::Regular) $true
     $savePlayback={
         param([bool]$Force=$false)
         try{
@@ -1759,6 +1819,10 @@ function Update-CocoMediaEpisodeRowUi($RowInfo){
         }
     }
     $RowInfo.Button.Text=$buttonText;$RowInfo.Button.Enabled=$canAct
+    # El texto del boton cambia por estado ('VERIFICAR / REPRODUCIR' es el mas
+    # largo): se reajusta en cada actualizacion para que nunca se corte.
+    Set-CocoFittedButtonText $RowInfo.Button ([string]$buttonText) 'Segoe UI Semibold' 9 6
+    if(-not$RowInfo.StatusLabel.IsDisposed){Set-CocoFittedLabelText $RowInfo.StatusLabel ([string]$RowInfo.StatusLabel.Text) 'Segoe UI' 7.5 6 ([Drawing.FontStyle]::Regular) $true}
 }
 
 function Invoke-CocoMediaEpisodeAction($RowInfo){
@@ -1852,7 +1916,7 @@ function Invoke-CocoMediaEpisodeUi($Experience){
     $episodeActionCommand=[System.Management.Automation.ScriptBlock]$episodeActionInfo.ScriptBlock
     Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
     $dialog=New-Object Windows.Forms.Form
-    $dialog.Name='CocoMediaEpisodeSelector';$dialog.Text=[string]$Experience.name;$dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='None';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.KeyPreview=$true;$dialog.ShowInTaskbar=$false;$dialog.BackColor=[Drawing.Color]::FromArgb(27,19,38);$dialog.Padding=New-Object Windows.Forms.Padding(1);$dialog.ClientSize=New-Object Drawing.Size(760,380);$dialog.MinimumSize=New-Object Drawing.Size(660,340)
+    $dialog.Name='CocoMediaEpisodeSelector';$dialog.Text=[string]$Experience.name;$dialog.StartPosition='CenterParent';$dialog.FormBorderStyle='None';$dialog.MaximizeBox=$false;$dialog.MinimizeBox=$false;$dialog.KeyPreview=$true;$dialog.ShowInTaskbar=$false;    $dialog.BackColor=[Drawing.Color]::FromArgb(27,19,38);$dialog.Padding=New-Object Windows.Forms.Padding(1);$dialog.ClientSize=New-Object Drawing.Size((Get-CocoLauncherUiMetric 760),(Get-CocoLauncherUiMetric 380));$dialog.MinimumSize=New-Object Drawing.Size((Get-CocoLauncherUiMetric 620),(Get-CocoLauncherUiMetric 320))
     $dialog.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(84,59,106),1);try{$eventArgs.Graphics.DrawRectangle($pen,0,0,$sender.ClientSize.Width-1,$sender.ClientSize.Height-1)}finally{$pen.Dispose()}}.GetNewClosure())
 
     $header=New-Object Windows.Forms.Panel;$header.Name='CocoMediaSelectorHeader';$header.Dock='Top';$header.Height=82;$header.BackColor=[Drawing.Color]::FromArgb(27,19,38)
@@ -1889,6 +1953,13 @@ function Invoke-CocoMediaEpisodeUi($Experience){
         $cancelButton.Location=New-Object Drawing.Point([Math]::Max(0,$footerWidth-130),12)
     }.GetNewClosure()
     $dialog.Add_Resize($layoutSelector);&$layoutSelector
+    # Teclado completo: Escape ya existia; CancelButton cubre el resto y el foco
+    # inicial evita que Tab empiece en un control arbitrario.
+    $dialog.CancelButton=$cancelButton
+    $dialog.Add_Shown({try{[void]$cancelButton.Focus()}catch{}}.GetNewClosure())
+    Set-CocoFittedLabelText $heading ([string]$heading.Text) 'Segoe UI Semibold' 14 9 ([Drawing.FontStyle]::Regular) $true
+    Set-CocoFittedLabelText $badge ([string]$badge.Text) 'Segoe UI Semibold' 7.5 6 ([Drawing.FontStyle]::Regular) $true
+    Set-CocoFittedButtonText $cancelButton ([string]$cancelButton.Text) 'Segoe UI Semibold' 9 6
 
     $dragState=[pscustomobject]@{Active=$false;Start=[Drawing.Point]::Empty;FormLocation=[Drawing.Point]::Empty}
     $beginDrag={param($sender,$eventArgs)if($eventArgs.Button-eq[Windows.Forms.MouseButtons]::Left){$dragState.Active=$true;$dragState.Start=[Windows.Forms.Cursor]::Position;$dragState.FormLocation=$dialog.Location}}.GetNewClosure()
@@ -1906,8 +1977,11 @@ function Invoke-CocoMediaEpisodeUi($Experience){
 
     $dialog.Tag=[pscustomobject]@{Buttons=(New-Object Collections.ArrayList);Progress=$progress;StatusLabel=$statusLabel}
     $rowY=8
+    # Reserva del ancho de la futura barra vertical (mismo fantasma horizontal
+    # que la grilla principal si las filas nacen del ancho completo).
+    $episodeVBar=try{[Windows.Forms.SystemInformation]::VerticalScrollBarWidth}catch{17}
     foreach($episode in @($Experience.content.episodes)){
-        $rowWidth=[Math]::Max(520,[int]$list.ClientSize.Width-6)
+        $rowWidth=[Math]::Max(1,([int]$list.ClientSize.Width-6-$episodeVBar))
         $row=New-Object Windows.Forms.Panel;$row.Name='CocoMediaEpisodeRow';$row.Location=New-Object Drawing.Point(0,$rowY);$row.Size=New-Object Drawing.Size($rowWidth,76);$row.BackColor=[Drawing.Color]::FromArgb(43,27,67);$row.Padding=New-Object Windows.Forms.Padding(1);Set-CocoControlDoubleBuffered $row
         $rowAccent=New-Object Windows.Forms.Panel;$rowAccent.Dock='Left';$rowAccent.Width=4;$rowAccent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
         $title=New-Object Windows.Forms.Label;$title.Text=[string]$episode.title;$title.Font=New-Object Drawing.Font('Segoe UI Semibold',9.5);$title.ForeColor=[Drawing.Color]::White;$title.AutoEllipsis=$true
@@ -1919,12 +1993,14 @@ function Invoke-CocoMediaEpisodeUi($Experience){
             $title.Location=New-Object Drawing.Point(17,7);$title.Size=New-Object Drawing.Size($textWidth,20);$file.Location=New-Object Drawing.Point(17,29);$file.Size=New-Object Drawing.Size($textWidth,17);$rowStatus.Location=New-Object Drawing.Point(17,51);$rowStatus.Size=New-Object Drawing.Size($textWidth,16);$button.Location=New-Object Drawing.Point([Math]::Max(0,$rowWidth-202),21)
         }.GetNewClosure()
         $row.Add_Resize($layoutRow);&$layoutRow
+        Set-CocoFittedLabelText $title ([string]$title.Text) 'Segoe UI Semibold' 9.5 7 ([Drawing.FontStyle]::Regular) $true
+        Set-CocoFittedLabelText $file ([string]$file.Text) 'Segoe UI' 7.5 6 ([Drawing.FontStyle]::Regular) $true
         $rowInfo=[pscustomobject]@{Experience=$Experience;Episode=$episode;Dialog=$dialog;Button=$button;StatusLabel=$rowStatus;Status=$null}
         $button.Tag=$rowInfo;$button.Add_Click({param($sender,$eventArgs)$null=&$episodeActionCommand $sender.Tag}.GetNewClosure())
         $row.Controls.AddRange(@($rowAccent,$title,$file,$rowStatus,$button));$list.Controls.Add($row);[void]$dialog.Tag.Buttons.Add($button);Update-CocoMediaEpisodeRowUi $rowInfo;$rowY+=84
     }
     $list.Add_Resize(({
-        $targetWidth=[Math]::Max(520,[int]$list.ClientSize.Width-6)
+        $targetWidth=[Math]::Max(1,([int]$list.ClientSize.Width-6-$episodeVBar))
         try{$list.HorizontalScroll.Enabled=$false;$list.HorizontalScroll.Visible=$false}catch{}
         foreach($episodeRow in @($list.Controls|Where-Object Name -eq 'CocoMediaEpisodeRow')){if($episodeRow.Width-ne$targetWidth){$episodeRow.Width=$targetWidth}}
     }.GetNewClosure()))
@@ -1951,7 +2027,17 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
     $installingExpId=if($script:CocoInstallingExperienceId){[string]$script:CocoInstallingExperienceId}else{''}
     $installingExpName=if($script:CocoInstallingExperienceName){[string]$script:CocoInstallingExperienceName}else{'otro juego'}
     $managedExperiences=@($Catalog.experiences|Where-Object{ $_.managementMode-eq'managed'-and($_.launch.workflow-eq'coco-managed'-or$_.launch.workflow-eq'coco-standalone'-or$_.launch.workflow-eq'coco-media') })
-    if($managedExperiences.Count-eq0){return}
+    if($managedExperiences.Count-eq0){
+        # Sin experiencias no hay grilla, pero el panel debe quedar limpio: con
+        # el return directo sobrevivian tarjetas viejas clicables y obsoletas.
+        try{
+            $DynamicPanel.SuspendLayout()
+            $DynamicPanel.AutoScroll=$false;$DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,0)
+            foreach($oldControl in @($DynamicPanel.Controls)){try{$DynamicPanel.Controls.Remove($oldControl);$oldControl.Dispose()}catch{}}
+            try{$DynamicPanel.HorizontalScroll.Enabled=$false;$DynamicPanel.HorizontalScroll.Visible=$false}catch{}
+        }catch{}finally{try{$DynamicPanel.ResumeLayout($true)}catch{}}
+        return
+    }
     Write-CocoStorageDiagnostic 'cards.refresh' @{role=$Role;experienceCount=$managedExperiences.Count;experiencesRoot=$expRoot;locationPath=$locationPath;panelSize=$DynamicPanel.Size;installing=$isInstallingAny;installingExpId=$installingExpId}
     Set-CocoExperienceCardsScrollBehavior $DynamicPanel
     if($script:CocoExperienceCardsToolTip){try{$script:CocoExperienceCardsToolTip.Dispose()}catch{}}
@@ -1971,14 +2057,34 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
         $cardsContent=New-Object Windows.Forms.Panel;$cardsContent.Name='CocoExperienceCardsContent';$cardsContent.Location=[Drawing.Point]::new(0,0);$cardsContent.Size=[Drawing.Size]::new(1,1);$cardsContent.BackColor=[Drawing.Color]::FromArgb(22,13,34);$cardsContent.TabStop=$false;Set-CocoControlDoubleBuffered $cardsContent
         $storageHeader=New-Object Windows.Forms.Label
         $storageHeader.Text=if($Role-eq'host'){'EXPERIENCIAS Y GESTION DE INSTANCIAS'}else{'EXPERIENCIAS DISPONIBLES'}
-        $storageHeader.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9 7));$storageHeader.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$storageHeader.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric 0));$storageHeader.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 810),(Get-CocoLauncherUiMetric 20));$storageHeader.AutoEllipsis=$true
+        $storageHeader.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 9 7));$storageHeader.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$storageHeader.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 0),(Get-CocoLauncherUiMetric 0));        $storageHeader.Size=New-Object Drawing.Size(([Math]::Max(1,[int]$DynamicPanel.ClientSize.Width)),(Get-CocoLauncherUiMetric 20));$storageHeader.AutoEllipsis=$true;$storageHeader.AutoSize=$false;$storageHeader.UseCompatibleTextRendering=$false
         $cardsContent.Controls.Add($storageHeader)
-        $columns=2;$gap=Get-CocoLauncherUiMetric 10;$availableWidth=[Math]::Max((Get-CocoLauncherUiMetric 500),$DynamicPanel.ClientSize.Width-(Get-CocoLauncherUiMetric 18));$cardWidth=[Math]::Max((Get-CocoLauncherUiMetric 240),[Math]::Floor(($availableWidth-$gap)/$columns));$cardHeight=[int]$cardWidth;$gradientHeight=Get-CocoLauncherUiMetric 110;$actionPadding=Get-CocoLauncherUiMetric 8;$actionGap=Get-CocoLauncherUiMetric 6;$actionHeight=Get-CocoLauncherUiMetric 28
+        # Sin minimos fijos que desborden: antes 500px/240px forzaban tarjetas mas
+        # anchas que el viewport en pantallas pequenas y aparecia el scroll
+        # horizontal fantasma. El ancho util nunca supera al viewport real.
+        $columns=2;$gap=Get-CocoLauncherUiMetric 10;$viewWidth=[Math]::Max(1,[int]$DynamicPanel.ClientSize.Width);if($viewWidth-le1){$viewWidth=Get-CocoLauncherUiMetric 640}
+        $cardWidth=1;$cardHeight=1;$logicalRows=1;$gridContentHeight=1
+        for($layoutPass=0;$layoutPass-lt3;$layoutPass++){
+            if($viewWidth-lt(Get-CocoLauncherUiMetric 400)){$columns=1}else{$columns=2}
+            $cardWidth=[Math]::Max(1,[int][Math]::Floor(($viewWidth-($columns-1)*$gap)/$columns))
+            $cardHeight=Get-CocoExperienceCardHeight $cardWidth
+            $logicalRows=[int][Math]::Ceiling($managedExperiences.Count/[double][Math]::Max(1,$columns))
+            $gridContentHeight=[int](Get-CocoLauncherUiMetric 22)+($logicalRows*$cardHeight)+([Math]::Max(0,$logicalRows-1)*$gap)+(Get-CocoLauncherUiMetric 8)
+            # La barra vertical que va a aparecer roba ancho al viewport: se reserva
+            # por adelantado. Sin esto el contenido nacia ~17px mas ancho que la vista
+            # final y WinForms mostraba el scroll horizontal fantasma del reporte.
+            $needVertical=$gridContentHeight-gt[Int]$DynamicPanel.ClientSize.Height
+            $reserved=if($needVertical){try{[Windows.Forms.SystemInformation]::VerticalScrollBarWidth}catch{17}}else{0}
+            $adjusted=[Math]::Max(1,([int]$DynamicPanel.ClientSize.Width-$reserved))
+            if($adjusted-eq$viewWidth){break}
+            $viewWidth=$adjusted
+        }
+        $gradientHeight=Get-CocoLauncherUiMetric 110;$actionPadding=Get-CocoLauncherUiMetric 8;$actionGap=Get-CocoLauncherUiMetric 6;$actionHeight=Get-CocoLauncherUiMetric 28
         $cardIndex=0
         foreach($exp in $managedExperiences){
             $rowIndex=[int][Math]::Floor($cardIndex/$columns);$columnIndex=$cardIndex%$columns;$cardX=[int]($columnIndex*($cardWidth+$gap));$cardTop=[int]((Get-CocoLauncherUiMetric 22)+$rowIndex*($cardHeight+$gap))
             $card=New-Object Windows.Forms.Panel;$card.Name='CocoExperienceCard';$card.Location=New-Object Drawing.Point($cardX,$cardTop);$card.Size=New-Object Drawing.Size($cardWidth,$cardHeight);$card.BackColor=[Drawing.Color]::FromArgb(30,20,42);$card.BorderStyle=[Windows.Forms.BorderStyle]::None;Set-CocoControlDoubleBuffered $card
-            $imageBox=New-Object Windows.Forms.PictureBox;$imageBox.Name='CocoExperienceImage';$imageBox.Location=New-Object Drawing.Point(0,0);$imageBox.Size=New-Object Drawing.Size($cardWidth,$cardHeight);$imageBox.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Normal;$imageBox.BackColor=[Drawing.Color]::FromArgb(30,20,42);$imageBox.BorderStyle=[Windows.Forms.BorderStyle]::None;$imageBox.TabStop=$false;Set-CocoControlDoubleBuffered $imageBox;Set-CocoPictureBoxCoverImage $imageBox (Get-CocoExperienceImagePath $exp) $cardWidth $cardHeight
+            $imageBox=New-Object Windows.Forms.PictureBox;$imageBox.Name='CocoExperienceImage';$imageBox.Location=New-Object Drawing.Point(0,0);$imageBox.Size=New-Object Drawing.Size($cardWidth,$cardHeight);$imageBox.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Normal;$imageBox.BackColor=[Drawing.Color]::FromArgb(30,20,42);$imageBox.BorderStyle=[Windows.Forms.BorderStyle]::None;$imageBox.TabStop=$false;Set-CocoControlDoubleBuffered $imageBox;Set-CocoPictureBoxContainImage $imageBox (Get-CocoExperienceImagePath $exp) $cardWidth $cardHeight
             $gradient=New-Object Windows.Forms.Panel;$gradient.Name='CocoExperienceGradient';$gradient.Dock='Bottom';$gradient.Height=$gradientHeight;$gradient.BackColor=[Drawing.Color]::FromArgb(30,20,42);$gradient.Padding=New-Object Windows.Forms.Padding(0);Set-CocoControlDoubleBuffered $gradient
             $gradient.Add_Paint(({
                 param($sender,$eventArgs)
@@ -1998,8 +2104,8 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 try{$graphics.FillRectangle($brush,$rectangle)}finally{$brush.Dispose()}
             }.GetNewClosure()))
             $imageBox.Controls.Add($gradient);$gradient.BringToFront()
-            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 12 8));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.BackColor=[Drawing.Color]::Transparent;$nameLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 4));$nameLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 40));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$true;$nameLabel.TextAlign=[Drawing.ContentAlignment]::BottomLeft;Set-CocoControlDoubleBuffered $nameLabel
-            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$detailLabel.BackColor=[Drawing.Color]::Transparent;$detailLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 46));$detailLabel.Size=New-Object Drawing.Size(($cardWidth-(2*$actionPadding)),(Get-CocoLauncherUiMetric 18));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false;Set-CocoControlDoubleBuffered $detailLabel
+            $nameLabel=New-Object Windows.Forms.Label;$nameLabel.Text=Format-CocoExperienceCardTitle ([string]$exp.name);$nameLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 12 8));$nameLabel.ForeColor=[Drawing.Color]::White;$nameLabel.BackColor=[Drawing.Color]::Transparent;$nameLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 4));$nameLabel.Size=New-Object Drawing.Size(([Math]::Max(1,($cardWidth-(2*$actionPadding)))),(Get-CocoLauncherUiMetric 40));$nameLabel.AutoEllipsis=$false;$nameLabel.AutoSize=$false;$nameLabel.UseCompatibleTextRendering=$false;$nameLabel.TextAlign=[Drawing.ContentAlignment]::BottomLeft;Set-CocoControlDoubleBuffered $nameLabel
+            $detailLabel=New-Object Windows.Forms.Label;$detailLabel.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 6));$detailLabel.ForeColor=[Drawing.Color]::FromArgb(224,190,255);$detailLabel.BackColor=[Drawing.Color]::Transparent;$detailLabel.Location=New-Object Drawing.Point($actionPadding,(Get-CocoLauncherUiMetric 46));$detailLabel.Size=New-Object Drawing.Size(([Math]::Max(1,($cardWidth-(2*$actionPadding)))),(Get-CocoLauncherUiMetric 18));$detailLabel.AutoEllipsis=$true;$detailLabel.AutoSize=$false;$detailLabel.UseCompatibleTextRendering=$false;Set-CocoControlDoubleBuffered $detailLabel
             $buttonSpecs=@();$cardInfo=$null
             $isMedia=Test-CocoMediaExperience $exp
             $isThisInstalling=($isInstallingAny -and -not $isMedia -and [string]$exp.id -eq $installingExpId)
@@ -2101,6 +2207,11 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 }
             }
             $card.Controls.Add($imageBox);$gradient.Controls.Add($nameLabel);$gradient.Controls.Add($detailLabel)
+            # Ajuste final con el texto ya definitivo: la fuente se reduce en esta
+            # maquina hasta que cada texto cabe en su rectangulo (anti-corte DPI).
+            Set-CocoFittedLabelText $storageHeader ([string]$storageHeader.Text) 'Segoe UI Semibold' (Get-CocoLauncherUiFontSize 9 7) 6 ([Drawing.FontStyle]::Regular) $true
+            Set-CocoFittedLabelText $nameLabel ([string]$nameLabel.Text) 'Segoe UI Semibold' (Get-CocoLauncherUiFontSize 12 8) 7 ([Drawing.FontStyle]::Regular) $false
+            Set-CocoFittedLabelText $detailLabel ([string]$detailLabel.Text) 'Segoe UI Semibold' (Get-CocoLauncherUiFontSize 8.5 6) 6 ([Drawing.FontStyle]::Regular) $true
             $cardTip="$([string]$exp.name)`r`n$([string]$exp.description)"
             if($isMedia){
                 if($isInstallingAny){
@@ -2191,6 +2302,7 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
                 $buttonFontSize=if($buttonCount-ge3){(Get-CocoLauncherUiFontSize 8.5 6.5)}else{(Get-CocoLauncherUiFontSize 9 7)}
                 $button.Font=New-Object Drawing.Font('Segoe UI Semibold',$buttonFontSize)
                 $button.UseCompatibleTextRendering=$false
+                Set-CocoFittedButtonText $button ([string]$spec.Text) 'Segoe UI Semibold' ([double]$buttonFontSize) 6
                 if($script:CocoExperienceCardsToolTip){
                     $tipText=if($spec.Kind-eq'installing'){
                         "Instalando $($exp.name)... Puedes ver series o peliculas mientras se completa la instalacion."
@@ -2223,19 +2335,28 @@ function Update-CocoExperienceCardsUi($DynamicPanel,$Catalog,$Paths,[string]$Rol
             }
             $cardsContent.Controls.Add($card);$cardIndex++
         }
-            $hostExperiences=$managedExperiences;$logicalRows=[int][Math]::Ceiling($hostExperiences.Count/2.0);$gridContentHeight=[int](Get-CocoLauncherUiMetric 22)+($logicalRows*$cardHeight)+([Math]::Max(0,$logicalRows-1)*$gap)+(Get-CocoLauncherUiMetric 8);
-            $cardsContent.Size=[Drawing.Size]::new([Math]::Max(1,[int]$DynamicPanel.ClientSize.Width),[Math]::Max(1,[int]$gridContentHeight));
+            $hostExperiences=$managedExperiences;$logicalRows=[int][Math]::Ceiling($hostExperiences.Count/[double][Math]::Max(1,$columns));$gridContentHeight=[int](Get-CocoLauncherUiMetric 22)+($logicalRows*$cardHeight)+([Math]::Max(0,$logicalRows-1)*$gap)+(Get-CocoLauncherUiMetric 8);
+            $cardsContent.Size=[Drawing.Size]::new([Math]::Max(1,$viewWidth),[Math]::Max(1,[int]$gridContentHeight));
             $cardsContent.Location=[Drawing.Point]::new(0,0)
             $DynamicPanel.Controls.Add($cardsContent);
             $cardsContent.Location=[Drawing.Point]::new(0,0)
-            $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new((Get-CocoLauncherUiMetric 0),[Math]::Max($gridContentHeight,(Get-CocoLauncherUiMetric ($hostExperiences.Count*70+22))));
+            $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,[Math]::Max($gridContentHeight,(Get-CocoLauncherUiMetric ($hostExperiences.Count*70+22))));
             $DynamicPanel.AutoScroll=$false
     }finally{$DynamicPanel.ResumeLayout($true)}
     try{
         $DynamicPanel.AutoScrollPosition=[Drawing.Point]::new(0,0)
         $DynamicPanel.PerformLayout();
         Set-CocoExperienceCardsScrollContent $DynamicPanel $gridContentHeight;
+        try{$DynamicPanel.HorizontalScroll.Enabled=$false;$DynamicPanel.HorizontalScroll.Visible=$false}catch{}
         $DynamicPanel.Invalidate()
+    }catch{}
+    # La grilla se reconstruye sola si el viewport cambia de ancho (resize/DPI):
+    # asi las tarjetas nunca quedan mas anchas que la vista y el scroll
+    # horizontal no tiene motivo para aparecer.
+    try{
+        $DynamicPanel|Add-Member -MemberType NoteProperty -Name CocoExperienceCardsLayoutWidth -Value ([int]$viewWidth) -Force|Out-Null
+        $refreshBlock={param($panel)Update-CocoExperienceCardsUi $panel $Catalog $Paths $Role}.GetNewClosure()
+        $DynamicPanel|Add-Member -MemberType NoteProperty -Name CocoExperienceCardsRefresh -Value $refreshBlock -Force|Out-Null
     }catch{}
     Register-CocoExperienceScrollWheel $DynamicPanel $DynamicPanel
     Set-CocoExperienceCardsNativeScrollStyle $DynamicPanel
@@ -3355,6 +3476,9 @@ function Get-CocoLockedAsset([string]$CacheRoot,$Asset,$ProgressContext){
 function Get-CocoLockedAssetsParallel($CacheRoot, $Assets, $ProgressContext) {
     $missing = [Collections.Generic.List[object]]::new()
     $cachedResults = @{}
+    # SHAs verificados (hash medido) en ESTA llamada: descargas de workers o
+    # reintentos secuenciales. Los hits por tamano no entran aqui.
+    $verifiedShas = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($asset in @($Assets)) {
         if(-not$asset){continue}
         $dest = Get-CocoLockedAssetCachePath $CacheRoot $asset
@@ -3443,6 +3567,7 @@ function Get-CocoLockedAssetsParallel($CacheRoot, $Assets, $ProgressContext) {
                     if ($res -and $res.Count) {
                         $item = $res[0]
                         $cachedResults[[string]$item.sha256] = [string]$item.path
+                        [void]$verifiedShas.Add([string]$item.sha256)
                         if ($ProgressContext) {
                             $ProgressContext.CompletedBytes = [int64]$ProgressContext.CompletedBytes + [int64]$item.size
                             $ProgressContext.Index = [int]$ProgressContext.Index + 1
@@ -3453,6 +3578,7 @@ function Get-CocoLockedAssetsParallel($CacheRoot, $Assets, $ProgressContext) {
                 } catch {
                     $single = Get-CocoLockedAsset $CacheRoot $task.Asset $ProgressContext
                     $cachedResults[([string]$task.Asset.sha256).ToLowerInvariant()] = $single
+                    [void]$verifiedShas.Add([string]$task.Asset.sha256)
                 } finally {
                     $task.PS.Dispose()
                 }
@@ -3463,8 +3589,11 @@ function Get-CocoLockedAssetsParallel($CacheRoot, $Assets, $ProgressContext) {
         }
         $pool.Close(); $pool.Dispose()
     }
-    
-    return $cachedResults
+
+    # Contrato: rutas por SHA mas el conjunto verificado en esta llamada. Los
+    # dos usos productivos descartaban el retorno; ahora lo reutilizan para no
+    # re-verificar lo recien descargado.
+    return [pscustomobject]@{Paths=$cachedResults;VerifiedShas=@($verifiedShas)}
 }
 
 function Expand-CocoCurseForgeOverrides([string]$Archive,[string]$OverridesRoot,[string]$Destination){
@@ -3986,12 +4115,16 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         $itemSize = [int64]$packItem.size
         $archive = Join-Path $downloadsDir ("$itemSha.zip")
         $archiveValid = $false
+        # Cada ruta que verifica el hash marca la parte como verificada en esta
+        # ejecucion: el chequeo final no relee GB ya verificados.
+        $archiveVerified = $false
 
         if(Test-Path -LiteralPath $archive){
             Set-CocoLauncherStep 4 'VERIFICANDO HASH DEL ARCHIVO DESCARGADO' ("Calculando SHA-256 parte {0}/{1} ({2:N1} MB)..."-f $partIndex, $archiveItems.Count, ((Get-Item -LiteralPath $archive).Length / 1MB)) 32
             $actualSha=Get-CocoFileSha256 $archive
             if($actualSha-eq$itemSha){
                 $archiveValid=$true
+                $archiveVerified=$true
                 Write-CocoLog "Archivo en cache verificado con exito: $archive"
             }else{
                 Write-CocoLog "Hash en cache no coincide (Encontrado: $actualSha, Esperado: $itemSha). Eliminando archivo corrupto."
@@ -4023,6 +4156,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                                 if($partialHash -eq $itemSha){
                                     Move-Item -LiteralPath $partialArchive -Destination $archive -Force
                                     $curlSuccess=$true
+                                    $archiveVerified=$true
                                     Write-CocoLog "Parcial completo verificado y reutilizado sin solicitar rango: $partialArchive"
                                 }else{
                                     Remove-Item -LiteralPath $partialArchive -Force -ErrorAction SilentlyContinue
@@ -4034,7 +4168,10 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                             }
                         }
                         if(-not$curlSuccess){
-                            $proc = Start-Process -FilePath "curl.exe" -ArgumentList @("-L", "-s", "--retry", "3", "--continue-at", "-", "-o", $partialArchive, $sourceUrl) -PassThru -NoNewWindow
+                            # Guard anti-cuelgue: sin limite de velocidad una transferencia
+                            # estancada espera eternamente en HasExited. Aborta si baja de
+                            # 1 KB/s durante 90s (--retry lo reintenta y el parcial se conserva).
+                            $proc = Start-Process -FilePath "curl.exe" -ArgumentList @("-L", "-s", "--retry", "3", "--connect-timeout", "30", "--speed-limit", "1024", "--speed-time", "90", "--continue-at", "-", "-o", $partialArchive, $sourceUrl) -PassThru -NoNewWindow
                             $lastUi = [DateTime]::MinValue
                             while(-not $proc.HasExited){
                                 if(Test-Path -LiteralPath $partialArchive){
@@ -4058,6 +4195,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                                     if($partialHash -eq $itemSha){
                                         Move-Item -LiteralPath $partialArchive -Destination $archive -Force
                                         $curlSuccess=$true
+                                        $archiveVerified=$true
                                         Write-CocoLog "curl.exe dejo el parcial completo y verificado: $partialArchive"
                                     }else{
                                         Remove-Item -LiteralPath $partialArchive -Force -ErrorAction SilentlyContinue
@@ -4079,6 +4217,9 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                 if(-not$curlSuccess){
                     if(Get-Command Download-VerifiedFile -ErrorAction SilentlyContinue){
                         Download-VerifiedFile $sourceUrl $archive $itemSha
+                        # Download-VerifiedFile ya verifico tamano y SHA-256 o habria
+                        # lanzado: no tiene sentido releer los GB de nuevo abajo.
+                        $archiveVerified=$true
                     }else{
                         $webClient=New-Object System.Net.WebClient
                         try{
@@ -4108,12 +4249,16 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                 }
             }
 
-            Set-CocoLauncherStep 4 'VERIFICANDO INTEGRIDAD DEL PAQUETE' ("Comprobando hash SHA-256 parte {0}/{1}..."-f $partIndex, $archiveItems.Count) 62
-            $downloadedSha=Get-CocoFileSha256 $archive
-            if($downloadedSha-ne$itemSha){
-                throw "El paquete descargado de '$($Experience.name)' (parte $partIndex) no coincide con el SHA-256 esperado (Obtenido: $downloadedSha, Esperado: $itemSha)."
+            if($archiveVerified){
+                Write-CocoLog "Parte $partIndex verificada durante la descarga/cache; se omite la relectura completa: SHA256=$itemSha"
+            }else{
+                Set-CocoLauncherStep 4 'VERIFICANDO INTEGRIDAD DEL PAQUETE' ("Comprobando hash SHA-256 parte {0}/{1}..."-f $partIndex, $archiveItems.Count) 62
+                $downloadedSha=Get-CocoFileSha256 $archive
+                if($downloadedSha-ne$itemSha){
+                    throw "El paquete descargado de '$($Experience.name)' (parte $partIndex) no coincide con el SHA-256 esperado (Obtenido: $downloadedSha, Esperado: $itemSha)."
+                }
+                Write-CocoLog "Descarga de paquete standalone parte $partIndex completada y verificada: SHA256=$downloadedSha"
             }
-            Write-CocoLog "Descarga de paquete standalone parte $partIndex completada y verificada: SHA256=$downloadedSha"
         }
 
         Set-CocoLauncherStep 5 'DESCOMPRIMIENDO JUEGO STANDALONE' ("Extrayendo parte {0}/{1} de {2}..." -f $partIndex, $archiveItems.Count, $Experience.name) 65
@@ -4128,6 +4273,11 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
                 if(-not(Test-CocoSafeRelativePath $candidatePath)-or
                    -not(Test-CocoPathWithin $candidateTarget $instanceRoot)-or-not$archivePaths.Add($candidatePath)){
                     throw "El paquete standalone contiene una ruta insegura o duplicada: '$($candidateEntry.FullName)'."
+                }
+                # Misma regla que los overrides administrados: el instalador nunca
+                # administra partidas vivas (saves/playerdata).
+                if($candidatePath.StartsWith('saves/',[StringComparison]::OrdinalIgnoreCase)-or$candidatePath-match'(?i)(^|/)(playerdata)(/|$)'){
+                    throw "El paquete standalone intento administrar datos persistentes prohibidos: '$($candidateEntry.FullName)'."
                 }
             }
         }finally{$validationZip.Dispose()}
@@ -4230,6 +4380,7 @@ $metaDir=Join-Path $instanceRoot '.coco'
     }
     Ensure-CocoOnlineFixSuppression $instanceRoot $Experience
     [IO.File]::WriteAllText($statePath,($stateObj|ConvertTo-Json -Depth 4),(New-Object Text.UTF8Encoding($false)))
+    Clear-CocoExperienceDiskUsageCache
     Write-CocoLog "Instalacion standalone de '$($Experience.id)' completada en '$instanceRoot'."
     return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$true}
 }
@@ -4457,7 +4608,7 @@ function Get-CocoStandaloneRepairArchive($Experience,$ArchiveItem,[string]$Cache
         if(Test-Path -LiteralPath $source -PathType Leaf){
             Copy-Item -LiteralPath $source -Destination $partial -Force
         }elseif(Get-Command curl.exe -ErrorAction SilentlyContinue){
-            $download=Start-Process -FilePath 'curl.exe' -ArgumentList @('-L','--fail','--retry','3','--silent','--show-error','-o',$partial,$source) -NoNewWindow -Wait -PassThru
+            $download=Start-Process -FilePath 'curl.exe' -ArgumentList @('-L','--fail','--retry','3','--connect-timeout','30','--speed-limit','1024','--speed-time','90','--silent','--show-error','-o',$partial,$source) -NoNewWindow -Wait -PassThru
             if($download.ExitCode-ne0){throw "curl.exe devolvio codigo $($download.ExitCode)."}
         }else{
             $client=New-Object Net.WebClient
@@ -4731,9 +4882,23 @@ function Install-CocoManagedExperience(
         $progress=@{Index=0;Count=$downloadAssets.Count;CompletedBytes=[int64]0;TotalBytes=$totalBytes;ProgressStart=30;ProgressEnd=68;Step=4;Title="DESCARGANDO $($experienceLabel.ToUpperInvariant())"}
         if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{role=$Role;experienceId=[string]$Experience.id;packVersion=[string]$Experience.pack.version;instanceRoot=$instanceRoot}}
         Set-CocoLauncherStep 4 'VERIFICANDO ARCHIVOS DEL PACK' ("{0} archivos fijados | {1:N1} MB totales | rol {2}"-f$downloadAssets.Count,($totalBytes/1MB),$Role) 30
-        [void](Get-CocoLockedAssetsParallel $CacheRoot $downloadAssets $progress)
+        $parallelAssetPaths=@{}
+        $parallelVerifiedShas=@()
+        try{
+            $parallelResult=Get-CocoLockedAssetsParallel $CacheRoot $downloadAssets $progress
+            if($parallelResult-and$parallelResult.Paths){$parallelAssetPaths=$parallelResult.Paths}
+            if($parallelResult-and$parallelResult.VerifiedShas){$parallelVerifiedShas=@($parallelResult.VerifiedShas)}
+        }catch{}
         if($Lock.pack.archive){
-            $packArchive=Get-CocoLockedAsset $CacheRoot $Lock.pack.archive $null
+            $packArchiveSha=([string]$Lock.pack.archive.sha256).ToLowerInvariant()
+            $packArchive=$parallelAssetPaths[$packArchiveSha]
+            # Solo se reutiliza sin re-verificar si esta llamada midio su hash al
+            # descargarlo; un hit por tamano en cache exige la verificacion unica.
+            if($packArchive-and($parallelVerifiedShas-contains$packArchiveSha)-and(Test-Path -LiteralPath $packArchive -PathType Leaf)){
+                Write-CocoLog "Pack verificado al descargar en paralelo; se omite la relectura: $packArchive"
+            }else{
+                $packArchive=Get-CocoLockedAsset $CacheRoot $Lock.pack.archive $null
+            }
             Expand-CocoCurseForgeOverrides $packArchive ([string]$Lock.pack.overridesRoot) $stageFiles
         }
         foreach($file in @(Get-ChildItem -LiteralPath $stageFiles -Recurse -File)){
@@ -4746,11 +4911,23 @@ function Install-CocoManagedExperience(
             $desired.Add([pscustomobject]@{path=$relative;sha256=(Get-CocoFileSha256 $file.FullName);size=[int64]$file.Length;policy=$policy})
             [void]$desiredPaths.Add($relative)
         }
-        [void](Get-CocoLockedAssetsParallel $CacheRoot $roleAssets $null)
+        $roleAssetPaths=@{}
+        $roleVerifiedShas=@()
+        try{
+            $roleParallel=Get-CocoLockedAssetsParallel $CacheRoot $roleAssets $null
+            if($roleParallel-and$roleParallel.Paths){$roleAssetPaths=$roleParallel.Paths}
+            if($roleParallel-and$roleParallel.VerifiedShas){$roleVerifiedShas=@($roleParallel.VerifiedShas)}
+        }catch{}
         foreach($asset in $roleAssets){
             $relative=[string]$asset.path
             if(-not(Test-CocoSafeRelativePath $relative)-or-not$desiredPaths.Add($relative)){throw "Ruta administrada duplicada o insegura: '$relative'."}
-            $cached=Get-CocoLockedAsset $CacheRoot $asset $null
+            $assetSha=([string]$asset.sha256).ToLowerInvariant()
+            $cached=$roleAssetPaths[$assetSha]
+            if($cached-and($roleVerifiedShas-contains$assetSha)-and(Test-Path -LiteralPath $cached -PathType Leaf)){
+                # Medido al descargar en esta ejecucion: no se re-hashea.
+            }else{
+                $cached=Get-CocoLockedAsset $CacheRoot $asset $null
+            }
             $staged=Join-Path $stageFiles ($relative-replace'/','\');$parent=Split-Path $staged -Parent;New-Item -ItemType Directory -Path $parent -Force|Out-Null
             Copy-Item -LiteralPath $cached -Destination $staged
             $desired.Add([pscustomobject]@{path=$relative;sha256=([string]$asset.sha256).ToLowerInvariant();size=[int64]$asset.size;policy=if($asset.policy){[string]$asset.policy}else{'replace'}})
@@ -4827,7 +5004,8 @@ function Install-CocoManagedExperience(
             throw $originalError
         }
         [pscustomobject]@{InstanceRoot=$instanceRoot;StatePath=$statePath;Files=$desired.Count;BackupRoot=''}
-    }finally{if((Test-Path -LiteralPath $stage)-and(Test-CocoExperienceStagePath $stage $instanceRoot)){Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue}}
+    }finally{if((Test-Path -LiteralPath $stage)-and(Test-CocoExperienceStagePath $stage $instanceRoot)){Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue}
+        Clear-CocoExperienceDiskUsageCache}
 }
 
 function Set-CocoManagedRuntimePolicies($Experience,[string]$InstanceRoot){
@@ -5903,6 +6081,93 @@ function Get-CocoLauncherUiFontSize([double]$Value,[double]$Minimum=6){
     return [single][Math]::Max($Minimum,[Math]::Round($Value*$scale,1))
 }
 
+# Relacion de aspecto canonica de las tarjetas de experiencia: 16:9 horizontal.
+# Medicion 2026-09-06 sobre assets/experiences: es el ratio horizontal mas comun
+# (2 de 1920x1080 exactas + 2 cercanas: 616x353 y 600x350); las fuentes
+# verticales (600x900) quedan contenidas completas con bandas laterales.
+# Contain (letterbox), nunca recorte ni deformacion.
+function Get-CocoExperienceCardAspect(){
+    [pscustomobject]@{Width=16;Height=9}
+}
+
+function Get-CocoExperienceCardHeight([int]$CardWidth){
+    $aspect=Get-CocoExperienceCardAspect
+    return [int][Math]::Round([double]$CardWidth*[double]$aspect.Height/[double]$aspect.Width)
+}
+
+# Sistema robusto anti-corte de textos (misma idea que Set-CocoFittedLabelText
+# del updater, generalizada): mide con TextRenderer sobre el tamano real del
+# control en ESTA maquina (DPI/fuentes reales) y reduce la fuente hasta que el
+# texto cabe. Nunca agranda por encima del tamano de diseno.
+function Get-CocoFittedFontSize([string]$Text,[string]$Family,[Drawing.FontStyle]$Style,[double]$MaximumSize,[double]$MinimumSize,[int]$BoxWidth,[int]$BoxHeight,[bool]$SingleLine){
+    $boxWidth=[Math]::Max(1,$BoxWidth);$boxHeight=[Math]::Max(1,$BoxHeight)
+    $flags=if($SingleLine){[Windows.Forms.TextFormatFlags]::SingleLine-bor[Windows.Forms.TextFormatFlags]::NoPadding}else{[Windows.Forms.TextFormatFlags]::WordBreak-bor[Windows.Forms.TextFormatFlags]::NoPadding}
+    $chosen=[double]$MinimumSize
+    for($size=[double]$MaximumSize;$size-ge([double]$MinimumSize)-0.001;$size-=0.5){
+        $candidate=$null
+        try{
+            $candidate=New-Object Drawing.Font($Family,[single]$size,$Style)
+            $targetSize=if($SingleLine){[Drawing.Size]::new(4096,4096)}else{[Drawing.Size]::new($boxWidth,4096)}
+            $measured=[Windows.Forms.TextRenderer]::MeasureText($Text,$candidate,$targetSize,$flags)
+            if($SingleLine){
+                if($measured.Width-le$boxWidth-and$measured.Height-le$boxHeight){$chosen=$size;break}
+            }else{
+                if($measured.Height-le$boxHeight){$chosen=$size;break}
+            }
+        }catch{$chosen=[double]$MinimumSize;break}
+        finally{if($candidate){$candidate.Dispose()}}
+    }
+    return [single]$chosen
+}
+
+function Set-CocoFittedLabelText($Label,[string]$Text,[string]$Family,[single]$MaximumSize,[single]$MinimumSize,[Drawing.FontStyle]$Style=[Drawing.FontStyle]::Regular,[bool]$SingleLine=$false){
+    if(-not$Label-or$Label.IsDisposed){return}
+    try{
+        $Label.AutoSize=$false
+        try{$Label.UseCompatibleTextRendering=$false}catch{}
+        $boxWidth=try{[int]$Label.ClientSize.Width}catch{0}
+        $boxHeight=try{[int]$Label.ClientSize.Height}catch{0}
+        if($boxWidth-le1-or$boxHeight-le1){
+            try{$Label.Font=New-Object Drawing.Font($Family,[single]$MaximumSize,$Style)}catch{}
+            $Label.Text=$Text
+            return
+        }
+        $fitted=Get-CocoFittedFontSize $Text $Family $Style ([double]$MaximumSize) ([double]$MinimumSize) $boxWidth $boxHeight ([bool]$SingleLine)
+        try{$Label.Font=New-Object Drawing.Font($Family,$fitted,$Style)}catch{}
+        $Label.Text=$Text
+    }catch{try{$Label.Text=$Text}catch{}}
+}
+
+function Set-CocoFittedButtonText($Button,[string]$Text,[string]$Family='Segoe UI Semibold',[double]$MaximumSize=9,[double]$MinimumSize=6){
+    if(-not$Button-or$Button.IsDisposed){return}
+    try{
+        $Button.AutoSize=$false
+        try{$Button.UseCompatibleTextRendering=$false}catch{}
+        $Button.Text=$Text
+        $boxWidth=try{[int]$Button.ClientSize.Width}catch{0}
+        $boxHeight=try{[int]$Button.ClientSize.Height}catch{0}
+        if($boxWidth-le1-or$boxHeight-le1){
+            try{$Button.Font=New-Object Drawing.Font($Family,[single]$MaximumSize)}catch{}
+            return
+        }
+        # Los botones WinForms pintan con un margen interno; se reserva para que
+        # el texto nunca toque el borde ni se recorte en otra PC con otra DPI.
+        $usableWidth=[Math]::Max(1,$boxWidth-10);$usableHeight=[Math]::Max(1,$boxHeight-6)
+        $flags=[Windows.Forms.TextFormatFlags]::SingleLine-bor[Windows.Forms.TextFormatFlags]::NoPadding-bor[Windows.Forms.TextFormatFlags]::NoPrefix
+        $chosen=[double]$MinimumSize
+        for($size=[double]$MaximumSize;$size-ge([double]$MinimumSize)-0.001;$size-=0.5){
+            $candidate=$null
+            try{
+                $candidate=New-Object Drawing.Font($Family,[single]$size)
+                $measured=[Windows.Forms.TextRenderer]::MeasureText($Text,$candidate,[Drawing.Size]::new(4096,4096),$flags)
+                if($measured.Width-le$usableWidth-and$measured.Height-le$usableHeight){$chosen=$size;break}
+            }catch{$chosen=[double]$MinimumSize;break}
+            finally{if($candidate){$candidate.Dispose()}}
+        }
+        try{$Button.Font=New-Object Drawing.Font($Family,[single]$chosen)}catch{}
+    }catch{try{$Button.Text=$Text}catch{}}
+}
+
 function Set-CocoControlDoubleBuffered($Control){
     if(-not$Control){return}
     try{
@@ -5974,7 +6239,65 @@ function Set-CocoPictureBoxCoverImage($Picture,[string]$Path,[int]$TargetWidth,[
                 $graphics.PixelOffsetMode=[Drawing.Drawing2D.PixelOffsetMode]::HighQuality
                 $graphics.CompositingQuality=[Drawing.Drawing2D.CompositingQuality]::HighQuality
                 $graphics.DrawImage($source,(New-Object Drawing.Rectangle($drawX,$drawY,$drawWidth,$drawHeight)),(New-Object Drawing.Rectangle(0,0,$sourceWidth,$sourceHeight)),[Drawing.GraphicsUnit]::Pixel)
+                # Cota: cada resize/DPI agregaba una entrada con Bitmap nativo.
+                if($script:CocoCoverImageCache.Count-ge64){
+                    foreach($old in @($script:CocoCoverImageCache.Values)){try{$old.Dispose()}catch{}}
+                    $script:CocoCoverImageCache.Clear()
+                }
                 $script:CocoCoverImageCache[$cacheKey]=$bitmap
+                $Picture.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Normal
+                $Picture.Image=New-Object Drawing.Bitmap $bitmap
+                $bitmap=$null
+            }finally{
+                if($graphics){$graphics.Dispose()}
+                if($bitmap){$bitmap.Dispose()}
+                if($source){$source.Dispose()}
+                if($stream){$stream.Dispose()}
+            }
+        }catch{}
+    }
+}
+
+# Contain (letterbox): la imagen se ve ENTERA dentro del rectangulo 16:9; si su
+# ratio no coincide, queda centrada con bandas del color de fondo (el "tocar el
+# primer borde" del reporte). Reemplaza al cover (que recortaba) en las
+# tarjetas de experiencia.
+function Set-CocoPictureBoxContainImage($Picture,[string]$Path,[int]$TargetWidth,[int]$TargetHeight){
+    if($Picture-and-not$Picture.IsDisposed){
+        try{
+            if($Picture.Image){$old=$Picture.Image;$Picture.Image=$null;$old.Dispose()}
+            if([string]::IsNullOrWhiteSpace($Path)-or-not(Test-Path -LiteralPath $Path -PathType Leaf)){return}
+            $width=[Math]::Max(1,$TargetWidth);$height=[Math]::Max(1,$TargetHeight)
+            if(-not $script:CocoContainImageCache){$script:CocoContainImageCache=@{}}
+            $cacheKey="contain|$Path|$width|$height"
+            $cached=$script:CocoContainImageCache[$cacheKey]
+            if($cached){
+                try{
+                    $Picture.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Normal
+                    $Picture.Image=New-Object Drawing.Bitmap $cached
+                    return
+                }catch{$script:CocoContainImageCache.Remove($cacheKey)}
+            }
+            $bytes=[IO.File]::ReadAllBytes($Path);$stream=$null;$source=$null;$bitmap=$null;$graphics=$null
+            try{
+                $stream=[IO.MemoryStream]::new($bytes,$false)
+                $source=[Drawing.Image]::FromStream($stream,$true,$true)
+                $bitmap=New-Object Drawing.Bitmap($width,$height)
+                $graphics=[Drawing.Graphics]::FromImage($bitmap)
+                $graphics.Clear([Drawing.Color]::FromArgb(30,20,42))
+                $sourceWidth=[Math]::Max(1,[int]$source.Width);$sourceHeight=[Math]::Max(1,[int]$source.Height)
+                $scale=[Math]::Min($width/[double]$sourceWidth,$height/[double]$sourceHeight)
+                $drawWidth=[Math]::Max(1,[int][Math]::Floor($sourceWidth*$scale));$drawHeight=[Math]::Max(1,[int][Math]::Floor($sourceHeight*$scale))
+                $drawX=[int](($width-$drawWidth)/2);$drawY=[int](($height-$drawHeight)/2)
+                $graphics.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                $graphics.PixelOffsetMode=[Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+                $graphics.CompositingQuality=[Drawing.Drawing2D.CompositingQuality]::HighQuality
+                $graphics.DrawImage($source,(New-Object Drawing.Rectangle($drawX,$drawY,$drawWidth,$drawHeight)),(New-Object Drawing.Rectangle(0,0,$sourceWidth,$sourceHeight)),[Drawing.GraphicsUnit]::Pixel)
+                if($script:CocoContainImageCache.Count-ge64){
+                    foreach($old in @($script:CocoContainImageCache.Values)){try{$old.Dispose()}catch{}}
+                    $script:CocoContainImageCache.Clear()
+                }
+                $script:CocoContainImageCache[$cacheKey]=$bitmap
                 $Picture.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Normal
                 $Picture.Image=New-Object Drawing.Bitmap $bitmap
                 $bitmap=$null
@@ -5990,7 +6313,15 @@ function Set-CocoPictureBoxCoverImage($Picture,[string]$Path,[int]$TargetWidth,[
 
 function Format-CocoExperienceCardTitle([string]$Text,[int]$MaximumLineLength=27){
     if([string]::IsNullOrWhiteSpace($Text)){return ''}
-    $words=$Text.Trim()-split'\s+'
+    # Palabras mas largas que la linea se parten (antes una sola palabra de 50+
+    # caracteres desbordaba el label sin "..." porque AutoEllipsis esta off).
+    $rawWords=$Text.Trim()-split'\s+'
+    $words=New-Object Collections.Generic.List[string]
+    foreach($rawWord in $rawWords){
+        $rest=$rawWord
+        while($rest.Length-gt$MaximumLineLength){[void]$words.Add($rest.Substring(0,$MaximumLineLength));$rest=$rest.Substring($MaximumLineLength)}
+        if($rest.Length-gt0){[void]$words.Add($rest)}
+    }
     $lines=New-Object Collections.Generic.List[string]
     $current=''
     foreach($word in $words){
@@ -6173,7 +6504,9 @@ function Set-CocoExperienceCardsScrollContent($DynamicPanel,[int]$ContentHeight)
         $DynamicPanel.HorizontalScroll.Value=0
         $surface=@($state.Items|Where-Object{$_.Control-and-not$_.Control.IsDisposed}|Select-Object -First 1)[0]
         if($surface-and$surface.Control){
-            $surface.Control.Width=[Math]::Max(1,[int]$DynamicPanel.ClientSize.Width)
+            # Nunca ensanchar: el contenido ya nace con la reserva de la barra
+            # vertical; ensancharlo recrearia el scroll horizontal fantasma.
+            $surface.Control.Width=[Math]::Max(1,[Math]::Min([int]$surface.Control.Width,[int]$DynamicPanel.ClientSize.Width))
             $surface.Control.Location=[Drawing.Point]::new(0,0)
         }
         $DynamicPanel.AutoScrollMinSize=[Drawing.Size]::new(0,[int]$state.ContentHeight)
@@ -6263,6 +6596,49 @@ function Set-CocoExperienceCardsScrollBehavior($DynamicPanel){
         $DynamicPanel.Add_Resize(({
             param($sender,$eventArgs)
             try{$sender.AutoScroll=$true;$sender.HorizontalScroll.Enabled=$false;$sender.HorizontalScroll.Visible=$false;$sender.PerformLayout();&$updateBarCommand $sender}catch{}
+            # Re-dibujo con debounce: si el ancho cambio, reconstruye la grilla
+            # para que ninguna tarjeta desborde (origen del scroll horizontal).
+            try{
+                if($sender.IsDisposed){return}
+                $newWidth=[int]$sender.ClientSize.Width
+                $oldWidth=0
+                try{if($sender.PSObject.Properties['CocoExperienceCardsLayoutWidth']){$oldWidth=[int]$sender.CocoExperienceCardsLayoutWidth}}catch{}
+                if($oldWidth-gt0-and[Math]::Abs($newWidth-$oldWidth)-lt5){return}
+                $refresh=$null
+                try{if($sender.PSObject.Properties['CocoExperienceCardsRefresh']){$refresh=$sender.CocoExperienceCardsRefresh}}catch{}
+                if(-not$refresh){return}
+                $timer=$null
+                try{if($sender.PSObject.Properties['CocoExperienceCardsResizeTimer']){$timer=$sender.CocoExperienceCardsResizeTimer}}catch{}
+                if($timer-and-not$timer.IsDisposed){
+                    try{$timer.Stop();$timer.Start()}catch{}
+                    return
+                }
+                $timer=New-Object Windows.Forms.Timer
+                $timer.Interval=180
+                $sender|Add-Member -MemberType NoteProperty -Name CocoExperienceCardsResizeTimer -Value $timer -Force|Out-Null
+                $timer.Add_Tick(({
+                    param($tickSender,$tickArgs)
+                    try{
+                        $panel=$tickSender.Tag
+                        try{$tickSender.Stop()}catch{}
+                        if(-not$panel-or$panel.IsDisposed){
+                            # El panel murio con el timer pendiente: liberarlo aqui
+                            # evita pinnear panel+closure hasta cerrar el proceso.
+                            try{$tickSender.Dispose()}catch{}
+                            return
+                        }
+                        $w=[int]$panel.ClientSize.Width
+                        $known=0
+                        try{if($panel.PSObject.Properties['CocoExperienceCardsLayoutWidth']){$known=[int]$panel.CocoExperienceCardsLayoutWidth}}catch{}
+                        if($known-gt0-and[Math]::Abs($w-$known)-lt5){return}
+                        $action=$null
+                        try{if($panel.PSObject.Properties['CocoExperienceCardsRefresh']){$action=$panel.CocoExperienceCardsRefresh}}catch{}
+                        if($action){&$action $panel}
+                    }catch{}
+                }.GetNewClosure()))
+                $timer.Tag=$sender
+                $timer.Start()
+            }catch{}
         }.GetNewClosure()))
     }
     Update-CocoExperienceCardsScrollBar $DynamicPanel
@@ -6341,6 +6717,8 @@ function Set-CocoSkinTilePreview($Picture,$Label,[string]$SkinRoot,[string]$User
         $Picture.Image=New-CocoSkinHeadPreview $path ([Math]::Max(1,[Math]::Min([int]$Picture.Width,[int]$Picture.Height)))
         $Label.Text=if($Pending){"SE SINCRONIZARA AL JUGAR`r`nCLIC O ARRASTRA PARA CAMBIAR"}else{"CLIC O ARRASTRA UN PNG`r`nPARA CAMBIARLA"}
     }else{$Label.Text="CLIC O ARRASTRA UN PNG`r`nPARA ELEGIRLA"}
+    # Dos lineas en ~24px: sin ajuste se cortaba incluso en el PC principal.
+    Set-CocoFittedLabelText $Label ([string]$Label.Text) 'Segoe UI' 7.5 6 ([Drawing.FontStyle]::Regular) $false
 }
 
 function Show-CocoUsernamePanel([string]$Suggested='',[switch]$AllowCancel){
@@ -6694,6 +7072,11 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                     foreach($img in @($script:CocoCoverImageCache.Values)){try{$img.Dispose()}catch{}}
                     $script:CocoCoverImageCache.Clear()
                 }
+                if($script:CocoContainImageCache){
+                    foreach($img in @($script:CocoContainImageCache.Values)){try{$img.Dispose()}catch{}}
+                    $script:CocoContainImageCache.Clear()
+                }
+                if($script:CocoExperienceCardsToolTip){try{$script:CocoExperienceCardsToolTip.Dispose();$script:CocoExperienceCardsToolTip=$null}catch{}}
             }catch{}
         })
     }
@@ -6707,7 +7090,8 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     try{
     Set-CocoLauncherStep 1 'INICIANDO COCO LAUNCHER' ("Engine {0} | ejecucion {1}"-f$Manifest.version,$runLabel) 13
     $role=if([string]::IsNullOrWhiteSpace($RoleOverride)){Get-CocoLauncherRole $LegacyMinecraftRoot}else{$RoleOverride}
-    if($script:CocoBrand){$script:CocoBrand.Text=if($role-eq'host'){'COCO LAUNCHER  |  MODO HOST'}else{'COCO LAUNCHER  |  EXPERIENCIAS DISPONIBLES'}}
+    if($script:CocoBrand){$script:CocoBrand.Text=if($role-eq'host'){'COCO LAUNCHER  |  MODO HOST'}else{'COCO LAUNCHER  |  EXPERIENCIAS DISPONIBLES'}
+    Set-CocoFittedLabelText $script:CocoBrand ([string]$script:CocoBrand.Text) 'Segoe UI Semibold' 9 6.5 ([Drawing.FontStyle]::Regular) $true}
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{role=$role}}
     Set-CocoLauncherStep 2 'PREPARANDO LA RED PRIVADA' 'Verificando ZeroTier, adaptador, autorizacion y rutas Coco...' 16
     $oldMinecraftPid=$script:MinecraftPid;$script:MinecraftPid=$PID
@@ -6729,6 +7113,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     $skinPicture.SizeMode='Zoom';$skinPicture.BackColor=[Drawing.Color]::FromArgb(36,22,57);$skinPicture.Cursor=[Windows.Forms.Cursors]::Hand;$skinPicture.AllowDrop=$true
     $identityHeading=New-Object Windows.Forms.Label;$identityHeading.Text='TU IDENTIDAD COCO';$identityHeading.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 76),(Get-CocoLauncherUiMetric 4));$identityHeading.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 198),(Get-CocoLauncherUiMetric 18))
     $identityHeading.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 8.5 7));$identityHeading.ForeColor=[Drawing.Color]::FromArgb(224,190,255)
+    Set-CocoFittedLabelText $identityHeading ([string]$identityHeading.Text) 'Segoe UI Semibold' (Get-CocoLauncherUiFontSize 8.5 7) 6 ([Drawing.FontStyle]::Regular) $true
     $identityText=New-Object Windows.Forms.TextBox;$identityText.Location=New-Object Drawing.Point((Get-CocoLauncherUiMetric 76),(Get-CocoLauncherUiMetric 24));$identityText.Size=New-Object Drawing.Size((Get-CocoLauncherUiMetric 233),(Get-CocoLauncherUiMetric 25))
     $identityText.MaxLength=16;$identityText.Font=New-Object Drawing.Font('Segoe UI',(Get-CocoLauncherUiFontSize 10 7));$identityText.BorderStyle='FixedSingle'
     $identityText.Text=if($savedIdentity){[string]$savedIdentity.username}else{''}
@@ -6749,6 +7134,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         $valid=Test-CocoMinecraftUsername $candidate
         $confirmed=$valid-and$candidate-eq[string]$script:CocoIdentityConfirmedName
         $identityStatus.Text=if($confirmed){'Nombre valido.'}elseif($valid){'Pulsa Enter para confirmar.'}else{'3-16 letras, numeros o _.'}
+        Set-CocoFittedLabelText $identityStatus ([string]$identityStatus.Text) 'Segoe UI' (Get-CocoLauncherUiFontSize 7.5 6) 6 ([Drawing.FontStyle]::Regular) $true
         $identityStatus.ForeColor=if($confirmed){[Drawing.Color]::FromArgb(78,214,132)}elseif($valid){[Drawing.Color]::FromArgb(224,190,255)}else{[Drawing.Color]::FromArgb(255,139,151)}
         $valid
     }
@@ -6762,6 +7148,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         }
         $script:CocoIdentityConfirmedName=$candidate
         $identityStatus.Text='Nombre valido.';$identityStatus.ForeColor=[Drawing.Color]::FromArgb(78,214,132)
+        Set-CocoFittedLabelText $identityStatus ([string]$identityStatus.Text) 'Segoe UI' (Get-CocoLauncherUiFontSize 7.5 6) 6 ([Drawing.FontStyle]::Regular) $true
         $pendingState=try{if(Test-Path -LiteralPath $paths.SkinStatePath){Get-Content -LiteralPath $paths.SkinStatePath -Raw|ConvertFrom-Json}else{$null}}catch{$null}
         Set-CocoSkinTilePreview $skinPicture $skinLabel $paths.SkinRoot $candidate ([bool]($pendingState-and$pendingState.username-eq$candidate-and$pendingState.pendingUpload))
         if($script:CocoIdentityButton-and-not$script:CocoIdentityButton.IsDisposed){$script:CocoIdentityButton.Text='JUGADOR';$script:CocoIdentityButton.AccessibleDescription="Jugador: $candidate"}
@@ -6794,6 +7181,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         }catch{
             $skinLabel.ForeColor=[Drawing.Color]::FromArgb(255,139,151)
             $skinLabel.Text="NO SE PUDO USAR`r`n$($_.Exception.Message)"
+            Set-CocoFittedLabelText $skinLabel ([string]$skinLabel.Text) 'Segoe UI' 7.5 6 ([Drawing.FontStyle]::Regular) $false
         }
     }
     $chooseSkin={
@@ -6832,6 +7220,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     $identityToggleCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Invoke-CocoLauncherIdentityButton -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $identityButton=New-Object Windows.Forms.Button;$identityButton.Name='CocoLauncherIdentityButton';$identityButton.Text='JUGADOR';$identityButton.AccessibleName='Abrir identidad';$identityButton.AccessibleDescription=if($savedIdentity){"Jugador: $($savedIdentity.username)"}else{'Configurar jugador'};$identityButton.TabStop=$false
     Set-CocoFlatButtonStyle $identityButton ([Drawing.Color]::FromArgb(22,13,37)) ([Drawing.Color]::FromArgb(224,190,255));$identityButton.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6));$identityButton.Add_Click({&$identityToggleCommand $identityCard $identityText}.GetNewClosure())
+    Set-CocoFittedButtonText $identityButton ([string]$identityButton.Text) 'Segoe UI Semibold' (Get-CocoLauncherUiFontSize 7.5 6) 6
     $script:CocoIdentityButton=$identityButton;$script:CocoPanel.Controls.Add($identityButton)
     # La identidad no es necesaria para ver contenido multimedia. El popup se
     # abre solo al pulsar JUGADOR o cuando una experiencia Minecraft realmente
@@ -6868,6 +7257,9 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
                     $hostForceButton.AccessibleDescription='Los clientes veran la partida pero podran unirse o jugar solos.'
                     Set-CocoFlatButtonStyle $hostForceButton ([Drawing.Color]::FromArgb(35,22,48)) ([Drawing.Color]::FromArgb(200,180,215))
                 }
+                # 'FORZAR CLIENTES: SI/NO' (18 caracteres en 170px) se cortaba en
+                # PCs con otra DPI: se reajusta en cada cambio de estado.
+                Set-CocoFittedButtonText $hostForceButton ([string]$hostForceButton.Text) 'Segoe UI Semibold' (Get-CocoLauncherUiFontSize 7.5 6) 6
             }catch{}
         }
         & $updateForceButtonUi

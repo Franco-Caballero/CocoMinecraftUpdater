@@ -14,7 +14,17 @@ function Invoke-CocoZeroTierJson([string]$Cli,[string[]]$Arguments){
     $text=(& $Cli @Arguments 2>&1|Out-String).Trim()
     if($LASTEXITCODE-ne0){throw "ZeroTier CLI termino con codigo $LASTEXITCODE`: $text"}
     if(-not$text){return $null}
-    return $text|ConvertFrom-Json
+    try{return $text|ConvertFrom-Json}catch{}
+    # zerotier-cli.bat a veces antepone BOM/avisos al JSON: tolerar el prefijo
+    # en vez de degradar a red ausente (falso OFFLINE / reinstalacion inutil).
+    $start=[Math]::Max($text.IndexOf('['),$text.IndexOf('{'))
+    if($start-gt0){
+        try{
+            if(Get-Command Write-CocoLog -ErrorAction SilentlyContinue){Write-CocoLog "ZeroTier CLI devolvio prefijo no-JSON ($($text.Length) chars); se reintenta desde el indice $start."}
+            return $text.Substring($start)|ConvertFrom-Json
+        }catch{}
+    }
+    throw "ZeroTier CLI devolvio JSON invalido: $($text.Substring(0,[Math]::Min(120,$text.Length)))"
 }
 
 function Get-CocoZeroTierNetwork([string]$Cli,[string]$NetworkId){
@@ -253,7 +263,14 @@ function Invoke-CocoNetworkElevation($NetworkConfig,[string]$Role,[bool]$Install
     Set-CocoState 'Configurando red Coco' 'Windows pedira permiso una sola vez. Pulsa Si.' 15
     try{$process=Start-Process powershell.exe -Verb RunAs -WindowStyle Hidden -ArgumentList $arguments -PassThru}
     catch{throw 'Se cancelo el permiso de administrador. Vuelve a abrir CocoUpdater y pulsa Si.'}
+    # Deadline anti-cuelgue: antes esta espera era infinita y retenia el mutex de
+    # red para siempre si el helper se colgaba. 15 minutos cubren con holgura una
+    # instalacion MSI + servicio + firewall. NO se mata el proceso elevado: matar
+    # msiexec a mitad corrompe la instalacion; el helper es idempotente y el
+    # siguiente intento lo reutiliza/retoma.
+    $elevateWatch=[Diagnostics.Stopwatch]::StartNew()
     while(-not$process.HasExited){
+        if($elevateWatch.Elapsed.TotalMinutes-ge15){throw 'La configuracion elevada de red tardo mas de 15 minutos sin terminar. Revisa el UAC pendiente o reinicia e intentalo de nuevo.'}
         if(Test-Path -LiteralPath $progressPath){
             try{
                 $networkProgress=Get-Content -LiteralPath $progressPath -Raw|ConvertFrom-Json
@@ -388,10 +405,14 @@ function Ensure-CocoNetwork([string]$Root,[string]$Role,$Manifest){
     Set-CocoMinecraftNetworkConfig $Root $config $Role
     $stateRoot=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\network'
     New-Item -ItemType Directory -Path $stateRoot -Force|Out-Null
+    $statePath=Join-Path $stateRoot 'state.json'
+    $stateTemporary="$statePath.tmp-$PID"
     [ordered]@{
         provider='zerotier';networkId=[string]$config.networkId;status=[string]$network.status
         assignedAddresses=@($network.assignedAddresses);role=$Role;peerMode=$peerMode;verifiedAt=(Get-Date).ToString('o')
-    }|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $stateRoot 'state.json') -Encoding UTF8
+    }|ConvertTo-Json|Set-Content -LiteralPath $stateTemporary -Encoding UTF8
+    # Atomico: un lector concurrente (diagnostico) nunca ve un JSON truncado.
+    Move-Item -LiteralPath $stateTemporary -Destination $statePath -Force
     Write-CocoLog "Red Coco lista. Role=$Role Status=$($network.status) PeerMode=$peerMode Addresses=$($network.assignedAddresses-join',')"
     return [pscustomobject]@{enabled=$true;network=$network;address=("{0}:{1}"-f$config.hostAddress,$config.minecraftPort)}
 }
