@@ -15,7 +15,7 @@ En las experiencias Minecraft, los amigos no eligen un pack: sólo el host ve el
 
 La biblioteca de experiencias usa un único viewport con el desplazamiento vertical nativo de WinForms: no hay una barra superpuesta ni animación que reposicione manualmente las tarjetas. Esto permite que la rueda y el arrastre actualicen juntos el contenido y su thumb, con prioridad en estabilidad sobre una barra tematizada. El scroll horizontal está prohibido por construcción: el ancho útil de la grilla nunca supera al viewport (reserva anticipada del ancho de la barra vertical, sin mínimos fijos que desborden, una columna bajo 400px y re-dibujo con debounce al cambiar el tamaño), con `AutoScrollMinSize.Width = 0` permanente.
 
-Las tarjetas usan el rectángulo canónico 16:9 horizontal (medición 2026-09-06: es el ratio horizontal más común de `assets/experiences`, 2 de 1920×1080 exactas más 2 cercanas 616×353 y 600×350). La portada se renderiza contenida completa (letterbox con el color de la tarjeta, `Set-CocoPictureBoxContainImage`): toca el primer borde sin recortar, sin escapar ni deformar; las imágenes de otro ratio (p. ej. las verticales 600×900) quedan centradas con bandas vacías.
+Las tarjetas usan el rectángulo canónico 16:9 horizontal (actualización 2026-09-06: el catálogo completo de 21 experiencias utiliza carátulas horizontales panorámicas en formato ~16:9, eliminando bandas laterales vacías). La portada se renderiza contenida completa (`Set-CocoPictureBoxContainImage`): toca el primer borde sin recortar, sin escapar ni deformar.
 
 ## Identidad
 
