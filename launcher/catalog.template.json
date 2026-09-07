@@ -1596,6 +1596,80 @@
                 "serverName": "Coco - Rhythm Doctor"
             },
             "files": []
+        },
+        {
+            "id": "move-or-die",
+            "name": "Move or Die",
+            "ui": {
+                "imagePath": "assets/experiences/move-or-die.jpg"
+            },
+            "description": "Juego de fiesta frenético para 4 jugadores donde las reglas cambian cada 20 segundos y tu salud baja constantemente si te quedas quieto.",
+            "instanceId": "move-or-die",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "MoveOrDie.exe",
+                "requiredFiles": [
+                    {
+                        "path": "MoveOrDie.exe",
+                        "sha256": "e6d06e6f7276327cf4d61b25575bedcb8f106a02b73eb9f69167684f52215064",
+                        "size": 396800,
+                        "archiveSha256": "a0c7cfb295aa01cc2508a47c09edcc6db5bdc2b86f4d0e1763a5ae6fdbb0ce24"
+                    },
+                    {
+                        "path": "Love/win/love.exe",
+                        "sha256": "7b3cf2ed431f6af3ad725892540f7877bee66717d72f8efeafbc9fa9eb607397",
+                        "size": 66560,
+                        "archiveSha256": "a0c7cfb295aa01cc2508a47c09edcc6db5bdc2b86f4d0e1763a5ae6fdbb0ce24"
+                    },
+                    {
+                        "path": "Love/win/OnlineFix.dll",
+                        "sha256": "10adca57976a0fd2060231599b98494cf1855b51f5bde50072dec6e3f087bf97",
+                        "size": 4278272,
+                        "archiveSha256": "a0c7cfb295aa01cc2508a47c09edcc6db5bdc2b86f4d0e1763a5ae6fdbb0ce24"
+                    },
+                    {
+                        "path": "Love/win/steam_api.dll",
+                        "sha256": "a54366280e6558795eafb10d39a6d51a50d33348574470179f39d172c5b44132",
+                        "size": 187472,
+                        "archiveSha256": "a0c7cfb295aa01cc2508a47c09edcc6db5bdc2b86f4d0e1763a5ae6fdbb0ce24"
+                    },
+                    {
+                        "path": "Love/win/liblove.dll",
+                        "sha256": "95346bfb289c50e955f6d454098caa819e91a6bcda02141b76c032d2765f32b2",
+                        "size": 5512704,
+                        "archiveSha256": "a0c7cfb295aa01cc2508a47c09edcc6db5bdc2b86f4d0e1763a5ae6fdbb0ce24"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "323850"
+            },
+            "pack": {
+                "packId": "standalone-move-or-die",
+                "lockPath": "launcher/experiences/move-or-die.lock.json",
+                "version": "15.1.2",
+                "sha256": "a0c7cfb295aa01cc2508a47c09edcc6db5bdc2b86f4d0e1763a5ae6fdbb0ce24",
+                "size": 527035015,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.160/Move-Or-Die.zip",
+                        "sha256": "a0c7cfb295aa01cc2508a47c09edcc6db5bdc2b86f4d0e1763a5ae6fdbb0ce24",
+                        "size": 527035015
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Move or Die"
+            },
+            "files": []
         }
     ]
 }
