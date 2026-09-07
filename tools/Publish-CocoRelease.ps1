@@ -649,11 +649,14 @@ if($missing.Count){throw "No se publicaron correctamente: $($missing -join ', ')
 $verifyDir=Join-Path $env:TEMP "coco-publish-verify-$PID"
 New-Item -ItemType Directory -Path $verifyDir -Force|Out-Null
 try{
+    $downloadHeaders=@{Authorization=$headers.Authorization;Accept='application/octet-stream';'User-Agent'='CocoPublisher'}
     foreach($asset in $assets){
         if([int64]$asset.Length-gt100MB){Write-Output "Verificacion de contenido omitida por tamano ($([int64]$asset.Length) bytes): $($asset.Name)";continue}
+        $match=@($remoteAssets|Where-Object name -eq $asset.Name|Select-Object -First 1)
+        if(-not$match){throw "No se encontro el asset '$($asset.Name)' en el release remoto para verificar contenido."}
         $downloaded=Join-Path $verifyDir $asset.Name
         Invoke-WithRetry {
-            Invoke-RestMethod -Uri "https://github.com/$Repository/releases/download/$tag/$([Uri]::EscapeDataString($asset.Name))" -Headers $headers -OutFile $downloaded -TimeoutSec 300
+            Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases/assets/$($match.id)" -Headers $downloadHeaders -OutFile $downloaded -TimeoutSec 300
         } "re-descargar $($asset.Name) para verificar contenido"
         $remoteHash=(Get-FileHash -LiteralPath $downloaded -Algorithm SHA256).Hash.ToLowerInvariant()
         $localHash=(Get-FileHash -LiteralPath $asset.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
