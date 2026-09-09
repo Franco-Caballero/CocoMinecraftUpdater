@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne22-or
+if($managedExperiences.Count-ne21-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -413,18 +413,6 @@ if($modRequired.Count-ne5-or`
 }
 if([string]$moveOrDie.runtimePolicies.defenderExclusion-ne'required'-or[string]$moveOrDie.runtimePolicies.onlineFixAppId-ne'323850'){
     throw 'Move or Die no declara sus politicas standalone de Defender y OnlineFix.'
-}
-$wormsWmd=@($catalog.experiences|Where-Object id -eq 'worms-wmd'|Select-Object -First 1)[0]
-if(-not$wormsWmd-or[string]$wormsWmd.runtime.executable-ne'Worms W.M.D.exe'-or$wormsWmd.runtime.type-ne'standalone'-or$wormsWmd.managementMode-ne'managed'){
-    throw 'La experiencia standalone Worms W.M.D no esta declarada correctamente.'
-}
-$wwmdRequired=@($wormsWmd.runtime.requiredFiles)
-if($wwmdRequired.Count-ne5-or`
-   @($wwmdRequired|Where-Object{[string]$_.sha256-notmatch'^[a-f0-9]{64}$'-or[int64]$_.size-le0-or[string]$_.archiveSha256-notin@($wormsWmd.pack.archives.sha256)}).Count){
-    throw 'Worms W.M.D no fija todos sus archivos base reparables por ruta, hash, tamano y archive exacto.'
-}
-if([string]$wormsWmd.runtimePolicies.defenderExclusion-ne'required'-or[string]$wormsWmd.runtimePolicies.onlineFixAppId-ne'327030'){
-    throw 'Worms W.M.D no declara sus politicas standalone de Defender y OnlineFix.'
 }
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){
