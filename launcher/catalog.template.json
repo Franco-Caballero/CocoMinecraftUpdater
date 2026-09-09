@@ -1670,6 +1670,80 @@
                 "serverName": "Coco - Move or Die"
             },
             "files": []
+        },
+        {
+            "id": "worms-wmd",
+            "name": "Worms W.M.D",
+            "ui": {
+                "imagePath": "assets/experiences/worms-wmd.jpg"
+            },
+            "description": "Guerra tactica de gusanos por turnos en 2D con vehiculos, armas artesanales y edificios.",
+            "instanceId": "worms-wmd",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "Worms W.M.D.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Worms W.M.D.exe",
+                        "sha256": "e4a8ed35af26192f87a6b483024943d09dc63275de2d3fed89db75ba65b3fde6",
+                        "size": 21042832,
+                        "archiveSha256": "816607bbfde1b4aa81ec9170eb8d58d374ca6ac1c04376a25495e584fa286fda"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "24fadc4fb5128aa01dcfa640eee7d846046d7630c35b51904480292926f524e6",
+                        "size": 214504,
+                        "archiveSha256": "816607bbfde1b4aa81ec9170eb8d58d374ca6ac1c04376a25495e584fa286fda"
+                    },
+                    {
+                        "path": "steam_api.dll",
+                        "sha256": "f9cb4b0944b4bff92212774d2f3a8b43b8578d02591bf16b155323a867b83d70",
+                        "size": 5411824,
+                        "archiveSha256": "816607bbfde1b4aa81ec9170eb8d58d374ca6ac1c04376a25495e584fa286fda"
+                    },
+                    {
+                        "path": "steam_api_of.dll",
+                        "sha256": "6756b377865f55e1c8c8a21526f87559741f204036ce33e5be594d3e13b53bce",
+                        "size": 106408,
+                        "archiveSha256": "816607bbfde1b4aa81ec9170eb8d58d374ca6ac1c04376a25495e584fa286fda"
+                    },
+                    {
+                        "path": "StubDRM32.dll",
+                        "sha256": "1ea7f3442c7066a48594270b5367e638d4b7895757429a0ea243f16c102683db",
+                        "size": 85992,
+                        "archiveSha256": "816607bbfde1b4aa81ec9170eb8d58d374ca6ac1c04376a25495e584fa286fda"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "327030"
+            },
+            "pack": {
+                "packId": "standalone-worms-wmd",
+                "lockPath": "launcher/experiences/worms-wmd.lock.json",
+                "version": "23062019",
+                "sha256": "816607bbfde1b4aa81ec9170eb8d58d374ca6ac1c04376a25495e584fa286fda",
+                "size": 1786304375,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.164/Worms-WMD.zip",
+                        "sha256": "816607bbfde1b4aa81ec9170eb8d58d374ca6ac1c04376a25495e584fa286fda",
+                        "size": 1786304375
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Worms W.M.D"
+            },
+            "files": []
         }
     ]
 }
