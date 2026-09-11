@@ -1744,6 +1744,80 @@
                 "serverName": "Coco - Worms W.M.D"
             },
             "files": []
+        },
+        {
+            "id": "mimic-party",
+            "name": "Mimic Party",
+            "ui": {
+                "imagePath": "assets/experiences/mimic-party.jpg"
+            },
+            "description": "Juego multijugador online por voz de 1 a 5 jugadores donde todos imitan sonidos simultáneamente, evaluando tono y ritmo en una divertida competencia party.",
+            "instanceId": "mimic-party",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "Mimic Party.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Mimic Party.exe",
+                        "sha256": "811c3b04688acd0d44850c308d318b5bbf1de1c2d6396d829905e4d9b5df6ac0",
+                        "size": 667648,
+                        "archiveSha256": "4ddce23a338a130993dc7de4dbee558b98bb563dcc4b83544fe515d4fe8d7707"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "fe45ada8cc8f25bc6809dc2de345fb4b7a6a194afd13cb38da9698b4ae84461a",
+                        "size": 13401600,
+                        "archiveSha256": "4ddce23a338a130993dc7de4dbee558b98bb563dcc4b83544fe515d4fe8d7707"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "350b435820a94644fac0116b841f5bb2b9c6ff632e8079429e4df16a1983dab4",
+                        "size": 502272,
+                        "archiveSha256": "4ddce23a338a130993dc7de4dbee558b98bb563dcc4b83544fe515d4fe8d7707"
+                    },
+                    {
+                        "path": "SteamOverlay64.dll",
+                        "sha256": "f784b4b85b627c7ea541bd2a90c9fc6e9736a0731707c31265aa86fe684dc2df",
+                        "size": 117248,
+                        "archiveSha256": "4ddce23a338a130993dc7de4dbee558b98bb563dcc4b83544fe515d4fe8d7707"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "156b1eecbaa08421a7d177972f594c9d161ef19663eccd85bbd909a600aabe24",
+                        "size": 36569520,
+                        "archiveSha256": "4ddce23a338a130993dc7de4dbee558b98bb563dcc4b83544fe515d4fe8d7707"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "5053820"
+            },
+            "pack": {
+                "packId": "standalone-mimic-party",
+                "lockPath": "launcher/experiences/mimic-party.lock.json",
+                "version": "0.1.60",
+                "sha256": "4ddce23a338a130993dc7de4dbee558b98bb563dcc4b83544fe515d4fe8d7707",
+                "size": 174043639,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.165/Mimic-Party.zip",
+                        "sha256": "4ddce23a338a130993dc7de4dbee558b98bb563dcc4b83544fe515d4fe8d7707",
+                        "size": 174043639
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Mimic Party"
+            },
+            "files": []
         }
     ]
 }
