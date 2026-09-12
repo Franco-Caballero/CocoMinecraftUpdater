@@ -1,6 +1,7 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
-    [string]$SourcePath=(Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads\the drama\The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4'),
+    [string]$ExperienceId='the-drama-2026',
+    [string]$SourcePath,
     [switch]$RecordVerifiedState,
     [switch]$AllowMissingLocal
 )
@@ -12,20 +13,24 @@ Add-Type -AssemblyName System.Windows.Forms
 . (Join-Path $root 'engine\CocoLauncher.ps1')
 
 $catalog=Read-CocoLauncherCatalog (Join-Path $root 'launcher\catalog.template.json')
-$experience=@($catalog.experiences|Where-Object id -eq 'the-drama-2026'|Select-Object -First 1)[0]
-if(-not$experience){throw 'El catalogo no contiene The Drama.'}
-if(-not(Test-CocoMovieExperience $experience)){throw 'The Drama no esta reconocido como experiencia movie.'}
+$experience=@($catalog.experiences|Where-Object id -eq $ExperienceId|Select-Object -First 1)[0]
+if(-not$experience){throw "El catalogo no contiene la experiencia movie '$ExperienceId'."}
+if(-not(Test-CocoMovieExperience $experience)){throw "La experiencia '$ExperienceId' no esta reconocida como experiencia movie."}
 
 $items=@(Get-CocoMediaItems $experience)
-if($items.Count-ne1){throw "The Drama debe tener exactamente 1 item de pelicula; encontrados: $($items.Count)."}
+if($items.Count-ne1){throw "La experiencia movie '$ExperienceId' debe tener exactamente 1 item de pelicula; encontrados: $($items.Count)."}
 $movieItem=$items[0]
+
+if([string]::IsNullOrWhiteSpace($SourcePath)){
+    $SourcePath=Join-Path ([Environment]::GetFolderPath('UserProfile')) "Downloads\$($experience.content.downloadFolderName)\$($movieItem.fileName)"
+}
 
 if(-not(Test-Path -LiteralPath $SourcePath -PathType Leaf)){
     if(-not$AllowMissingLocal){throw "No existe el archivo de pelicula local: $SourcePath"}
     if([string]$movieItem.streamUrl-notmatch'^https://'){throw 'La pelicula no tiene un streamUrl HTTPS para validacion remota.'}
     if([int64]$movieItem.size-le0-or[string]$movieItem.sha256-notmatch'^[0-9a-fA-F]{64}$'){throw 'La metadata remota de la pelicula no tiene tamano/hash validos.'}
     [pscustomobject]@{Experience=[string]$experience.name;Movie=[string]$movieItem.title;Path='(asset remoto; sin copia local)';Size=[int64]$movieItem.size;Sha256=[string]$movieItem.sha256;LocalStatus='streaming';StateRecorded=$false}|ConvertTo-Json -Compress
-    'PASS: The Drama tiene metadata HTTPS/hash valida; no se requirio copia local para validar.'
+    "PASS: $($experience.name) tiene metadata HTTPS/hash valida; no se requirio copia local para validar."
     return
 }
 
@@ -52,4 +57,4 @@ if($RecordVerifiedState-and$status.Status-ne'verified'){throw "El estado local n
     StateRecorded=[bool]$RecordVerifiedState
 } | ConvertTo-Json -Compress
 
-"PASS: The Drama coincide con la metadata fijada y queda lista para el reproductor integrado."
+"PASS: $($experience.name) coincide con la metadata fijada y queda lista para el reproductor integrado."

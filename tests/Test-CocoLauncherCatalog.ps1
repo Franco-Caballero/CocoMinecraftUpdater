@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne23-or
+if($managedExperiences.Count-ne24-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -178,6 +178,18 @@ if(-not$dramaMovie-or$dramaMovie.fileName-ne'The.Drama.2026.1080p.Spanish.Hardsu
    $dramaMovie.sha256-ne'7a391022d6b6a3a6e9d902c6e4b3b2fb5b89a5377b694b0da689053f18152b19'-or
    $dramaMovie.streamUrl-notmatch'^https://'-or$dramaMovie.sourceUrl-notmatch'^https://'){
     throw 'The Drama no conserva la metadata o URL publicada.'
+}
+$leviticus=@($catalog.experiences|Where-Object id -eq 'leviticus-2026'|Select-Object -First 1)[0]
+if(-not$leviticus-or$leviticus.runtime.type-ne'media'-or$leviticus.launch.workflow-ne'coco-media'-or
+   $leviticus.content.type-ne'movie'-or$leviticus.content.downloadFolderName-ne'leviticus'){
+    throw 'Leviticus no esta declarado como pelicula local.'
+}
+$leviticusMovie=$leviticus.content.movie
+if(-not$leviticusMovie-or$leviticusMovie.fileName-ne'Leviticus.2026.1080p.Spanish.Hardsub.AAC5.1.mp4'-or
+   [int64]$leviticusMovie.size-ne1762094150-or
+   $leviticusMovie.sha256-ne'5df7d024caa59313b8d55ec5dd13276f81413022090a5156d98844e378978c97'-or
+   $leviticusMovie.streamUrl-notmatch'^https://'-or$leviticusMovie.sourceUrl-notmatch'^https://'){
+    throw 'Leviticus no conserva la metadata o URL publicada.'
 }
 $bounds=for($i=0;$i-lt$managedExperiences.Count;$i++){Get-CocoExperienceButtonBounds $i}
 for($i=0;$i-lt$bounds.Count;$i++){

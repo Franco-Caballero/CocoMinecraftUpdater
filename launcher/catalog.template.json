@@ -1374,6 +1374,51 @@
             "files": []
         },
         {
+            "id": "leviticus-2026",
+            "name": "Leviticus",
+            "ui": {
+                "badge": "Película",
+                "accentColor": "#2C3E50",
+                "imagePath": "assets/experiences/leviticus.jpg"
+            },
+            "description": "Película (2026). Reproduce directamente en el reproductor integrado o descárgala en tu carpeta Downloads.",
+            "instanceId": "leviticus",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "media"
+            },
+            "content": {
+                "type": "movie",
+                "downloadFolderName": "leviticus",
+                "openAfterDownload": true,
+                "movie": {
+                    "id": "leviticus-2026",
+                    "title": "Leviticus (2026)",
+                    "fileName": "Leviticus.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                    "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/leviticus-2026/Leviticus.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                    "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/leviticus-2026/Leviticus.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                    "size": 1762094150,
+                    "sha256": "5df7d024caa59313b8d55ec5dd13276f81413022090a5156d98844e378978c97"
+                },
+                "episodes": [
+                    {
+                        "id": "leviticus-2026",
+                        "title": "Leviticus (2026)",
+                        "fileName": "Leviticus.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/leviticus-2026/Leviticus.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/leviticus-2026/Leviticus.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+                        "size": 1762094150,
+                        "sha256": "5df7d024caa59313b8d55ec5dd13276f81413022090a5156d98844e378978c97"
+                    }
+                ]
+            },
+            "launch": {
+                "workflow": "coco-media",
+                "serverName": "Leviticus"
+            },
+            "files": []
+        },
+        {
             "id": "how-to-fish",
             "name": "How to Fish",
             "ui": {
