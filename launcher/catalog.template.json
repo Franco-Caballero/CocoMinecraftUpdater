@@ -781,9 +781,9 @@
             "files": [
                 {
                     "path": "BepInEx/mods/peak-unlimited-mods.zip",
-                    "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.118/peak-unlimited-mods.zip",
-                    "sha256": "c41e4a11c364ea3b5c5d431f96bd60148c83ad669e3bc0cf8a000451caf4ee57",
-                    "size": 665645,
+                    "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.166/peak-unlimited-mods.zip",
+                    "sha256": "90271a53211bed207853a03ed57ca24e959bc02fea7ea23b54820ec04a5c8601",
+                    "size": 1264555,
                     "policy": "replace",
                     "role": "all",
                     "license": "MIT"

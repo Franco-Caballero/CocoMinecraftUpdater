@@ -291,7 +291,7 @@ if([string]$peak.runtimePolicies.defenderExclusion-ne'required'-or[string]$peak.
     throw 'PEAK no declara sus politicas standalone de Defender y OnlineFix.'
 }
 $peakMods=@($peak.files|Where-Object path -eq 'BepInEx/mods/peak-unlimited-mods.zip'|Select-Object -First 1)[0]
-if(-not$peakMods-or[int64]$peakMods.size-ne665645-or[string]$peakMods.sha256-ne'c41e4a11c364ea3b5c5d431f96bd60148c83ad669e3bc0cf8a000451caf4ee57'-or[string]$peakMods.role-ne'all'){
+if(-not$peakMods-or[int64]$peakMods.size-ne1264555-or[string]$peakMods.sha256-ne'90271a53211bed207853a03ed57ca24e959bc02fea7ea23b54820ec04a5c8601'-or[string]$peakMods.role-ne'all'){
     throw 'PEAK no fija su paquete de mods BepInEx (PEAK Unlimited v4.0.1) con rol all.'
 }
 $machineParty=@($catalog.experiences|Where-Object id -eq 'machine-party'|Select-Object -First 1)[0]
