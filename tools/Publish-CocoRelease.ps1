@@ -364,6 +364,7 @@ if(-not$Fast){
 .\tests\Test-CocoVoiceChatDefaults.ps1
 .\tests\Test-CocoMediaExperience.ps1 -AllowMissingLocal
 .\tests\Test-CocoMovieExperience.ps1 -AllowMissingLocal
+.\tests\Test-CocoMovieExperience.ps1 -ExperienceId 'leviticus-2026' -AllowMissingLocal
 .\tests\Test-CocoMediaHttpProxy.ps1
 if(-not$Fast){
     .\tests\Test-CocoMediaPlaybackProgress.ps1 -SourceUrl $mediaTestUrl -HoldSeconds 2 -TimeoutSeconds 30
