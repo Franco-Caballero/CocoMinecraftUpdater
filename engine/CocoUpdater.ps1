@@ -1345,7 +1345,16 @@ function Import-CocoEngineModule([string]$ModulePath){
 
 Import-CocoEngineModule (Join-Path $script:CocoEngineRoot 'CocoDefenderControl.ps1')
 Import-CocoEngineModule (Join-Path $script:CocoEngineRoot 'CocoLauncher.ps1')
-Import-CocoEngineModule (Join-Path $script:CocoEngineRoot 'CocoNetwork.ps1')
+$networkLibrary=Join-Path $script:CocoEngineRoot 'CocoNetwork.ps1'
+if(Test-Path -LiteralPath $networkLibrary){
+    # El bootstrapper ejecuta el engine desde memoria para funcionar incluso
+    # cuando Windows conserva la politica predeterminada Restricted. Cargar un
+    # .ps1 secundario por ruta volveria a activar ese bloqueo, por lo que este
+    # componente se incorpora al mismo contexto de memoria.
+    $networkSource=[IO.File]::ReadAllText($networkLibrary,[Text.Encoding]::UTF8)
+    $networkBlock=[ScriptBlock]::Create($networkSource)
+    . $networkBlock
+}
 
 $mutex=$null;$mutexAcquired=$false
 $networkMutex=$null;$networkMutexAcquired=$false
