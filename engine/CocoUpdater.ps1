@@ -1287,18 +1287,25 @@ function Show-CocoPreview {
     Start-Sleep -Seconds 5
 }
 
-function Import-CocoEngineModule([string]$ModulePath){
-    if(-not(Test-Path -LiteralPath $ModulePath)){return}
+$defenderLibrary=Join-Path $script:CocoEngineRoot 'CocoDefenderControl.ps1'
+if(Test-Path -LiteralPath $defenderLibrary){
+    $defenderSource=[IO.File]::ReadAllText($defenderLibrary,[Text.Encoding]::UTF8)
+    $defenderBlock=[ScriptBlock]::Create($defenderSource)
+    . $defenderBlock
+}
+
+$launcherLibrary=Join-Path $script:CocoEngineRoot 'CocoLauncher.ps1'
+if(Test-Path -LiteralPath $launcherLibrary){
     for($attempt=1;$attempt-le3;$attempt++){
         try{
-            $source=[IO.File]::ReadAllText($ModulePath,[Text.Encoding]::UTF8)
-            $block=[ScriptBlock]::Create($source)
-            . $block
-            return
+            $launcherSource=[IO.File]::ReadAllText($launcherLibrary,[Text.Encoding]::UTF8)
+            $launcherBlock=[ScriptBlock]::Create($launcherSource)
+            . $launcherBlock
+            break
         }catch [System.IO.IOException]{
             $isVirusError=($_.Exception.Message -match '(?i)(virus|amenaza|malware|unwanted|no deseado)') -or ($_.Exception.HResult -eq -2147024671)
             if($isVirusError -and $attempt -lt 3){
-                Write-CocoLog "Windows Defender bloqueo el componente '$ModulePath'. Solicitando autorizacion de exclusion..."
+                Write-CocoLog "Windows Defender bloqueo el componente '$launcherLibrary'. Solicitando autorizacion de exclusion..."
                 $localCoco=[IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater')).TrimEnd('\')
                 $appDataCoco=[IO.Path]::GetFullPath((Join-Path $env:APPDATA 'CocoMinecraft')).TrimEnd('\')
                 try{
@@ -1327,10 +1334,9 @@ function Import-CocoEngineModule([string]$ModulePath){
                         Add-Type -AssemblyName System.IO.Compression.FileSystem
                         $zip=[IO.Compression.ZipFile]::OpenRead($zipCandidate)
                         try{
-                            $entryName=[IO.Path]::GetFileName($ModulePath)
-                            $entry=$zip.Entries|Where-Object{$_.Name -eq $entryName}|Select-Object -First 1
+                            $entry=$zip.Entries|Where-Object{$_.Name -eq 'CocoLauncher.ps1'}|Select-Object -First 1
                             if($entry){
-                                [IO.Compression.ZipFileExtensions]::ExtractToFile($entry,$ModulePath,$true)
+                                [IO.Compression.ZipFileExtensions]::ExtractToFile($entry,$launcherLibrary,$true)
                             }
                         }finally{$zip.Dispose()}
                     }
@@ -1342,9 +1348,6 @@ function Import-CocoEngineModule([string]$ModulePath){
         }
     }
 }
-
-Import-CocoEngineModule (Join-Path $script:CocoEngineRoot 'CocoDefenderControl.ps1')
-Import-CocoEngineModule (Join-Path $script:CocoEngineRoot 'CocoLauncher.ps1')
 $networkLibrary=Join-Path $script:CocoEngineRoot 'CocoNetwork.ps1'
 if(Test-Path -LiteralPath $networkLibrary){
     # El bootstrapper ejecuta el engine desde memoria para funcionar incluso
