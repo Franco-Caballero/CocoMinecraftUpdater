@@ -4108,6 +4108,138 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     New-Item -ItemType Directory -Path $instanceRoot -Force|Out-Null
 
+    # Los paquetes standalone grandes suelen estar divididos en varios assets de
+    # GitHub. Un unico stream puede quedar muy por debajo del enlace disponible,
+    # por lo que adelantamos hasta tres partes a la vez. La extraccion sigue
+    # siendo estrictamente secuencial mas abajo para evitar escrituras rivales.
+    $prefetchedVerifiedShas=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $parallelCandidates=[Collections.Generic.List[object]]::new()
+    $parallelCandidateShas=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $candidateIndex=0
+    foreach($candidateItem in $archiveItems){
+        $candidateIndex++
+        $candidateSha=([string]$candidateItem.sha256).ToLowerInvariant()
+        $candidateSize=[int64]$candidateItem.size
+        $candidateArchive=Join-Path $downloadsDir ("$candidateSha.zip")
+        if(Test-Path -LiteralPath $candidateArchive -PathType Leaf){continue}
+        # El cache standalone es content-addressed. Si el manifiesto referencia
+        # el mismo SHA mas de una vez, una sola transferencia abastece ambas
+        # extracciones; nunca permitimos dos curl escribiendo el mismo parcial.
+        if(-not$parallelCandidateShas.Add($candidateSha)){continue}
+        $candidateSource=[string]$candidateItem.archiveUrl
+        if([string]::IsNullOrWhiteSpace($candidateSource)-and$candidateItem.manifestUrl){$candidateSource=[string]$candidateItem.manifestUrl}
+        if([string]::IsNullOrWhiteSpace($candidateSource)-or(Test-Path -LiteralPath $candidateSource)){continue}
+        $candidatePartial="$candidateArchive.partial"
+        if(Test-Path -LiteralPath $candidatePartial -PathType Leaf){
+            $candidatePartialSize=[int64](Get-Item -LiteralPath $candidatePartial).Length
+            if($candidatePartialSize-eq$candidateSize){
+                $candidatePartialSha=Get-CocoFileSha256 $candidatePartial
+                if($candidatePartialSha-eq$candidateSha){
+                    Move-Item -LiteralPath $candidatePartial -Destination $candidateArchive -Force
+                    [void]$prefetchedVerifiedShas.Add($candidateSha)
+                    Write-CocoLog "Prefetch reutilizo parcial completo y verificado de parte $candidateIndex/$($archiveItems.Count): $candidateArchive"
+                    continue
+                }
+                Remove-Item -LiteralPath $candidatePartial -Force -ErrorAction SilentlyContinue
+                Write-CocoLog "Prefetch descarto parcial completo con hash incorrecto de parte $candidateIndex/$($archiveItems.Count)."
+            }elseif($candidatePartialSize-gt$candidateSize){
+                Remove-Item -LiteralPath $candidatePartial -Force -ErrorAction SilentlyContinue
+                Write-CocoLog "Prefetch descarto parcial sobredimensionado de parte $candidateIndex/$($archiveItems.Count)."
+            }
+        }
+        [void]$parallelCandidates.Add([pscustomobject]@{
+            Index=$candidateIndex;Sha=$candidateSha;Size=$candidateSize;Archive=$candidateArchive;Partial=$candidatePartial;Source=$candidateSource
+        })
+    }
+    if($parallelCandidates.Count-gt1-and(Get-Command curl.exe -ErrorAction SilentlyContinue)){
+        $maxParallelStandaloneDownloads=3
+        $parallelActive=[Collections.Generic.List[object]]::new()
+        $parallelNext=0
+        [int64]$parallelSettledBytes=0
+        [int64]$parallelTotalBytes=[int64](@($parallelCandidates|Measure-Object -Property Size -Sum).Sum)
+        $parallelLastUi=[DateTime]::MinValue
+        Write-CocoLog "Prefetch standalone paralelo iniciado: $($parallelCandidates.Count) partes remotas, maximo $maxParallelStandaloneDownloads descargas simultaneas."
+        try{
+            while($parallelNext-lt$parallelCandidates.Count-or$parallelActive.Count-gt0){
+                while($parallelNext-lt$parallelCandidates.Count-and$parallelActive.Count-lt$maxParallelStandaloneDownloads){
+                    $candidate=$parallelCandidates[$parallelNext];$parallelNext++
+                    try{
+                        $proc=Start-Process -FilePath 'curl.exe' -ArgumentList @('-L','-s','--retry','3','--connect-timeout','30','--speed-limit','1024','--speed-time','90','--continue-at','-','-o',[string]$candidate.Partial,[string]$candidate.Source) -PassThru -NoNewWindow
+                        [void]$parallelActive.Add([pscustomobject]@{Process=$proc;Candidate=$candidate})
+                        Write-CocoLog "Prefetch inicio parte $($candidate.Index)/$($archiveItems.Count): $($candidate.Source)"
+                    }catch{
+                        Write-CocoLog "Prefetch no pudo iniciar parte $($candidate.Index)/$($archiveItems.Count): $($_.Exception.Message). Se usara descarga secuencial."
+                    }
+                }
+
+                $now=[DateTime]::UtcNow
+                if(($now-$parallelLastUi).TotalMilliseconds-ge250){
+                    [int64]$parallelCurrentBytes=$parallelSettledBytes
+                    $activeParts=[Collections.Generic.List[string]]::new()
+                    foreach($active in $parallelActive){
+                        [void]$activeParts.Add([string]$active.Candidate.Index)
+                        if(Test-Path -LiteralPath $active.Candidate.Partial -PathType Leaf){
+                            $activeBytes=[int64](Get-Item -LiteralPath $active.Candidate.Partial).Length
+                            $parallelCurrentBytes+=[Math]::Min($activeBytes,[int64]$active.Candidate.Size)
+                        }
+                    }
+                    $parallelPct=if($parallelTotalBytes-gt0){[Math]::Min(99,[int](100*$parallelCurrentBytes/$parallelTotalBytes))}else{0}
+                    $launcherPct=30+[int](32*$parallelPct/100)
+                    Set-CocoLauncherStep 4 'DESCARGANDO PAQUETE STANDALONE' ("Hasta 3 partes en paralelo: {0:N1} MB / {1:N1} MB ({2}%) | activas {3} | {4}"-f($parallelCurrentBytes/1MB),($parallelTotalBytes/1MB),$parallelPct,($activeParts-join','),$Experience.name) $launcherPct
+                    $parallelLastUi=$now
+                }
+
+                for($activeIndex=$parallelActive.Count-1;$activeIndex-ge0;$activeIndex--){
+                    $active=$parallelActive[$activeIndex]
+                    if(-not$active.Process.HasExited){continue}
+                    $candidate=$active.Candidate
+                    [int64]$settledBytes=0
+                    try{
+                        if(Test-Path -LiteralPath $candidate.Partial -PathType Leaf){
+                            $settledBytes=[Math]::Min([int64](Get-Item -LiteralPath $candidate.Partial).Length,[int64]$candidate.Size)
+                        }
+                        if($active.Process.ExitCode-eq0-and$settledBytes-eq[int64]$candidate.Size){
+                            $downloadedSha=Get-CocoFileSha256 $candidate.Partial
+                            if($downloadedSha-eq[string]$candidate.Sha){
+                                Move-Item -LiteralPath $candidate.Partial -Destination $candidate.Archive -Force
+                                [void]$prefetchedVerifiedShas.Add([string]$candidate.Sha)
+                                Write-CocoLog "Prefetch completo y verificado parte $($candidate.Index)/$($archiveItems.Count): $($candidate.Archive)"
+                            }else{
+                                Remove-Item -LiteralPath $candidate.Partial -Force -ErrorAction SilentlyContinue
+                                $settledBytes=0
+                                Write-CocoLog "Prefetch obtuvo hash incorrecto en parte $($candidate.Index)/$($archiveItems.Count); se repetira secuencialmente."
+                            }
+                        }else{
+                            Write-CocoLog "Prefetch parte $($candidate.Index)/$($archiveItems.Count) termino incompleto (curl=$($active.Process.ExitCode), bytes=$settledBytes/$($candidate.Size)); se conserva para reanudar secuencialmente."
+                        }
+                    }catch{
+                        Write-CocoLog "Prefetch fallo al verificar parte $($candidate.Index)/$($archiveItems.Count): $($_.Exception.Message). Se usara descarga secuencial."
+                    }finally{
+                        $parallelSettledBytes+=$settledBytes
+                        $active.Process.Dispose()
+                        $parallelActive.RemoveAt($activeIndex)
+                    }
+                }
+                if($parallelActive.Count-gt0){
+                    if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+                    Start-Sleep -Milliseconds 80
+                }
+            }
+        }finally{
+            # Si UI/progreso o cualquier otra operacion inesperada aborta el
+            # scheduler, no dejamos curl escribiendo parciales por detras del
+            # fallback secuencial ni despues de salir del instalador.
+            foreach($active in @($parallelActive)){
+                try{
+                    if(-not$active.Process.HasExited){$active.Process.Kill();$active.Process.WaitForExit()}
+                }catch{}
+                try{$active.Process.Dispose()}catch{}
+            }
+            $parallelActive.Clear()
+        }
+        Write-CocoLog "Prefetch standalone paralelo finalizado: $($prefetchedVerifiedShas.Count) partes quedaron verificadas en cache."
+    }
+
     $partIndex = 0
     foreach($packItem in $archiveItems){
         $partIndex++
@@ -4119,7 +4251,11 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         # ejecucion: el chequeo final no relee GB ya verificados.
         $archiveVerified = $false
 
-        if(Test-Path -LiteralPath $archive){
+        if((Test-Path -LiteralPath $archive)-and$prefetchedVerifiedShas.Contains($itemSha)){
+            $archiveValid=$true
+            $archiveVerified=$true
+            Write-CocoLog "Archivo en cache ya verificado por prefetch paralelo: $archive"
+        }elseif(Test-Path -LiteralPath $archive){
             Set-CocoLauncherStep 4 'VERIFICANDO HASH DEL ARCHIVO DESCARGADO' ("Calculando SHA-256 parte {0}/{1} ({2:N1} MB)..."-f $partIndex, $archiveItems.Count, ((Get-Item -LiteralPath $archive).Length / 1MB)) 32
             $actualSha=Get-CocoFileSha256 $archive
             if($actualSha-eq$itemSha){
