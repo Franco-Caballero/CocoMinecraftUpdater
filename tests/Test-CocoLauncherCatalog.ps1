@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne24-or
+if($managedExperiences.Count-ne25-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -449,6 +449,18 @@ if($mpPartyRequired.Count-ne5-or`
 }
 if([string]$mimicParty.runtimePolicies.defenderExclusion-ne'required'-or[string]$mimicParty.runtimePolicies.onlineFixAppId-ne'5053820'){
     throw 'Mimic Party no declara sus politicas standalone de Defender y OnlineFix.'
+}
+$theCabin=@($catalog.experiences|Where-Object id -eq 'the-cabin'|Select-Object -First 1)[0]
+if(-not$theCabin-or[string]$theCabin.runtime.executable-ne'the_cabin_game.exe'-or$theCabin.runtime.type-ne'standalone'-or$theCabin.managementMode-ne'managed'){
+    throw 'La experiencia standalone The Cabin no esta declarada correctamente.'
+}
+$tcRequired=@($theCabin.runtime.requiredFiles)
+if($tcRequired.Count-ne6-or`
+   @($tcRequired|Where-Object{[string]$_.sha256-notmatch'^[a-f0-9]{64}$'-or[int64]$_.size-le0-or[string]$_.archiveSha256-notin@($theCabin.pack.archives.sha256)}).Count){
+    throw 'The Cabin no fija todos sus archivos base reparables por ruta, hash, tamano y archive exacto.'
+}
+if([string]$theCabin.runtimePolicies.defenderExclusion-ne'required'-or[string]$theCabin.runtimePolicies.onlineFixAppId-ne'4406280'){
+    throw 'The Cabin no declara sus politicas standalone de Defender y OnlineFix.'
 }
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){

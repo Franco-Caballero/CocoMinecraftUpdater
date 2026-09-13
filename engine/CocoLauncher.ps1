@@ -4483,6 +4483,10 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             $realAppId = '5053820'
             $hash0 = '48c5993c1bdb21b6fb7fc2ed3a529c6b187a21518c4204d45e8d6832d2420d3e81347b05258d255d7c44f1daac4418ea282b9237fb0331f6428ad11b62eda475'
             $hash1337 = '2b60889f737aba7c2ed64677fff36e1b17ee1826c9fa6569faff2c354c3de035dc38cdae100001ea3ecb70b3594a7e5bda897e30efb6d6bc7e9ea24f8b6ee297'
+        }elseif($expId -eq 'the-cabin' -or $appId -eq '4406280'){
+            $realAppId = '4406280'
+            $hash0 = 'dae40a91a9152d8d7219a566c260475fd6a6ae2c096a605ca1ecdf64d3fadf153f2c019cc79d06303aadc7e712f7eed2ca1cfeb18b8067511fa2beda9e8254aa'
+            $hash1337 = ''
         }elseif($appId){
             $realAppId = $appId
             $hash0 = 'b4353c02359f2a29161f863d31d525227f958c269c51a920a5a6c14c37dbd0f0d9a0ede86cf0a35fa608ecccdfa1cbcc712d762d1cc62f3a64d74506c056a476'
@@ -4558,16 +4562,20 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                 }elseif($content -match '(?i)RealAppId\s*=\s*5053820'){
                     $targetHash0 = '48c5993c1bdb21b6fb7fc2ed3a529c6b187a21518c4204d45e8d6832d2420d3e81347b05258d255d7c44f1daac4418ea282b9237fb0331f6428ad11b62eda475'
                     $targetHash1337 = '2b60889f737aba7c2ed64677fff36e1b17ee1826c9fa6569faff2c354c3de035dc38cdae100001ea3ecb70b3594a7e5bda897e30efb6d6bc7e9ea24f8b6ee297'
+                }elseif($content -match '(?i)RealAppId\s*=\s*4406280'){
+                    $targetHash0 = 'dae40a91a9152d8d7219a566c260475fd6a6ae2c096a605ca1ecdf64d3fadf153f2c019cc79d06303aadc7e712f7eed2ca1cfeb18b8067511fa2beda9e8254aa'
+                    $targetHash1337 = ''
                 }elseif(-not $targetHash1337){
                     if($content -match '(?i)1337\s*=\s*([a-f0-9]{128})'){
                         $targetHash1337 = $matches[1]
                     }
                 }
-                if($targetHash1337){
+                if($targetHash0){
+                    $hashBlock = if($targetHash1337){ "0=$targetHash0`r`n1337=$targetHash1337`r`n" }else{ "0=$targetHash0`r`n" }
                     if($content -match '\[Hashes\]'){
-                        $content = [regex]::Replace($content, '(?s)\[Hashes\].*$', "[Hashes]`r`n0=$targetHash0`r`n1337=$targetHash1337`r`n")
+                        $content = [regex]::Replace($content, '(?s)\[Hashes\].*$', "[Hashes]`r`n$hashBlock")
                     }else{
-                        $content = $content.TrimEnd() + "`r`n`r`n[Hashes]`r`n0=$targetHash0`r`n1337=$targetHash1337`r`n"
+                        $content = $content.TrimEnd() + "`r`n`r`n[Hashes]`r`n$hashBlock"
                     }
                     [IO.File]::WriteAllText($iniFile.FullName, $content, [System.Text.Encoding]::ASCII)
                 }

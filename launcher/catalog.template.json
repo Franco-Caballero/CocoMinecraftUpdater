@@ -1863,6 +1863,119 @@
                 "serverName": "Coco - Mimic Party"
             },
             "files": []
+        },
+        {
+            "id": "the-cabin",
+            "name": "The Cabin: Game",
+            "ui": {
+                "badge": "Nuevo",
+                "accentColor": "#7A1F1D",
+                "imagePath": "assets/experiences/the-cabin.jpg"
+            },
+            "description": "the cabin game es un juego de terror caotico cooperativo de 1 a 4 jugadores donde estas atrapado en una cabana y la unica salida es mediante un juego de cartas.",
+            "instanceId": "the-cabin",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "the_cabin_game.exe",
+                "requiredFiles": [
+                    {
+                        "path": "the_cabin_game.exe",
+                        "sha256": "8f9f4e5d136f2dafb3b6ea5643ec62e1a2f57037b71934a10281a4ee05aa24ed",
+                        "size": 233984,
+                        "archiveSha256": "8bb5252113ea16ef18fd7b72caa426cea9ad26ffa3499340247875b5ff9af75a"
+                    },
+                    {
+                        "path": "the_cabin_game/Binaries/Win64/the_cabin_game-Win64-Shipping.exe",
+                        "sha256": "3e1f421164908ab209d4957849dcdcbfe2e59e8cbdec85af990a46f5cfe59ba5",
+                        "size": 160926208,
+                        "archiveSha256": "8bb5252113ea16ef18fd7b72caa426cea9ad26ffa3499340247875b5ff9af75a"
+                    },
+                    {
+                        "path": "the_cabin_game/Binaries/Win64/OnlineFix64.dll",
+                        "sha256": "fe45ada8cc8f25bc6809dc2de345fb4b7a6a194afd13cb38da9698b4ae84461a",
+                        "size": 13401600,
+                        "archiveSha256": "8bb5252113ea16ef18fd7b72caa426cea9ad26ffa3499340247875b5ff9af75a"
+                    },
+                    {
+                        "path": "the_cabin_game/Binaries/Win64/winmm.dll",
+                        "sha256": "350b435820a94644fac0116b841f5bb2b9c6ff632e8079429e4df16a1983dab4",
+                        "size": 502272,
+                        "archiveSha256": "8bb5252113ea16ef18fd7b72caa426cea9ad26ffa3499340247875b5ff9af75a"
+                    },
+                    {
+                        "path": "the_cabin_game/Binaries/Win64/OnlineFix.ini",
+                        "sha256": "97c32a1b5efc86ef282d37b790e72777acedc44fa8637bdd7ca5d9f686efee30",
+                        "size": 464,
+                        "archiveSha256": "8bb5252113ea16ef18fd7b72caa426cea9ad26ffa3499340247875b5ff9af75a"
+                    },
+                    {
+                        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_api64.dll",
+                        "sha256": "8657fe4d3389bfb18191342a6a3f5c69d3507a0c02088e3369af7ced02133379",
+                        "size": 316608,
+                        "archiveSha256": "8bb5252113ea16ef18fd7b72caa426cea9ad26ffa3499340247875b5ff9af75a"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "4406280"
+            },
+            "pack": {
+                "packId": "standalone-the-cabin",
+                "lockPath": "launcher/experiences/the-cabin.lock.json",
+                "version": "1.0.0",
+                "sha256": "8bb5252113ea16ef18fd7b72caa426cea9ad26ffa3499340247875b5ff9af75a",
+                "size": 11730198076,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part1.zip",
+                        "sha256": "8bb5252113ea16ef18fd7b72caa426cea9ad26ffa3499340247875b5ff9af75a",
+                        "size": 983953524
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part2.zip",
+                        "sha256": "3040001f1ca27a908b43b76018b6627ed6d2f3c009532ed2df29db01293fdee1",
+                        "size": 1800000236
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part3.zip",
+                        "sha256": "7d137a7cabf10f18fa91f1ec4ba6d50b4ceb5632453a1b3ceb3b2ea2a4f85e6c",
+                        "size": 1800000236
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part4.zip",
+                        "sha256": "41555001c3abb96c9ebb0a03d0abd309945f1d95734ad88e25ecc0b0d80fb951",
+                        "size": 1800000236
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part5.zip",
+                        "sha256": "3ae80d4b671428e609fd41f877ee7830cc763c5a91465dc4115dc9114fd90503",
+                        "size": 1800000236
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part6.zip",
+                        "sha256": "4932427e5006de262f6a32cdbbf0e61b3c02313ba665f683cccc70aeb25492e7",
+                        "size": 1800000236
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part7.zip",
+                        "sha256": "d1266dbe6a21bdc7914ea54cd4fbe4a9716932de7175496b0f2c976ad0f860b8",
+                        "size": 1746243372
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "The Cabin: Game",
+                "minimumFreeBytes": 20000000000
+            },
+            "files": []
         }
     ]
 }
