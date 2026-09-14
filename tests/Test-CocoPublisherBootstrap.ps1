@@ -41,7 +41,7 @@ try{
     'param()'|Set-Content (Join-Path $engineSource 'CocoUpdater.ps1') -Encoding UTF8
     'param()'|Set-Content (Join-Path $engineSource 'CocoLauncher.ps1') -Encoding UTF8
     'param()'|Set-Content (Join-Path $engineSource 'CocoSessionService.ps1') -Encoding UTF8
-    'param()'|Set-Content (Join-Path $engineSource 'CocoDefenderControl.ps1') -Encoding UTF8
+    '$script:CocoDefenderControlCompatibility=''exclusions-only'''|Set-Content (Join-Path $engineSource 'CocoDefenderControl.ps1') -Encoding UTF8
     [IO.File]::WriteAllBytes((Join-Path $engineSource 'CocoPopupGate.dll'), [byte[]](1,2,3))
     New-Item -ItemType Directory -Path (Join-Path $engineSource 'launcher\experiences') -Force|Out-Null
     [ordered]@{experiences=@([ordered]@{id='test-pack';managementMode='managed';pack=[ordered]@{lockPath='launcher/experiences/test-pack.lock.json'}})}|ConvertTo-Json -Depth 6|Set-Content (Join-Path $engineSource 'launcher\catalog.json') -Encoding UTF8

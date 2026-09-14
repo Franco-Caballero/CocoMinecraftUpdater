@@ -1287,12 +1287,24 @@ function Show-CocoPreview {
     Start-Sleep -Seconds 5
 }
 
-$defenderLibrary=Join-Path $script:CocoEngineRoot 'CocoDefenderControl.ps1'
-if(Test-Path -LiteralPath $defenderLibrary){
-    $defenderSource=[IO.File]::ReadAllText($defenderLibrary,[Text.Encoding]::UTF8)
-    $defenderBlock=[ScriptBlock]::Create($defenderSource)
-    . $defenderBlock
+function Remove-CocoLegacyDefenderControlArtifacts{
+    # Versiones antiguas de Coco instalaban herramientas/tareas para alternar
+    # la proteccion en tiempo real. Ya no se usan: Defender permanece activo y
+    # Coco depende exclusivamente de exclusiones persistentes de carpeta.
+    foreach($taskName in @('CocoDefenderDisable','CocoDefenderEnable')){
+        try{
+            if(Get-Command Unregister-ScheduledTask -ErrorAction SilentlyContinue){
+                Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+            }
+        }catch{}
+    }
+    try{
+        $legacyRoot=Join-Path (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater') 'tools\defender-control'
+        if(Test-Path -LiteralPath $legacyRoot){Remove-Item -LiteralPath $legacyRoot -Recurse -Force -ErrorAction SilentlyContinue}
+    }catch{}
 }
+
+Remove-CocoLegacyDefenderControlArtifacts
 
 $launcherLibrary=Join-Path $script:CocoEngineRoot 'CocoLauncher.ps1'
 if(Test-Path -LiteralPath $launcherLibrary){

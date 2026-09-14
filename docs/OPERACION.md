@@ -121,22 +121,17 @@ e4mc permanece instalado solo en el host. En operación ZeroTier se detiene con 
 - `online-mode=false` permite perfiles offline y, por tanto, suplantación de nombres si no existe whitelist.
 - SmartScreen puede advertir porque el EXE aún no posee una firma de código con reputación.
 
-## Defender Control (ventana online-fix)
+## Exclusiones de Windows Defender
 
-Los juegos standalone con parche online-fix son eliminados por Windows Defender al momento, así que Coco alterna la protección en tiempo real durante cada sesión con [Defender Control v2.0](https://github.com/pgkt04/defender-control) (MIT), binarios fijados por SHA-256 en `engine\CocoDefenderControl.ps1`.
+Coco nunca desactiva la protección en tiempo real. Para experiencias standalone que lo requieren, mantiene exclusiones persistentes de carpeta y las prepara antes de instalar o reparar archivos sensibles.
 
-Automático en todas las sesiones:
+- Instalación nueva o rescate: `tools\install.ps1` prepara `%LOCALAPPDATA%\CocoMinecraftUpdater`, `%APPDATA%\CocoMinecraft` y cualquier ubicación personalizada ya guardada en `instance-locations.json` dentro del mismo UAC inicial, antes de descargar/iniciar Coco.
+- Instalación existente: el launcher comprueba las exclusiones cuando una experiencia las necesita y solicita UAC solamente si debe agregarlas.
+- Ubicaciones personalizadas o antiguas: `instance-locations.json` se conserva y sus rutas siguen entrando en la preparación de exclusiones; no es necesario mover ni reinstalar las experiencias.
+- Migración desde versiones con Defender Control: el engine deja de usar el toggle y limpia silenciosamente los binarios/tareas heredados cuando es posible.
+- Si una versión antigua de `CocoUpdater.exe` no puede ejecutarse porque Windows la bloqueó o eliminó, ejecutar `Instalar-Coco.bat` instala el Coco actual sin depender del EXE antiguo y conserva las experiencias existentes.
 
-- Al abrir Coco Launcher: crea `%LOCALAPPDATA%\CocoMinecraftUpdater\tools\defender-control`, agrega esa carpeta como exclusión de Defender (antes de descargar, para que las herramientas no sean eliminadas), descarga y verifica los binarios y desactiva la protección.
-- Al cerrar Coco Launcher: restaura la protección, incluso si la sesión terminó con error.
-- La alternancia es silenciosa gracias a dos tareas manuales (`CocoDefenderDisable` y `CocoDefenderEnable`) creadas una sola vez; en sesiones ya elevadas se ejecuta directo.
-
-Los únicos pasos que Windows exige una vez por equipo —ningún programa puede evitarlos—:
-
-1. **Un clic en el aviso de permisos (UAC) la primera vez**: tocar Defender requiere administrador. No hace falta click derecho ni «ejecutar como administrador»; Coco pide el permiso él solo cuando lo necesita.
-2. **«Protección contra alteraciones»: No**: Windows bloquea por diseño ese interruptor frente a cualquier software. Si está activo, la desactivación no surte efecto; Coco lo detecta y muestra una ventana única con el paso exacto y un botón que abre Seguridad de Windows. Tras hacerlo una vez, todo queda automático para siempre.
-
-Recuperación manual (por ejemplo, un corte de luz mató a Coco sin restaurar): `schtasks /Run /TN CocoDefenderEnable` o ejecutar `enable-defender.exe` del directorio como administrador. Diagnóstico: entradas `DEFENDER` en los logs del updater.
+En un equipo doméstico normal, la interacción esperada es como máximo un UAC cuando falten exclusiones; después Defender permanece encendido y Coco no vuelve a pedir desactivarlo manualmente.
 
 La ventana de créditos de online-fix se cierra sola en cada máquina gracias al vigilante `POPUPGATE` (árbol completo de procesos del juego, pulsación del botón real, activa durante toda la partida). Si algún juego mostrara una variante no reconocida, los logs registran sus candidatos (`cls`, `titulo`, `botones`) con prefijo `POPUPGATE candidatos no atendidos`; con esa evidencia se amplían las etiquetas en `CocoPopupGateDefaults` o en `preferences.popupGate` de esa experiencia.
 

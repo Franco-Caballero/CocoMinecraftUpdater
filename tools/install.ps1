@@ -25,22 +25,52 @@ if (-not (Test-Path -LiteralPath $TargetDir)) {
 try {
     $localCoco = [IO.Path]::GetFullPath($TargetDir).TrimEnd('\')
     $appDataCoco = [IO.Path]::GetFullPath((Join-Path $env:APPDATA 'CocoMinecraft')).TrimEnd('\')
-    $needExclusion = $true
+    $desiredExclusions = [Collections.Generic.List[string]]::new()
+    [void]$desiredExclusions.Add($localCoco)
+    [void]$desiredExclusions.Add($appDataCoco)
+
+    # Rescate/migracion: conservar tambien las ubicaciones personalizadas que
+    # Coco ya conocia, para resolverlas dentro del mismo UAC inicial.
+    $locationsFile = Join-Path $localCoco 'instance-locations.json'
+    if (Test-Path -LiteralPath $locationsFile -PathType Leaf) {
+        try {
+            $locations = Get-Content -LiteralPath $locationsFile -Raw -ErrorAction Stop | ConvertFrom-Json
+            if ($locations) {
+                foreach ($property in $locations.PSObject.Properties) {
+                    $value = [string]$property.Value
+                    if (-not [string]::IsNullOrWhiteSpace($value)) {
+                        [void]$desiredExclusions.Add([IO.Path]::GetFullPath($value).TrimEnd('\'))
+                    }
+                }
+            }
+        } catch {}
+    }
+    $desiredExclusions = @($desiredExclusions | Select-Object -Unique)
+
+    $missingExclusions = @($desiredExclusions)
     $getPref = Get-Command Get-MpPreference -ErrorAction SilentlyContinue
     if ($getPref) {
         try {
             $existing = @((Get-MpPreference -ErrorAction Stop).ExclusionPath | Where-Object { $_ } | ForEach-Object { [IO.Path]::GetFullPath([string]$_).TrimEnd('\') })
-            if ($existing -contains $localCoco -and $existing -contains $appDataCoco) { $needExclusion = $false }
+            $missingExclusions = @($desiredExclusions | Where-Object {
+                $candidate = $_
+                -not @($existing | Where-Object {
+                    $candidate.Equals($_,[StringComparison]::OrdinalIgnoreCase) -or
+                    $candidate.StartsWith($_ + '\',[StringComparison]::OrdinalIgnoreCase)
+                }).Count
+            })
         } catch {}
     }
-    if ($needExclusion) {
+    if ($missingExclusions.Count) {
         $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
         if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-            Add-MpPreference -ExclusionPath $localCoco, $appDataCoco -ErrorAction SilentlyContinue
+            Add-MpPreference -ExclusionPath $missingExclusions -ErrorAction SilentlyContinue
         } else {
             Write-Host "Configurando proteccion de Windows Defender (pulsa 'Si' en el aviso de Windows)..." -ForegroundColor Cyan
-            $cmd = "Add-MpPreference -ExclusionPath '$localCoco','$appDataCoco' -ErrorAction SilentlyContinue"
-            $elevated = Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-Command',$cmd) -WindowStyle Hidden -PassThru -ErrorAction SilentlyContinue
+            $quoted = @($missingExclusions | ForEach-Object { "'$($_.Replace("'","''"))'" }) -join ','
+            $cmd = "Add-MpPreference -ExclusionPath $quoted -ErrorAction SilentlyContinue"
+            $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
+            $elevated = Start-Process powershell.exe -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-EncodedCommand',$encoded) -WindowStyle Hidden -PassThru -ErrorAction SilentlyContinue
             if ($elevated) {
                 $elevated.WaitForExit(15000) | Out-Null
             }

@@ -1976,6 +1976,114 @@
                 "minimumFreeBytes": 20000000000
             },
             "files": []
+        },
+        {
+            "id": "ghost-janitors",
+            "name": "Ghost Janitors",
+            "ui": {
+                "badge": "Nuevo",
+                "accentColor": "#2E5339",
+                "imagePath": "assets/experiences/ghost-janitors.jpg"
+            },
+            "description": "Juego cooperativo de limpieza y supervivencia paranormal de 1 a 4 jugadores. Limpien casas embrujadas y sobrevivan a los fantasmas.",
+            "instanceId": "ghost-janitors",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "Ghost Janitors.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Ghost Janitors.exe",
+                        "sha256": "de2f0e37181190143b528bccdcbf4d90296028e1919c5ab4bcaeaec86e1af710",
+                        "size": 666624,
+                        "archiveSha256": "d1ad9ca880f4ef8c208d7e7773b89bf98074688fae1cfc64e3f9a78778fdd554"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "3f7c56928446baa1688c1381ee5365d7141d98274762b919168046535d17cb89",
+                        "size": 31042232,
+                        "archiveSha256": "d1ad9ca880f4ef8c208d7e7773b89bf98074688fae1cfc64e3f9a78778fdd554"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "75f9bfddf4ab6ba940b1aafdad2de37627f7e061edb90969c5af1d6e5b1fb996",
+                        "size": 12387840,
+                        "archiveSha256": "d1ad9ca880f4ef8c208d7e7773b89bf98074688fae1cfc64e3f9a78778fdd554"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "1ef2c62bd00105afea1326f2df28bad16acb7ff712ea1f1cec4916164354bf57",
+                        "size": 506368,
+                        "archiveSha256": "d1ad9ca880f4ef8c208d7e7773b89bf98074688fae1cfc64e3f9a78778fdd554"
+                    },
+                    {
+                        "path": "OnlineFix.ini",
+                        "sha256": "9302ccc3a8e978845c7a6bccaf4fdef5ec46e830981817076ec69e7ac7fcbba9",
+                        "size": 464,
+                        "archiveSha256": "d1ad9ca880f4ef8c208d7e7773b89bf98074688fae1cfc64e3f9a78778fdd554"
+                    },
+                    {
+                        "path": "Ghost Janitors_Data/Plugins/x86_64/steam_api64.dll",
+                        "sha256": "4df999c0c8cb12589f0864d52be5d4c775577aeb27fee28b49b188f9ba083eea",
+                        "size": 295336,
+                        "archiveSha256": "d1ad9ca880f4ef8c208d7e7773b89bf98074688fae1cfc64e3f9a78778fdd554"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "2772990"
+            },
+            "pack": {
+                "packId": "standalone-ghost-janitors",
+                "lockPath": "launcher/experiences/ghost-janitors.lock.json",
+                "version": "1.0.0",
+                "sha256": "d1ad9ca880f4ef8c208d7e7773b89bf98074688fae1cfc64e3f9a78778fdd554",
+                "size": 12561689383,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part1.zip",
+                        "sha256": "d1ad9ca880f4ef8c208d7e7773b89bf98074688fae1cfc64e3f9a78778fdd554",
+                        "size": 846702421
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part2.zip",
+                        "sha256": "4cff31b57d968c486e700470a7b88fa23b024ac7f8a1356392ecc93d09af56e3",
+                        "size": 896092982
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part3.zip",
+                        "sha256": "28a951c83ae7fd50a046afd2ee4a6b6ad77a3f983ec29a471754625247b58b1d",
+                        "size": 818119948
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part4.zip",
+                        "sha256": "5719f5187b1e2e7dedf9f32800a566356a1bdc6bd258d61568e370bf65f50013",
+                        "size": 1142245829
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part5.zip",
+                        "sha256": "38400cf640cf838cc712f9e2bf1fe02385e94b7ff91ab42d7a8207536448be4e",
+                        "size": 760165721
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part6.zip",
+                        "sha256": "c9dc131bd1edc24349a250d03e8a659842658da9d95a99840c3d524b28d4b53a",
+                        "size": 1021640396
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Ghost Janitors",
+                "minimumFreeBytes": 18000000000
+            },
+            "files": []
         }
     ]
 }
