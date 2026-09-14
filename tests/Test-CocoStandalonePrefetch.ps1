@@ -89,16 +89,17 @@ try{
     if((Get-Content -LiteralPath (Join-Path $instance 'shared.txt') -Raw)-ne'part-5'){
         throw 'La extraccion multipart no respeto el orden declarado de las partes.'
     }
+    [void](Invoke-CocoStandaloneInstallerCacheCleanup ([pscustomobject]@{experiences=@($experience)}) $experiencesRoot $cacheRoot)
     for($i=0;$i-lt$archives.Count;$i++){
         $item=$archives[$i]
         $cacheZip=Join-Path $cacheRoot "downloads\standalone-packs\$($item.sha256).zip"
-        if(-not(Test-Path -LiteralPath $cacheZip -PathType Leaf)){throw "Falta la parte $($i+1) verificada en cache."}
-        if((Get-FileHash -LiteralPath $cacheZip -Algorithm SHA256).Hash.ToLowerInvariant()-ne[string]$item.sha256){throw "Hash de cache incorrecto en parte $($i+1)."}
+        if(Test-Path -LiteralPath $cacheZip -PathType Leaf){throw "La parte $($i+1) quedo innecesariamente en cache despues de instalar."}
+        if(Test-Path -LiteralPath "$cacheZip.partial" -PathType Leaf){throw "La parte $($i+1) dejo un parcial despues de instalar."}
         if(-not(Test-Path -LiteralPath (Join-Path $instance "sentinel-$($i+1).txt") -PathType Leaf)){throw "No se extrajo la parte $($i+1)."}
     }
     if(-not(Test-Path -LiteralPath (Join-Path $instance '.coco\standalone-state.json') -PathType Leaf)){throw 'La instalacion multipart no escribio su estado final.'}
 
-    'PASS: prefetch standalone acotado a 3 descargas, cache verificada y extraccion ordenada validados.'
+    'PASS: prefetch standalone acotado a 3 descargas, limpieza post-instalacion y extraccion ordenada validados.'
 }finally{
     Remove-Item Function:\Start-Process -ErrorAction SilentlyContinue
     Remove-Item Function:\curl.exe -ErrorAction SilentlyContinue

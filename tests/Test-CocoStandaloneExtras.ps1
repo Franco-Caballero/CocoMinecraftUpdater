@@ -63,15 +63,26 @@ try{
     if([string]$state1.filesSha-ne$modsSha1){throw "El estado no registro los extras (filesSha=$($state1.filesSha))."}
     if(@($state1.extraFiles).Count-ne2){throw 'El estado no registro todos los archivos extraidos de los mods.'}
     if([int]$state1.schemaVersion-ne2){throw 'El estado standalone no usa el esquema transaccional vigente.'}
+    if(@($state1.archiveShas).Count-ne1-or[string]$state1.archiveShas[0]-ne$gameSha){throw 'El estado standalone no fijo archiveShas del paquete base.'}
+
+    $statePath=Join-Path $instance '.coco\standalone-state.json'
+    $state1.archiveShas=@(('f'*64))
+    [IO.File]::WriteAllText($statePath,($state1|ConvertTo-Json -Depth 5),(New-Object Text.UTF8Encoding($false)))
+    $archiveMismatchInstall=Install-CocoStandaloneExperience $experience $experiencesRoot $cacheRoot
+    if(-not$archiveMismatchInstall.Updated){throw 'Un archiveShas distinto fue tratado como instalacion base vigente.'}
+    $stateAfterArchiveRepair=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
+    if(@($stateAfterArchiveRepair.archiveShas).Count-ne1-or[string]$stateAfterArchiveRepair.archiveShas[0]-ne$gameSha){throw 'La reinstalacion no restauro archiveShas exacto.'}
 
     $packCache=Join-Path $cacheRoot "downloads\standalone-packs\$gameSha.zip"
-    Remove-Item -LiteralPath $packCache -Force
+    [void](Invoke-CocoStandaloneInstallerCacheCleanup ([pscustomobject]@{experiences=@($experience)}) $experiencesRoot $cacheRoot)
+    if(Test-Path -LiteralPath $packCache -PathType Leaf){throw 'La instalacion standalone dejo su ZIP base en cache despues de completarse.'}
     [IO.File]::WriteAllText((Join-Path $instance 'game_Data\level.bin'),'corrupt',(New-Object Text.UTF8Encoding($false)))
     $repairStatus=@(Repair-CocoStandaloneRequiredFiles $experience $instance $cacheRoot)
     if($repairStatus.Count-ne2-or(Get-FileHash -LiteralPath (Join-Path $instance 'game_Data\level.bin') -Algorithm SHA256).Hash.ToLowerInvariant()-ne$levelSha){
         throw 'La reparacion standalone no recupero desde su archivo fijado un archivo base corrupto sin cache.'
     }
-    if(-not(Test-Path -LiteralPath $packCache -PathType Leaf)){throw 'La reparacion standalone no repuso el paquete verificado en cache.'}
+    [void](Invoke-CocoStandaloneInstallerCacheCleanup ([pscustomobject]@{experiences=@($experience)}) $experiencesRoot $cacheRoot)
+    if(Test-Path -LiteralPath $packCache -PathType Leaf){throw 'La reparacion standalone dejo el paquete base en cache despues de verificar el archivo reparado.'}
 
     [IO.File]::WriteAllText((Join-Path $instance 'BepInEx\config\BigVoice.cfg'),'player-volume=37',(New-Object Text.UTF8Encoding($false)))
 
@@ -141,6 +152,9 @@ try{
     $unsafeRejected=$false
     try{Install-CocoStandaloneExperience $unsafeExperience $experiencesRoot $cacheRoot|Out-Null}catch{$unsafeRejected=$_.Exception.Message-match'ruta insegura o duplicada'}
     if(-not$unsafeRejected-or(Test-Path -LiteralPath (Join-Path $experiencesRoot 'escaped.txt'))){throw 'La extraccion standalone permitio escapar de la instancia.'}
+    if(Test-Path -LiteralPath (Join-Path $experiencesRoot 'unsafe-standalone\.coco\standalone-state.json') -PathType Leaf){throw 'Una instalacion fallida escribio estado final como si hubiera terminado.'}
+    $unsafeCache=Join-Path $cacheRoot "downloads\standalone-packs\$unsafeSha.zip"
+    if(-not(Test-Path -LiteralPath $unsafeCache -PathType Leaf)){throw 'Una instalacion fallida elimino el paquete que debe quedar disponible para diagnostico/reintento.'}
 
     'PASS: instalacion standalone con extras, idempotencia y actualizacion de mods validados.'
 }finally{

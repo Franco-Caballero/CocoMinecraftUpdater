@@ -4031,6 +4031,85 @@ function Test-CocoStandaloneExtraManifest([string]$InstanceRoot,[object[]]$Manif
     }
 }
 
+function Test-CocoStandaloneInstalledStateForCleanup($Experience,[string]$ExperiencesRoot,[string]$InstanceLocationsPath=''){
+    try{
+        if(-not$Experience-or[string]$Experience.managementMode-ne'managed'-or[string]$Experience.runtime.type-ne'standalone'){return $false}
+        $instanceRoot=Get-CocoExperienceInstanceRoot $Experience $ExperiencesRoot $InstanceLocationsPath
+        if([string]::IsNullOrWhiteSpace($instanceRoot)-or-not(Test-Path -LiteralPath $instanceRoot -PathType Container)){return $false}
+        $statePath=Join-Path $instanceRoot '.coco\standalone-state.json'
+        if(-not(Test-Path -LiteralPath $statePath -PathType Leaf)){return $false}
+        $state=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
+        $archives=@(if($Experience.pack.archives){$Experience.pack.archives}else{$Experience.pack})
+        $expectedSha=([string]$Experience.pack.sha256).ToLowerInvariant()
+        if(-not$expectedSha-and$archives.Count){$expectedSha=([string]$archives[0].sha256).ToLowerInvariant()}
+        if([string]$state.experienceId-ne[string]$Experience.id-or
+           [string]$state.sha256-ne$expectedSha-or
+           [string]$state.version-ne[string]$Experience.pack.version){return $false}
+        if($state.PSObject.Properties['archiveShas']){
+            $currentArchiveShas=@($archives|Where-Object{$_}|ForEach-Object{([string]$_.sha256).ToLowerInvariant()})
+            $stateArchiveShas=@($state.archiveShas|ForEach-Object{([string]$_).ToLowerInvariant()})
+            if($currentArchiveShas.Count-ne$stateArchiveShas.Count){return $false}
+            for($i=0;$i-lt$currentArchiveShas.Count;$i++){if($currentArchiveShas[$i]-ne$stateArchiveShas[$i]){return $false}}
+        }
+        $exec=Join-Path $instanceRoot (([string]$Experience.runtime.executable)-replace'/','\')
+        if(-not(Test-Path -LiteralPath $exec -PathType Leaf)){return $false}
+        foreach($required in @($Experience.runtime.requiredFiles|Where-Object{$_})){
+            if(-not(Test-CocoStandaloneRequiredFile $instanceRoot $required)){return $false}
+        }
+        return $true
+    }catch{return $false}
+}
+
+function Invoke-CocoStandaloneInstallerCacheCleanup($Catalog,[string]$ExperiencesRoot,[string]$CacheRoot,[string]$InstanceLocationsPath=''){
+    $downloadsDir=Join-Path $CacheRoot 'downloads\standalone-packs'
+    if(-not(Test-Path -LiteralPath $downloadsDir -PathType Container)){return [pscustomobject]@{Files=0;Bytes=[int64]0}}
+    $cachedShas=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($file in @(Get-ChildItem -LiteralPath $downloadsDir -File -ErrorAction SilentlyContinue)){
+        if($file.Name-match'^([a-fA-F0-9]{64})\.zip(?:\.partial|\.repair\.partial)?$'){[void]$cachedShas.Add($matches[1])}
+    }
+    if(-not$cachedShas.Count){return [pscustomobject]@{Files=0;Bytes=[int64]0}}
+    $referenced=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $protected=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $disposable=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($experience in @($Catalog.experiences|Where-Object{[string]$_.managementMode-eq'managed'-and[string]$_.runtime.type-eq'standalone'})){
+        $archives=@(if($experience.pack.archives){$experience.pack.archives}else{$experience.pack})
+        $relevant=$false
+        foreach($archive in $archives){
+            $sha=([string]$archive.sha256).ToLowerInvariant()
+            if($sha-match'^[a-f0-9]{64}$'){
+                [void]$referenced.Add($sha)
+                if($cachedShas.Contains($sha)){$relevant=$true}
+            }
+        }
+        if(-not$relevant){continue}
+        $installed=Test-CocoStandaloneInstalledStateForCleanup $experience $ExperiencesRoot $InstanceLocationsPath
+        foreach($archive in $archives){
+            $sha=([string]$archive.sha256).ToLowerInvariant()
+            if($sha-notmatch'^[a-f0-9]{64}$'){continue}
+            if($installed){[void]$disposable.Add($sha)}else{[void]$protected.Add($sha)}
+        }
+    }
+    # Si dos experiencias comparten contenido, una instalacion incompleta gana:
+    # conservar el cache permite continuarla sin volver a descargar.
+    foreach($sha in @($protected)){[void]$disposable.Remove($sha)}
+    $removed=0;[int64]$bytes=0
+    foreach($file in @(Get-ChildItem -LiteralPath $downloadsDir -File -ErrorAction SilentlyContinue)){
+        if($file.Name-notmatch'^([a-fA-F0-9]{64})\.zip(?:\.partial|\.repair\.partial)?$'){continue}
+        $sha=$matches[1].ToLowerInvariant()
+        $isOrphan=-not$referenced.Contains($sha)
+        if(-not$isOrphan-and-not$disposable.Contains($sha)){continue}
+        try{
+            $length=[int64]$file.Length
+            Remove-Item -LiteralPath $file.FullName -Force -ErrorAction Stop
+            $removed++;$bytes+=$length
+        }catch{
+            Write-CocoLog "No se pudo limpiar residuo standalone '$($file.FullName)': $($_.Exception.Message)"
+        }
+    }
+    if($removed-gt0){Write-CocoLog ("Barrido retroactivo de instaladores standalone: {0} archivo(s), {1:N1} MB liberados."-f$removed,($bytes/1MB))}
+    return [pscustomobject]@{Files=$removed;Bytes=$bytes}
+}
+
 function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot, [string]$CacheRoot, [string]$InstanceLocationsPath='',[ValidateSet('client','host')][string]$Role='client'){
     if($Experience.managementMode-ne'managed'){throw 'La experiencia no esta marcada como administrada.'}
     $instanceRoot=Get-CocoExperienceInstanceRoot $Experience $ExperiencesRoot $InstanceLocationsPath
@@ -4063,6 +4142,7 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
     try { [void](Ensure-CocoDefenderExclusion $Experience $instanceRoot) } catch {}
     try { [void](Ensure-CocoSteamRunning -Quiet) } catch {}
     $archiveItems = @(if($Experience.pack.archives){$Experience.pack.archives}else{$Experience.pack})
+    $expectedArchiveShas=@($archiveItems|Where-Object{$_}|ForEach-Object{([string]$_.sha256).ToLowerInvariant()})
     $expectedSha = [string]$Experience.pack.sha256
     if(-not$expectedSha -and $archiveItems.Count-gt0){
         $expectedSha = [string]$archiveItems[0].sha256
@@ -4085,6 +4165,16 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
             Write-CocoLog "No se pudo leer el estado anterior de la instancia standalone: $($_.Exception.Message)"
         }
     }
+    $archiveStateCurrent=$true
+    if($existingState-and$existingState.PSObject.Properties['archiveShas']){
+        $stateArchiveShas=@($existingState.archiveShas|ForEach-Object{([string]$_).ToLowerInvariant()})
+        if($stateArchiveShas.Count-ne$expectedArchiveShas.Count){$archiveStateCurrent=$false}
+        else{
+            for($archiveStateIndex=0;$archiveStateIndex-lt$expectedArchiveShas.Count;$archiveStateIndex++){
+                if($stateArchiveShas[$archiveStateIndex]-ne$expectedArchiveShas[$archiveStateIndex]){$archiveStateCurrent=$false;break}
+            }
+        }
+    }
     $previousExtraManifest=if($existingState-and$existingState.PSObject.Properties['extraFiles']){@($existingState.extraFiles)}else{@()}
     $extraManifest=@($previousExtraManifest)
     $extraManifestValid=$false
@@ -4093,12 +4183,12 @@ function Install-CocoStandaloneExperience($Experience, [string]$ExperiencesRoot,
         $extraManifestValid=Test-CocoStandaloneExtraManifest $instanceRoot $extraManifest
         $extraStateCurrent=$extraManifestValid-and[string]$existingState.filesSha-eq$expectedExtrasSha-and[string]$existingState.role-eq$Role
     }
-    if($existingState-and[string]$existingState.sha256-eq$expectedSha-and(Test-Path -LiteralPath $execPath)-and$extraStateCurrent){
+    if($existingState-and[string]$existingState.sha256-eq$expectedSha-and$archiveStateCurrent-and(Test-Path -LiteralPath $execPath)-and$extraStateCurrent){
         Ensure-CocoOnlineFixSuppression $instanceRoot $Experience
         return [pscustomobject]@{InstanceRoot=$instanceRoot;Updated=$false}
     }
     $archivesUpToDate=$false
-    if($existingState-and[string]$existingState.sha256-eq$expectedSha-and(Test-Path -LiteralPath $execPath)){$archivesUpToDate=$true}
+    if($existingState-and[string]$existingState.sha256-eq$expectedSha-and$archiveStateCurrent-and(Test-Path -LiteralPath $execPath)){$archivesUpToDate=$true}
 
     if(-not $archivesUpToDate){
     Set-CocoLauncherStep 4 'DESCARGANDO JUEGO STANDALONE' ("{0} | {1:N1} MB totales"-f $Experience.name, ($expectedSize / 1MB)) 30
@@ -4509,6 +4599,7 @@ $metaDir=Join-Path $instanceRoot '.coco'
         sha256=$expectedSha
         size=$expectedSize
         version=[string]$Experience.pack.version
+        archiveShas=@($expectedArchiveShas)
         role=$Role
         filesSha=$expectedExtrasSha
         extraFiles=@($extraManifest)
@@ -5644,6 +5735,7 @@ function Invoke-CocoManagedExperienceLaunch(
         }
         Ensure-CocoOnlineFixSuppression $installed.InstanceRoot $experience
         $requiredStatus=@(Repair-CocoStandaloneRequiredFiles $experience $installed.InstanceRoot $CacheRoot)
+        try{[void](Invoke-CocoStandaloneInstallerCacheCleanup $Catalog $ExperiencesRoot $CacheRoot $InstanceLocationsPath)}catch{Write-CocoLog "No se pudo limpiar cache standalone tras verificar '$($experience.id)': $($_.Exception.Message)"}
         if($Dry){
             return [pscustomobject]@{Status='prepared';Experience=$experience;Installation=$installed}
         }
@@ -7199,6 +7291,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     $paths=Get-CocoLauncherPaths $script:CocoEngineRoot $LauncherTestRoot
     $script:CocoInstanceLocationsPath=[string]$paths.InstanceLocationsPath
     $catalog=Read-CocoLauncherCatalog $paths.CatalogPath
+    try{[void](Invoke-CocoStandaloneInstallerCacheCleanup $catalog $paths.ExperiencesRoot $paths.CacheRoot $paths.InstanceLocationsPath)}catch{Write-CocoLog "No se pudo completar la limpieza de instaladores standalone: $($_.Exception.Message)"}
     if($paths.IsTest){New-Item -ItemType Directory -Path $paths.SkinRoot -Force|Out-Null}
     else{Initialize-CocoSkinRegistry $catalog.globalPolicies $script:CocoEngineRoot $paths.SkinRoot}
     $original=@($catalog.experiences|Where-Object id -eq 'coco-original'|Select-Object -First 1)[0]

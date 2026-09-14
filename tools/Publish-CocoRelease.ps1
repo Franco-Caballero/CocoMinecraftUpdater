@@ -357,6 +357,7 @@ if(-not$Fast){
 .\tests\Test-CocoLauncherInstance.ps1
 .\tests\Test-CocoStandaloneExtras.ps1
 .\tests\Test-CocoStandalonePrefetch.ps1
+.\tests\Test-CocoStandaloneCacheCleanup.ps1
 if(-not$Fast){
     .\tests\Test-CocoLauncherIntegration.ps1
 }
