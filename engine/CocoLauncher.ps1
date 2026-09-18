@@ -887,7 +887,7 @@ function Write-CocoMediaPlaybackState($Experience,$Episode,[double]$PositionSeco
 function Invoke-CocoMediaPumpUi{
     if($script:CocoMediaDialog-and$script:CocoMediaDialog.IsDisposed){$script:CocoMediaCancelRequested=$true}
     try{[Windows.Forms.Application]::DoEvents()}catch{}
-    if($script:CocoMediaCancelRequested){throw 'La operacion de Heart Signal fue cancelada.'}
+    if($script:CocoMediaCancelRequested){throw 'La operacion de media fue cancelada.'}
 }
 
 function Set-CocoMediaUiStatus([string]$Text,[int]$Percent=0){
@@ -945,18 +945,18 @@ function Invoke-CocoMediaHttpDownload($Experience,$Episode,[string]$Destination)
         if($resumeBytes-gt$expectedSize){Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue;$resumeBytes=0}
         $request=$null;$response=$null;$input=$null;$output=$null;$responseStatus=0;$hashMismatch=$false
         try{
-            $request=[Net.HttpWebRequest]::Create($url);$request.UserAgent='CocoLauncher/HeartSignal';$request.Timeout=30000;$request.ReadWriteTimeout=30000
+            $request=[Net.HttpWebRequest]::Create($url);$request.UserAgent='CocoLauncher/Media';$request.Timeout=30000;$request.ReadWriteTimeout=30000
             if($resumeBytes-gt0){$request.AddRange($resumeBytes)}
             $response=$request.GetResponse();$responseStatus=[int]$response.StatusCode
             $resumed=$resumeBytes-gt0-and$response.StatusCode-eq[Net.HttpStatusCode]::PartialContent
-            if($resumeBytes-gt0-and-not$resumed){Write-CocoLog "HEART SIGNAL: el asset no acepto el rango; se reinicia el parcial."}
+            if($resumeBytes-gt0-and-not$resumed){Write-CocoLog "MEDIA: el asset no acepto el rango; se reinicia el parcial."}
             $total=[int64]$response.ContentLength
             if($resumed){$total+=$resumeBytes}else{$resumeBytes=0}
             if($total-le0){$total=$expectedSize}
             $input=$response.GetResponseStream()
             $output=if($resumed){[IO.File]::Open($partial,[IO.FileMode]::Append,[IO.FileAccess]::Write,[IO.FileShare]::Read)}else{[IO.File]::Create($partial)}
             $received=$resumeBytes;$watch=[Diagnostics.Stopwatch]::StartNew();$lastUi=[DateTime]::MinValue
-            Write-CocoLog "HEART SIGNAL: descarga intento=$attempt; reanudada=$resumed; bytesIniciales=$resumeBytes; destino=$Destination"
+            Write-CocoLog "MEDIA: descarga intento=$attempt; reanudada=$resumed; bytesIniciales=$resumeBytes; destino=$Destination"
             $buffer=New-Object byte[] (4MB)
             while(($read=$input.Read($buffer,0,$buffer.Length))-gt0){
                 Invoke-CocoMediaPumpUi; $output.Write($buffer,0,$read);$received+=$read
@@ -974,7 +974,7 @@ function Invoke-CocoMediaHttpDownload($Experience,$Episode,[string]$Destination)
             if(Test-Path -LiteralPath $Destination -PathType Leaf){
                 $preserved="$Destination.coco-replaced-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
                 Move-Item -LiteralPath $Destination -Destination $preserved -Force
-                Write-CocoLog "HEART SIGNAL: archivo anterior preservado en $preserved"
+                Write-CocoLog "MEDIA: archivo anterior preservado en $preserved"
             }
             Move-Item -LiteralPath $partial -Destination $Destination -Force
             try{
@@ -1009,10 +1009,10 @@ function Invoke-CocoMediaHttpDownload($Experience,$Episode,[string]$Destination)
             Set-CocoMediaUiStatus 'Descarga y verificacion completadas.' 100
             return $Destination
         }catch{
-            if($script:CocoMediaCancelRequested){throw 'La operacion de Heart Signal fue cancelada.'}
+            if($script:CocoMediaCancelRequested){throw 'La operacion de media fue cancelada.'}
             if($hashMismatch-or$responseStatus-eq416){Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue}
             if($attempt-eq4){throw}
-            Write-CocoLog "HEART SIGNAL: fallo de descarga intento=${attempt}: $($_.Exception.Message)"
+            Write-CocoLog "MEDIA: fallo de descarga intento=${attempt}: $($_.Exception.Message)"
             Set-CocoMediaUiStatus ("Reintentando descarga (intento {0}/4); se conserva el parcial."-f($attempt+1)) 75
             Wait-CocoMediaRetry ([int][Math]::Pow(2,$attempt-1))
         }finally{if($output){$output.Dispose()};if($input){$input.Dispose()};if($response){$response.Dispose()}}
@@ -1649,7 +1649,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
             &$writePlaybackCommand $Experience $Episode $current $state.Duration $state.Completed
             $state.LastSavedUtc=$now
         }catch{
-            try{if($logCommand){&$logCommand "HEART SIGNAL: no se pudo guardar la posicion de '$($Episode.id)': $($_.Exception.Message)"}}catch{}
+            try{if($logCommand){&$logCommand "MEDIA: no se pudo guardar la posicion de '$($Episode.id)': $($_.Exception.Message)"}}catch{}
         }
     }.GetNewClosure()
     $applyResume={
@@ -1996,7 +1996,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
         $uri=if($mediaSource-match'^[a-zA-Z]:[\\/]'){[Uri]::new([IO.Path]::GetFullPath($mediaSource))}else{[Uri]::new($mediaSource)}
         $form.Add_Shown(({
             try{$media.Source=$uri;$timer.Start();$startTimer.Start()}
-            catch{$statusLabel.Text='No se pudo cargar el video.';$statusLabel.ForeColor=[Drawing.Color]::FromArgb(255,139,151);try{if($logCommand){&$logCommand "HEART SIGNAL: no se pudo cargar el video: $($_.Exception.Message)"}}catch{}}
+            catch{$statusLabel.Text='No se pudo cargar el video.';$statusLabel.ForeColor=[Drawing.Color]::FromArgb(255,139,151);try{if($logCommand){&$logCommand "MEDIA: no se pudo cargar el video: $($_.Exception.Message)"}}catch{}}
         }.GetNewClosure()))
         if($script:CocoForm-and-not$script:CocoForm.IsDisposed){[void]$form.ShowDialog($script:CocoForm)}else{[void]$form.ShowDialog()}
     }finally{
@@ -2157,7 +2157,7 @@ function Invoke-CocoMediaEpisodeUi($Experience){
 
     $header=New-Object Windows.Forms.Panel;$header.Name='CocoMediaSelectorHeader';$header.Dock='Top';$header.Height=82;$header.BackColor=[Drawing.Color]::FromArgb(27,19,38)
     $accent=New-Object Windows.Forms.Panel;$accent.Dock='Left';$accent.Width=5;$accent.BackColor=[Drawing.Color]::FromArgb(177,92,255)
-    $heading=New-Object Windows.Forms.Label;$heading.Name='CocoMediaSelectorTitle';$heading.Text='HEART SIGNAL';$heading.Font=New-Object Drawing.Font('Segoe UI Semibold',14);$heading.ForeColor=[Drawing.Color]::White;$heading.AutoEllipsis=$true
+    $heading=New-Object Windows.Forms.Label;$heading.Name='CocoMediaSelectorTitle';$heading.Text=if($Experience.name){$Experience.name.ToUpperInvariant()}else{'COCO MEDIA'};$heading.Font=New-Object Drawing.Font('Segoe UI Semibold',14);$heading.ForeColor=[Drawing.Color]::White;$heading.AutoEllipsis=$true
     $badge=New-Object Windows.Forms.Label;$badge.Name='CocoMediaSelectorBadge';$badge.Text='STREAMING DIRECTO';$badge.TextAlign='MiddleCenter';$badge.Font=New-Object Drawing.Font('Segoe UI Semibold',7.5);$badge.ForeColor=[Drawing.Color]::FromArgb(183,239,194);$badge.BackColor=[Drawing.Color]::FromArgb(39,57,48)
     $closeButton=New-Object Windows.Forms.Button;$closeButton.Name='CocoMediaSelectorCloseButton';$closeButton.Text='X';$closeButton.AccessibleName='Cerrar selector';$closeButton.Font=New-Object Drawing.Font('Segoe UI Semibold',9);Set-CocoMediaButtonStyle $closeButton ([Drawing.Color]::FromArgb(27,19,38)) ([Drawing.Color]::FromArgb(218,210,229)) ([Drawing.Color]::FromArgb(150,48,70))
     $header.Controls.AddRange(@($accent,$heading,$badge,$closeButton))
