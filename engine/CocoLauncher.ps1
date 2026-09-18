@@ -977,6 +977,34 @@ function Invoke-CocoMediaHttpDownload($Experience,$Episode,[string]$Destination)
                 Write-CocoLog "HEART SIGNAL: archivo anterior preservado en $preserved"
             }
             Move-Item -LiteralPath $partial -Destination $Destination -Force
+            try{
+                $subUrl=''
+                if($Episode.PSObject.Properties.Name -contains 'subtitleUrl' -and [string]$Episode.subtitleUrl -match '^https?://'){
+                    $subUrl=[string]$Episode.subtitleUrl
+                }elseif($Episode.PSObject.Properties.Name -contains 'subtitles' -and $Episode.subtitles){
+                    $subs=@($Episode.subtitles)
+                    $selected=@($subs|Where-Object{([string]$_.language -match '(?i)^(es|spa)$') -or ([string]$_.label -match '(?i)spanish|español')}|Select-Object -First 1)[0]
+                    if(-not$selected){$selected=@($subs|Where-Object{[bool]$_.default}|Select-Object -First 1)[0]}
+                    if(-not$selected -and $subs.Count -gt 0){$selected=$subs[0]}
+                    if($selected -and [string]$selected.url -match '^https?://'){$subUrl=[string]$selected.url}
+                }
+                if($subUrl){
+                    $destDir=Split-Path $Destination -Parent
+                    $destBase=[IO.Path]::GetFileNameWithoutExtension($Destination)
+                    $subExt=[IO.Path]::GetExtension(([Uri]$subUrl).AbsolutePath)
+                    if($subExt -notmatch '^\.(srt|vtt)$'){$subExt='.es.srt'}
+                    elseif($subExt -eq '.srt'){$subExt='.es.srt'}
+                    $subDest=Join-Path $destDir "$destBase$subExt"
+                    $wcSub=New-Object System.Net.WebClient
+                    $wcSub.Encoding=[System.Text.Encoding]::UTF8
+                    $wcSub.Headers.Add('User-Agent','CocoLauncher/Subtitles')
+                    $wcSub.DownloadFile($subUrl,$subDest)
+                    $wcSub.Dispose()
+                    Write-CocoLog "MEDIA: subtitulo guardado junto al video en '$subDest'"
+                }
+            }catch{
+                Write-CocoLog "MEDIA: no se pudo guardar subtitulo local: $($_.Exception.Message)"
+            }
             Write-CocoMediaState $Experience $Episode
             Set-CocoMediaUiStatus 'Descarga y verificacion completadas.' 100
             return $Destination
@@ -1318,6 +1346,176 @@ function Set-CocoMediaButtonStyle($Button,[Drawing.Color]$BackColor,[Drawing.Col
     $Button.UseCompatibleTextRendering=$true
 }
 
+function Parse-CocoSubtitles([string]$Content){
+    if([string]::IsNullOrWhiteSpace($Content)){return @()}
+    $cues=[System.Collections.Generic.List[pscustomobject]]::new()
+    $normalized=$Content -replace '\r\n', "`n" -replace '\r', "`n"
+    $blocks=$normalized -split "(?:\n\s*\n)+"
+    $timePattern='^(?:(\d{1,2}):)?(\d{2}):(\d{2})[,.](\d{1,3})\s*-->\s*(?:(\d{1,2}):)?(\d{2}):(\d{2})[,.](\d{1,3})'
+
+    foreach($block in $blocks){
+        $lines=$block.Trim().Split("`n")|ForEach-Object{$_.Trim()}|Where-Object{$_.Length -gt 0}
+        if($lines.Count -lt 1){continue}
+        $timeIndex=-1
+        for($j=0;$j -lt $lines.Count;$j++){
+            if($lines[$j] -match $timePattern){
+                $timeIndex=$j
+                break
+            }
+        }
+        if($timeIndex -lt 0){continue}
+
+        $m=[regex]::Match($lines[$timeIndex],$timePattern)
+        $sh=if($m.Groups[1].Success){[double]$m.Groups[1].Value}else{0.0}
+        $sm=[double]$m.Groups[2].Value
+        $ss=[double]$m.Groups[3].Value
+        $sms=[double]($m.Groups[4].Value.PadRight(3,'0').Substring(0,3))
+        $start=($sh*3600.0)+($sm*60.0)+$ss+($sms/1000.0)
+
+        $eh=if($m.Groups[5].Success){[double]$m.Groups[5].Value}else{0.0}
+        $em=[double]$m.Groups[6].Value
+        $es=[double]$m.Groups[7].Value
+        $ems=[double]($m.Groups[8].Value.PadRight(3,'0').Substring(0,3))
+        $end=($eh*3600.0)+($em*60.0)+$es+($ems/1000.0)
+
+        $textLines=@()
+        for($j=$timeIndex+1;$j -lt $lines.Count;$j++){
+            $clean=[regex]::Replace($lines[$j],'<[^>]+>','').Trim()
+            if($clean.Length -gt 0){$textLines+=$clean}
+        }
+        if($textLines.Count -gt 0 -and $end -gt $start){
+            $cues.Add([pscustomobject]@{
+                Start=$start
+                End=$end
+                Text=($textLines -join "`n")
+            })
+        }
+    }
+    return ,@($cues)
+}
+
+function Find-CocoMediaSubtitleCue($Cues,[double]$Seconds,[ref]$IndexRef){
+    $cueList=@($Cues)
+    if($cueList.Count -eq 0){return $null}
+    $idx=$IndexRef.Value
+    if($idx -ge 0 -and $idx -lt $cueList.Count){
+        $c=$cueList[$idx]
+        if($Seconds -ge $c.Start -and $Seconds -le $c.End){return $c}
+        if($idx+1 -lt $cueList.Count){
+            $next=$cueList[$idx+1]
+            if($Seconds -ge $c.End -and $Seconds -lt $next.Start){return $null}
+            if($Seconds -ge $next.Start -and $Seconds -le $next.End){
+                $IndexRef.Value=$idx+1
+                return $next
+            }
+        }
+    }
+    $low=0;$high=$cueList.Count - 1
+    while($low -le $high){
+        $mid=[int](($low+$high)/2)
+        $c=$cueList[$mid]
+        if($Seconds -ge $c.Start -and $Seconds -le $c.End){
+            $IndexRef.Value=$mid
+            return $c
+        }
+        if($Seconds -lt $c.Start){$high=$mid - 1}else{$low=$mid+1}
+    }
+    $IndexRef.Value=[Math]::Max(0,[Math]::Min($cueList.Count - 1,$low))
+    return $null
+}
+
+function Get-CocoMediaEpisodeSubtitles($Experience,$Episode,[string]$SourcePath=''){
+    try{
+        if(-not[string]::IsNullOrWhiteSpace($SourcePath) -and (Test-Path -LiteralPath $SourcePath -PathType Leaf)){
+            $parent=Split-Path $SourcePath -Parent
+            $baseName=[IO.Path]::GetFileNameWithoutExtension($SourcePath)
+            $candidates=@(Get-ChildItem -LiteralPath $parent -File -ErrorAction SilentlyContinue|Where-Object{
+                $_.Name.StartsWith($baseName,[StringComparison]::OrdinalIgnoreCase) -and ($_.Name.EndsWith('.srt',[StringComparison]::OrdinalIgnoreCase) -or $_.Name.EndsWith('.vtt',[StringComparison]::OrdinalIgnoreCase))
+            })
+            if($candidates.Count -gt 0){
+                $chosen=@($candidates|Where-Object{
+                    $_.Name -match '(?i)(^|[._-])(es|spa|spanish|espanol|español)([._-]|$)'
+                }|Select-Object -First 1)[0]
+                if(-not$chosen){
+                    $chosen=@($candidates|Where-Object{
+                        $_.Name -match "(?i)^\Q$baseName\E\.(srt|vtt)$"
+                    }|Select-Object -First 1)[0]
+                }
+                if(-not$chosen){$chosen=$candidates[0]}
+                if($chosen){
+                    $raw=[IO.File]::ReadAllText($chosen.FullName,[System.Text.Encoding]::UTF8)
+                    $parsed=@(Parse-CocoSubtitles $raw)
+                    if($parsed.Count -gt 0){
+                        try{Write-CocoLog "MEDIA: subtitulos locales cargados desde '$($chosen.Name)' ($($parsed.Count) lineas)"}catch{}
+                        return ,$parsed
+                    }
+                }
+            }
+        }
+
+        $subUrl=''
+        if($Episode){
+            if($Episode.PSObject.Properties.Name -contains 'subtitleUrl' -and [string]$Episode.subtitleUrl -match '^https?://'){
+                $subUrl=[string]$Episode.subtitleUrl
+            }elseif($Episode.PSObject.Properties.Name -contains 'subtitles' -and $Episode.subtitles){
+                $subs=@($Episode.subtitles)
+                $selected=@($subs|Where-Object{
+                    ([string]$_.language -match '(?i)^(es|spa)$') -or ([string]$_.label -match '(?i)spanish|español')
+                }|Select-Object -First 1)[0]
+                if(-not$selected){$selected=@($subs|Where-Object{[bool]$_.default}|Select-Object -First 1)[0]}
+                if(-not$selected -and $subs.Count -gt 0){$selected=$subs[0]}
+                if($selected -and [string]$selected.url -match '^https?://'){$subUrl=[string]$selected.url}
+            }
+        }
+
+        if($subUrl){
+            $cacheRoot=try{Join-Path (Get-CocoMediaDownloadRoot $Experience) '.subtitles'}catch{
+                Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\cache\subtitles'
+            }
+            New-Item -ItemType Directory -Path $cacheRoot -Force|Out-Null
+            $subFileName="$([string]$Episode.id).srt"
+            $cachePath=Join-Path $cacheRoot $subFileName
+            $rawContent=''
+
+            $needFetch=$true
+            if(Test-Path -LiteralPath $cachePath -PathType Leaf){
+                $item=Get-Item -LiteralPath $cachePath -Force
+                if($item.Length -gt 10){
+                    try{
+                        $rawContent=[IO.File]::ReadAllText($cachePath,[System.Text.Encoding]::UTF8)
+                        $needFetch=$false
+                    }catch{}
+                }
+            }
+
+            if($needFetch){
+                try{
+                    $wc=New-Object System.Net.WebClient
+                    $wc.Encoding=[System.Text.Encoding]::UTF8
+                    $wc.Headers.Add('User-Agent','CocoLauncher/Subtitles')
+                    $rawContent=$wc.DownloadString($subUrl)
+                    $wc.Dispose()
+                    if([string]::IsNullOrWhiteSpace($rawContent)){throw "Respuesta vacia"}
+                    [IO.File]::WriteAllText($cachePath,$rawContent,[System.Text.Encoding]::UTF8)
+                }catch{
+                    try{Write-CocoLog "MEDIA: no se pudo descargar subtitulo desde '$subUrl': $($_.Exception.Message)"}catch{}
+                }
+            }
+
+            if(-not[string]::IsNullOrWhiteSpace($rawContent)){
+                $parsed=@(Parse-CocoSubtitles $rawContent)
+                if($parsed.Count -gt 0){
+                    try{Write-CocoLog "MEDIA: subtitulos remotos cargados para '$([string]$Episode.id)' ($($parsed.Count) lineas)"}catch{}
+                    return ,$parsed
+                }
+            }
+        }
+    }catch{
+        try{Write-CocoLog "MEDIA: error resolviendo subtitulos: $($_.Exception.Message)"}catch{}
+    }
+    return @()
+}
+
 function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     if([string]::IsNullOrWhiteSpace($Source)){$Source=[string]$Episode.streamUrl}
     if([string]::IsNullOrWhiteSpace($Source)){throw 'No existe una fuente de reproduccion para este episodio.'}
@@ -1344,7 +1542,31 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $chrome.Controls.AddRange(@($accent,$titleLabel,$subtitleLabel,$minimize,$close))
     $videoHost=New-Object Windows.Forms.Integration.ElementHost;$videoHost.Name='CocoMediaVideoHost';$videoHost.Dock='Fill';$videoHost.BackColor=[Drawing.Color]::Black
     $media=New-Object System.Windows.Controls.MediaElement;$media.LoadedBehavior='Manual';$media.UnloadedBehavior='Manual';$media.Stretch='Uniform';$media.Volume=1.0;$media.ScrubbingEnabled=$true;$media.Focusable=$true
-    $videoHost.Child=$media
+    $grid=New-Object System.Windows.Controls.Grid;$grid.Background=[System.Windows.Media.Brushes]::Black
+    [void]$grid.Children.Add($media)
+    $subContainer=New-Object System.Windows.Controls.Border
+    $subContainer.HorizontalAlignment=[System.Windows.HorizontalAlignment]::Center
+    $subContainer.VerticalAlignment=[System.Windows.VerticalAlignment]::Bottom
+    $subContainer.Margin=New-Object System.Windows.Thickness(28,0,28,38)
+    $subContainer.Padding=New-Object System.Windows.Thickness(12,5,12,5)
+    $subContainer.Background=New-Object System.Windows.Media.SolidColorBrush([System.Windows.Media.Color]::FromArgb(180,10,10,10))
+    $subContainer.CornerRadius=New-Object System.Windows.CornerRadius(4)
+    $subContainer.IsHitTestVisible=$false
+    $subContainer.Visibility=[System.Windows.Visibility]::Collapsed
+    $subText=New-Object System.Windows.Controls.TextBlock
+    $subText.Foreground=[System.Windows.Media.Brushes]::White
+    $subText.FontFamily=New-Object System.Windows.Media.FontFamily('Segoe UI, Arial, sans-serif')
+    $subText.FontSize=21
+    $subText.FontWeight=[System.Windows.FontWeights]::SemiBold
+    $subText.TextAlignment=[System.Windows.TextAlignment]::Center
+    $subText.TextWrapping=[System.Windows.TextWrapping]::Wrap
+    $subText.IsHitTestVisible=$false
+    $subContainer.Child=$subText
+    [void]$grid.Children.Add($subContainer)
+    $grid|Add-Member -MemberType ScriptProperty -Name 'Position' -Value {$media.Position} -Force
+    $grid|Add-Member -MemberType ScriptProperty -Name 'NaturalDuration' -Value {$media.NaturalDuration} -Force
+    $grid|Add-Member -MemberType ScriptProperty -Name 'MediaElement' -Value {$media} -Force
+    $videoHost.Child=$grid
     $controls=New-Object Windows.Forms.Panel;$controls.Name='CocoMediaControlPanel';$controls.Dock='Bottom';$controls.Height=68;$controls.BackColor=[Drawing.Color]::FromArgb(27,19,38)
     $controlLine=New-Object Windows.Forms.Panel;$controlLine.Name='CocoMediaControlLine';$controlLine.Dock='Top';$controlLine.Height=1;$controlLine.BackColor=[Drawing.Color]::FromArgb(72,52,91)
     $play=New-Object Windows.Forms.Button;$play.Name='CocoMediaPlayButton';$play.Text='PAUSAR';$play.AccessibleName='Pausar o reproducir';$play.Size=New-Object Drawing.Size(112,36);Set-CocoMediaButtonStyle $play ([Drawing.Color]::FromArgb(177,92,255)) ([Drawing.Color]::White) ([Drawing.Color]::FromArgb(196,121,255))
@@ -1359,6 +1581,9 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $controls.Controls.AddRange(@($controlLine,$play,$statusLabel,$position,$seek,$volumeLabel,$volume,$fullscreen));$form.Controls.Add($videoHost);$form.Controls.Add($controls);$form.Controls.Add($chrome)
     $savedPlayback=Get-CocoMediaPlaybackState $Experience $Episode
     $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;PreviousVolume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;LastKnownPositionSeconds=0.0;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;CursorHidden=$false;LastMouseMoveUtc=[DateTime]::UtcNow}
+    $subtitles=@(Get-CocoMediaEpisodeSubtitles $Experience $Episode $Source)
+    $subCueIndex=[ref]0
+    $subLastText=''
     $formatTime={param([double]$Seconds)&$formatTimeCommand $Seconds}.GetNewClosure()
     $layoutChrome={
         $width=[Math]::Max(1,[int]$chrome.ClientSize.Width)
@@ -1530,6 +1755,15 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
             $seek.Invalidate()
             if($state.Started){&$savePlayback $false}
             if($media.DownloadProgress-lt1-and-not$state.Started){$statusLabel.Text=("Buffer {0}%"-f[int]($media.DownloadProgress*100))}elseif($state.Started-and$statusLabel.Text-like'Buffer*'){$statusLabel.Text='Reproduciendo'}
+            if($subtitles.Count -gt 0){
+                $cue=Find-CocoMediaSubtitleCue $subtitles $currentSeconds $subCueIndex
+                if($cue -and -not[string]::IsNullOrWhiteSpace($cue.Text)){
+                    if($subLastText -ne $cue.Text){$subText.Text=$cue.Text;$subLastText=$cue.Text}
+                    if($subContainer.Visibility -ne [System.Windows.Visibility]::Visible){$subContainer.Visibility=[System.Windows.Visibility]::Visible}
+                }else{
+                    if($subContainer.Visibility -ne [System.Windows.Visibility]::Collapsed){$subContainer.Visibility=[System.Windows.Visibility]::Collapsed;$subLastText=''}
+                }
+            }
             if($state.Fullscreen){
                 $idleSeconds=([DateTime]::UtcNow-$state.LastMouseMoveUtc).TotalSeconds
                 if($idleSeconds-ge2.5-and-not$state.CursorHidden){
@@ -1615,6 +1849,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
                 $form.WindowState=[Windows.Forms.FormWindowState]::Normal
                 $form.FormBorderStyle='None';$form.Padding=New-Object Windows.Forms.Padding(0);$form.TopMost=$true;$form.Bounds=$screen.Bounds
                 $state.Fullscreen=$true;$fullscreen.Text='SALIR DE PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Salir de pantalla completa (Esc)')
+                $subText.FontSize=26;$subContainer.Margin=New-Object System.Windows.Thickness(36,0,36,48)
             }else{
                 $restoreWindowState=$state.PreviousWindowState
                 $form.WindowState=[Windows.Forms.FormWindowState]::Normal
@@ -1624,6 +1859,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
                 $form.Bounds=$state.PreviousBounds
                 if($restoreWindowState-eq[Windows.Forms.FormWindowState]::Maximized){$form.WindowState=$restoreWindowState}
                 $state.Fullscreen=$false;$fullscreen.Text='PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)')
+                $subText.FontSize=21;$subContainer.Margin=New-Object System.Windows.Thickness(28,0,28,38)
                 if($state.CursorHidden){
                     [Windows.Forms.Cursor]::Show()
                     $state.CursorHidden=$false
@@ -7360,11 +7596,15 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     Set-CocoLauncherUiLayout
     if(Get-Command Set-CocoDiagnosticContext -ErrorAction SilentlyContinue){Set-CocoDiagnosticContext @{component='launcher';mode='launcher';role='detecting';stage='start'}}
     $runLabel=if(-not[string]::IsNullOrWhiteSpace([string]$script:CocoRunId)){([string]$script:CocoRunId).Substring(0,[Math]::Min(8,([string]$script:CocoRunId).Length))}else{'test/local'}
-    $script:CocoDefenderPlayWindowOwned=$false
-    if(-not$paths.IsTest-and(Get-Command Invoke-CocoDefenderPlayWindowStart -ErrorAction SilentlyContinue)){
-        try{$script:CocoDefenderPlayWindowOwned=[bool](Invoke-CocoDefenderPlayWindowStart)}catch{Write-CocoLog "DEFENDER: inicio de sesion sin toggle ($($_.Exception.Message))"}
-    }
     try{
+        foreach($legacyTask in @('CocoDefenderDisable','CocoDefenderEnable')){
+            if(Get-Command Unregister-ScheduledTask -ErrorAction SilentlyContinue){
+                Unregister-ScheduledTask -TaskName $legacyTask -Confirm:$false -ErrorAction SilentlyContinue
+            }
+        }
+        $legacyDefRoot=Join-Path (Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater') 'tools\defender-control'
+        if(Test-Path -LiteralPath $legacyDefRoot){Remove-Item -LiteralPath $legacyDefRoot -Recurse -Force -ErrorAction SilentlyContinue}
+    }catch{}
     Set-CocoLauncherStep 1 'INICIANDO COCO LAUNCHER' ("Engine {0} | ejecucion {1}"-f$Manifest.version,$runLabel) 13
     $role=if([string]::IsNullOrWhiteSpace($RoleOverride)){Get-CocoLauncherRole $LegacyMinecraftRoot}else{$RoleOverride}
     if($script:CocoBrand){$script:CocoBrand.Text=if($role-eq'host'){'COCO LAUNCHER  |  MODO HOST'}else{'COCO LAUNCHER  |  EXPERIENCIAS DISPONIBLES'}
@@ -7774,10 +8014,4 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
         }
     }
     if(-not$script:CocoForm.IsDisposed){while(-not$script:CocoForm.IsDisposed){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 100}}
-    }finally{
-        if($script:CocoDefenderPlayWindowOwned){
-            try{[void](Invoke-CocoDefenderPlayWindowEnd)}catch{Write-CocoLog "DEFENDER: restauracion fallo ($($_.Exception.Message))"}
-            $script:CocoDefenderPlayWindowOwned=$false
-        }
-    }
 }

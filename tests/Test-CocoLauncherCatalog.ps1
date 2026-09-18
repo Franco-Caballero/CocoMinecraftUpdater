@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne26-or
+if($managedExperiences.Count-ne27-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -166,6 +166,25 @@ if(-not$heartEpisode4-or$heartEpisode4.title-ne'Temporada 5 - Episodio 2 - Parte
    $heartEpisode4.sha256-ne'd86985cace867d75e73e166814e86c96a8ced2a28ff719ed8e04bf3874a8620d'-or
    $heartEpisode4.streamUrl-notmatch'^https://' -or$heartEpisode4.sourceUrl-notmatch'^https://'){
     throw 'La Parte 2 del E02 de Heart Signal no conserva la metadata o URL publicada.'
+}
+$loveIsland=@($catalog.experiences|Where-Object id -eq 'love-island-us'|Select-Object -First 1)[0]
+if(-not$loveIsland-or$loveIsland.runtime.type-ne'media'-or$loveIsland.launch.workflow-ne'coco-media'-or
+   $loveIsland.content.type-ne'episodic-video'-or$loveIsland.content.downloadFolderName-ne'love island us'){
+    throw 'Love Island USA no esta declarado como contenido episodico local.'
+}
+$loveEpisodes=@($loveIsland.content.episodes)
+if($loveEpisodes.Count-ne2){throw 'Love Island USA debe mostrar sus 2 episodios declarados.'}
+$loveEp1=@($loveEpisodes|Where-Object id -eq 's06e01'|Select-Object -First 1)[0]
+if(-not$loveEp1-or$loveEp1.fileName-ne'Love.Island.US.S06E01.1080p.HEVC.x265-MeGusta[EZTVx.to].mkv'-or
+   [int64]$loveEp1.size-ne1739368175-or$loveEp1.sha256-ne'd0f9cc94dd191845abb8dbb14e11f8081a4255ac0dc5196896bddb032a269229'-or
+   $loveEp1.subtitleUrl-notmatch'^https://'-or$loveEp1.streamUrl-notmatch'^https://'){
+    throw 'El E01 de Love Island USA no conserva la metadata o URL publicada.'
+}
+$loveEp2=@($loveEpisodes|Where-Object id -eq 's06e02'|Select-Object -First 1)[0]
+if(-not$loveEp2-or$loveEp2.fileName-ne'love.island.us.s06e02.720p.web.h264-skyfire[EZTVx.to].mkv'-or
+   [int64]$loveEp2.size-ne1959278148-or$loveEp2.sha256-ne'd40d956f6c9d602e84c0a1646688d62bf855262bc8d25165099809be960f5830'-or
+   $loveEp2.subtitleUrl-notmatch'^https://'-or$loveEp2.streamUrl-notmatch'^https://'){
+    throw 'El E02 de Love Island USA no conserva la metadata o URL publicada.'
 }
 $theDrama=@($catalog.experiences|Where-Object id -eq 'the-drama-2026'|Select-Object -First 1)[0]
 if(-not$theDrama-or$theDrama.runtime.type-ne'media'-or$theDrama.launch.workflow-ne'coco-media'-or

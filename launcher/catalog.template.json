@@ -1329,6 +1329,53 @@
             "files": []
         },
         {
+            "id": "love-island-us",
+            "name": "Love Island USA",
+            "ui": {
+                "badge": "Serie",
+                "accentColor": "#FF2E93",
+                "imagePath": "assets/experiences/love-island.jpg"
+            },
+            "description": "Serie de telerrealidad (Temporada 6). Disfruta de los episodios en el reproductor integrado con subtítulos en español o descárgalos en tu carpeta Downloads.",
+            "instanceId": "love-island-us",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "media"
+            },
+            "content": {
+                "type": "episodic-video",
+                "downloadFolderName": "love island us",
+                "openAfterDownload": true,
+                "episodes": [
+                    {
+                        "id": "s06e01",
+                        "title": "Temporada 6 - Episodio 1",
+                        "fileName": "Love.Island.US.S06E01.1080p.HEVC.x265-MeGusta[EZTVx.to].mkv",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/Love.Island.US.S06E01.1080p.HEVC.x265-MeGusta[EZTVx.to].mkv",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/Love.Island.US.S06E01.1080p.HEVC.x265-MeGusta[EZTVx.to].mkv",
+                        "subtitleUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/Love.Island.US.S06E01.1080p.HEVC.x265-MeGusta.EZTVx.to.es.srt",
+                        "size": 1739368175,
+                        "sha256": "d0f9cc94dd191845abb8dbb14e11f8081a4255ac0dc5196896bddb032a269229"
+                    },
+                    {
+                        "id": "s06e02",
+                        "title": "Temporada 6 - Episodio 2",
+                        "fileName": "love.island.us.s06e02.720p.web.h264-skyfire[EZTVx.to].mkv",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/love.island.us.s06e02.720p.web.h264-skyfire[EZTVx.to].mkv",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/love.island.us.s06e02.720p.web.h264-skyfire[EZTVx.to].mkv",
+                        "subtitleUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/love.island.us.s06e02.720p.web.h264-skyfire.EZTVx.to.es.srt",
+                        "size": 1959278148,
+                        "sha256": "d40d956f6c9d602e84c0a1646688d62bf855262bc8d25165099809be960f5830"
+                    }
+                ]
+            },
+            "launch": {
+                "workflow": "coco-media",
+                "serverName": "Love Island USA"
+            },
+            "files": []
+        },
+        {
             "id": "the-drama-2026",
             "name": "The Drama",
             "ui": {
