@@ -1355,6 +1355,15 @@
                         "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/Love.Island.US.S06E01.1080p.Spanish.Hardsub.mp4",
                         "size": 1804925953,
                         "sha256": "15245dd8e8f6a394757342b2ec3cfc532a9848f42886312ea755c07b13ff6967"
+                    },
+                    {
+                        "id": "s06e02",
+                        "title": "Temporada 6 - Episodio 2",
+                        "fileName": "Love.Island.US.S06E02.720p.Spanish.Hardsub.mp4",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/Love.Island.US.S06E02.720p.Spanish.Hardsub.mp4",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/Love.Island.US.S06E02.720p.Spanish.Hardsub.mp4",
+                        "size": 1876473189,
+                        "sha256": "ed4c9aa4eea153e658bdfa77b68b09aca6d72d79433d7a5d3bc8c33465fe09b7"
                     }
                 ]
             },
