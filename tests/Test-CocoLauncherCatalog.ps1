@@ -175,9 +175,9 @@ if(-not$loveIsland-or$loveIsland.runtime.type-ne'media'-or$loveIsland.launch.wor
 $loveEpisodes=@($loveIsland.content.episodes)
 if($loveEpisodes.Count-ne1){throw 'Love Island USA debe mostrar su episodio declarado.'}
 $loveEp1=@($loveEpisodes|Where-Object id -eq 's06e01'|Select-Object -First 1)[0]
-if(-not$loveEp1-or$loveEp1.fileName-ne'Love.Island.US.S06E01.1080p.HEVC.x265-MeGusta.EZTVx.to.mkv'-or
-   [int64]$loveEp1.size-ne1739368175-or$loveEp1.sha256-ne'd0f9cc94dd191845abb8dbb14e11f8081a4255ac0dc5196896bddb032a269229'-or
-   $loveEp1.subtitleUrl-notmatch'^https://'-or$loveEp1.streamUrl-notmatch'^https://'){
+if(-not$loveEp1-or$loveEp1.fileName-ne'Love.Island.US.S06E01.1080p.Spanish.Hardsub.mp4'-or
+   [int64]$loveEp1.size-ne1804925953-or$loveEp1.sha256-ne'15245dd8e8f6a394757342b2ec3cfc532a9848f42886312ea755c07b13ff6967'-or
+   $loveEp1.streamUrl-notmatch'^https://'-or$loveEp1.sourceUrl-notmatch'^https://'){
     throw 'El E01 de Love Island USA no conserva la metadata o URL publicada.'
 }
 $theDrama=@($catalog.experiences|Where-Object id -eq 'the-drama-2026'|Select-Object -First 1)[0]
