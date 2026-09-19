@@ -1346,6 +1346,22 @@ function Set-CocoMediaButtonStyle($Button,[Drawing.Color]$BackColor,[Drawing.Col
     $Button.UseCompatibleTextRendering=$true
 }
 
+function Flatten-CocoMediaCues($RawCues){
+    $result=[System.Collections.Generic.List[pscustomobject]]::new()
+    if(-not$RawCues){return @()}
+    $recurse=$null
+    $recurse={
+        param($item)
+        if($item -is [System.Collections.IEnumerable] -and -not($item -is [string])){
+            foreach($sub in $item){if($sub){&$recurse $sub}}
+        }elseif($item -and ($item.PSObject.Properties.Name -contains 'Start')){
+            $result.Add($item)
+        }
+    }
+    &$recurse $RawCues
+    return [pscustomobject[]]$result.ToArray()
+}
+
 function Parse-CocoSubtitles([string]$Content){
     if([string]::IsNullOrWhiteSpace($Content)){return @()}
     $cues=[System.Collections.Generic.List[pscustomobject]]::new()
@@ -1391,13 +1407,13 @@ function Parse-CocoSubtitles([string]$Content){
             })
         }
     }
-    return ,@($cues)
+    return [pscustomobject[]]$cues.ToArray()
 }
 
-function Find-CocoMediaSubtitleCue($Cues,[double]$Seconds,[ref]$IndexRef){
-    $cueList=@($Cues)
+function Find-CocoMediaSubtitleCue($Cues,[double]$Seconds,$IndexRef=$null){
+    $cueList=@(Flatten-CocoMediaCues $Cues)
     if($cueList.Count -eq 0){return $null}
-    $idx=$IndexRef.Value
+    $idx=if($IndexRef -and ($IndexRef.PSObject.Properties.Name -contains 'Value')){[int]$IndexRef.Value}else{0}
     if($idx -ge 0 -and $idx -lt $cueList.Count){
         $c=$cueList[$idx]
         if($Seconds -ge $c.Start -and $Seconds -le $c.End){return $c}
@@ -1405,7 +1421,7 @@ function Find-CocoMediaSubtitleCue($Cues,[double]$Seconds,[ref]$IndexRef){
             $next=$cueList[$idx+1]
             if($Seconds -ge $c.End -and $Seconds -lt $next.Start){return $null}
             if($Seconds -ge $next.Start -and $Seconds -le $next.End){
-                $IndexRef.Value=$idx+1
+                if($IndexRef -and ($IndexRef.PSObject.Properties.Name -contains 'Value')){$IndexRef.Value=$idx+1}
                 return $next
             }
         }
@@ -1415,12 +1431,12 @@ function Find-CocoMediaSubtitleCue($Cues,[double]$Seconds,[ref]$IndexRef){
         $mid=[int](($low+$high)/2)
         $c=$cueList[$mid]
         if($Seconds -ge $c.Start -and $Seconds -le $c.End){
-            $IndexRef.Value=$mid
+            if($IndexRef -and ($IndexRef.PSObject.Properties.Name -contains 'Value')){$IndexRef.Value=$mid}
             return $c
         }
         if($Seconds -lt $c.Start){$high=$mid - 1}else{$low=$mid+1}
     }
-    $IndexRef.Value=[Math]::Max(0,[Math]::Min($cueList.Count - 1,$low))
+    if($IndexRef -and ($IndexRef.PSObject.Properties.Name -contains 'Value')){$IndexRef.Value=[Math]::Max(0,[Math]::Min($cueList.Count - 1,$low))}
     return $null
 }
 
@@ -1444,7 +1460,7 @@ function Get-CocoMediaEpisodeSubtitles($Experience,$Episode,[string]$SourcePath=
                 if(-not$chosen){$chosen=$candidates[0]}
                 if($chosen){
                     $raw=[IO.File]::ReadAllText($chosen.FullName,[System.Text.Encoding]::UTF8)
-                    $parsed=@(Parse-CocoSubtitles $raw)
+                    $parsed=@(Flatten-CocoMediaCues (Parse-CocoSubtitles $raw))
                     if($parsed.Count -gt 0){
                         try{Write-CocoLog "MEDIA: subtitulos locales cargados desde '$($chosen.Name)' ($($parsed.Count) lineas)"}catch{}
                         return ,$parsed
@@ -1503,7 +1519,7 @@ function Get-CocoMediaEpisodeSubtitles($Experience,$Episode,[string]$SourcePath=
             }
 
             if(-not[string]::IsNullOrWhiteSpace($rawContent)){
-                $parsed=@(Parse-CocoSubtitles $rawContent)
+                $parsed=@(Flatten-CocoMediaCues (Parse-CocoSubtitles $rawContent))
                 if($parsed.Count -gt 0){
                     try{Write-CocoLog "MEDIA: subtitulos remotos cargados para '$([string]$Episode.id)' ($($parsed.Count) lineas)"}catch{}
                     return ,$parsed
@@ -1553,6 +1569,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $subContainer.CornerRadius=New-Object System.Windows.CornerRadius(4)
     $subContainer.IsHitTestVisible=$false
     $subContainer.Visibility=[System.Windows.Visibility]::Collapsed
+    [System.Windows.Controls.Panel]::SetZIndex($subContainer, 999)
     $subText=New-Object System.Windows.Controls.TextBlock
     $subText.Foreground=[System.Windows.Media.Brushes]::White
     $subText.FontFamily=New-Object System.Windows.Media.FontFamily('Segoe UI, Arial, sans-serif')
@@ -1581,7 +1598,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $controls.Controls.AddRange(@($controlLine,$play,$statusLabel,$position,$seek,$volumeLabel,$volume,$fullscreen));$form.Controls.Add($videoHost);$form.Controls.Add($controls);$form.Controls.Add($chrome)
     $savedPlayback=Get-CocoMediaPlaybackState $Experience $Episode
     $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;PreviousVolume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;LastKnownPositionSeconds=0.0;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;CursorHidden=$false;LastMouseMoveUtc=[DateTime]::UtcNow}
-    $subtitles=@(Get-CocoMediaEpisodeSubtitles $Experience $Episode $Source)
+    $subtitles=@(Flatten-CocoMediaCues (Get-CocoMediaEpisodeSubtitles $Experience $Episode $Source))
     $subCueIndex=[ref]0
     $subLastText=''
     $formatTime={param([double]$Seconds)&$formatTimeCommand $Seconds}.GetNewClosure()

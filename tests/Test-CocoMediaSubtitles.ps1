@@ -120,4 +120,50 @@ $selected = @($subs | Where-Object {
 if (-not $selected -or $selected.language -ne 'es') { throw "Fallo seleccion de idioma espanol en array de subtitulos" }
 Write-Host "  PASS: Seleccion de pista de espanol desde metadatos declarados validada." -ForegroundColor Green
 
+Write-Host "=== TEST 7: Aplanado de colecciones anidadas y comparacion de escala (Flatten-CocoMediaCues) ===" -ForegroundColor Cyan
+$nestedCues = @(
+    ,@(
+        ,@(
+            [pscustomobject]@{ Start = 1.0; End = 3.0; Text = "Cue 1" },
+            [pscustomobject]@{ Start = 4.0; End = 6.0; Text = "Cue 2" }
+        )
+    ),
+    [pscustomobject]@{ Start = 7.0; End = 9.0; Text = "Cue 3" }
+)
+$flattened = Flatten-CocoMediaCues $nestedCues
+if ($flattened.Count -ne 3) { throw "Flatten-CocoMediaCues no aplano correctamente: esperados 3 cues, obtenidos $($flattened.Count)" }
+if ($flattened[0].Start -ne 1.0 -or $flattened[1].Start -ne 4.0 -or $flattened[2].Start -ne 7.0) {
+    throw "Flatten-CocoMediaCues altero los valores de Start"
+}
+
+# Verificamos que Find-CocoMediaSubtitleCue no falle con comparacion de arrays incluso si se le pasa algo anidado
+$found = Find-CocoMediaSubtitleCue $nestedCues 5.0 ([ref]0)
+if (-not $found -or $found.Text -ne "Cue 2") {
+    throw "Find-CocoMediaSubtitleCue fallo al buscar sobre estructura anidada"
+}
+
+# Verificamos invocacion con IndexRef nulo
+$foundNoRef = Find-CocoMediaSubtitleCue $flattened 8.0 $null
+if (-not $foundNoRef -or $foundNoRef.Text -ne "Cue 3") {
+    throw "Find-CocoMediaSubtitleCue fallo cuando IndexRef es null"
+}
+
+# Simular 2500 cues para validar que no haya regresion de comparacion de tipos en masa
+$largeCues = [System.Collections.Generic.List[pscustomobject]]::new()
+for ($i = 0; $i -lt 2500; $i++) {
+    $largeCues.Add([pscustomobject]@{
+        Start = [double]($i * 2)
+        End   = [double]($i * 2 + 1.5)
+        Text  = "Cue $i"
+    })
+}
+$largeTest = @(Flatten-CocoMediaCues $largeCues.ToArray())
+if ($largeTest.Count -ne 2500) { throw "Conjunto masivo no conservo los 2500 elementos" }
+$timeToFind = 2450.2
+$foundLarge = Find-CocoMediaSubtitleCue $largeTest $timeToFind ([ref]0)
+if (-not $foundLarge -or $foundLarge.Text -ne "Cue 1225") {
+    throw "Busqueda binaria en coleccion masiva de subtitulos fallo (esperado Cue 1225, obtenido: $($foundLarge.Text))"
+}
+Write-Host "  PASS: Aplanado, busqueda binaria y tipos escalares validados correctamente." -ForegroundColor Green
+
 Write-Host "`nTODO APROBADO: Soporte de subtitulos suave y auto-seleccion funcionando correctamente." -ForegroundColor Green
