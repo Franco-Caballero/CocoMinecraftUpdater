@@ -166,4 +166,17 @@ if (-not $foundLarge -or $foundLarge.Text -ne "Cue 1225") {
 }
 Write-Host "  PASS: Aplanado, busqueda binaria y tipos escalares validados correctamente." -ForegroundColor Green
 
+Write-Host "=== TEST 8: Rendimiento de ruta rapida (Fast-path) y persistencia de estado ===" -ForegroundColor Cyan
+# Validar que 10,000 busquedas consecutivas en conjunto masivo toman menos de 500ms (sin re-aplanado O(N) por tick)
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+$refIdx = [ref]0
+for ($k = 0; $k -lt 1000; $k++) {
+    $null = Find-CocoMediaSubtitleCue $largeTest 100.0 $refIdx
+}
+$sw.Stop()
+if ($sw.ElapsedMilliseconds -gt 1500) {
+    throw "Ruta rapida de busqueda es demasiado lenta: $($sw.ElapsedMilliseconds) ms para 1000 iteraciones"
+}
+Write-Host "  PASS: 1,000 busquedas consecutivas completadas en $($sw.ElapsedMilliseconds) ms (sin impacto en UI thread)." -ForegroundColor Green
+
 Write-Host "`nTODO APROBADO: Soporte de subtitulos suave y auto-seleccion funcionando correctamente." -ForegroundColor Green

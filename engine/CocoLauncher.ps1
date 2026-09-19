@@ -1347,8 +1347,11 @@ function Set-CocoMediaButtonStyle($Button,[Drawing.Color]$BackColor,[Drawing.Col
 }
 
 function Flatten-CocoMediaCues($RawCues){
-    $result=[System.Collections.Generic.List[pscustomobject]]::new()
     if(-not$RawCues){return @()}
+    if($RawCues -is [System.Array] -and $RawCues.Length -gt 0 -and $RawCues[0] -and ($RawCues[0].PSObject.Properties.Name -contains 'Start') -and -not($RawCues[0] -is [System.Collections.IEnumerable])){
+        return $RawCues
+    }
+    $result=[System.Collections.Generic.List[pscustomobject]]::new()
     $recurse=$null
     $recurse={
         param($item)
@@ -1411,7 +1414,7 @@ function Parse-CocoSubtitles([string]$Content){
 }
 
 function Find-CocoMediaSubtitleCue($Cues,[double]$Seconds,$IndexRef=$null){
-    $cueList=@(Flatten-CocoMediaCues $Cues)
+    $cueList=if($Cues -is [System.Array] -and $Cues.Length -gt 0 -and $Cues[0] -and ($Cues[0].PSObject.Properties.Name -contains 'Start')){$Cues}else{@(Flatten-CocoMediaCues $Cues)}
     if($cueList.Count -eq 0){return $null}
     $idx=if($IndexRef -and ($IndexRef.PSObject.Properties.Name -contains 'Value')){[int]$IndexRef.Value}else{0}
     if($idx -ge 0 -and $idx -lt $cueList.Count){
@@ -1560,16 +1563,19 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $media=New-Object System.Windows.Controls.MediaElement;$media.LoadedBehavior='Manual';$media.UnloadedBehavior='Manual';$media.Stretch='Uniform';$media.Volume=1.0;$media.ScrubbingEnabled=$true;$media.Focusable=$true
     $grid=New-Object System.Windows.Controls.Grid;$grid.Background=[System.Windows.Media.Brushes]::Black
     [void]$grid.Children.Add($media)
+    $subPopup=New-Object System.Windows.Controls.Primitives.Popup
+    $subPopup.AllowsTransparency=$true
+    $subPopup.PlacementTarget=$grid
+    $subPopup.Placement=[System.Windows.Controls.Primitives.PlacementMode]::Center
+    $subPopup.IsHitTestVisible=$false
+
     $subContainer=New-Object System.Windows.Controls.Border
-    $subContainer.HorizontalAlignment=[System.Windows.HorizontalAlignment]::Center
-    $subContainer.VerticalAlignment=[System.Windows.VerticalAlignment]::Bottom
-    $subContainer.Margin=New-Object System.Windows.Thickness(28,0,28,38)
-    $subContainer.Padding=New-Object System.Windows.Thickness(12,5,12,5)
-    $subContainer.Background=New-Object System.Windows.Media.SolidColorBrush([System.Windows.Media.Color]::FromArgb(180,10,10,10))
+    $subContainer.Background=New-Object System.Windows.Media.SolidColorBrush([System.Windows.Media.Color]::FromArgb(215,10,10,10))
+    $subContainer.Padding=New-Object System.Windows.Thickness(16,6,16,6)
     $subContainer.CornerRadius=New-Object System.Windows.CornerRadius(4)
+    $subContainer.MaxWidth=[Math]::Max(600,[int]($form.ClientSize.Width*0.80))
     $subContainer.IsHitTestVisible=$false
-    $subContainer.Visibility=[System.Windows.Visibility]::Collapsed
-    [System.Windows.Controls.Panel]::SetZIndex($subContainer, 999)
+
     $subText=New-Object System.Windows.Controls.TextBlock
     $subText.Foreground=[System.Windows.Media.Brushes]::White
     $subText.FontFamily=New-Object System.Windows.Media.FontFamily('Segoe UI, Arial, sans-serif')
@@ -1579,7 +1585,8 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $subText.TextWrapping=[System.Windows.TextWrapping]::Wrap
     $subText.IsHitTestVisible=$false
     $subContainer.Child=$subText
-    [void]$grid.Children.Add($subContainer)
+    $subPopup.Child=$subContainer
+    [void]$grid.Children.Add($subPopup)
     $grid|Add-Member -MemberType ScriptProperty -Name 'Position' -Value {$media.Position} -Force
     $grid|Add-Member -MemberType ScriptProperty -Name 'NaturalDuration' -Value {$media.NaturalDuration} -Force
     $grid|Add-Member -MemberType ScriptProperty -Name 'MediaElement' -Value {$media} -Force
@@ -1597,10 +1604,31 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $statusLabel.TextAlign='MiddleLeft';$statusLabel.BackColor=[Drawing.Color]::FromArgb(38,27,52);$statusLabel.Padding=New-Object Windows.Forms.Padding(10,0,6,0)
     $controls.Controls.AddRange(@($controlLine,$play,$statusLabel,$position,$seek,$volumeLabel,$volume,$fullscreen));$form.Controls.Add($videoHost);$form.Controls.Add($controls);$form.Controls.Add($chrome)
     $savedPlayback=Get-CocoMediaPlaybackState $Experience $Episode
-    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;PreviousVolume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;LastKnownPositionSeconds=0.0;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;CursorHidden=$false;LastMouseMoveUtc=[DateTime]::UtcNow}
+    $state=[pscustomobject]@{Duration=0.0;Seeking=$false;SeekPreviewSeconds=0.0;Volume=1.0;PreviousVolume=1.0;Fullscreen=$false;Started=$false;MediaReady=$false;Completed=[bool]$savedPlayback.Completed;ResumeSeconds=[double]$savedPlayback.PositionSeconds;ResumeApplied=$false;LastSavedUtc=[DateTime]::MinValue;LastKnownPositionSeconds=0.0;ClosingSaved=$false;LastFullscreenToggleUtc=[DateTime]::MinValue;PreviousFormBorderStyle=$form.FormBorderStyle;PreviousWindowState=$form.WindowState;PreviousBounds=$form.Bounds;PreviousPadding=$form.Padding;PreviousTopMost=$form.TopMost;CursorHidden=$false;LastMouseMoveUtc=[DateTime]::UtcNow;SubCueIndex=[ref]0;SubLastText='';SubActive=$false}
     $subtitles=@(Flatten-CocoMediaCues (Get-CocoMediaEpisodeSubtitles $Experience $Episode $Source))
-    $subCueIndex=[ref]0
-    $subLastText=''
+    if($subtitles.Count -gt 0){
+        try{Write-CocoLog "MEDIA: $($subtitles.Count) subtitulos listos para reproduccion"}catch{}
+        if($statusLabel.Text -eq 'Cargando video...'){$statusLabel.Text='Cargando video (Subs: ES)...'}
+    }
+    $popupRepositionMethod=$subPopup.GetType().GetMethod('Reposition',[System.Reflection.BindingFlags]'NonPublic,Instance')
+    $updateSubtitlePos={
+        if($grid.ActualHeight -gt 0){
+            $bottomOffset=if($state.Fullscreen){70}else{50}
+            $targetOffset=[int]($grid.ActualHeight/2 - $bottomOffset)
+            if($subPopup.VerticalOffset -ne $targetOffset){$subPopup.VerticalOffset=$targetOffset}
+            $maxWidth=if($state.Fullscreen){[Math]::Max(800,[int]($form.ClientSize.Width*0.85))}else{[Math]::Max(600,[int]($form.ClientSize.Width*0.80))}
+            if($subContainer.MaxWidth -ne $maxWidth){$subContainer.MaxWidth=$maxWidth}
+            if($subPopup.IsOpen -and $popupRepositionMethod){
+                try{$popupRepositionMethod.Invoke($subPopup,$null)}catch{}
+            }
+        }
+    }.GetNewClosure()
+    $grid.Add_SizeChanged(({&$updateSubtitlePos}.GetNewClosure()))
+    $form.Add_LocationChanged(({&$updateSubtitlePos}.GetNewClosure()))
+    $form.Add_Resize(({
+        if($form.WindowState -eq [Windows.Forms.FormWindowState]::Minimized){$subPopup.IsOpen=$false}
+        &$updateSubtitlePos
+    }.GetNewClosure()))
     $formatTime={param([double]$Seconds)&$formatTimeCommand $Seconds}.GetNewClosure()
     $layoutChrome={
         $width=[Math]::Max(1,[int]$chrome.ClientSize.Width)
@@ -1771,14 +1799,26 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
             $position.Text=if($state.Duration-gt0){("{0} / {1}"-f(&$formatTime $currentSeconds),(&$formatTime $state.Duration))}else{("{0} / --:--"-f(&$formatTime $currentSeconds))}
             $seek.Invalidate()
             if($state.Started){&$savePlayback $false}
-            if($media.DownloadProgress-lt1-and-not$state.Started){$statusLabel.Text=("Buffer {0}%"-f[int]($media.DownloadProgress*100))}elseif($state.Started-and$statusLabel.Text-like'Buffer*'){$statusLabel.Text='Reproduciendo'}
+            if($media.DownloadProgress-lt1-and-not$state.Started){$statusLabel.Text=("Buffer {0}%"-f[int]($media.DownloadProgress*100))}elseif($state.Started-and$statusLabel.Text-like'Buffer*'){$statusLabel.Text=if($subtitles.Count -gt 0){'Reproduciendo (Subs: ES)'}else{'Reproduciendo'}}
             if($subtitles.Count -gt 0){
-                $cue=Find-CocoMediaSubtitleCue $subtitles $currentSeconds $subCueIndex
+                $cue=Find-CocoMediaSubtitleCue $subtitles $currentSeconds $state.SubCueIndex
                 if($cue -and -not[string]::IsNullOrWhiteSpace($cue.Text)){
-                    if($subLastText -ne $cue.Text){$subText.Text=$cue.Text;$subLastText=$cue.Text}
-                    if($subContainer.Visibility -ne [System.Windows.Visibility]::Visible){$subContainer.Visibility=[System.Windows.Visibility]::Visible}
+                    if($state.SubLastText -ne $cue.Text){
+                        $subText.Text=$cue.Text
+                        $state.SubLastText=$cue.Text
+                        try{Write-CocoLog ("MEDIA: subtitulo ({0}): {1}" -f (&$formatTime $currentSeconds),($cue.Text -replace "`r?`n"," / "))}catch{}
+                    }
+                    if(-not$state.SubActive){
+                        $state.SubActive=$true
+                        $subPopup.IsOpen=$true
+                        &$updateSubtitlePos
+                    }
                 }else{
-                    if($subContainer.Visibility -ne [System.Windows.Visibility]::Collapsed){$subContainer.Visibility=[System.Windows.Visibility]::Collapsed;$subLastText=''}
+                    if($state.SubActive){
+                        $state.SubActive=$false
+                        $state.SubLastText=''
+                        $subPopup.IsOpen=$false
+                    }
                 }
             }
             if($state.Fullscreen){
@@ -1791,7 +1831,9 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
                 [Windows.Forms.Cursor]::Show()
                 $state.CursorHidden=$false
             }
-        }catch{}
+        }catch{
+            try{Write-CocoLog "MEDIA: error en timer de reproductor: $($_.Exception.Message)"}catch{}
+        }
     }.GetNewClosure()))
     $showCursorOnMove={
         $state.LastMouseMoveUtc=[DateTime]::UtcNow
@@ -1807,7 +1849,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     $media.Add_MediaOpened(({
         param($sender,$eventArgs)
         try{$state.MediaReady=$true;$play.Enabled=$true;if($media.NaturalDuration.HasTimeSpan){$state.Duration=$media.NaturalDuration.TimeSpan.TotalSeconds;&$applyResume}}catch{}
-        try{$media.Play();$state.Started=$true;if($statusLabel.Text-notlike'Continuando*'){$statusLabel.Text='Reproduciendo'};$play.Text='PAUSAR'}catch{$state.Started=$false;$statusLabel.Text='Preparando reproduccion...'}
+        try{$media.Play();$state.Started=$true;if($statusLabel.Text-notlike'Continuando*'){$statusLabel.Text=if($subtitles.Count -gt 0){'Reproduciendo (Subs: ES)'}else{'Reproduciendo'}};$play.Text='PAUSAR'}catch{$state.Started=$false;$statusLabel.Text='Preparando reproduccion...'}
     }.GetNewClosure()))
     $media.Add_MediaEnded(({
         param($sender,$eventArgs)
@@ -1866,7 +1908,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
                 $form.WindowState=[Windows.Forms.FormWindowState]::Normal
                 $form.FormBorderStyle='None';$form.Padding=New-Object Windows.Forms.Padding(0);$form.TopMost=$true;$form.Bounds=$screen.Bounds
                 $state.Fullscreen=$true;$fullscreen.Text='SALIR DE PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Salir de pantalla completa (Esc)')
-                $subText.FontSize=26;$subContainer.Margin=New-Object System.Windows.Thickness(36,0,36,48)
+                $subText.FontSize=26; &$updateSubtitlePos
             }else{
                 $restoreWindowState=$state.PreviousWindowState
                 $form.WindowState=[Windows.Forms.FormWindowState]::Normal
@@ -1876,7 +1918,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
                 $form.Bounds=$state.PreviousBounds
                 if($restoreWindowState-eq[Windows.Forms.FormWindowState]::Maximized){$form.WindowState=$restoreWindowState}
                 $state.Fullscreen=$false;$fullscreen.Text='PANTALLA COMPLETA';$toolTip.SetToolTip($fullscreen,'Pantalla completa (F11)')
-                $subText.FontSize=21;$subContainer.Margin=New-Object System.Windows.Thickness(28,0,28,38)
+                $subText.FontSize=21; &$updateSubtitlePos
                 if($state.CursorHidden){
                     [Windows.Forms.Cursor]::Show()
                     $state.CursorHidden=$false
@@ -2000,6 +2042,7 @@ function Invoke-CocoMediaPlayerUi($Experience,$Episode,[string]$Source=''){
     }.GetNewClosure()))
     $form.Add_FormClosing(({
         param($sender,$eventArgs)
+        if($subPopup){try{$subPopup.IsOpen=$false}catch{}}
         if($state.CursorHidden){try{[Windows.Forms.Cursor]::Show()}catch{}}
         try{&$savePlayback $true;$state.ClosingSaved=$true;$timer.Stop();$startTimer.Stop();$media.Stop()}catch{}
     }.GetNewClosure()))
