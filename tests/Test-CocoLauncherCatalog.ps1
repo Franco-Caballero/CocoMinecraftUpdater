@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne27-or
+if($managedExperiences.Count-ne28-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -209,6 +209,18 @@ if(-not$leviticusMovie-or$leviticusMovie.fileName-ne'Leviticus.2026.1080p.Spanis
    $leviticusMovie.sha256-ne'5df7d024caa59313b8d55ec5dd13276f81413022090a5156d98844e378978c97'-or
    $leviticusMovie.streamUrl-notmatch'^https://'-or$leviticusMovie.sourceUrl-notmatch'^https://'){
     throw 'Leviticus no conserva la metadata o URL publicada.'
+}
+$mickey=@($catalog.experiences|Where-Object id -eq 'mickey-17-2025'|Select-Object -First 1)[0]
+if(-not$mickey-or$mickey.runtime.type-ne'media'-or$mickey.launch.workflow-ne'coco-media'-or
+   $mickey.content.type-ne'movie'-or$mickey.content.downloadFolderName-ne'mickey 17'){
+    throw 'Mickey 17 no esta declarado como pelicula local.'
+}
+$mickeyMovie=$mickey.content.movie
+if(-not$mickeyMovie-or$mickeyMovie.fileName-ne'Mickey.17.2025.1080p.WEB-DL.Spanish.Hardsub.mp4'-or
+   [int64]$mickeyMovie.size-ne1955022383-or
+   $mickeyMovie.sha256-ne'aee69272e7b31577482903749779b72637da055c516acd14dd8697fc727f3f83'-or
+   $mickeyMovie.streamUrl-notmatch'^https://'-or$mickeyMovie.sourceUrl-notmatch'^https://'){
+    throw 'Mickey 17 no conserva la metadata o URL publicada.'
 }
 $bounds=for($i=0;$i-lt$managedExperiences.Count;$i++){Get-CocoExperienceButtonBounds $i}
 for($i=0;$i-lt$bounds.Count;$i++){

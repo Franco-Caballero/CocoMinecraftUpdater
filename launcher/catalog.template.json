@@ -1464,6 +1464,51 @@
             "files": []
         },
         {
+            "id": "mickey-17-2025",
+            "name": "Mickey 17",
+            "ui": {
+                "badge": "Película",
+                "accentColor": "#E67E22",
+                "imagePath": "assets/experiences/mickey-17.jpg"
+            },
+            "description": "Película de ciencia ficción (2025) dirigida por Bong Joon-ho y protagonizada por Robert Pattinson. Mickey 17 es un empleado prescindible enviado a colonizar un mundo helado; cuando una versión muere, un clon toma su lugar con sus recuerdos intactos.",
+            "instanceId": "mickey-17",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "media"
+            },
+            "content": {
+                "type": "movie",
+                "downloadFolderName": "mickey 17",
+                "openAfterDownload": true,
+                "movie": {
+                    "id": "mickey-17-2025",
+                    "title": "Mickey 17 (2025)",
+                    "fileName": "Mickey.17.2025.1080p.WEB-DL.Spanish.Hardsub.mp4",
+                    "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mickey-17-2025/Mickey.17.2025.1080p.WEB-DL.Spanish.Hardsub.mp4",
+                    "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mickey-17-2025/Mickey.17.2025.1080p.WEB-DL.Spanish.Hardsub.mp4",
+                    "size": 1955022383,
+                    "sha256": "aee69272e7b31577482903749779b72637da055c516acd14dd8697fc727f3f83"
+                },
+                "episodes": [
+                    {
+                        "id": "mickey-17-2025",
+                        "title": "Mickey 17 (2025)",
+                        "fileName": "Mickey.17.2025.1080p.WEB-DL.Spanish.Hardsub.mp4",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mickey-17-2025/Mickey.17.2025.1080p.WEB-DL.Spanish.Hardsub.mp4",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mickey-17-2025/Mickey.17.2025.1080p.WEB-DL.Spanish.Hardsub.mp4",
+                        "size": 1955022383,
+                        "sha256": "aee69272e7b31577482903749779b72637da055c516acd14dd8697fc727f3f83"
+                    }
+                ]
+            },
+            "launch": {
+                "workflow": "coco-media",
+                "serverName": "Mickey 17"
+            },
+            "files": []
+        },
+        {
             "id": "how-to-fish",
             "name": "How to Fish",
             "ui": {

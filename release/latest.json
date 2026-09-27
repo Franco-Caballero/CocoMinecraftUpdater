@@ -1,18 +1,18 @@
 {
     "schemaVersion":  2,
     "packId":  "coco-fabric-26.1.2",
-    "version":  "0.5.179",
-    "publishedAt":  "2026-09-19T05:44:57.5895041Z",
+    "version":  "0.5.180",
+    "publishedAt":  "2026-09-27T20:07:06.3813649Z",
     "engine":  {
-                   "version":  "0.5.179",
-                   "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.179/coco-engine-0.5.179.zip",
-                   "sha256":  "7aee06255be9c2bf0185949fb43a62d287c5132030907bc53a21c6ea80032254",
-                   "size":  9212377
+                   "version":  "0.5.180",
+                   "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.180/coco-engine-0.5.180.zip",
+                   "sha256":  "b842967ad30dab57a88b5a9f22b321626b6c30d68c6c2379e626308291e8eb3f",
+                   "size":  10053085
                },
     "bootstrap":  {
-                      "version":  "0.5.179",
-                      "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.179/CocoUpdater.exe",
-                      "sha256":  "499c24022d89389d0d8ba42efd965701103012ffaf67771c5a069268f3ae5842",
+                      "version":  "0.5.180",
+                      "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.180/CocoUpdater.exe",
+                      "sha256":  "cb171c5bd88e1807acd9fc8c9097673941c24cd86168cd2096dade3b1fb4a5b9",
                       "size":  654336
                   },
     "network":  {
@@ -348,10 +348,10 @@
                                           "size":  1135373
                                       },
                                       {
-                                          "name":  "coco-session-bridge-0.5.179.jar",
+                                          "name":  "coco-session-bridge-0.5.180.jar",
                                           "fabricId":  "coco_session_bridge",
-                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-cb9d2d9d67dde3933598cd54d50b46406485bf8c3fd902970d57b7ea4e4b35bd.jar",
-                                          "sha256":  "cb9d2d9d67dde3933598cd54d50b46406485bf8c3fd902970d57b7ea4e4b35bd",
+                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a773d3bec8b0681cf39740223288413a1bb0cef97ee99f82a222153f201d8a91.jar",
+                                          "sha256":  "a773d3bec8b0681cf39740223288413a1bb0cef97ee99f82a222153f201d8a91",
                                           "size":  16486
                                       },
                                       {
@@ -1291,10 +1291,10 @@
                                           "size":  1135373
                                       },
                                       {
-                                          "name":  "coco-session-bridge-0.5.179.jar",
+                                          "name":  "coco-session-bridge-0.5.180.jar",
                                           "fabricId":  "coco_session_bridge",
-                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-cb9d2d9d67dde3933598cd54d50b46406485bf8c3fd902970d57b7ea4e4b35bd.jar",
-                                          "sha256":  "cb9d2d9d67dde3933598cd54d50b46406485bf8c3fd902970d57b7ea4e4b35bd",
+                                          "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mod-assets/mod-a773d3bec8b0681cf39740223288413a1bb0cef97ee99f82a222153f201d8a91.jar",
+                                          "sha256":  "a773d3bec8b0681cf39740223288413a1bb0cef97ee99f82a222153f201d8a91",
                                           "size":  16486
                                       },
                                       {
