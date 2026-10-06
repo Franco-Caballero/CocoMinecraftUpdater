@@ -118,7 +118,7 @@ if($valorantState.startItemAll-ne'shop:knife'-or
     throw 'La tienda de CSmain no contiene el arsenal Valorant y el cuchillo inicial fijados.'
 }
 $managedExperiences=@($catalog.experiences|Where-Object managementMode -eq 'managed')
-if($managedExperiences.Count-ne28-or
+if($managedExperiences.Count-ne29-or
     @($managedExperiences|Where-Object{$_.PSObject.Properties.Name-contains'compatibility'}).Count){
     throw 'Todas las experiencias deben estar visibles por presencia en catalogo, sin estados de bloqueo/experimento.'
 }
@@ -504,6 +504,18 @@ if($gjRequired.Count-ne6-or`
 }
 if([string]$ghostJanitors.runtimePolicies.defenderExclusion-ne'required'-or[string]$ghostJanitors.runtimePolicies.onlineFixAppId-ne'2772990'){
     throw 'Ghost Janitors no declara sus politicas standalone de Defender y OnlineFix.'
+}
+$pilgrimExp=@($catalog.experiences|Where-Object id -eq 'pilgrim'|Select-Object -First 1)[0]
+if(-not$pilgrimExp-or[string]$pilgrimExp.runtime.executable-ne'PILGRIM.exe'-or$pilgrimExp.runtime.type-ne'standalone'-or$pilgrimExp.managementMode-ne'managed'){
+    throw 'La experiencia standalone PILGRIM no esta declarada correctamente.'
+}
+$pilRequired=@($pilgrimExp.runtime.requiredFiles)
+if($pilRequired.Count-ne6-or`
+   @($pilRequired|Where-Object{[string]$_.sha256-notmatch'^[a-f0-9]{64}$'-or[int64]$_.size-le0-or[string]$_.archiveSha256-notin@($pilgrimExp.pack.archives.sha256)}).Count){
+    throw 'PILGRIM no fija todos sus archivos base reparables por ruta, hash, tamano y archive exacto.'
+}
+if([string]$pilgrimExp.runtimePolicies.defenderExclusion-ne'required'-or[string]$pilgrimExp.runtimePolicies.onlineFixAppId-ne'2965660'){
+    throw 'PILGRIM no declara sus politicas standalone de Defender y OnlineFix.'
 }
 $smolbird=@($catalog.globalPolicies.customSkinLoader.localSkins|Where-Object username -eq 'smolbird')
 if($smolbird.Count-ne1-or$smolbird[0].sha256-ne'fbfb5fdf0c1a71d3904efcbdfe9b403107c133b9137a302f1611e8adc29864fb'){

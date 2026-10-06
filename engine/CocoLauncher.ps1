@@ -5014,6 +5014,10 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
             $realAppId = '2772990'
             $hash0 = 'c94c6d68984e6467a57ed8ad1d16966a076b286077d5cea3f775993bf1d1e2ce697b2cdaaad9a38554ac5d96fba84d0139996fc3f5bbde3b5bfaa34edc2ed6c6'
             $hash1337 = ''
+        }elseif($expId -eq 'pilgrim' -or $appId -eq '2965660'){
+            $realAppId = '2965660'
+            $hash0 = 'b8be45250c6a8bf5e90e8f9558005d2fce0447bf77479d512900be6a84ac9b907efd436adaac9c94da5fa6956a394084afd7dc72006f2efa780923b0df5f8fa9'
+            $hash1337 = '21475f22c19b088ac987998f4734c7b4729e6f88df2b1677703c08f9d8c088a1fc4e543a51ff4b548aaa9c79bae2d0531202f8d696bef5c450eb443cf1e563ae'
         }elseif($appId){
             $realAppId = $appId
             $hash0 = 'b4353c02359f2a29161f863d31d525227f958c269c51a920a5a6c14c37dbd0f0d9a0ede86cf0a35fa608ecccdfa1cbcc712d762d1cc62f3a64d74506c056a476'
@@ -5095,6 +5099,9 @@ function Ensure-CocoOnlineFixSuppression([string]$InstanceRoot, $Experience){
                 }elseif($content -match '(?i)RealAppId\s*=\s*2772990'){
                     $targetHash0 = 'c94c6d68984e6467a57ed8ad1d16966a076b286077d5cea3f775993bf1d1e2ce697b2cdaaad9a38554ac5d96fba84d0139996fc3f5bbde3b5bfaa34edc2ed6c6'
                     $targetHash1337 = ''
+                }elseif($content -match '(?i)RealAppId\s*=\s*2965660'){
+                    $targetHash0 = 'b8be45250c6a8bf5e90e8f9558005d2fce0447bf77479d512900be6a84ac9b907efd436adaac9c94da5fa6956a394084afd7dc72006f2efa780923b0df5f8fa9'
+                    $targetHash1337 = '21475f22c19b088ac987998f4734c7b4729e6f88df2b1677703c08f9d8c088a1fc4e543a51ff4b548aaa9c79bae2d0531202f8d696bef5c450eb443cf1e563ae'
                 }elseif(-not $targetHash1337){
                     if($content -match '(?i)1337\s*=\s*([a-f0-9]{128})'){
                         $targetHash1337 = $matches[1]

@@ -2174,6 +2174,89 @@
                 "minimumFreeBytes": 18000000000
             },
             "files": []
+        },
+        {
+            "id": "pilgrim",
+            "name": "PILGRIM",
+            "ui": {
+                "badge": "Nuevo",
+                "accentColor": "#4A2E18",
+                "imagePath": "assets/experiences/pilgrim.jpg"
+            },
+            "description": "Pilgrim es una aventura de terror medieval cooperativa de 1 a 4 jugadores. ¿Podrán tú y tus amigos llegar al final de The Road?",
+            "instanceId": "pilgrim",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "PILGRIM.exe",
+                "requiredFiles": [
+                    {
+                        "path": "PILGRIM.exe",
+                        "sha256": "def4fc7f3bd7286a840d2c5f79cc1470a886132cba6a8a2d5d3ff43b6880e323",
+                        "size": 357376,
+                        "archiveSha256": "8310ea06735e86e833ed16492b0eebbbd12876bdd3f223b513672657f91d2327"
+                    },
+                    {
+                        "path": "PILGRIM/Binaries/Win64/PILGRIM-Win64-Shipping.exe",
+                        "sha256": "750a0a829f342361d4aea2d8e9f5324081bd970bd0fece80870e77af3b2f7144",
+                        "size": 126947840,
+                        "archiveSha256": "8310ea06735e86e833ed16492b0eebbbd12876bdd3f223b513672657f91d2327"
+                    },
+                    {
+                        "path": "PILGRIM/Binaries/Win64/OnlineFix64.dll",
+                        "sha256": "478caefd87d32916f590a0f8df2009f3fd7b254fad25ace62b8fc7631fb0611b",
+                        "size": 11979776,
+                        "archiveSha256": "8310ea06735e86e833ed16492b0eebbbd12876bdd3f223b513672657f91d2327"
+                    },
+                    {
+                        "path": "PILGRIM/Binaries/Win64/winmm.dll",
+                        "sha256": "f3982fd60da4a2ce2c14f3f9d3256775db4888668a48422ed426109d192791a3",
+                        "size": 524288,
+                        "archiveSha256": "8310ea06735e86e833ed16492b0eebbbd12876bdd3f223b513672657f91d2327"
+                    },
+                    {
+                        "path": "PILGRIM/Binaries/Win64/OnlineFix.ini",
+                        "sha256": "442a985acfbcc3509d5c9b0c3d75f4bda24d6dd08b8e681686d7c87e2f7ce089",
+                        "size": 566,
+                        "archiveSha256": "8310ea06735e86e833ed16492b0eebbbd12876bdd3f223b513672657f91d2327"
+                    },
+                    {
+                        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/steam_api64.dll",
+                        "sha256": "01afed5fb22b04387bdafbf75f7370a6c309598ce49a177d7ea4d6a007d6ef1f",
+                        "size": 311672,
+                        "archiveSha256": "8310ea06735e86e833ed16492b0eebbbd12876bdd3f223b513672657f91d2327"
+                    }
+                ]
+            },
+            "runtimePolicies": {
+                "defenderExclusion": "required",
+                "onlineFixAppId": "2965660"
+            },
+            "pack": {
+                "packId": "standalone-pilgrim",
+                "lockPath": "launcher/experiences/pilgrim.lock.json",
+                "version": "0.1.2",
+                "sha256": "8310ea06735e86e833ed16492b0eebbbd12876bdd3f223b513672657f91d2327",
+                "size": 816116268,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.181/Pilgrim.zip",
+                        "sha256": "8310ea06735e86e833ed16492b0eebbbd12876bdd3f223b513672657f91d2327",
+                        "size": 816116268
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p",
+                "networkId": "58997fc5f3c0c001"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "autoJoin": true,
+                "serverName": "Coco - Pilgrim",
+                "minimumFreeBytes": 3000000000
+            },
+            "files": []
         }
     ]
 }
