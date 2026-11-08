@@ -932,6 +932,199 @@ exit 1
     }catch{Write-CocoLog "No se pudo programar la actualizacion del bootstrap: $($_.Exception.Message)"}
 }
 
+# Coco Launcher 2 reemplaza a este launcher. Al abrirlo a mano se instala el 2
+# (Setup fijado por SHA-256 y tamaño; instalación por usuario, sin UAC), se
+# retiran los accesos del 1 y se abre el 2. Si algo falla, este launcher sigue
+# como siempre y lo reintenta en la próxima apertura. Los modos Bridge/Minecraft
+# (-GameDir, -MinecraftPid, -Silent) no pasan por aquí: Coco original todavía
+# usa este EXE en segundo plano, por eso no se borra.
+$script:Coco2Release=[pscustomobject]@{
+    Version='0.6.17'
+    Url='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/CocoLauncher2_0.6.17_x64-setup.exe'
+    Sha256='fd2d9fcd4e1bbbdc9678a6e1e3bb737545e98fe24907a184ead38e22851487d3'
+    Size=[int64]16772989
+}
+$script:Coco2HandoffMarker=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\coco2-handoff.json'
+
+function Get-Coco2Executable{
+    $folders=@()
+    try{
+        # El Setup reutiliza la carpeta de una instalación anterior, aunque sea otra, y la anota aquí.
+        $key=Get-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Coco Launcher 2' -ErrorAction Stop
+        foreach($value in $key.InstallLocation,$key.'(default)'){if($value){$folders+=([string]$value).Trim('"')}}
+    }catch{}
+    $folders+=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Coco Launcher 2'
+    foreach($folder in $folders){
+        $exe=Join-Path $folder 'coco-launcher-2.exe'
+        if(Test-Path -LiteralPath $exe -PathType Leaf){return $exe}
+    }
+    return $null
+}
+
+function Test-Coco2Supported{
+    # Coco 2 es Windows 10/11 de 64 bits (WebView2); en otro equipo el 1 sigue.
+    return [Environment]::OSVersion.Version.Major-ge10-and[Environment]::Is64BitOperatingSystem
+}
+
+function Test-CocoLauncher1Target([string]$Target){
+    if([string]::IsNullOrWhiteSpace($Target)){return $false}
+    $name=[IO.Path]::GetFileName($Target)
+    return $name-match'(?i)^Coco(?:[ ._-]*Minecraft)?[ ._-]*(?:Updater|Launcher)(?:[ ._()\-]*\d+[ ._()\-]*)*\.exe$'-and$name-notmatch'(?i)launcher[ ._-]*2'
+}
+
+# Escritorio y menú Inicio: se borran los accesos del 1 (el Setup del 2 crea el
+# suyo). En la barra de tareas el anclaje se redirige al 2 para que no quede un
+# icono roto. Devuelve cuántos accesos cambió.
+function Move-CocoLauncher1Shortcuts([string]$Coco2Exe){
+    $changed=0
+    $shell=$null
+    try{$shell=New-Object -ComObject WScript.Shell}catch{return 0}
+    try{
+        $removable=@(
+            [Environment]::GetFolderPath('Desktop'),
+            [Environment]::GetFolderPath('CommonDesktopDirectory'),
+            [Environment]::GetFolderPath('Programs'),
+            [Environment]::GetFolderPath('CommonPrograms')
+        )|Where-Object{$_-and(Test-Path -LiteralPath $_ -PathType Container)}|Select-Object -Unique
+        $pinned=Join-Path $env:APPDATA 'Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar'
+        foreach($folder in @($removable)+@($pinned)){
+            if(-not(Test-Path -LiteralPath $folder -PathType Container)){continue}
+            $depth=if($folder-like'*Programs'){1}else{0}
+            foreach($link in @(Get-ChildItem -LiteralPath $folder -Filter '*.lnk' -File -Recurse -Depth $depth -ErrorAction SilentlyContinue)){
+                try{
+                    $shortcut=$shell.CreateShortcut($link.FullName)
+                    if(-not(Test-CocoLauncher1Target $shortcut.TargetPath)){continue}
+                    if($folder-eq$pinned){
+                        $shortcut.TargetPath=$Coco2Exe
+                        $shortcut.WorkingDirectory=Split-Path $Coco2Exe -Parent
+                        $shortcut.IconLocation="$Coco2Exe,0"
+                        $shortcut.Arguments=''
+                        $shortcut.Description='Abrir Coco Launcher 2'
+                        $shortcut.Save()
+                    }else{
+                        Remove-Item -LiteralPath $link.FullName -Force -ErrorAction Stop
+                    }
+                    $changed++
+                    Write-CocoLog "Acceso del launcher 1 retirado: '$($link.FullName)'."
+                }catch{Write-CocoLog "No se pudo retirar el acceso '$($link.FullName)': $($_.Exception.Message)"}
+            }
+        }
+    }finally{try{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)}catch{}}
+    return $changed
+}
+
+function Start-Coco2([string]$Exe){
+    # El 2 es de instancia única: si ya estaba abierto, el proceso nuevo le pasa
+    # el foco y termina. Cuenta como abierto si queda alguno vivo.
+    Start-Process -FilePath $Exe -WorkingDirectory (Split-Path $Exe -Parent) | Out-Null
+    $deadline=[DateTime]::UtcNow.AddSeconds(8)
+    do{
+        if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+        Start-Sleep -Milliseconds 250
+        $alive=@(Get-Process -Name 'coco-launcher-2' -ErrorAction SilentlyContinue).Count-gt0
+    }while(-not$alive-and[DateTime]::UtcNow-lt$deadline)
+    if(-not$alive){return $false}
+    # Un 2 que no puede arrancar (por ejemplo, sin WebView2) se cierra enseguida.
+    $settle=[DateTime]::UtcNow.AddSeconds(4)
+    while([DateTime]::UtcNow-lt$settle){
+        if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+        Start-Sleep -Milliseconds 250
+    }
+    return @(Get-Process -Name 'coco-launcher-2' -ErrorAction SilentlyContinue).Count-gt0
+}
+
+function Install-Coco2{
+    $downloads=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\downloads'
+    New-Item -ItemType Directory -Path $downloads -Force | Out-Null
+    $drive=[IO.Path]::GetPathRoot($downloads)
+    try{
+        $free=(New-Object IO.DriveInfo($drive)).AvailableFreeSpace
+        if($free-lt($script:Coco2Release.Size+300MB)){throw "Falta espacio en $drive para instalar Coco Launcher 2 (se necesitan unos 300 MB)."}
+    }catch [IO.IOException]{}
+    $setup=Join-Path $downloads "CocoLauncher2-Setup-$($script:Coco2Release.Version).exe"
+    if(-not((Test-Path -LiteralPath $setup -PathType Leaf)-and(Get-Item -LiteralPath $setup).Length-eq$script:Coco2Release.Size-and(Get-Sha256 $setup)-eq$script:Coco2Release.Sha256)){
+        Remove-Item -LiteralPath $setup -Force -ErrorAction SilentlyContinue
+        Download-VerifiedFile $script:Coco2Release.Url $setup $script:Coco2Release.Sha256 0 $script:Coco2Release.Size 'Descargando Coco Launcher 2' 'Tus juegos y partidas se quedan donde están.' 8 70
+    }
+    if((Get-Item -LiteralPath $setup).Length-ne$script:Coco2Release.Size){throw 'El instalador de Coco Launcher 2 no tiene el tamaño publicado.'}
+    Set-CocoState 'Instalando Coco Launcher 2' 'Esto tarda unos segundos y no pide permisos.' 76
+    $process=Start-Process -FilePath $setup -ArgumentList '/S' -PassThru -WindowStyle Hidden
+    $deadline=[DateTime]::UtcNow.AddMinutes(10)
+    while(-not$process.HasExited-and[DateTime]::UtcNow-lt$deadline){
+        if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
+        Start-Sleep -Milliseconds 200
+    }
+    if(-not$process.HasExited){throw 'El instalador de Coco Launcher 2 no terminó a tiempo.'}
+    Write-CocoLog "Setup de Coco Launcher 2 $($script:Coco2Release.Version) terminó con código $($process.ExitCode)."
+    $exe=Get-Coco2Executable
+    if(-not$exe){throw "El instalador de Coco Launcher 2 terminó (código $($process.ExitCode)) pero no dejó el programa. Si tu antivirus lo bloqueó, permítelo."}
+    Remove-Item -LiteralPath $setup -Force -ErrorAction SilentlyContinue
+    return $exe
+}
+
+function Remove-CocoLauncher1Leftovers{
+    # Descargas que solo usaba el launcher 1 para juegos; el 2 trae las suyas.
+    # Los mods de Minecraft (downloads\jars), respaldos y partidas no se tocan.
+    $downloads=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\downloads'
+    foreach($name in 'standalone-files','standalone-files-stage'){
+        $path=Join-Path $downloads $name
+        if(Test-Path -LiteralPath $path -PathType Container){
+            try{Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction Stop;Write-CocoLog "Descargas antiguas eliminadas: '$path'."}
+            catch{Write-CocoLog "No se pudo limpiar '$path': $($_.Exception.Message)"}
+        }
+    }
+}
+
+function Close-CocoHandoffWindow{
+    if(-not$script:CocoForm){return}
+    $script:CocoAllowClose=$true
+    try{
+        if($script:CocoForm.Tag-and$script:CocoForm.Tag.PSObject.Properties.Name-contains'AllowClose'){$script:CocoForm.Tag.AllowClose=$true}
+        if(-not$script:CocoForm.IsDisposed){$script:CocoForm.Close();$script:CocoForm.Dispose()}
+    }catch{}
+    $script:CocoForm=$null
+}
+
+# Devuelve $true cuando Coco Launcher 2 quedó abierto y este launcher debe salir.
+function Invoke-CocoLauncher2Handoff{
+    if($env:COCO_DISABLE_COCO2_HANDOFF-eq'1'){return $false}
+    if(-not(Test-Coco2Supported)){Write-CocoLog 'Coco Launcher 2 requiere Windows 10/11 de 64 bits; se mantiene el launcher 1.';return $false}
+    $exe=Get-Coco2Executable
+    $installedNow=$false
+    try{
+        if(-not$exe){
+            Show-CocoWindow
+            Set-CocoState 'Llegó Coco Launcher 2' 'Lo instalamos por ti. Tus juegos y partidas se quedan donde están.' 4
+            $exe=Install-Coco2
+            $installedNow=$true
+        }
+        if($script:CocoForm){Set-CocoState 'Abriendo Coco Launcher 2' 'Desde ahora, Coco se abre desde su nuevo acceso en el escritorio.' 92}
+        if(-not(Start-Coco2 $exe)){throw 'Coco Launcher 2 se instaló pero no pudo abrirse en este equipo.'}
+        $moved=Move-CocoLauncher1Shortcuts $exe
+        Remove-CocoLauncher1Leftovers
+        $source=try{[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName}catch{$null}
+        if($env:COCO_BOOTSTRAPPER_EXE-and(Get-Command Test-CocoLegacyLauncherCandidate -ErrorAction SilentlyContinue)-and(Test-CocoLegacyLauncherCandidate $source $env:COCO_BOOTSTRAPPER_EXE)){
+            # Una copia suelta (Descargas, Escritorio) se guarda en respaldos al cerrar este proceso.
+            try{[void](New-CocoLegacyLauncherArchiveHelper $source $env:COCO_BOOTSTRAPPER_EXE (Split-Path $env:COCO_BOOTSTRAPPER_EXE -Parent) $PID -Start)}
+            catch{Write-CocoLog "No se pudo retirar la copia '$source': $($_.Exception.Message)"}
+        }
+        $record=[ordered]@{version=$script:Coco2Release.Version;installedNow=$installedNow;coco2=$exe;shortcutsMoved=$moved;at=(Get-Date).ToString('o')}
+        $record|ConvertTo-Json|Set-Content -LiteralPath $script:Coco2HandoffMarker -Encoding UTF8
+        Write-CocoLog "Traspaso a Coco Launcher 2 completado: $($record|ConvertTo-Json -Compress)"
+        Close-CocoHandoffWindow
+        return $true
+    }catch{
+        Write-CocoLog "Traspaso a Coco Launcher 2 pendiente: $($_.Exception.Message)"
+        if($script:CocoForm){
+            Set-CocoState 'Coco Launcher 2 no pudo instalarse' "$($_.Exception.Message) Abrimos el launcher de siempre; se reintenta la próxima vez." $script:CocoCurrentProgress $true 'failure'
+            $wait=[DateTime]::UtcNow.AddSeconds(5)
+            while([DateTime]::UtcNow-lt$wait){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 50}
+        }
+        Close-CocoHandoffWindow
+        return $false
+    }
+}
+
 function Test-MinecraftRunning([string]$Root) {
     if ($MinecraftPid -gt 0) { return [bool](Get-Process -Id $MinecraftPid -ErrorAction SilentlyContinue) }
     $running = Get-RunningGameDirectories
@@ -1409,6 +1602,11 @@ try {
     $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
     if (-not $manifest.packId -or -not $manifest.version -or -not $manifest.detector) { throw 'Manifiesto incompleto.' }
     Ensure-BootstrapUpdate $manifest
+    # Solo una apertura a mano del launcher; nunca el Bridge de Minecraft ni pruebas.
+    $manualOpen=-not$Silent-and-not$TestSuppressUi-and-not$DetectOnly-and-not$NetworkOnly-and-not$Preview-and
+        [string]::IsNullOrWhiteSpace($GameDir)-and$MinecraftPid-le0-and
+        [string]::IsNullOrWhiteSpace($SessionStatePath)-and-not$automaticFullCheck
+    if($manualOpen-and(Invoke-CocoLauncher2Handoff)){exit 0}
     if(-not$TestSuppressUi-and(Get-Command Initialize-CocoLauncherMigration -ErrorAction SilentlyContinue)){
         $canonical=$env:COCO_BOOTSTRAPPER_EXE
         if($canonical){Initialize-CocoLauncherMigration $canonical (-not$NetworkOnly)}

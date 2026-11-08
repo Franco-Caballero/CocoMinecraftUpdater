@@ -6314,6 +6314,9 @@ finally{Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyCont
 
 function Initialize-CocoLauncherMigration([string]$CanonicalExe,[bool]$ArchiveInvokedCopy=$true){
     if([string]::IsNullOrWhiteSpace($CanonicalExe)-or-not(Test-Path -LiteralPath $CanonicalExe -PathType Leaf)){return}
+    # Tras el traspaso a Coco Launcher 2 este EXE solo atiende a Minecraft en
+    # segundo plano: no debe volver a poner su acceso en el escritorio.
+    if(Test-Path -LiteralPath (Join-Path (Split-Path $CanonicalExe -Parent) 'coco2-handoff.json') -PathType Leaf){return}
     try{
         $shortcut=Install-CocoLauncherShortcut $CanonicalExe
         Write-CocoLog "Acceso directo Coco Launcher listo en '$shortcut'."
