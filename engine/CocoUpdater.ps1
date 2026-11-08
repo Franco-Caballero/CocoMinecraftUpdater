@@ -939,10 +939,10 @@ exit 1
 # (-GameDir, -MinecraftPid, -Silent) no pasan por aquí: Coco original todavía
 # usa este EXE en segundo plano, por eso no se borra.
 $script:Coco2Release=[pscustomobject]@{
-    Version='0.6.18'
-    Url='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/CocoLauncher2_0.6.18_x64-setup.exe'
-    Sha256='4b25a147d477420dc4fccd8d901e320dcd3fae5a0babfc80f0c0ed4910c3d260'
-    Size=[int64]16767807
+    Version='0.6.21'
+    Url='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/CocoLauncher2_0.6.21_x64-setup.exe'
+    Sha256='bfafcf5eaeaf9d2ce3ada27b1766498a6f0e2bc5840a4f70f386d805837b8a8d'
+    Size=[int64]16652288
 }
 $script:Coco2HandoffMarker=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\coco2-handoff.json'
 
@@ -1014,23 +1014,22 @@ function Move-CocoLauncher1Shortcuts([string]$Coco2Exe){
 }
 
 function Start-Coco2([string]$Exe){
-    # El 2 es de instancia única: si ya estaba abierto, el proceso nuevo le pasa
-    # el foco y termina. Cuenta como abierto si queda alguno vivo.
+    # El 2 es de instancia única: si ya estaba abierto, el proceso nuevo le pasa el foco y
+    # termina. Cuenta como abierto cuando sigue vivo 3 segundos seguidos; uno que no puede
+    # arrancar (por ejemplo, sin WebView2) se cierra antes. Si se cierra para actualizarse,
+    # su instalador lo vuelve a abrir y se espera a que reaparezca.
     Start-Process -FilePath $Exe -WorkingDirectory (Split-Path $Exe -Parent) | Out-Null
-    $deadline=[DateTime]::UtcNow.AddSeconds(8)
-    do{
+    $deadline=[DateTime]::UtcNow.AddSeconds(45)
+    $aliveSince=$null
+    while([DateTime]::UtcNow-lt$deadline){
         if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
         Start-Sleep -Milliseconds 250
-        $alive=@(Get-Process -Name 'coco-launcher-2' -ErrorAction SilentlyContinue).Count-gt0
-    }while(-not$alive-and[DateTime]::UtcNow-lt$deadline)
-    if(-not$alive){return $false}
-    # Un 2 que no puede arrancar (por ejemplo, sin WebView2) se cierra enseguida.
-    $settle=[DateTime]::UtcNow.AddSeconds(4)
-    while([DateTime]::UtcNow-lt$settle){
-        if('System.Windows.Forms.Application'-as[type]){[Windows.Forms.Application]::DoEvents()}
-        Start-Sleep -Milliseconds 250
+        if(@(Get-Process -Name 'coco-launcher-2' -ErrorAction SilentlyContinue).Count-gt0){
+            if(-not$aliveSince){$aliveSince=[DateTime]::UtcNow}
+            if(([DateTime]::UtcNow-$aliveSince).TotalSeconds-ge3){return $true}
+        }else{$aliveSince=$null}
     }
-    return @(Get-Process -Name 'coco-launcher-2' -ErrorAction SilentlyContinue).Count-gt0
+    return $false
 }
 
 function Install-Coco2{

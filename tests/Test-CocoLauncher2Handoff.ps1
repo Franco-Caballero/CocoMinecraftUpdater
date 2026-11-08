@@ -53,6 +53,12 @@ Assert-True (-not($source-match"Verb RunAs[^\n]*Setup|Setup[^\n]*-Verb RunAs")) 
 Assert-True ($source-match"downloads\\jars|downloads\\\\jars|Los mods de Minecraft \(downloads\\jars\)") 'documenta que no toca los mods de Minecraft'
 Assert-True (-not($source-match"Remove-Item[^\n]*'jars'|Remove-Item[^\n]*backups")) 'no borra mods ni respaldos'
 
+# Un 2 que se cierra para actualizarse no cuenta como fallo: abierto = vivo 3 s seguidos.
+$start=$ast.Find({param($node)$node-is[Management.Automation.Language.FunctionDefinitionAst]-and$node.Name-eq'Start-Coco2'},$true).Extent.Text
+Assert-True ($start-match'TotalSeconds-ge3') 'abierto solo tras 3 s seguidos'
+Assert-True ($start.Contains('AddSeconds(45)')) 'espera a que reaparezca tras actualizarse'
+Assert-True ($start.Contains('aliveSince=$null')) 'un cierre reinicia la cuenta'
+
 # Tras el traspaso, el Bridge no vuelve a poner el acceso del 1 en el escritorio.
 Assert-True ($launcher-match"coco2-handoff\.json'\) -PathType Leaf\)\{return\}") 'Initialize-CocoLauncherMigration respeta el traspaso'
 Write-Host "Coco Launcher 2 handoff OK ($version)"
