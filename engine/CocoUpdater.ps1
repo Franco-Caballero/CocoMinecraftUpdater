@@ -939,10 +939,10 @@ exit 1
 # (-GameDir, -MinecraftPid, -Silent) no pasan por aquí: Coco original todavía
 # usa este EXE en segundo plano, por eso no se borra.
 $script:Coco2Release=[pscustomobject]@{
-    Version='0.6.17'
-    Url='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/CocoLauncher2_0.6.17_x64-setup.exe'
-    Sha256='fd2d9fcd4e1bbbdc9678a6e1e3bb737545e98fe24907a184ead38e22851487d3'
-    Size=[int64]16772989
+    Version='0.6.18'
+    Url='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/CocoLauncher2_0.6.18_x64-setup.exe'
+    Sha256='4b25a147d477420dc4fccd8d901e320dcd3fae5a0babfc80f0c0ed4910c3d260'
+    Size=[int64]16767807
 }
 $script:Coco2HandoffMarker=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\coco2-handoff.json'
 
@@ -1099,7 +1099,18 @@ function Invoke-CocoLauncher2Handoff{
             $installedNow=$true
         }
         if($script:CocoForm){Set-CocoState 'Abriendo Coco Launcher 2' 'Desde ahora, Coco se abre desde su nuevo acceso en el escritorio.' 92}
-        if(-not(Start-Coco2 $exe)){throw 'Coco Launcher 2 se instaló pero no pudo abrirse en este equipo.'}
+        if(-not(Start-Coco2 $exe)){
+            # Una instalación previa dañada (archivos borrados por un antivirus, una
+            # actualización cortada) se repara reinstalando una sola vez.
+            if($installedNow){throw 'Coco Launcher 2 se instaló pero no pudo abrirse en este equipo.'}
+            Write-CocoLog "Coco Launcher 2 instalado en '$exe' no abrió; se reinstala."
+            Show-CocoWindow
+            Set-CocoState 'Reparando Coco Launcher 2' 'Lo reinstalamos; tus juegos y partidas no se tocan.' 4
+            $exe=Install-Coco2
+            $installedNow=$true
+            Set-CocoState 'Abriendo Coco Launcher 2' 'Desde ahora, Coco se abre desde su nuevo acceso en el escritorio.' 92
+            if(-not(Start-Coco2 $exe)){throw 'Coco Launcher 2 no pudo abrirse en este equipo.'}
+        }
         $moved=Move-CocoLauncher1Shortcuts $exe
         Remove-CocoLauncher1Leftovers
         $source=try{[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName}catch{$null}
