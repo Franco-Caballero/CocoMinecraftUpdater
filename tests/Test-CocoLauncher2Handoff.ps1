@@ -32,6 +32,10 @@ foreach($name in 'coco-launcher-2.exe','Coco Launcher 2.exe','CocoLauncher2_0.6.
     Assert-True (-not(Test-CocoLauncher1Target "C:\Juegos\$name")) "no debe tocar el acceso a '$name'"
 }
 Assert-True (Test-Coco2Supported) 'este equipo de pruebas es Windows 10/11 x64'
+# CocoUpdater.exe sin manifiesto de compatibilidad ve Windows 10/11 como 6.2: nunca usar OSVersion.
+$supported=$ast.Find({param($node)$node-is[Management.Automation.Language.FunctionDefinitionAst]-and$node.Name-eq'Test-Coco2Supported'},$true).Extent.Text
+Assert-True (-not$supported.Contains('OSVersion')) 'la version de Windows no sale de [Environment]::OSVersion'
+Assert-True ($supported.Contains('CurrentMajorVersionNumber')) 'la version real sale del registro'
 
 # Solo una apertura manual hace el traspaso; Bridge, red y pruebas siguen igual.
 $gate=[regex]::Match($source,'\$manualOpen=(?<g>[\s\S]+?)\n\s+if\(\$manualOpen-and\(Invoke-CocoLauncher2Handoff\)\)\{exit 0\}')

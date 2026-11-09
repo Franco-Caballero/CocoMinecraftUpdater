@@ -939,10 +939,10 @@ exit 1
 # (-GameDir, -MinecraftPid, -Silent) no pasan por aquí: Coco original todavía
 # usa este EXE en segundo plano, por eso no se borra.
 $script:Coco2Release=[pscustomobject]@{
-    Version='0.6.21'
-    Url='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/CocoLauncher2_0.6.21_x64-setup.exe'
-    Sha256='bfafcf5eaeaf9d2ce3ada27b1766498a6f0e2bc5840a4f70f386d805837b8a8d'
-    Size=[int64]16652288
+    Version='0.6.39'
+    Url='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/CocoLauncher2_0.6.39_x64-setup.exe'
+    Sha256='42cbfd71e98c7f46a729799cd8630f1ac1a2ec02b3d8425a208e5b0c4c2bfb07'
+    Size=[int64]20785272
 }
 $script:Coco2HandoffMarker=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\coco2-handoff.json'
 
@@ -963,7 +963,13 @@ function Get-Coco2Executable{
 
 function Test-Coco2Supported{
     # Coco 2 es Windows 10/11 de 64 bits (WebView2); en otro equipo el 1 sigue.
-    return [Environment]::OSVersion.Version.Major-ge10-and[Environment]::Is64BitOperatingSystem
+    # CocoUpdater.exe no declara compatibilidad con Windows 10, asi que la version de .NET
+    # responde 6.2 tambien en Windows 10/11: la version real sale del registro, o de WMI si falta.
+    if(-not[Environment]::Is64BitOperatingSystem){return $false}
+    $major=$null
+    try{$major=(Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name CurrentMajorVersionNumber -ErrorAction Stop).CurrentMajorVersionNumber}catch{}
+    if(-not$major){try{$major=([version](Get-CimInstance Win32_OperatingSystem -ErrorAction Stop).Version).Major}catch{}}
+    return [int]$major-ge10
 }
 
 function Test-CocoLauncher1Target([string]$Target){
