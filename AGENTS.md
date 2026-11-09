@@ -167,3 +167,7 @@ El Publisher exige la siguiente versión pública exacta, compila, valida hashes
 - Evidencia extensa: auditoría separada.
 - Operación y recuperación: `docs\OPERACION.md`.
 - Al cambiar un contrato, actualiza la fuente principal y las referencias afectadas; no copies el mismo párrafo en todos los documentos.
+
+## Commit attribution
+
+Do not add Co-Authored-By trailers for assistants, models or bots. Preserve the human owner/contributor Git identity. Install the repository hooks with `git config core.hooksPath .githooks`; do not bypass the attribution checks.

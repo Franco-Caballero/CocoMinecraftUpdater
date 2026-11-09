@@ -1,0 +1,17 @@
+name: Attribution
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  attribution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check commit identities and coauthor trailers
+        run: python3 tools/check_commit_attribution.py --revision HEAD
+      - name: Test attribution guard
+        run: python3 tests/test_commit_attribution.py
