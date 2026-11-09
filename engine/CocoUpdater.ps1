@@ -939,10 +939,10 @@ exit 1
 # (-GameDir, -MinecraftPid, -Silent) no pasan por aquí: Coco original todavía
 # usa este EXE en segundo plano, por eso no se borra.
 $script:Coco2Release=[pscustomobject]@{
-    Version='0.6.39'
-    Url='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/CocoLauncher2_0.6.39_x64-setup.exe'
-    Sha256='42cbfd71e98c7f46a729799cd8630f1ac1a2ec02b3d8425a208e5b0c4c2bfb07'
-    Size=[int64]20785272
+    Version='0.6.44'
+    Url='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/CocoLauncher2_0.6.44_x64-setup.exe'
+    Sha256='478593aaae46c259d1ad3fcd8eec345b7cc1a4a3c98077a53d9e6316966b2bca'
+    Size=[int64]20836235
 }
 $script:Coco2HandoffMarker=Join-Path $env:LOCALAPPDATA 'CocoMinecraftUpdater\coco2-handoff.json'
 
