@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "grocery-store-simulator",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part01.zip",
+    "sha256": "b95f6408f0b250922e651fee518be82036ccef4ea02987c110abc93a9ac0aa51",
+    "size": 293307938
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part01.zip",
+      "sha256": "b95f6408f0b250922e651fee518be82036ccef4ea02987c110abc93a9ac0aa51",
+      "size": 293307938
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part02.zip",
+      "sha256": "602d9da15c29431b9e05614bd93b39524ebecea13a8ee636765e773a480dbd66",
+      "size": 1779783449
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part03.zip",
+      "sha256": "5fcfff029201ae3c50a7678c15c633b972a03eb5dfdcec8d004ef025f5326440",
+      "size": 1793417098
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part04.zip",
+      "sha256": "5c990b2e704c4f4370fe787384b69ec79dfee65d8b1cfa0f891b31f83baa5c08",
+      "size": 1794303310
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part05.zip",
+      "sha256": "3f4654b5b935cbf0f4a22aa1cb0e86d7087bcf9ac82bd8fe6100b801deb3512e",
+      "size": 962229371
+    }
+  ]
+}

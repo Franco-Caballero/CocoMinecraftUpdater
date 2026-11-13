@@ -124,6 +124,21 @@
    "realAppId": "285900",
    "hash0": "28e860b2e681fa3cdaf920d6c1e856a5681640ae491a1752d48ad641356debad287f93cef04eb5333ad9c0c124b058e9413989f7ae87a516eabd8ace35c4f4c8",
    "hash1337": ""
+  },
+  "pummel-party": {
+   "realAppId": "880940",
+   "hash0": "36dc327dc0f4f6d632249ec2354027f061e51bdd6b206279b7129b61223f99cceb70f0c90c2a01199fe8aa1dbba3f09c497d93f3e40f818de6c906c5ca25f5dc",
+   "hash1337": ""
+  },
+  "grocery-store-simulator": {
+   "realAppId": "2961880",
+   "hash0": "bc4135f74cde5828c465229e54c5898d29cc546b567040a656f67f494dbf91e4df37c91523cc6abae53fa03da34c0fa0f13e3e7c54949231d051d4c1777279de",
+   "hash1337": ""
+  },
+  "paint-the-town-red": {
+   "realAppId": "337320",
+   "hash0": "ed45fa1e9805e6ca46c8594e15744519dbe24a7c6147e1f835018e2f0f73f6f74b5081d78e5ba4a82b765490627cfb6f7167fde544bf5f0dc419ca37165c0183",
+   "hash1337": ""
   }
  },
  "apps": {
@@ -250,6 +265,21 @@
   "285900": {
    "realAppId": "285900",
    "hash0": "28e860b2e681fa3cdaf920d6c1e856a5681640ae491a1752d48ad641356debad287f93cef04eb5333ad9c0c124b058e9413989f7ae87a516eabd8ace35c4f4c8",
+   "hash1337": ""
+  },
+  "880940": {
+   "realAppId": "880940",
+   "hash0": "36dc327dc0f4f6d632249ec2354027f061e51bdd6b206279b7129b61223f99cceb70f0c90c2a01199fe8aa1dbba3f09c497d93f3e40f818de6c906c5ca25f5dc",
+   "hash1337": ""
+  },
+  "2961880": {
+   "realAppId": "2961880",
+   "hash0": "bc4135f74cde5828c465229e54c5898d29cc546b567040a656f67f494dbf91e4df37c91523cc6abae53fa03da34c0fa0f13e3e7c54949231d051d4c1777279de",
+   "hash1337": ""
+  },
+  "337320": {
+   "realAppId": "337320",
+   "hash0": "ed45fa1e9805e6ca46c8594e15744519dbe24a7c6147e1f835018e2f0f73f6f74b5081d78e5ba4a82b765490627cfb6f7167fde544bf5f0dc419ca37165c0183",
    "hash1337": ""
   }
  }

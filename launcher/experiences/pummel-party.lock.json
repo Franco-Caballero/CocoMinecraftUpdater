@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "pummel-party",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/pummel-party-1.14.1/pummel-party-1.14.1-part01.zip",
+    "sha256": "e39ac7468651b013a6d8bf418d43b107b70f661f5c537897b3e9e8779adb533b",
+    "size": 1109221476
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/pummel-party-1.14.1/pummel-party-1.14.1-part01.zip",
+      "sha256": "e39ac7468651b013a6d8bf418d43b107b70f661f5c537897b3e9e8779adb533b",
+      "size": 1109221476
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/pummel-party-1.14.1/pummel-party-1.14.1-part02.zip",
+      "sha256": "2edd98b31f1db947d36654b437ede800f125b0f2fa494583270ff24372338714",
+      "size": 483085231
+    }
+  ]
+}

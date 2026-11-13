@@ -147,5 +147,23 @@
                      "steamAppId":  285900,
                      "trailerId":  257075225,
                      "bytes":  2199673
+                 },
+    "pummel-party":  {
+                     "url":  "https://cdn.akamai.steamstatic.com/steam/apps/256729701/microtrailer.webm",
+                     "steamAppId":  880940,
+                     "trailerId":  256729701,
+                     "bytes":  1641104
+                 },
+    "grocery-store-simulator":  {
+                     "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257075050/microtrailer.webm",
+                     "steamAppId":  2961880,
+                     "trailerId":  257075050,
+                     "bytes":  2548236
+                 },
+    "paint-the-town-red":  {
+                     "url":  "https://cdn.akamai.steamstatic.com/steam/apps/256845079/microtrailer.webm",
+                     "steamAppId":  337320,
+                     "trailerId":  256845079,
+                     "bytes":  1088835
                  }
 }

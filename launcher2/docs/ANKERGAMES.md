@@ -9,7 +9,7 @@ Documento de trabajo para agregar juegos de `ankergames.net` a Coco Launcher 2. 
 - El ZIP de AnkerGames se **reempaqueta** (no se sube tal cual): hay que quitar el `1337` del `OnlineFix.ini`, los accesos `.url` y los archivos promocionales.
 - `%TEMP%`/`%TMP%` del proceso apuntan a `D:\CocoWork\<id>\temp` antes de invocar scripts Python/PowerShell pesados.
 
-## Flujo probado (Gang Beasts, 1.0 GB)
+## Flujo probado (Gang Beasts, Pummel, Grocery y Paint; 1,0–6,6 GB)
 
 ### 1. Abrir la ficha y obtener el `downloadId`
 
@@ -64,9 +64,21 @@ Comprueba `Content-Length` con `curl -sIL` antes de bajar. Gang Beasts: `1,085,2
 
 > No hace falta resolver el Turnstile a mano ni esperar la cuenta atrás: cuando la página ya muestra "Download Ready", el `href` está listo. El error clásico era dejar que el navegador guardara el archivo (queda en C: y con nombre UUID).
 
+> **El token no sirve antes de "Download Ready".** Si haces `curl` (o incluso un `HEAD`) con el `download-file` recién minteado, recibes un HTML de **190.888 B** con "Ops matey no downloads here". Hay que navegar de verdad a `download_url`, esperar el texto "Download Ready" o `a.download-button`, y solo entonces leer el `href` y bajar. El mismo token funciona después. Haz una descarga a la vez; los tokens caducan en ~4 h.
+
+### 3.1 Variantes de empaquetado
+
+- **ZIP normal**: Pummel (1,6 GB), Paint (2,6 GB).
+- **RAR**: Grocery Store Simulator. Magic `52 61 72 21` ("Rar!"), no `PK`. 7-Zip lo extrae igual; el reempaquetado posterior sí produce ZIP.
+- **Zstandard**: algunas entradas de ZIP de AnkerGames; 7-Zip las maneja.
+- **Unreal Engine** (Grocery): el `.exe` de la raíz (`Simulatorita.exe`) es el lanzador; el binario real es `<Juego>/<Juego>/Binaries/Win64/<Juego>-Win64-Shipping.exe`. Incluye ambos en `requiredFiles`.
+- **Unity** (Pummel, Paint): `<Juego>.exe` + `UnityPlayer.dll` + `GameAssembly.dll` (Paint usa IL2CPP).
+
 ### 4. Inspeccionar y limpiar antes de hashear
 
 El ZIP de AnkerGames puede usar **Zstandard** en algunas entradas: `System.IO.Compression` falla con "método de compresión no compatible". Usa 7-Zip (`C:\Program Files\7-Zip\7z.exe`) para extraer.
+
+Comprueba el magic antes de elegir herramienta: `50 4B 03 04` = ZIP; `52 61 72 21` = RAR (Grocery Store Simulator). 7-Zip cubre ambos.
 
 Extrae a `D:\CocoWork\<id>\source` y revisa:
 
@@ -98,6 +110,8 @@ python -I launcher2/desktop/scripts/New-CocoMultipartArchives.py 'D:\CocoWork\ga
 
 Gang Beasts: `1,077,893,081` bytes en 82,6 s (una parte). Si el juego supera 1,8 GB por archivo, añade `--split-large`.
 
+`--split-large` parte un archivo individual (p. ej. `Simulatorita-Windows.ucas`, 6,18 GB) en `.part1..partN` y el instalador nativo lo reconstruye. Sin ese flag el empaquetador aborta con `ValueError: File exceeds part budget: <ruta>`. Verifica tras la instalación que el archivo reconstruido tiene el tamaño/SHA del inventario y que no quedan `.part*`.
+
 ### 6. Release, draft y catálogo
 
 ```powershell
@@ -118,7 +132,7 @@ python -I launcher2/desktop/scripts/New-CocoMultipartCandidate.py --inventory 'D
 
 ### 7. Online-Fix, medios y sync
 
-- `online-fix.json`: añade `games.<id>` y `apps.<RealAppId>` con `realAppId`, `hash0` (el `0=` del INI) y `hash1337: ""`. **`hash1337: ""` no borra un 1337 existente**; el 1337 se elimina del INI en el paso 4.
+- `online-fix.json`: añade `games.<id>` y `apps.<RealAppId>` con `realAppId`, `hash0` (el `0=` del INI) y `hash1337: ""`. **`hash1337: ""` no borra un 1337 existente**; el 1337 se elimina del INI en el paso 4. No agregues `hash1` al JSON: `game_prepare.rs::with_hashes` conserva la línea `1=` que ya trae el INI (Paint la necesita).
 - Portada: cápsula oficial 616×353 (`.../store_item_assets/steam/apps/<appid>/capsule_616x353.jpg`) a `assets/experiences/<id>.jpg`.
 - Preview: `game-hover-previews.json` con `url`, `steamAppId`, `trailerId`, `bytes`. Los juegos antiguos usan `https://cdn.akamai.steamstatic.com/steam/apps/<trailerId>/microtrailer.webm`.
 - Capturas: `node scripts/sync-steam-screenshots.mjs` (12 por juego) y `node scripts/sync-catalog.mjs`.
@@ -136,7 +150,9 @@ $env:COCO_PRIME_ROOT='D:\CocoWork\<id>\install-test'; $env:COCO_PRIME_EXE='<Jueg
 cargo test --lib real_first_run -- --ignored --nocapture
 ```
 
-Esperado: `conclusive true`, `hashes changed: true`, `credits box on screen afterwards: false`.
+Esperado: `conclusive true` y `credits box on screen afterwards: false`. `hashes changed: false` es lo normal cuando el `hash0` del INI ya es el de esta PC (Pummel, Grocery y Paint); `true` solo indica que el loader reescribió hashes. Cualquiera de los dos es aceptable si `conclusive` es `true`.
+
+El dry-run del canal lista **todos** los juegos posteriores al último Setup, no solo el nuevo (el canal es un snapshot completo). Es esperado que vuelvan a aparecer Pummel/Grocery en la secuencia siguiente.
 
 ### 9. Publicar el canal
 
@@ -154,6 +170,9 @@ No requiere Git limpio ni Setup. El juego aparece en los Coco abiertos en minuto
 |---|---|---|---|---|---|---|---|---|
 | Buckshot Roulette | `/game/buckshot-roulette` | 775 | 2835570 | 2.2.0.6 | 1,006,059,895 B | `27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d` | `buckshot-roulette-2026` | En Setup 0.6.53 (baseline) |
 | Gang Beasts | `/game/gang-beasts` | 198 | 285900 | 1.28 | 1,077,893,081 B | `50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45` | `gang-beasts-1.28` | Canal firmado secuencia 2 |
+| Pummel Party | `/game/pummel-party` | 166 | 880940 | 1.14.1 | 1,592,306,707 B (2 partes) | `e39ac7468651b013a6d8bf418d43b107b70f661f5c537897b3e9e8779adb533b` (part01) | `pummel-party-1.14.1` | Canal firmado secuencia 5 |
+| Grocery Store Simulator | `/game/grocery-store-simulator` | 92 | 2961880 | 1.2.4 | 6,623,041,166 B (5 partes) | `b95f6408f0b250922e651fee518be82036ccef4ea02987c110abc93a9ac0aa51` (part01) | `grocery-store-simulator-1.2.4` | Canal firmado secuencia 5 |
+| Paint the Town Red | `/game/paint-the-town-red` | 716 | 337320 | 1.3.4 | 2,527,207,121 B (2 partes) | `89522e27e85cc41d29757a587b29b97918ecacb67893679bcab5789d47f53be6` (part01) | `paint-the-town-red-1.3.4` | Canal firmado secuencia 5 |
 
 Gang Beasts: ZIP original `1,085,266,103` B SHA-256 `da78bdf52537a921657cb47521cc531bc13f1563eb383f5d10adcd27b3b4d035`; INI preparado `e07c10f2d451a2da42b522c1ee9ed0d4c0c27f5366d61399d6e681e15ee4411c` (623 B); `hash0` `28e860b2...`; preview `257075225` (2,199,673 B); 12 capturas; excluidos `.url`, `Read Me.txt`, `Run Me!.bat`, `Saves/0/Input.txt`.
 

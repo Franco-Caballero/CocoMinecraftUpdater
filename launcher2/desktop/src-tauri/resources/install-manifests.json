@@ -1347,5 +1347,178 @@
       }
     ],
     "extraFiles": []
+  },
+  {
+    "id": "pummel-party",
+    "instanceId": "pummel-party",
+    "workflow": "coco-standalone",
+    "version": "1.14.1",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/pummel-party-1.14.1/pummel-party-1.14.1-part01.zip",
+        "sha256": "e39ac7468651b013a6d8bf418d43b107b70f661f5c537897b3e9e8779adb533b",
+        "size": 1109221476
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/pummel-party-1.14.1/pummel-party-1.14.1-part02.zip",
+        "sha256": "2edd98b31f1db947d36654b437ede800f125b0f2fa494583270ff24372338714",
+        "size": 483085231
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Pummel Party/OnlineFix.ini",
+        "sha256": "cf3e25d541d5b2d68583cc49eb68ece69f3d37a1fe7ca1be6a6ed2d314d31645",
+        "size": 526
+      },
+      {
+        "path": "Pummel Party/OnlineFix64.dll",
+        "sha256": "ebe60e58f43a8a034a392eed82495d4a278557a16ec40ba814eba068aed91b7b",
+        "size": 11200512
+      },
+      {
+        "path": "Pummel Party/PummelParty.exe",
+        "sha256": "80079b10fdca54e06a2d49ddaf369b5ecc11fe64eb4f727eb7ecd033dcd55767",
+        "size": 653824
+      },
+      {
+        "path": "Pummel Party/PummelParty_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "0f16cef53bba8ce21056ecb49aa254eb407759a7ab1095452730695d7d8199a4",
+        "size": 290536
+      },
+      {
+        "path": "Pummel Party/UnityPlayer.dll",
+        "sha256": "fae6c04f23916263879196211ed241aee5f1f1b53ba4566bb99d4df8526cc105",
+        "size": 29438200
+      },
+      {
+        "path": "Pummel Party/winmm.dll",
+        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+        "size": 524288
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "grocery-store-simulator",
+    "instanceId": "grocery-store-simulator",
+    "workflow": "coco-standalone",
+    "version": "1.2.4",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part01.zip",
+        "sha256": "b95f6408f0b250922e651fee518be82036ccef4ea02987c110abc93a9ac0aa51",
+        "size": 293307938
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part02.zip",
+        "sha256": "602d9da15c29431b9e05614bd93b39524ebecea13a8ee636765e773a480dbd66",
+        "size": 1779783449
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part03.zip",
+        "sha256": "5fcfff029201ae3c50a7678c15c633b972a03eb5dfdcec8d004ef025f5326440",
+        "size": 1793417098
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part04.zip",
+        "sha256": "5c990b2e704c4f4370fe787384b69ec79dfee65d8b1cfa0f891b31f83baa5c08",
+        "size": 1794303310
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part05.zip",
+        "sha256": "3f4654b5b935cbf0f4a22aa1cb0e86d7087bcf9ac82bd8fe6100b801deb3512e",
+        "size": 962229371
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Grocery Store Simulator/Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/steam_api64.dll",
+        "sha256": "90c01524af6e929aafcc4c2fc87095efd0a2565ee2a3881eb01b2ac6e46a367e",
+        "size": 311672
+      },
+      {
+        "path": "Grocery Store Simulator/Simulatorita.exe",
+        "sha256": "f19aea0e54df979d4d70d7b4bfd8535e23c18d278b799e279724d12758a0be81",
+        "size": 229888
+      },
+      {
+        "path": "Grocery Store Simulator/Simulatorita/Binaries/Win64/OnlineFix.ini",
+        "sha256": "0ee807d0c2742977c64829113832a3f87129538493fa4377fb7d369643b05b4b",
+        "size": 431
+      },
+      {
+        "path": "Grocery Store Simulator/Simulatorita/Binaries/Win64/OnlineFix64.dll",
+        "sha256": "14232bd5332d950291bc419d3dba5d8794079adfe108a3fd0688af8a01ca5e6b",
+        "size": 11979776
+      },
+      {
+        "path": "Grocery Store Simulator/Simulatorita/Binaries/Win64/Simulatorita-Win64-Shipping.exe",
+        "sha256": "da3869e21d89a17f1e8dd3c4f6955d98462238297ed2f1e6ccf2f060a5a9e50e",
+        "size": 116019712
+      },
+      {
+        "path": "Grocery Store Simulator/Simulatorita/Binaries/Win64/winmm.dll",
+        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+        "size": 524288
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "paint-the-town-red",
+    "instanceId": "paint-the-town-red",
+    "workflow": "coco-standalone",
+    "version": "1.3.4",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/paint-the-town-red-1.3.4/paint-the-town-red-1.3.4-part01.zip",
+        "sha256": "89522e27e85cc41d29757a587b29b97918ecacb67893679bcab5789d47f53be6",
+        "size": 1480958289
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/paint-the-town-red-1.3.4/paint-the-town-red-1.3.4-part02.zip",
+        "sha256": "c3b88e70cea7e4a4939af1184bb13e74fc074b5a653bca628179e1fcb3c160f9",
+        "size": 1046248832
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Paint the Town Red/GameAssembly.dll",
+        "sha256": "4fda649bd600cc6e9a66c5acaee07006f9cad0c6081a28440a5f64e9e4cea921",
+        "size": 49043456
+      },
+      {
+        "path": "Paint the Town Red/OnlineFix.ini",
+        "sha256": "03ce8b06841e3ac22423078d07ae18d7d4ba69e9db0687a50d7c40841d5ebebc",
+        "size": 1465
+      },
+      {
+        "path": "Paint the Town Red/OnlineFix64.dll",
+        "sha256": "f75c51aef1e4f154278ffffa29664a263f758d9a4563f2ac2da7b18757e1dfdb",
+        "size": 4519936
+      },
+      {
+        "path": "Paint the Town Red/PaintTheTownRed.exe",
+        "sha256": "d2233beea6bc9ea0ce0b2d356be6851ff4599b8565323a584c01e6940c857dbb",
+        "size": 860952
+      },
+      {
+        "path": "Paint the Town Red/PaintTheTownRed_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "0f16cef53bba8ce21056ecb49aa254eb407759a7ab1095452730695d7d8199a4",
+        "size": 290536
+      },
+      {
+        "path": "Paint the Town Red/UnityPlayer.dll",
+        "sha256": "72c333160ce91b0b3cc4b59cf0fe1311870deac585c7ddd2f502895ad3791d16",
+        "size": 28339736
+      },
+      {
+        "path": "Paint the Town Red/winmm.dll",
+        "sha256": "54a6ece54641ee6e437caa351e493ddf4435f3e23e3d4ab4655c35f57b94fc59",
+        "size": 263280
+      }
+    ],
+    "extraFiles": []
   }
 ]
