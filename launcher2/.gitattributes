@@ -1,0 +1,7 @@
+# Coco 2 sources are LF: several contract tests read them byte for byte.
+* text=auto eol=lf
+*.mp4 binary
+*.webp binary
+*.ico binary
+*.png binary
+*.jpg binary

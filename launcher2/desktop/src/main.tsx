@@ -1,5 +1,6 @@
 import React, { useDeferredValue, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { flushSync } from 'react-dom';
 import { convertFileSrc, isTauri } from '@tauri-apps/api/core';
 import { invoke, captureUnexpectedErrors, copyDiagnosticReport } from './diagnostics';
 import { listen } from '@tauri-apps/api/event';
@@ -13,6 +14,8 @@ import './shell.css';
 import './experience-v2.css';
 import './discovery-v9.css';
 import './coco-ui.css';
+import './install-cue.css';
+import './catalog-arrival.css';
 import './cinema.css';
 import hoverPreviews from './game-hover-previews.json';
 import screenshotList from './game-screenshots.json';
@@ -105,8 +108,9 @@ const libraryFilters:{id:LibraryFilter;label:string}[]=[
   {id:'all',label:'Todo'},{id:'games',label:'Juegos'},{id:'movies',label:'Películas'},
   {id:'installed',label:'Instalados'},{id:'favorites',label:'Favoritos'},
 ];
-const CATALOG_SYNC_INTERVAL_MS=15*60_000;
-const CATALOG_SYNC_FOCUS_GAP_MS=5*60_000;
+// Only a tiny head file is read each time; the signed catalog downloads when it changes.
+const CATALOG_SYNC_INTERVAL_MS=3*60_000;
+const CATALOG_SYNC_FOCUS_GAP_MS=60_000;
 const ARRIVAL_NOTICE_MS=9000;
 const catalogSnapshotKey='coco2-catalog-snapshot';
 const seenCatalogKey='coco2-seen-catalog';
@@ -149,9 +153,24 @@ const category = (entry: Experience): Exclude<Category,'all'> => entry.workflow=
 const meta = (entry:Experience) => category(entry)==='minecraft' ? ['Minecraft',entry.minecraftVersion].filter(Boolean).join(' ') : catLabels[category(entry)];
 
 // Curated Steam promotional microtrailers, never video URLs from untrusted imports.
-const gameHoverPreviews:Record<string,{url:string;bytes:number}> = hoverPreviews;
-const gameScreenshots:Record<string,string[]> = screenshotList;
+const gameHoverPreviews:Record<string,{url:string;bytes:number}> = {...hoverPreviews};
+const gameScreenshots:Record<string,string[]> = {...screenshotList};
 const hoverVideoPool=new HoverVideoPool(gameHoverPreviews);
+type CatalogExtras=Record<string,{preview?:{url:string;bytes?:number};screenshots?:string[]}>;
+/** A game that arrived through the signed catalog brings its hover clip and gallery along. */
+function mergeCatalogExtras(extras:CatalogExtras):string[]{
+  const changed:string[]=[];
+  for(const [id,extra] of Object.entries(extras||{})){
+    if(extra.preview?.url&&gameHoverPreviews[id]?.url!==extra.preview.url){
+      gameHoverPreviews[id]={url:extra.preview.url,bytes:extra.preview.bytes??0};changed.push(id);
+    }
+    if(extra.screenshots?.length&&JSON.stringify(gameScreenshots[id])!==JSON.stringify(extra.screenshots)){
+      gameScreenshots[id]=[...extra.screenshots];if(!changed.includes(id))changed.push(id);
+    }
+  }
+  if(changed.length)hoverVideoPool.addSources(changed);
+  return changed;
+}
 /** Clips already on disk; any other one the player reaches for jumps the download line. */
 const previewsOnDisk=new Set<string>();
 function prioritizePreview(id:string){
@@ -236,6 +255,19 @@ function App(){
   const lastCatalogSync=React.useRef(0);
   const [seenCatalog,setSeenCatalog]=useState(restoreSeenCatalog);
   const [arrival,setArrival]=useState<string|null>(null);
+  const [extrasEpoch,setExtrasEpoch]=useState(0);
+  // While a game's arrival animates, the grid's own glide stays still.
+  const arrivalTransition=React.useRef(false);
+  const loadCatalogExtras=async()=>{
+    if(!isTauri())return;
+    try{
+      const changed=mergeCatalogExtras(await invoke<CatalogExtras>('get_catalog_extras'));
+      if(changed.length){
+        setExtrasEpoch(epoch=>epoch+1);
+        void invoke('start_preview_cache',{priority:changed}).catch(()=>{});
+      }
+    }catch(error){console.warn('Catalog extras unavailable:',error);}
+  };
   const [cachedPreviews,setCachedPreviews]=useState<Map<string,string>>(new Map());
   const [filter,setFilter]=useState<LibraryFilter>('all');
   const [sort,setSort]=useState<LibrarySort>('recent');
@@ -244,6 +276,8 @@ function App(){
   const [localInstances,setLocalInstances]=useState<Map<string,LocalInstance>>(new Map());
   const [catalogSources,setCatalogSources]=useState<Map<string,CatalogProvenance>>(new Map());
   const [view,setView]=useState<View>('library');
+  const viewLive=React.useRef(view);
+  viewLive.current=view;
   const [search,setSearch]=useState('');
   const [searchOpen,setSearchOpen]=useState(false);
   const [searchActiveIndex,setSearchActiveIndex]=useState(-1);
@@ -253,6 +287,14 @@ function App(){
   const [activity,setActivity]=useState(readActivity);
   const [selected,setSelected]=useState<Experience|null>(null);
   const detailFocusReturn=React.useRef<HTMLElement|null>(null);
+  const selectedRef=React.useRef<Experience|null>(null);
+  selectedRef.current=selected;
+  // Installing from the sheet folds it away and follows the install from the library.
+  const [detailClosing,setDetailClosing]=useState(false);
+  // The game just installed: the side panel keeps it ready to play until played or dismissed,
+  // and its card stands out in the library until the player looks elsewhere.
+  const [installedCue,setInstalledCue]=useState<{id:string;path:string}|null>(null);
+  const [spotlightId,setSpotlightId]=useState<string|null>(null);
   const openDetails=(entry:Experience)=>{
     prioritizePreview(entry.id);
     if(Object.hasOwn(gameScreenshots,entry.id))warmScreenshots(gameScreenshots[entry.id],true);
@@ -534,15 +576,26 @@ function App(){
         saveCatalogSnapshot(result);
         const known=new Set(itemsLive.current.map(entry=>entry.id));
         const added=result.filter(entry=>!known.has(entry.id));
-        if(added.length)setArrival(added.length===1?added[0].name:`${added.length} juegos nuevos`);
-        setItems([...result]);
-        // Old disk/provenance badges cannot be trusted across a new revision.
-        // Their new read-only states arrive independently after first paint.
-        setLocalInstances(new Map());
-        setCatalogSources(new Map());
-        setSelected(previous=>previous?nextById.get(previous.id)||null:null);
-        setInstallPlan(null);setUpgradePlan(null);setUpgradeOutcome(null);
-        setCatalogEpoch(previous=>previous+1);
+        const commit=()=>{
+          if(added.length)setArrival(added.length===1?added[0].name:`${added.length} juegos nuevos`);
+          setItems([...result]);
+          // Old disk/provenance badges cannot be trusted across a new revision.
+          // Their new read-only states arrive independently after first paint.
+          setLocalInstances(new Map());
+          setCatalogSources(new Map());
+          setSelected(previous=>previous?nextById.get(previous.id)||null:null);
+          setInstallPlan(null);setUpgradePlan(null);setUpgradeOutcome(null);
+          setCatalogEpoch(previous=>previous+1);
+        };
+        // A game reaching an open library takes the top spot in one continuous motion: the
+        // previous newest card shrinks into its place in the grid while the rest make room.
+        if(added.length&&motion&&viewLive.current==='library'&&!document.hidden&&typeof document.startViewTransition==='function'){
+          arrivalTransition.current=true;
+          const transition=document.startViewTransition(()=>{flushSync(commit);});
+          void transition.finished.catch(()=>{}).finally(()=>{arrivalTransition.current=false;});
+          return transition.updateCallbackDone.catch(()=>{});
+        }
+        commit();
       },
       async isCurrent=>{
         const [observed,sources]=await Promise.allSettled([
@@ -593,6 +646,7 @@ function App(){
               .then(value=>{if(active){setIdentity(value);setIdentityName(value.username||'');}}),
             invoke<boolean>('host_studio_available')
               .then(value=>{if(active)setHostStudioAvailable(value);}),
+            loadCatalogExtras(),
           ]).then(results=>{
             results.forEach((entry,index)=>{
               if(entry.status==='rejected'&&active)
@@ -764,7 +818,7 @@ function App(){
       const result=await invoke<CatalogSyncResult>('sync_catalog_channel');
       // Do not enumerate game folders/recalculate every card when no accepted
       // channel revision has changed.
-      if(result.status==='updated')await refreshNativeCatalog();
+      if(result.status==='updated'){await loadCatalogExtras();await refreshNativeCatalog();}
       setCatalogSync(result.status==='updated'?'updated':result.status==='unchanged'?'current':'local');
     }catch(error){
       setCatalogSync('local');
@@ -1426,8 +1480,12 @@ function App(){
     nativeProgressSampler.current.reset();
     nativeTransferRateMeter.current.reset();setInstallTransferRate(null);
     setInstalling(entry.id);setInstallProgress(null);setOperationMessage('');
+    setInstalledCue(null);setSpotlightId(null);
     try{
       const result=await invoke<InstallOutcome>('install_standalone',{id:entry.id});
+      // The sheet was folded away to follow the install: anything but success or a
+      // cancellation the player asked for brings it back, so the explanation is seen.
+      if(result.status!=='installed'&&result.status!=='cancelled'&&!selectedRef.current)openDetails(entry);
       setOperationMessage(result.message);
       if(result.status==='installed'){
         rememberActivity('installed',entry.id);
@@ -1441,10 +1499,28 @@ function App(){
           async()=>setInstallPlan(await invoke<InstallPlan>('plan_standalone_install',{id:entry.id})),
         ]);
         setOperationMessage(confirmedOperationMessage(result.message,refresh.failed));
+        setInstalledCue({id:entry.id,path:result.instancePath});
+        setSpotlightId(entry.id);
       }
-    }catch(error){explainFailedNativeWrite(error,'install',ticket,entry);}
+    }catch(error){
+      if(!selectedRef.current)openDetails(entry);
+      explainFailedNativeWrite(error,'install',ticket,entry);
+    }
     finally{nativeOperationGate.current.finish(ticket);setInstalling(null);setInstallProgress(null);}
   };
+  // Installing from the sheet folds it away once the install is really under way.
+  const foldOnInstall=React.useRef<{id:string;at:number}|null>(null);
+  useEffect(()=>{
+    const request=foldOnInstall.current;
+    foldOnInstall.current=null;
+    if(!request||installing!==request.id||Date.now()-request.at>2000||selectedRef.current?.id!==request.id)return;
+    if(!motion){closeDetails();return;}
+    setDetailClosing(true);
+    const timer=window.setTimeout(()=>{if(selectedRef.current?.id===request.id)closeDetails();},300);
+    return()=>window.clearTimeout(timer);
+  },[installing]);
+  useEffect(()=>{if(!selected)setDetailClosing(false);},[selected]);
+  const dismissInstalledCue=()=>{setInstalledCue(null);setSpotlightId(null);};
   const cancelInstall=()=>{if(installing&&isTauri())void invoke('cancel_standalone_install',{id:installing}).catch(console.error);};
   const repairThenLaunch=async(entry:Experience)=>{
     const ticket=nativeOperationGate.current.begin(entry.id,'commit-repair');
@@ -1706,7 +1782,8 @@ function App(){
     const isNew=unseenIds.has(entry.id);
     const running=observedGameIds.includes(entry.id)||(runtime?.state==='running'&&runtime.id===entry.id);
     const standing=running?'Jugando':installed?'Instalado':soon?'Desactivado':'';
-    return <article className={`experience-card ${latestCard?'coco-latest-card':''} ${soon?'is-soon':''} ${installed?'is-installed':''} ${isNew?'is-new':''}`} data-preview-id={entry.id} data-flip-id={latestCard?undefined:entry.id} key={entry.id} style={{'--index':Math.min(index,12)} as React.CSSProperties} onClick={event=>{
+    const spotlit=spotlightId===entry.id&&installed;
+    return <article className={`experience-card ${latestCard?'coco-latest-card':''} ${soon?'is-soon':''} ${installed?'is-installed':''} ${isNew?'is-new':''} ${spotlit?'is-spotlit':''} ${latestCard&&arrival===entry.name?'is-arriving':''}`} data-preview-id={entry.id} data-flip-id={latestCard?undefined:entry.id} key={entry.id} style={{'--index':Math.min(index,12),viewTransitionName:`coco-card-${entry.id}`,viewTransitionClass:latestCard?'coco-card coco-card-latest':'coco-card'} as React.CSSProperties} onClick={event=>{
       // The image, play and favorite controls already handle their own clicks.
       if(event.target instanceof Element&&event.target.closest('button,a,input,select,textarea,[role="button"],[contenteditable="true"]'))return;
       cardActions.current.openDetails(entry);
@@ -1716,6 +1793,7 @@ function App(){
       // preview; mouse-click focus alone must not keep playback running.
       if(!event.currentTarget.querySelector('.card-image-button')?.matches(':focus-visible'))previewVideoInCard(event.currentTarget,false);
     }}>
+      {spotlit&&<i className="card-spotlight-halo" aria-hidden="true"/>}
       <div className="card-surface">
       <button className="card-image-button" onFocus={event=>{if(motion)previewVideoInCard(event.currentTarget.closest('.experience-card') as HTMLElement,true);}} onBlur={event=>{
         const article=event.currentTarget.closest('.experience-card') as HTMLElement;
@@ -1727,17 +1805,22 @@ function App(){
         {latestCard&&<p className="coco-latest-copy">{entry.description}</p>}
       </div>
       </div>
-      <div className="card-float"><div className="card-actions">
-        {installed&&!soon&&!running&&quickPlayAvailable&&<button className="card-play" aria-label={`Jugar ${entry.name}`} onClick={()=>void cardActions.current.launchNative(entry)}><Play size={13} fill="currentColor"/> Jugar</button>}
+      <div className="card-float">
+        {spotlit&&<div className="card-spotlight">
+          <span className="card-spotlight-eyebrow"><Check size={12} strokeWidth={3}/> Recién instalado</span>
+          {!running&&quickPlayAvailable&&<button className="card-spotlight-play" aria-label={`Jugar ${entry.name}`} onClick={()=>void cardActions.current.launchNative(entry)}><Play size={20} fill="currentColor"/><span>Jugar</span></button>}
+        </div>}
+        <div className="card-actions">
+        {installed&&!soon&&!running&&quickPlayAvailable&&!spotlit&&<button className="card-play" aria-label={`Jugar ${entry.name}`} onClick={()=>void cardActions.current.launchNative(entry)}><Play size={13} fill="currentColor"/> Jugar</button>}
         <button aria-label={favorites.has(entry.id)?'Quitar favorito':'Añadir favorito'} aria-pressed={favorites.has(entry.id)} className={`favorite-button ${favorites.has(entry.id)?'active':''}`} onClick={()=>cardActions.current.toggleFavorite(entry.id)}><Heart size={14} fill={favorites.has(entry.id)?'currentColor':'none'}/></button>
       </div></div>
     </article>;
   };
   const visibleEntries=gridEntries.slice(0,visibleCount);
   const gridNodes=useMemo(()=>visibleEntries.map((entry,index)=>card(entry,index)),
-    [visibleEntries.map(entry=>`${entry.id}:${entry.image}:${entry.name}`).join('|'),installedIds,unseenIds,favorites,observedGameIds,runtime?.state,runtime?.id,quickPlayAvailable,catalogSources,motion]);
+    [visibleEntries.map(entry=>`${entry.id}:${entry.image}:${entry.name}`).join('|'),installedIds,unseenIds,favorites,observedGameIds,runtime?.state,runtime?.id,quickPlayAvailable,catalogSources,motion,spotlightId,extrasEpoch]);
   const latestNode=useMemo(()=>latest?card(latest,0,true):null,
-    [latest,installedIds,unseenIds,favorites,observedGameIds,runtime?.state,runtime?.id,quickPlayAvailable,catalogSources,motion]);
+    [latest,installedIds,unseenIds,favorites,observedGameIds,runtime?.state,runtime?.id,quickPlayAvailable,catalogSources,motion,spotlightId,extrasEpoch,arrival]);
   const stageRef=React.useRef<HTMLElement>(null);
   const mainRef=React.useRef<HTMLElement>(null);
   const filtersRef=React.useRef<HTMLDivElement>(null);
@@ -1762,7 +1845,45 @@ function App(){
     return()=>window.removeEventListener('resize',place);
   },[filter,view,installedIds.size,favorites.size]);
   const gridRef=React.useRef<HTMLDivElement>(null);
-  useFlipGrid(gridRef,visibleEntries.map(entry=>entry.id).join('|'),motion&&view==='library');
+  useFlipGrid(gridRef,visibleEntries.map(entry=>entry.id).join('|'),motion&&view==='library',()=>arrivalTransition.current);
+
+  // The just-installed cue ends once that game is opened or is no longer installed.
+  useEffect(()=>{
+    if(!installedCue)return;
+    const opened=observedGameIds.includes(installedCue.id)||(runtime?.id===installedCue.id&&(runtime.state==='verifying'||runtime.state==='running'));
+    if(opened||!installedIds.has(installedCue.id))dismissInstalledCue();
+  },[installedCue,observedGameIds,runtime?.id,runtime?.state,installedIds]);
+  // Brings the lifted card into view, loading more of the grid first if it is further down.
+  useEffect(()=>{
+    if(!spotlightId||view!=='library')return;
+    const index=gridEntries.findIndex(entry=>entry.id===spotlightId);
+    if(index>=visibleCount){
+      setVisibleCount(current=>Math.max(current,Math.min(gridEntries.length,Math.ceil((index+1)/EXPERIENCE_PAGE_SIZE)*EXPERIENCE_PAGE_SIZE)));
+      return;
+    }
+    // Waits for the sheet to finish folding so the glide is not hidden behind it.
+    const timer=window.setTimeout(()=>{
+      const card=document.querySelector<HTMLElement>('.experience-card.is-spotlit');
+      if(!card)return;
+      const box=card.getBoundingClientRect();
+      const top=(document.querySelector('.coco-bar')?.getBoundingClientRect().bottom??0)+12;
+      if(box.top<top||box.bottom>window.innerHeight-12)card.scrollIntoView({behavior:motion?'smooth':'auto',block:'center'});
+    },selected?0:120);
+    return()=>window.clearTimeout(timer);
+  },[spotlightId,view,visibleCount]);
+  // The lift settles back as soon as the player clicks anywhere else or presses Escape.
+  useEffect(()=>{
+    if(!spotlightId)return;
+    const down=(event:PointerEvent)=>{
+      const target=event.target instanceof Element?event.target:null;
+      if(target?.closest('.experience-card.is-spotlit,.coco-status'))return;
+      setSpotlightId(null);
+    };
+    const key=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!selectedRef.current)setSpotlightId(null);};
+    window.addEventListener('pointerdown',down,true);
+    window.addEventListener('keydown',key);
+    return()=>{window.removeEventListener('pointerdown',down,true);window.removeEventListener('keydown',key);};
+  },[spotlightId]);
 
   const entryName=(id:string|null|undefined)=>items.find(x=>x.id===id)?.name||'el juego';
   const operationId=installing||upgrading||upgradeRecovering||repairRecovering||moving||autoRepairing;
@@ -1791,7 +1912,9 @@ function App(){
     authorizing,
     startingSteam,
     firstGameRun,
+    installed:installedCue?{name:entryName(installedCue.id)}:null,
   });
+  const cueEntry=installedCue&&launcherStatus.tone==='installed'?items.find(x=>x.id===installedCue.id)??null:null;
   const cancelCurrentOperation=
     installing?cancelInstall:
     upgrading||moving?()=>{void invoke('cancel_standalone_install',{id:upgrading||moving}).catch(console.error);}:
@@ -1808,10 +1931,18 @@ function App(){
       <div className="coco-reyna-drift"><img className="coco-reyna" src="/reyna-2.webp" alt="" decoding="async"/></div>
       <div className="coco-edition" aria-hidden="true"><i/><span>Launcher</span><b>2</b></div>
       <div className="coco-status" role="status" aria-live="polite">
-        <div className="coco-status-line"><span className="coco-status-dot" aria-hidden="true"/><div className="coco-status-copy" key={launcherStatus.label+(launcherStatus.subject||'')}><div className="coco-status-head"><strong>{launcherStatus.label}</strong>{launcherStatus.percent!==null&&<span className="coco-status-percent">{launcherStatus.percent}<i>%</i></span>}</div>{launcherStatus.subject&&<b className="coco-status-subject" title={launcherStatus.subject}>{launcherStatus.subject}</b>}{launcherStatus.detail&&<small>{launcherStatus.detail}</small>}</div></div>
-        {launcherStatus.percent!==null?<div className="coco-status-bar"><span style={{width:`${launcherStatus.percent}%`}}/></div>:launcherStatus.tone==='busy'&&<div className="coco-status-bar is-waiting"><span/></div>}
+        <div className="coco-status-line"><span className="coco-status-dot" aria-hidden="true"/><div className="coco-status-copy" key={launcherStatus.label+(launcherStatus.subject||'')}><div className="coco-status-head"><strong>{launcherStatus.label}</strong>{cueEntry?<span className="coco-status-check" aria-hidden="true"><Check size={15} strokeWidth={3.2}/></span>:launcherStatus.percent!==null&&<span className="coco-status-percent">{launcherStatus.percent}<i>%</i></span>}</div>{launcherStatus.subject&&<b className="coco-status-subject" title={launcherStatus.subject}>{launcherStatus.subject}</b>}{launcherStatus.detail&&<small>{launcherStatus.detail}</small>}</div></div>
+        {cueEntry&&<i className="coco-status-burst" key={cueEntry.id} aria-hidden="true"/>}
+        {launcherStatus.percent!==null?<div className={`coco-status-bar${cueEntry?' is-complete':''}`}><span style={{width:`${launcherStatus.percent}%`}}/></div>:launcherStatus.tone==='busy'&&<div className="coco-status-bar is-waiting"><span/></div>}
         {launcherStatus.metrics!==undefined&&<div className="coco-status-metrics">{launcherStatus.metrics||' '}</div>}
-        {operationId&&<NativeStageRail phase={installProgress?.phase}/>}
+        {operationId?<NativeStageRail phase={installProgress?.phase}/>:cueEntry&&<NativeStageRail phase="completed"/>}
+        {cueEntry&&installedCue&&<div className="coco-status-ready" key={cueEntry.id}>
+          <button className="coco-status-path" title={`Abrir ${installedCue.path}`} onClick={()=>void invoke('open_game_folder',{id:cueEntry.id}).catch(console.warn)}><FolderOpen size={13}/><span><small>Instalado en</small><code>{shortPath(installedCue.path,34)}</code></span><ArrowUpRight size={12}/></button>
+          <div className="coco-status-ready-actions">
+            <button className="coco-status-play" disabled={!quickPlayAvailable} onClick={()=>void launchNative(cueEntry)}><Play size={16} fill="currentColor"/><span>Jugar ahora</span></button>
+            <button className="coco-status-dismiss" aria-label="Ocultar aviso de instalación" title="Ocultar" onClick={dismissInstalledCue}><X size={15}/></button>
+          </div>
+        </div>}
         {cancelCurrentOperation&&<button className="coco-status-action" onClick={cancelCurrentOperation}>{mediaCancelPending?'Cancelando…':'Cancelar'}</button>}
         {appUpdate.stage==='deferred'&&<button className="coco-status-action is-primary" disabled={nativeBusy||hostStudioOpen} onClick={()=>void applyAppUpdate()}>Actualizar Coco</button>}
       </div>
@@ -1868,11 +1999,11 @@ function App(){
       </main>
     </div>
 
-    {selected&&<><div className="overlay" onClick={closeDetails}/><aside className="detail-drawer" role="dialog" aria-modal="true" aria-label={`Detalles de ${selected.name}`} tabIndex={-1} onKeyDown={onDetailKey}>
+    {selected&&<><div className={`overlay${detailClosing?' is-closing':''}`} onClick={closeDetails}/><aside className={`detail-drawer${detailClosing?' is-closing':''}`} role="dialog" aria-modal="true" aria-label={`Detalles de ${selected.name}`} tabIndex={-1} onKeyDown={onDetailKey}>
       <div className="drawer-hero"><img src={selected.image} alt=""/>{motion&&selected.workflow==='coco-standalone'&&Object.hasOwn(gameHoverPreviews,selected.id)&&<video key={selected.id} className="drawer-hero-video" src={cachedPreviews.get(selected.id)||gameHoverPreviews[selected.id].url} preload="auto" muted loop playsInline aria-hidden="true" tabIndex={-1} onCanPlay={event=>void event.currentTarget.play().catch(()=>{})} onPlaying={event=>event.currentTarget.classList.add('is-playing')}/>}<button autoFocus className="drawer-close" aria-label="Cerrar" onClick={closeDetails}><X size={18}/></button></div>
       <div className="drawer-copy"><h2>{selected.name}</h2><p>{selected.description}</p><div className="drawer-chips">{catalogSources.get(selected.id)?.source==='local'&&<span className="catalog-origin-local" title="Paquete aceptado manualmente en este equipo; no equivale a publicación oficial">Importado en este PC</span>}</div>
         <div className="drawer-actions">
-          {primaryGame&&<button className={`primary-button${primaryGame.pending?' is-pending':''}`} aria-busy={primaryGame.pending||undefined} disabled={primaryGame.kind==='disabled'} title={primaryGame.reason} aria-describedby={primaryGame.kind==='disabled'?'gamePrimaryHint':undefined} onClick={()=>primaryGame.kind==='install'?void installNative(selected):primaryGame.kind==='launch'?void launchNative(selected):undefined}>{installing===selected.id||moving===selected.id||primaryGame.pending?<LoaderCircle className="spin" size={16}/>:primaryGame.kind==='install'?<Download size={16}/>:primaryGame.kind==='launch'?<Play size={16}/>:<CircleAlert size={16}/>} {installing===selected.id?'Instalando…':moving===selected.id?'Moviendo…':primaryGame.label}{primaryGame.kind==='install'&&installing!==selected.id&&installPlan?.id===selected.id&&installPlan.status==='ready'&&<span className="primary-size">{formatBytes(installPlan.totalDownloadBytes)}</span>}</button>}
+          {primaryGame&&<button className={`primary-button${primaryGame.pending?' is-pending':''}`} aria-busy={primaryGame.pending||undefined} disabled={primaryGame.kind==='disabled'} title={primaryGame.reason} aria-describedby={primaryGame.kind==='disabled'?'gamePrimaryHint':undefined} onClick={()=>{if(primaryGame.kind==='install')foldOnInstall.current={id:selected.id,at:Date.now()};return primaryGame.kind==='install'?void installNative(selected):primaryGame.kind==='launch'?void launchNative(selected):undefined;}}>{installing===selected.id||moving===selected.id||primaryGame.pending?<LoaderCircle className="spin" size={16}/>:primaryGame.kind==='install'?<Download size={16}/>:primaryGame.kind==='launch'?<Play size={16}/>:<CircleAlert size={16}/>} {installing===selected.id?'Instalando…':moving===selected.id?'Moviendo…':primaryGame.label}{primaryGame.kind==='install'&&installing!==selected.id&&installPlan?.id===selected.id&&installPlan.status==='ready'&&<span className="primary-size">{formatBytes(installPlan.totalDownloadBytes)}</span>}</button>}
           {isComingSoon(selected)&&<button className="primary-button" disabled>Desactivado</button>}
           {selected.workflow==='coco-media'&&(()=>{
             const media=mediaCatalog.find(x=>x.id===selected.id);

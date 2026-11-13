@@ -22,6 +22,12 @@ struct GameHashes{real_app_id:String,hash0:String,hash1337:String}
 #[derive(Deserialize)]
 struct OnlineFixTable{games:HashMap<String,GameHashes>,apps:HashMap<String,GameHashes>}
 
+/// A game's hashes: the shipped table first, then what a signed catalog brought with it.
+fn game_hashes(id:&str)->Option<GameHashes>{
+    table().games.get(id).cloned().or_else(||crate::services::catalog::online_fix_extra(id)
+        .map(|fix|GameHashes{real_app_id:fix.real_app_id,hash0:fix.hash0,hash1337:fix.hash1337}))
+}
+
 fn table()->&'static OnlineFixTable{
     static TABLE:OnceLock<OnlineFixTable>=OnceLock::new();
     TABLE.get_or_init(||serde_json::from_str(include_str!("../../resources/online-fix.json")).expect("embedded Online-Fix table"))
@@ -296,7 +302,8 @@ fn prepare_online_fix(entry:&Experience,root:&Path){
     for url in find_named(root,"OnlineFix.url"){let _=fs::remove_file(url);}
     // Worms W.M.D aborts at start without this file; an empty one opens no browser.
     if entry.id==WORMS_ID{let _=fs::write(root.join("OnlineFix.url"),b"");}
-    let game=table().games.get(&entry.id);
+    let game_owned=game_hashes(&entry.id);
+    let game=game_owned.as_ref();
     let required:HashSet<String>=entry.required_files.iter().map(|file|file.path.replace('\\',"/").to_lowercase()).collect();
     let is_required=|path:&Path|path.strip_prefix(root).ok()
         .map(|relative|relative.to_string_lossy().replace('\\',"/").to_lowercase())

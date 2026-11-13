@@ -1,6 +1,6 @@
 /** Everything the launcher is doing, reduced to the one line the side panel shows.
  * Order is priority: what can affect the player most always wins the panel. */
-export type StatusTone='ready'|'busy'|'playing'|'attention';
+export type StatusTone='ready'|'busy'|'playing'|'attention'|'installed';
 /** subject: what the operation acts on, on its own line. metrics: one fixed-format line of figures. */
 export type LauncherStatus={tone:StatusTone;label:string;detail:string;percent:number|null;subject?:string;metrics?:string};
 export type CatalogSyncState='idle'|'syncing'|'current'|'updated'|'local';
@@ -17,6 +17,8 @@ export type StatusInput={
   startingSteam:boolean;
   /** The fix's one-time setup for this PC, run out of sight before the game opens. */
   firstGameRun?:boolean;
+  /** A game this session just finished installing: it stays until played or dismissed. */
+  installed?:{name:string}|null;
   pendingRecovery:number;
   arrival:string|null;
   catalog:CatalogSyncState;
@@ -50,6 +52,8 @@ export function deriveLauncherStatus(input:StatusInput):LauncherStatus{
   if(input.playing.length)
     return {tone:'playing',label:input.playing.length===1?`Jugando ${input.playing[0]}`:`${input.playing.length} juegos abiertos`,
       detail:'',percent:null};
+  if(input.installed)
+    return {tone:'installed',label:'Instalado',subject:input.installed.name,detail:'Listo para jugar',percent:100};
   if(input.pendingRecovery>0)
     return {tone:'attention',label:input.pendingRecovery===1?'Un juego necesita revisión':`${input.pendingRecovery} juegos necesitan revisión`,
       detail:'Tus archivos están protegidos',percent:null};

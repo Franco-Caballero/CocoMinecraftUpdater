@@ -4,7 +4,9 @@ El host decide qué se distribuye y el agente prepara, comprueba y publica cuand
 
 ## Ruta rápida (léela primero)
 
-**¿Dónde está la lista de juegos y qué la hace aparecer?** La lista es `launcher/catalog.template.json`. `node scripts/sync-catalog.mjs` la convierte en `desktop/src-tauri/resources/catalog.json` (+ manifests) y **compilar** el Setup la incrusta dentro del `.exe`. Por eso un juego añadido al repo **no aparece en ningún Coco instalado** (tampoco en el del anfitrión) hasta publicar un Setup nuevo; el updater de cada PC lo instala solo. Para verlo sin publicar: `npm run tauri dev` desde `launcher2/desktop`. El canal dinámico firmado (`coco2-catalog-channel.json`) **no está publicado** hoy en `coco2-channel`; no lo cuentes como vía de entrega salvo que lo verifiques. Pedir «agrega este juego» ya autoriza publicar el Setup: el alta no está terminada sin él.
+**¿Dónde está la lista de juegos y qué la hace aparecer?** La lista es `launcher/catalog.template.json`. Desde Coco 2 0.6.52 un juego nuevo llega a los amigos por el **canal de catálogo firmado**, sin Setup nuevo ni reinicio: `node scripts/Publish-Coco2Catalog.mjs` toma los juegos standalone que `desktop/channel-baseline.json` (lo que trae el último Setup) no tiene o tiene en versión anterior, los firma con la clave del anfitrión y los sube a `coco2-channel`. Cada Coco abierto lee un `coco2-catalog-head.json` diminuto al abrir, cada 3 minutos y al volver a la ventana (si pasó más de 1 minuto); si cambió, descarga `coco2-catalog-s<N>.json` + `.sig`, verifica la firma Ed25519 y el juego **aparece con animación en la biblioteca abierta** (el «Último agregado» anterior se encoge a la cuadrícula). Vídeo de hover, galería y datos de Online-Fix viajan en el mismo catálogo firmado (`extras`). Un Coco cerrado lo ve al abrirse. Pedir «agrega este juego» ya autoriza publicar el catálogo: el alta no está terminada sin él.
+
+El **Setup** solo hace falta cuando cambia el programa (código, interfaz, reproductor) o para juegos que el canal no admite: con argumentos de lanzamiento, `experiences[].files` extra, ZIP fuera de los releases del repo, versión no numérica (`2.1.a`), películas/series (`coco-media`) o Minecraft. `Publish-Coco2Catalog.mjs` lo dice explícitamente y no publica nada en ese caso. Para ver un cambio sin publicar: `npm run tauri dev` desde `launcher2/desktop`.
 
 Orden mínimo (detalles en cada sección):
 
@@ -13,8 +15,44 @@ Orden mínimo (detalles en cada sección):
 3. `New-CocoStandaloneCandidate.ps1` (o multipartes) → prerelease del juego con el ZIP final → verificar tamaño/SHA servidos → `Apply-CocoStandaloneDraft.ps1` (dry-run y apply).
 4. Entrada en `src-tauri/resources/online-fix.json` (`games.<id>` y `apps.<realAppId>`, `hash1337: ""`), preview, `sync-steam-screenshots.mjs`, `sync-catalog.mjs`.
 5. Instalación nativa + primer arranque con las pruebas opt-in (Online-Fix punto 7). Tests de «Validación y entrega».
-6. Subir versión, `Build-CocoLauncher2.ps1`, `Publish-Coco2Release.ps1` (sección «Publicar una versión nueva»). Ninguno de los dos exige Git limpio; un árbol con cambios ajenos **no** bloquea la publicación (no los reviertas ni los commitees por tu cuenta).
+6. `node scripts/Publish-Coco2Catalog.mjs --dry-run` y, si lista el juego sin errores, `node scripts/Publish-Coco2Catalog.mjs` (sección «Publicar el catálogo»). Solo si el script dice que el juego necesita Setup: subir versión, `Build-CocoLauncher2.ps1`, `Publish-Coco2Release.ps1` (sección «Publicar una versión nueva»). Nada de esto exige Git limpio; un árbol con cambios ajenos **no** bloquea la publicación (no los reviertas). Al terminar, haz commit de lo tuyo en `main`.
 7. Limpieza y entrega.
+
+### Receta probada: carpeta ya instalada (AnkerGames, Online-Fix) → amigos
+
+Así se agregó Gamble With Your Friends (2,2 GB, Unity, Online-Fix con `winmm.dll`) en ~20 minutos de trabajo real, sin Setup. Sustituye `<...>`; todo lo pesado va en `D:\CocoWork\<id>`.
+
+```powershell
+# 0) Inspección sin ejecutar: carpeta del juego, .exe, OnlineFix.ini (RealAppId, 0=, 1337=), accesos .url/.bat/Read Me
+#    Versión: la del juego si existe (Steam/página/archivo). El FileVersion de un .exe Unity/Unreal es la del MOTOR,
+#    no sirve. Sin versión fiable usa la fecha del paquete AAAA.MM.DD (numérica: el canal no acepta "2.1.a").
+# 1) INI sin el 1337 de quien empaquetó (copia preparada; la fuente no se toca)
+# 2) Partes ZIP sin copiar el juego (deflate nivel 1: 2,2 GB -> 963 MB en 71 s)
+python -I launcher2/desktop/scripts/New-CocoMultipartArchives.py '<carpeta descargada>' 'D:\CocoWork\<id>\archives' `
+  --prefix <id>-<version> --base-url 'https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/<id>-<version>' `
+  --override '<Juego>/OnlineFix.ini=D:\CocoWork\<id>\prepared\OnlineFix.ini' `
+  --exclude '<acceso>.url' --exclude 'Read Me.txt' --exclude 'Run Me!.bat' --compression deflate --level 1 --jobs 2
+# 3) Prerelease del juego (nunca Latest) y comprobar Content-Length servido de cada parte
+gh release create <id>-<version> -R Franco-Caballero/CocoMinecraftUpdater --prerelease --latest=false --title '<Nombre> <version> - Coco 2' --notes '...' <partes.zip>
+# 4) Borrador desde el inventario (no relee los ZIP). --require: loader del fix, INI, motor y steam_api
+python -I launcher2/desktop/scripts/New-CocoMultipartCandidate.py --inventory 'D:\CocoWork\<id>\archives\inventory.json' --id <id> `
+  --name '<Nombre>' --version <version> --executable '<Juego>/<Juego>.exe' --description '<español>' --cover 'D:\CocoWork\<id>\cover.jpg' `
+  --require '<Juego>/OnlineFix64.dll' --require '<Juego>/winmm.dll' --require '<Juego>/OnlineFix.ini' --require '<Juego>/UnityPlayer.dll'
+# 5) Aplicar (dry-run, luego -Apply con el SHA que imprime). Pasa -SourceZipDirectory también en el -Apply.
+& .\launcher2\desktop\scripts\Apply-CocoStandaloneDraft.ps1 -DraftId <id> -SourceZipDirectory 'D:\CocoWork\<id>\archives'
+# 6) online-fix.json (games.<id> y apps.<RealAppId>, hash0 del INI, hash1337 ""), preview, capturas, sync
+node scripts/sync-steam-screenshots.mjs; node scripts/sync-catalog.mjs          # desde launcher2/desktop
+# 7) Instalación nativa con caché precargada por hardlink (<sha>.zip), sin descargar de nuevo
+New-Item -ItemType HardLink -Path 'D:\CocoWork\<id>\cache\<sha-parte>.zip' -Target '<parte>.zip'
+$env:COCO2_HOST_SMOKE_ID='<id>'; $env:COCO2_HOST_SMOKE_TARGET='D:\CocoWork\<id>\install-test'; $env:COCO2_HOST_SMOKE_CACHE='D:\CocoWork\<id>\cache'
+cargo test --lib host_package_install_smoke -- --ignored --nocapture                # desde src-tauri
+$env:COCO_PRIME_ROOT='D:\CocoWork\<id>\install-test'; $env:COCO_PRIME_EXE='<Juego>\<Juego>.exe'
+cargo test --lib real_first_run -- --ignored --nocapture                            # esperado: conclusive true, credits box false
+# 8) Tests de «Validación y entrega» y publicar
+node scripts/Publish-Coco2Catalog.mjs --dry-run; node scripts/Publish-Coco2Catalog.mjs
+```
+
+Edita `online-fix.json` y `game-hover-previews.json` **como texto** (añadir el bloque antes del cierre del objeto): reescribirlos con `JSON.stringify` reordena las claves numéricas de `apps` y cambia el espaciado de todo el archivo. Si publicas un Setup en la misma tarea, publícalo **antes** de añadir el juego nuevo a los recursos: `Publish-Coco2Release.ps1` toma la línea base de `install-manifests.json` y se niega a escribirla si ese archivo es más nuevo que el Setup.
 
 ### Trampas que ya costaron tiempo
 
@@ -25,6 +63,10 @@ Orden mínimo (detalles en cada sección):
 - Al cambiar un ZIP, su SHA aparece en `pack.sha256`, `pack.archives[].sha256` y en los `requiredFiles` que lo citen; regenera con el borrador en vez de buscar/reemplazar a mano.
 - Descargas web con navegador del servidor (p. ej. AnkerGames: `Download` → `Direct Download` → página con Turnstile y cuenta atrás que **solo avanza con la pestaña visible**): el archivo queda en `%USERPROFILE%\.t3\userdata\server-browser\downloads\<hash>\<uuid>` aunque el diálogo de guardar se cancele. Muévelo a D: y bórralo de ahí al terminar.
 - El diálogo «Steam is not launched» en pruebas aisladas es porque Steam está cerrado; Coco lo inicia antes del juego. No es el aviso de Online-Fix.
+- Tras subir el catálogo, la URL **sin parámetros** de un asset reemplazado (`--clobber`) puede responder 404 unos ~3 minutos aunque `?x=1` ya funcione. `Publish-Coco2Catalog.mjs` espera hasta 5 min; si aun así falla, vuelve a ejecutarlo: `unchanged` significa que ya está publicado y verificado. Los clientes siguen con el catálogo anterior mientras tanto.
+- PowerShell 5.1 entrega un array JSON como **un solo** objeto en una tubería (`ConvertFrom-Json | Sort-Object` ve 1 elemento): enumera con `@(...) | ForEach-Object {$_}` antes.
+- Un checkout/rebase con `core.autocrlf=true` convertía `launcher2` a CRLF y rompía pruebas que leen el código byte a byte. `launcher2/.gitattributes` fija `eol=lf`; no lo quites.
+- Puertos locales reservados por Windows dan `WinError 10013`: elige otro (p. ej. 18765).
 
 ## Antes de empezar
 
@@ -42,7 +84,20 @@ Orden mínimo (detalles en cada sección):
 4. Ejecuta `Apply-CocoStandaloneDraft.ps1 -DraftId <id> -SourceZipPath <zip>` en dry-run. Tras revisar derechos, aplica con `-Apply -ApproveReviewedLicenseRights -ExpectedCatalogSha256 <hash>`; nunca reemplaces un draft o catálogo ajeno. Para actualizaciones usa el flujo de update de Host Studio, no un ID duplicado.
 5. La fuente es `launcher/catalog.template.json`, con lock en `launcher/experiences/<id>.lock.json` y portada en `assets/experiences/`. Ejecuta `node scripts/sync-catalog.mjs` desde `launcher2/desktop`; no edites sus recursos generados a mano.
 
-**Tarjeta completa en cada alta:** consulta `https://store.steampowered.com/api/appdetails?appids=<SteamAppId>&l=spanish` una sola vez para obtener nombre, descripción, portada y tráileres. Redacta en `description` un resumen breve y natural en español con el género, objetivo y número de jugadores cuando esté verificado; no dejes el texto genérico del borrador. Copia a `assets/experiences/` la cápsula oficial **616×353** (`main_capsule` de `IStoreBrowseService/GetItems` con `include_assets`, o `capsule_616x353.jpg`; si es estacional, `.../apps/<id>/capsule_616x353.jpg` suele dar la base): las tarjetas son 16:9 y el `header` 460×215 pierde los costados y registra el preview de Steam en `desktop/src/game-hover-previews.json`. Prueba primero `https://cdn.akamai.steamstatic.com/steam/apps/<trailerId>/microtrailer.webm`; si no existe, busca un MP4 oficial de Steam o prepara un clip local corto y silencioso del HLS oficial, como `desktop/public/previews/yapyap-steam.mp4`. Comprueba URL o archivo, tamaño, reproducción y procedencia; después ejecuta `node scripts/sync-steam-screenshots.mjs` desde `launcher2/desktop` para la galería del detalle (lee el `steamAppId` del preview), actualiza las pruebas y ejecuta `sync-catalog.mjs`. Haz la búsqueda de medios en paralelo con la inspección del ZIP y evita recompilar hasta reunir todos los cambios. Si no existe una fuente válida, usa portada neutral provisional, documenta el preview pendiente y no inventes medios.
+**Tarjeta completa en cada alta:** consulta `https://store.steampowered.com/api/appdetails?appids=<SteamAppId>&l=spanish` una sola vez para obtener nombre, descripción, portada y tráileres. Redacta en `description` un resumen breve y natural en español con el género, objetivo y número de jugadores cuando esté verificado; no dejes el texto genérico del borrador. Copia a `assets/experiences/` la cápsula oficial **616×353** (las tarjetas son 16:9 y el `header` 460×215 pierde los costados) y registra el preview de Steam en `desktop/src/game-hover-previews.json`.
+
+Juegos de 2025 en adelante usan el **formato nuevo de Steam**: `appdetails` ya no trae `microtrailer` ni la cápsula en la ruta antigua (`/steam/apps/<id>/capsule_616x353.jpg` y `/steam/apps/<trailerId>/microtrailer.webm` dan 404). Pide ambos a `IStoreBrowseService/GetItems` en una sola llamada:
+
+```bash
+Q='{"ids":[{"appid":<AppId>}],"context":{"language":"spanish","country_code":"CL"},"data_request":{"include_assets":true,"include_trailers":true,"include_screenshots":true}}'
+curl -s -G https://api.steampowered.com/IStoreBrowseService/GetItems/v1/ --data-urlencode "input_json=$Q"
+```
+
+- Cápsula: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/<AppId>/` + `assets.main_capsule`.
+- Clip: `https://video.akamai.steamstatic.com/store_trailers/` + `trailers.highlights[0].microtrailer[].filename` (el `.webm`). Desde 0.6.53 Coco admite `video.akamai.steamstatic.com` (CSP, caché de clips, canal); un Coco anterior no lo reproduce.
+- En el JSON de previews usa `trailerId` = id de `appdetails.movies[].id` y `bytes` = tamaño real descargado.
+
+Para juegos antiguos prueba primero `https://cdn.akamai.steamstatic.com/steam/apps/<trailerId>/microtrailer.webm`. Si no hay fuente de Steam, un clip local corto (`desktop/public/previews/…mp4`) solo viaja con un Setup, no por el canal. Comprueba URL o archivo, tamaño, reproducción y procedencia; después ejecuta `node scripts/sync-steam-screenshots.mjs` desde `launcher2/desktop` para la galería del detalle (lee el `steamAppId` del preview), actualiza las pruebas y ejecuta `sync-catalog.mjs`. Haz la búsqueda de medios en paralelo con la inspección del ZIP y evita recompilar hasta reunir todos los cambios. Si no existe una fuente válida, usa portada neutral provisional, documenta el preview pendiente y no inventes medios.
 
 ## Evitar avisos promocionales y aperturas de navegador (todos los juegos)
 
@@ -116,7 +171,19 @@ Para desarrollar el visor sin compilar un release, prepara el runtime una vez y 
 ## Distribución autorizada
 
 - **Catálogo embebido:** integra fuente y recursos, sube cada ZIP a un prerelease propio del juego (no Latest), verifica tamaño y SHA servidos y publica un Setup nuevo firmado. Incrementa la misma versión en `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json` y `tests/version-contract-v12.test.mjs`. Para probar cambios de interfaz usa `npm run tauri dev` (recarga al guardar) y compila el instalador solo al publicar. Compila una vez con `desktop/scripts/Build-CocoLauncher2.ps1` (Cargo en PATH; con cualquier 7-Zip se revisa además el instalador, y lo que esa versión no pueda leer se omite); publica el candidato con `Publish-Coco2Release.ps1`. El updater usa `coco2-channel/latest.json`, no `releases/latest` de Coco 1.
-- **Canal dinámico:** el cliente consulta `coco2-catalog-channel.json` y su firma Ed25519 en `coco2-channel` al abrir, cada 15 minutos y al recuperar el foco. Un artefacto de Host Studio sin firma es solo borrador. Sella, revisa y firma los bytes exactos con la clave del host; comprueba procedencia, secuencia, todas las URLs y hashes antes de publicar. No expongas la clave. Un catálogo firmado actualizado puede agregar juegos sin recompilar cuando la versión instalada soporta su formato.
+- **Canal de catálogo firmado (vía normal para juegos):** ver «Publicar el catálogo». Los clientes 0.6.51 o anteriores no lo leen (usaban `coco2-catalog-channel.json`, que ya no se publica); se actualizan solos al abrir Coco y desde ahí reciben el canal. Un artefacto de Host Studio sin firma sigue siendo solo borrador.
+
+### Publicar el catálogo
+
+Desde `launcher2/desktop`, con el ZIP del juego ya publicado en su prerelease y `sync-catalog.mjs` hecho:
+
+1. `node scripts/Publish-Coco2Catalog.mjs --dry-run`: lista los juegos que irán (`games`), comprueba con HEAD que cada ZIP se sirve con su tamaño exacto, arma las portadas (WebP en data URL) y los `extras` (preview, capturas y `online-fix.json` del juego) y **firma** sin subir nada. Si un juego no cumple las reglas del cliente, lo nombra con el motivo y termina con error: ese juego necesita Setup.
+2. `node scripts/Publish-Coco2Catalog.mjs`: secuencia = la del head publicado + 1. Sube `coco2-catalog-s<N>.json` y `.sig` (nombres nuevos, nadie los lee aún) y después reemplaza `coco2-catalog-head.json`; descarga lo servido, compara SHA-256, verifica la firma y comprueba que `coco2-channel` no quedó como Latest. Si el contenido es igual al publicado responde `unchanged` y no sube nada.
+3. La clave se descifra en memoria desde el vault DPAPI del anfitrión (`%LOCALAPPDATA%\CocoLauncher2\signing\private-key.dpapi`, minisign/scrypt) y se comprueba contra la clave pública del updater en `tauri.conf.json` antes de firmar. Solo funciona en el PC del anfitrión; nunca la imprimas ni la guardes en archivos.
+4. `desktop/channel-baseline.json` lo reescribe `Publish-Coco2Release.ps1` al publicar cada Setup: desde ese momento los juegos que el Setup ya trae dejan de viajar por el canal. El cliente además ignora una entrada firmada que no sea más nueva que la suya de fábrica, así que una línea base atrasada no rompe nada; solo hace el catálogo más grande. Límite: 100 juegos en el canal.
+5. Para corregir un juego ya publicado por el canal, sube un ZIP nuevo con versión de paquete mayor y vuelve a publicar: el cliente nunca acepta otro contenido con la misma versión.
+
+Prueba de punta a punta sin tocar GitHub: `--baseline <json sin el juego> --sequence 1 --out <carpeta>` genera un catálogo firmado local (esas opciones nunca suben). Sírvelo con `python -m http.server <puerto> --bind 127.0.0.1` y abre `npm run tauri dev` con `COCO_CATALOG_CHANNEL_BASE=http://127.0.0.1:<puerto>/` (solo en debug); el juego tiene que faltar en el catálogo de fábrica de esa compilación. Copia los archivos al servidor con la app abierta y espera 1 minuto o el ciclo de 3. La app escribe la caché real `%LOCALAPPDATA%\CocoLauncher2\catalog-channel`: bórrala al terminar si no existía antes, o el canal real con la misma secuencia quedará rechazado en ese PC. Algunos puertos están reservados por Windows (error 10013): usa otro.
 
 ### Publicar una versión nueva
 

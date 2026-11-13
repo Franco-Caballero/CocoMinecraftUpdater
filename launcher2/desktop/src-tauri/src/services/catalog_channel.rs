@@ -7,7 +7,7 @@ use ring::signature::{UnparsedPublicKey, ED25519};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-use std::collections::{HashMap,HashSet};
+use std::collections::{BTreeMap,HashMap,HashSet};
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -23,6 +23,13 @@ const MAX_ENTRIES: usize = 100;
 const MAX_ARCHIVE: u64 = 128 * 1024 * 1024 * 1024;
 const OFFICIAL_CATALOG: &str = "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/coco2-catalog-channel.json";
 const OFFICIAL_SIGNATURE: &str = "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/coco2-catalog-channel.json.sig";
+/// Where the signed catalog lives since the fast channel: a tiny unsigned head names the
+/// current sequence and digest, so an open launcher can check often without downloading
+/// covers; the signed body and its detached signature carry the sequence in their names.
+const CHANNEL_BASE: &str = "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/";
+const CHANNEL_HEAD: &str = "coco2-catalog-head.json";
+const MAX_HEAD: u64 = 4096;
+const MAX_SCREENSHOTS: usize = 16;
 static CATALOG_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 #[derive(Clone, Debug, Serialize)]
@@ -167,7 +174,47 @@ struct Snapshot {
     #[serde(default)]
     remote_digest: Option<String>,
     entries: Vec<Accepted>,
+    /// What a signed channel adds to a card beyond the installer: hover clip, gallery and
+    /// Online-Fix data. Replaced as a whole by every newer signed channel.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    extras: BTreeMap<String, GameExtras>,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct GameExtras {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preview: Option<PreviewExtra>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub screenshots: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub online_fix: Option<OnlineFixExtra>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PreviewExtra {
+    pub url: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub steam_app_id: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trailer_id: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bytes: Option<u64>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct OnlineFixExtra {
+    pub real_app_id: String,
+    pub hash0: String,
+    #[serde(default)]
+    pub hash1337: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ChannelHead { schema_version: u32, sequence: u64, sha256: String }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -181,6 +228,8 @@ struct RemoteChannel {
     entries: Vec<Accepted>,
     #[serde(default)]
     promotions: Vec<SignedPromotion>,
+    #[serde(default)]
+    extras: BTreeMap<String, GameExtras>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -252,7 +301,7 @@ fn package_cache() -> Result<PathBuf,String> {
 fn snapshot_path(dir: &Path, sha: &str) -> PathBuf { dir.join(format!("snapshot-{sha}.json")) }
 
 fn empty() -> Snapshot {
-    Snapshot { schema_version:1, revision:0, previous_sha256:None, remote_sequence:0, remote_digest:None, entries:vec![] }
+    Snapshot { schema_version:1, revision:0, previous_sha256:None, remote_sequence:0, remote_digest:None, entries:vec![], extras:BTreeMap::new() }
 }
 
 fn valid_relative_file(value: &str) -> bool {
@@ -381,6 +430,52 @@ fn verify_entry(accepted: &Accepted) -> Result<(),String> {
     }
     Ok(())
 }
+fn steam_media_url(value:&str,hosts:&[&str],extensions:&[&str])->bool{
+    let Ok(url)=reqwest::Url::parse(value) else{return false};
+    value.len()<=512 && url.scheme()=="https" && url.port_or_known_default()==Some(443)
+        && url.username().is_empty() && url.password().is_none() && url.query().is_none() && url.fragment().is_none()
+        && url.host_str().is_some_and(|host|hosts.contains(&host))
+        && extensions.iter().any(|ext|url.path().to_ascii_lowercase().ends_with(ext))
+}
+fn verify_extras(extras:&BTreeMap<String,GameExtras>)->Result<(),String>{
+    if extras.len()>MAX_ENTRIES*2 {return Err("Too many catalog extras".into());}
+    let hex=|value:&str|value.len()==128 && value.bytes().all(|b|b.is_ascii_hexdigit());
+    for (id,extra) in extras {
+        if !valid_id(id) {return Err("Invalid catalog extras ID".into());}
+        if let Some(preview)=&extra.preview {
+            if !steam_media_url(&preview.url,&["cdn.akamai.steamstatic.com","shared.akamai.steamstatic.com","video.akamai.steamstatic.com"],&[".webm",".mp4"])
+                || preview.bytes.is_some_and(|bytes|bytes==0 || bytes>64*1024*1024) {
+                return Err("Untrusted hover preview in catalog extras".into());
+            }
+        }
+        if extra.screenshots.len()>MAX_SCREENSHOTS
+            || extra.screenshots.iter().any(|shot|!steam_media_url(shot,&["shared.akamai.steamstatic.com"],&[".jpg",".jpeg",".png",".webp"])) {
+            return Err("Untrusted screenshots in catalog extras".into());
+        }
+        if let Some(fix)=&extra.online_fix {
+            if fix.real_app_id.is_empty() || fix.real_app_id.len()>12 || !fix.real_app_id.bytes().all(|b|b.is_ascii_digit())
+                || !hex(&fix.hash0) || !(fix.hash1337.is_empty() || hex(&fix.hash1337)) {
+                return Err("Invalid Online-Fix data in catalog extras".into());
+            }
+        }
+    }
+    Ok(())
+}
+/// Versions of the games this build was shipped with. A signed entry only replaces one of
+/// them when it is strictly newer; an equal or older one is already here and is skipped.
+fn embedded_versions()->&'static HashMap<String,String>{
+    static VERSIONS:OnceLock<HashMap<String,String>>=OnceLock::new();
+    VERSIONS.get_or_init(||{
+        let manifests:Vec<Value>=serde_json::from_str(include_str!("../../resources/install-manifests.json")).unwrap_or_default();
+        manifests.into_iter().filter_map(|m|Some((m["id"].as_str()?.to_string(),m["version"].as_str()?.to_string()))).collect()
+    })
+}
+fn supersedes_embedded(record:&Accepted)->bool{
+    match embedded_versions().get(&record.entry.id) {
+        Some(shipped)=>strictly_newer(&record.version,shipped).unwrap_or(false),
+        None=>!embedded_id(&record.entry.id).unwrap_or(true),
+    }
+}
 fn verify_snapshot(snapshot: &Snapshot) -> Result<(),String> {
     if snapshot.schema_version!=1 || snapshot.entries.len()>MAX_ENTRIES
         || snapshot.previous_sha256.as_deref().is_some_and(|v|!valid_sha(v))
@@ -388,6 +483,7 @@ fn verify_snapshot(snapshot: &Snapshot) -> Result<(),String> {
         || snapshot.remote_digest.as_deref().is_some_and(|s|!valid_sha(s))
         || snapshot.remote_sequence==0 && snapshot.remote_digest.is_some()
     {return Err("Invalid snapshot schema or ancestry".into());}
+    verify_extras(&snapshot.extras)?;
     let mut seen=HashSet::new();
     for entry in &snapshot.entries {
         verify_entry(entry)?;
@@ -548,7 +644,8 @@ fn current_manifest(snapshot:&Snapshot,id:&str,version:Option<&str>,client_only:
     ->Result<Option<String>,String>{
     if let Some(record)=snapshot.entries.iter().find(|r|(!client_only || r.source=="remote")
         && r.entry.id==id
-        && version.is_none_or(|v|r.version==v)){
+        && version.is_none_or(|v|r.version==v)
+        && (version.is_some() || !client_only || supersedes_embedded(r))){
         verify_entry(record)?;
         return serde_json::to_string(&record.manifest).map(Some).map_err(|e|e.to_string());
     }
@@ -606,6 +703,8 @@ fn client_catalog_view(root:&Path,baseline:Vec<Experience>)->Vec<Experience>{
         // Source=local is a historical self-consistent SHA record, NOT a
         // signature or approval from the host. Never offer it to friends.
         if record.source!="remote"{continue;}
+        // A game this build already ships at the same or a newer version keeps its own entry.
+        if !supersedes_embedded(&record){continue;}
         if let Some(previous)=visible.iter_mut().find(|e|e.id==record.entry.id){
             *previous=record.entry;
         }else{visible.push(record.entry);}
@@ -1128,6 +1227,7 @@ fn decode_channel(json:&[u8])->Result<RemoteChannel,String>{
         verify_entry(entry)?;
         if !ids.insert(entry.entry.id.to_ascii_lowercase()){return Err("Duplicate signed channel ID".into());}
     }
+    verify_extras(&result.extras)?;
     if result.promotions.len()>MAX_ENTRIES{return Err("Too many signed promotions".into());}
     let mut promotions=HashSet::new();
     for promotion in &result.promotions {
@@ -1142,6 +1242,8 @@ fn decode_channel(json:&[u8])->Result<RemoteChannel,String>{
     Ok(result)
 }
 fn allowed_http_redirect(url:&reqwest::Url)->bool{
+    #[cfg(debug_assertions)]
+    if url.scheme()=="http" && url.host_str()==Some("127.0.0.1") && std::env::var_os("COCO_CATALOG_CHANNEL_BASE").is_some() {return true;}
     if url.scheme()!="https" || url.port_or_known_default()!=Some(443)
         || !url.username().is_empty() || url.password().is_some(){return false;}
     match url.host_str(){
@@ -1200,6 +1302,9 @@ fn apply_signed_at_scoped(dir:&Path,body:&[u8],sig:&[u8],key:&[u8;32],client_onl
         return Err("Signed channel sequence rollback rejected".into());
     }
     for record in channel.entries {
+        // The channel lists every game added since a given installer; one this build already
+        // ships at that version (or newer) is not news and must not reject the whole channel.
+        if client_only && !supersedes_embedded(&record) {continue;}
         if let Some(old)=snap.entries.iter().find(|e|e.entry.id==record.entry.id && e.source=="local") {
             if !client_only {
                 // Host-only offline test fixtures still require a deliberate
@@ -1223,10 +1328,69 @@ fn apply_signed_at_scoped(dir:&Path,body:&[u8],sig:&[u8],key:&[u8;32],client_onl
     }
     snap.remote_sequence=channel.sequence;
     snap.remote_digest=Some(digest);
+    snap.extras=channel.extras;
     commit(dir,snap,sha)?;
     Ok(status(dir,"updated","Verified official Ed25519 channel snapshot accepted".into()))
 }
+fn channel_base()->String{
+    // Debug builds can point at a local copy of the channel to test arrivals end to end.
+    #[cfg(debug_assertions)]
+    if let Some(base)=std::env::var("COCO_CATALOG_CHANNEL_BASE").ok()
+        .filter(|base|base.starts_with("http://127.0.0.1:") && base.ends_with('/')) {return base;}
+    CHANNEL_BASE.into()
+}
+fn offline_error(error:&str)->bool{
+    error.starts_with("Official catalog request failed:") || error.starts_with("Official release unavailable:")
+}
+/// Reads the small head first and downloads the signed body only when it names a newer
+/// catalog than the one installed here.
+fn sync_fast_channel(root:&Path,key:&[u8;32])->Result<CatalogChannelStatus,String>{
+    let client=http_client()?;
+    let base=channel_base();
+    let head=match fetch_bounded(&client,&format!("{base}{CHANNEL_HEAD}"),MAX_HEAD){
+        Ok(bytes)=>bytes,
+        Err(error) if offline_error(&error)=>return Ok(status(root,"offline",format!("Fast channel unavailable; trusted cache retained: {error}"))),
+        Err(error)=>return Err(error),
+    };
+    let head:ChannelHead=serde_json::from_slice(&head).map_err(|_|"Invalid catalog channel head")?;
+    if head.schema_version!=1 || head.sequence==0 || !valid_sha(&head.sha256) {return Err("Invalid catalog channel head".into());}
+    let current=active(root).unwrap_or_else(|_|empty());
+    if head.sequence<current.remote_sequence
+        || head.sequence==current.remote_sequence && current.remote_digest.as_deref()==Some(head.sha256.as_str()) {
+        return Ok(status(root,"unchanged","The signed catalog named by the head is already installed".into()));
+    }
+    let name=format!("coco2-catalog-s{}.json",head.sequence);
+    let fetch=|url:String,max:u64|fetch_bounded(&client,&url,max);
+    let body=match fetch(format!("{base}{name}"),MAX_SNAPSHOT){
+        Ok(bytes)=>bytes,
+        Err(error) if offline_error(&error)=>return Ok(status(root,"offline",format!("Signed catalog not reachable yet: {error}"))),
+        Err(error)=>return Err(error),
+    };
+    if hash(&body)!=head.sha256 {return Err("Signed catalog does not match its head".into());}
+    let sig=match fetch(format!("{base}{name}.sig"),512){
+        Ok(bytes)=>bytes,
+        Err(error) if offline_error(&error)=>return Ok(status(root,"offline",format!("Signature not reachable yet: {error}"))),
+        Err(error)=>return Err(error),
+    };
+    client_apply_signed_at(root,&body,&sig,key)
+}
+/// Signed extras for the cards and the launcher: hover clip, gallery and Online-Fix data.
+pub(crate) fn channel_extras()->BTreeMap<String,GameExtras>{
+    cache_dir().ok().and_then(|root|active(&root).ok()).map(|snapshot|snapshot.extras).unwrap_or_default()
+}
+pub(crate) fn online_fix_extra(id:&str)->Option<OnlineFixExtra>{
+    channel_extras().remove(id).and_then(|extra|extra.online_fix)
+}
 pub async fn sync_catalog_channel()->Result<CatalogChannelStatus,String>{
+    tauri::async_runtime::spawn_blocking(move||{
+        let root=cache_dir()?;
+        let key=embedded_key()?;
+        sync_fast_channel(&root,&key)
+    }).await.map_err(|e|format!("Channel synchronization interrupted: {e}"))?
+}
+/// The first channel format, one fixed file pair. Kept for the host review tools only.
+#[allow(dead_code)]
+async fn sync_legacy_catalog_channel()->Result<CatalogChannelStatus,String>{
     tauri::async_runtime::spawn_blocking(move||{
         let root=cache_dir()?;
         let key=embedded_key()?;
@@ -2640,5 +2804,76 @@ mod tests {
         assert!(!f.snapshots().join("current.json").exists());
         assert_eq!(valid.id,"test-game");
         assert_eq!(fs::read(&good).unwrap(),raw,"Never modify the source portable package");
+    }
+    fn as_shipped(mut record:Accepted,id:&str)->Accepted{
+        record.source="remote".into();
+        record.entry.id=id.into();record.entry.instance_id=id.into();
+        record.manifest["id"]=id.into();record.manifest["instanceId"]=id.into();
+        record
+    }
+    fn signed(signing:&Ed25519KeyPair,payload:&Value)->(Vec<u8>,String){
+        let bytes=serde_json::to_vec(payload).unwrap();
+        let signature=STANDARD.encode(signing.sign(&bytes).as_ref());
+        (bytes,signature)
+    }
+
+    #[test]
+    fn fast_channel_skips_games_this_build_already_ships_and_keeps_the_new_ones(){
+        let f=TestFixture::new();
+        let signing=Ed25519KeyPair::from_seed_unchecked(&[73u8;32]).unwrap();
+        let mut key=[0u8;32];key.copy_from_slice(signing.public_key().as_ref());
+        // big-walk ships at 1.0.0: the same version in a channel is not news, and must not
+        // make the client reject the brand-new game listed next to it.
+        let shipped=as_shipped(f.accepted("1.0.0"),"big-walk");
+        let fresh=Accepted{source:"remote".into(),..f.accepted("1.0.0")};
+        let (bytes,sig)=signed(&signing,&serde_json::json!({"schemaVersion":1,"sequence":1,"entries":[shipped,fresh]}));
+        let status=client_apply_signed_at(&f.snapshots(),&bytes,sig.as_bytes(),&key).unwrap();
+        assert_eq!(status.status,"updated");
+        let snapshot=active(&f.snapshots()).unwrap();
+        assert_eq!(snapshot.entries.len(),1);
+        assert_eq!(snapshot.entries[0].entry.id,"test-game");
+        let view=client_catalog_view(&f.snapshots(),serde_json::from_str(include_str!("../../resources/catalog.json")).unwrap());
+        assert!(view.iter().any(|e|e.id=="test-game"),"the new game is offered");
+        assert!(view.iter().find(|e|e.id=="big-walk").is_some_and(|e|e.image.starts_with("/covers/")),"the shipped card stays");
+    }
+
+    #[test]
+    fn an_older_signed_record_never_hides_a_newer_shipped_game(){
+        let f=TestFixture::new();
+        let mut snapshot=empty();
+        snapshot.entries.push(as_shipped(f.accepted("0.9.0"),"big-walk"));
+        commit(&f.snapshots(),snapshot,None).unwrap();
+        let view=client_catalog_view(&f.snapshots(),serde_json::from_str(include_str!("../../resources/catalog.json")).unwrap());
+        assert!(view.iter().find(|e|e.id=="big-walk").is_some_and(|e|e.image.starts_with("/covers/")));
+        let manifest:Value=serde_json::from_str(&client_manifest_at(&f.snapshots(),"big-walk",None).unwrap().unwrap()).unwrap();
+        assert_eq!(manifest["version"],"1.0.0","the shipped installer wins over an older signed one");
+    }
+
+    #[test]
+    fn signed_extras_travel_with_the_channel_and_are_checked(){
+        let f=TestFixture::new();
+        let signing=Ed25519KeyPair::from_seed_unchecked(&[74u8;32]).unwrap();
+        let mut key=[0u8;32];key.copy_from_slice(signing.public_key().as_ref());
+        let fresh=Accepted{source:"remote".into(),..f.accepted("1.0.0")};
+        let extras=serde_json::json!({"test-game":{
+            "preview":{"url":"https://cdn.akamai.steamstatic.com/steam/apps/1/microtrailer.webm","steamAppId":1,"trailerId":1,"bytes":1000},
+            "screenshots":["https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1/ss_a.1920x1080.jpg"],
+            "onlineFix":{"realAppId":"123","hash0":"a".repeat(128),"hash1337":""}
+        }});
+        let (bytes,sig)=signed(&signing,&serde_json::json!({"schemaVersion":1,"sequence":1,"entries":[fresh.clone()],"extras":extras}));
+        client_apply_signed_at(&f.snapshots(),&bytes,sig.as_bytes(),&key).unwrap();
+        let saved=active(&f.snapshots()).unwrap().extras;
+        assert_eq!(saved["test-game"].online_fix.as_ref().unwrap().real_app_id,"123");
+        assert_eq!(saved["test-game"].screenshots.len(),1);
+        for bad in [
+            serde_json::json!({"test-game":{"preview":{"url":"https://example.com/a.webm"}}}),
+            serde_json::json!({"test-game":{"screenshots":["http://shared.akamai.steamstatic.com/a.jpg"]}}),
+            serde_json::json!({"test-game":{"onlineFix":{"realAppId":"12a","hash0":"a".repeat(128)}}}),
+            serde_json::json!({"Bad ID":{}}),
+        ]{
+            let (bytes,sig)=signed(&signing,&serde_json::json!({"schemaVersion":1,"sequence":2,"entries":[fresh.clone()],"extras":bad}));
+            assert!(client_apply_signed_at(&f.snapshots(),&bytes,sig.as_bytes(),&key).is_err());
+        }
+        assert_eq!(active(&f.snapshots()).unwrap().remote_sequence,1,"a rejected channel changes nothing");
     }
 }

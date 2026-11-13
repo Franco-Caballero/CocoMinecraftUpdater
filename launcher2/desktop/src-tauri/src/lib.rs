@@ -46,6 +46,7 @@ pub fn run() {
             services::catalog::review_local_publish_package,
             services::catalog::import_local_publish_package,
             services::catalog::sync_catalog_channel,
+            services::catalog::get_catalog_extras,
             services::catalog::get_catalog_channel_status,
             services::catalog::prepare_catalog_channel,
             services::catalog::review_channel_delivery,

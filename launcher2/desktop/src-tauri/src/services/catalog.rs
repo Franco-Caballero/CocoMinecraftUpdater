@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 mod catalog_channel;
 #[cfg(test)]
 pub(crate) use catalog_channel::test_api;
+pub(crate) use catalog_channel::{channel_extras,online_fix_extra,GameExtras};
 pub use catalog_channel::{
     CatalogChannelStatus, LocalPublishReview, UnsignedCatalogChannelDraft, CatalogProvenance,
     ChannelDeliveryReview,
@@ -74,6 +75,12 @@ pub async fn review_local_publish_package(path: String) -> Result<LocalPublishRe
 pub async fn import_local_publish_package(path: String,review_token: String,confirmed: bool)
     -> Result<CatalogChannelStatus,String> {
     catalog_channel::import_local_publish_package(path,review_token,confirmed).await
+}
+/// Hover clips, galleries and Online-Fix data that arrived with the signed channel.
+#[tauri::command]
+pub async fn get_catalog_extras() -> Result<std::collections::BTreeMap<String,GameExtras>,String> {
+    tauri::async_runtime::spawn_blocking(catalog_channel::channel_extras)
+        .await.map_err(|e|format!("Catalog extras read interrupted: {e}"))
 }
 #[tauri::command]
 pub async fn sync_catalog_channel() -> Result<CatalogChannelStatus,String> {

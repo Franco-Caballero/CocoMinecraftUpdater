@@ -26,7 +26,7 @@ test('the CSP allows Steam clips, cached files and the fast IPC channel, and not
   const config=JSON.parse(await read('src-tauri/tauri.conf.json'));
   const csp=config.app.security.csp;
   const media=csp.match(/media-src ([^;]+)/)[1];
-  for(const source of ['https://cdn.akamai.steamstatic.com','https://shared.akamai.steamstatic.com','asset:','http://asset.localhost'])
+  for(const source of ['https://cdn.akamai.steamstatic.com','https://shared.akamai.steamstatic.com','https://video.akamai.steamstatic.com','asset:','http://asset.localhost'])
     assert.ok(media.includes(source),`media-src must allow ${source}`);
   assert.doesNotMatch(media,/https:(\s|$)|\*\./,'no wildcard media host');
   assert.match(csp,/connect-src [^;]*ipc: http:\/\/ipc\.localhost/,'without it every native call falls back to postMessage');

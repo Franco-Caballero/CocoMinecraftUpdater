@@ -84,6 +84,19 @@ try{
 }finally{Remove-Item -LiteralPath $verify -Recurse -Force -ErrorAction SilentlyContinue}
 $latest=Invoke-Gh @('release','view','-R',$Repository,'--json','tagName','-q','.tagName')
 if([string]$latest -ceq $Tag){throw "ATENCIÓN: $Tag quedó como Latest; eso rompe a Coco 1. Marca de nuevo el release de Coco 1 como Latest."}
+# The signed catalog channel only carries games newer than what this Setup ships: record it.
+# Built and published together, so the manifests on disk are the ones inside this Setup.
+$manifests=Join-Path $PSScriptRoot '..\src-tauri\resources\install-manifests.json'
+if((Get-Item -LiteralPath $manifests).LastWriteTimeUtc -gt (Get-Item -LiteralPath $setup).LastWriteTimeUtc){
+    Write-Warning 'install-manifests.json cambió después de compilar este Setup: channel-baseline.json no se actualiza. Revísalo antes de publicar el catálogo.'
+}else{
+    $games=[ordered]@{}
+    # PowerShell 5.1 emits a JSON array as ONE object: enumerate it before sorting.
+    $list=@(Get-Content -LiteralPath $manifests -Raw -Encoding UTF8 | ConvertFrom-Json)
+    foreach($m in @($list | ForEach-Object {$_} | Sort-Object id)){$games[[string]$m.id]=[string]$m.version}
+    $baseline=[ordered]@{note='Games and versions shipped inside the last published Coco 2 Setup. Publish-Coco2Release.ps1 rewrites it; Publish-Coco2Catalog.mjs sends everything newer through the signed channel.';setupVersion=$version;games=$games}
+    [IO.File]::WriteAllText((Join-Path $PSScriptRoot '..\channel-baseline.json'),(($baseline|ConvertTo-Json -Depth 4)+"`n"),(New-Object Text.UTF8Encoding($false)))
+}
 # Older candidates are already on GitHub; keeping their local copies only takes space.
 $candidateDir=(Get-Item -LiteralPath $setup).Directory
 foreach($old in @(Get-ChildItem -LiteralPath $candidateDir.Parent.FullName -Directory | Where-Object { $_.FullName -ne $candidateDir.FullName -and $_.Name -match '^\d+\.\d+\.\d+-[0-9A-F]{12}$' })){

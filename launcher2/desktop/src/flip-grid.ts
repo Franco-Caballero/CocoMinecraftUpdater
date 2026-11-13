@@ -32,7 +32,7 @@ function measure(container:HTMLElement){
   return {cards,slots};
 }
 
-export function useFlipGrid(container:RefObject<HTMLElement|null>,signature:string,enabled:boolean){
+export function useFlipGrid(container:RefObject<HTMLElement|null>,signature:string,enabled:boolean,suspended?:()=>boolean){
   const slots=useRef<Map<string,Slot>|null>(null);
   useLayoutEffect(()=>{
     const element=container.current;
@@ -40,7 +40,8 @@ export function useFlipGrid(container:RefObject<HTMLElement|null>,signature:stri
     const current=measure(element);
     const previous=slots.current;
     slots.current=current.slots;
-    if(!previous||!enabled||typeof Element.prototype.animate!=='function')return;
+    // A view transition already moves every card: gliding them again would move them twice.
+    if(!previous||!enabled||suspended?.()||typeof Element.prototype.animate!=='function')return;
     const plan=planFlip(previous,current.slots);
     plan.moved.slice(0,MAX_ANIMATED).forEach(({id,dx,dy})=>{
       current.cards.get(id)?.animate(

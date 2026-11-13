@@ -45,7 +45,7 @@ type Clip = {
 
 export class HoverVideoPool {
   private readonly clips=new Map<string,Clip>();
-  private readonly sourceIds:string[];
+  private sourceIds:string[];
   private readonly requestedEver=new Set<string>();
   private readonly metadataCovered=new Set<string>();
   private readonly retryAfterEviction=new Map<string,number>();
@@ -96,6 +96,11 @@ export class HoverVideoPool {
 
   constructor(private readonly sources:Record<string,HoverPreviewSource>){
     this.sourceIds=Object.keys(sources);
+  }
+
+  /** Clips that arrived later (with a signed catalog) join the warm-up rotation. */
+  addSources(ids:readonly string[]){
+    for(const id of ids)if(Object.hasOwn(this.sources,id)&&!this.sourceIds.includes(id))this.sourceIds.push(id);
   }
 
   /** Native cache finished this clip: use it from now on. */

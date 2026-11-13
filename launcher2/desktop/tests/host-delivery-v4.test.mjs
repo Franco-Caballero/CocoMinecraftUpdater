@@ -58,8 +58,8 @@ test('pending native operations are shown without silent rollback',async()=>{
 
 test('trusted cached catalog renders immediately and background identical/offline channel causes no re-enumeration',async()=>{
   const app=await read('src/main.tsx');
-  assert.match(app,/const CATALOG_SYNC_INTERVAL_MS=15\*60_000/);
-  assert.match(app,/result\.status==='updated'\)await refreshNativeCatalog\(\)/);
+  assert.match(app,/const CATALOG_SYNC_INTERVAL_MS=3\*60_000/,'only a tiny head is read each time');
+  assert.match(app,/result\.status==='updated'\)\{await loadCatalogExtras\(\);await refreshNativeCatalog\(\);\}/,'extras land before the new cards');
   assert.match(app,/publishVerifiedCatalog\(/);
   assert.match(app,/if\(sources\.status==='fulfilled'\)setCatalogSources\(new Map\(sources\.value\.map/);
   assert.match(app,/if\(!isCurrent\(\)\)return/);

@@ -32,6 +32,7 @@
 | Preparación al abrir un juego (Online-Fix, Steam, popups) y Defender | `desktop/src-tauri/src/services/{game_prepare.rs,defender.rs}`, `desktop/src-tauri/resources/online-fix.json` |
 | Partidas LAN, prioridad del adaptador Coco y migración de red desde Coco 1 | [`docs/LAN.md`](docs/LAN.md) |
 | Última versión distribuible y QA | `README.md` y `desktop/scripts/{Build-CocoLauncher2.ps1,Verify-Coco2SignedSetup.mjs}` |
+| **Hacer aparecer un juego nuevo a los amigos** (sin Setup ni reinicio) | `desktop/scripts/Publish-Coco2Catalog.mjs` y la sección «Publicar el catálogo» de `docs/AGENT_ADD_GAME.md` |
 | Publicar una versión (solo con autorización del host) | `desktop/scripts/Publish-Coco2Release.ps1` y la sección «Publicar una versión nueva» de `docs/AGENT_ADD_GAME.md` |
 | Traspaso de amigos desde Coco 1 | `../engine/CocoUpdater.ps1` (`Invoke-CocoLauncher2Handoff`) y `../tests/Test-CocoLauncher2Handoff.ps1` |
 

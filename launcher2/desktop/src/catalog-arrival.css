@@ -1,0 +1,42 @@
+/* A game published while the library is open arrives in one continuous motion: the new
+   card drops into "Último agregado", the previous one shrinks into its slot in the grid and
+   every other card slides over to make room. Driven by a view transition per card. */
+
+/* The page itself does not crossfade: only the cards move. */
+::view-transition-old(root),::view-transition-new(root){animation:none}
+
+/* Each card is clipped to its own moving frame, so a wide card shrinking into a tile never spills. */
+::view-transition-group(*.coco-card){overflow:clip;border-radius:6px;animation-duration:.82s;animation-timing-function:cubic-bezier(.22,.9,.24,1)}
+::view-transition-image-pair(*.coco-card){isolation:isolate}
+/* A card that changes shape (wide "último agregado" ↔ grid tile) crossfades while it morphs,
+   anchored at the cover's corner so the artwork itself appears to resize. */
+::view-transition-old(*.coco-card),::view-transition-new(*.coco-card){width:100%;height:100%;object-fit:cover;object-position:left top;animation-duration:.82s;animation-timing-function:cubic-bezier(.22,.9,.24,1)}
+
+/* The newcomer: drops in from above, sharpening out of a glow. */
+::view-transition-new(*.coco-card):only-child{animation:coco-arrive-in 1s cubic-bezier(.2,1.2,.3,1) .16s both}
+/* A card pushed past the last visible page bows out. */
+::view-transition-old(*.coco-card):only-child{animation:coco-arrive-out .42s ease-in both}
+
+@keyframes coco-arrive-in{
+  0%{opacity:0;transform:translateY(-34px) scale(.84);filter:blur(12px) brightness(1.9) saturate(1.4)}
+  55%{opacity:1;filter:blur(0) brightness(1.3) saturate(1.15)}
+  100%{opacity:1;transform:none;filter:none}
+}
+@keyframes coco-arrive-out{to{opacity:0;transform:scale(.9) translateY(10px)}}
+
+/* Once in place, the newest card keeps a short celebration so the eye finds it. */
+.coco2-desktop .coco-latest-card.is-arriving .card-surface{animation:coco-arrive-glow 2.6s ease-out .9s both}
+.coco2-desktop .coco-latest-card.is-arriving .card-surface::before{opacity:1;animation:coco-orbit 1.8s linear .9s 3}
+.coco2-desktop .coco-latest-card.is-arriving .card-surface::after{opacity:1;background:linear-gradient(105deg,transparent 30%,#ffffff40 48%,transparent 66%);background-size:250% 100%;background-repeat:no-repeat;animation:coco-arrive-sheen 1.4s ease-in-out 1s 2 both}
+.coco2-desktop .coco-latest-card.is-arriving .coco-latest-label{animation:coco-arrive-label 1.2s var(--snap) 1s both}
+
+@keyframes coco-arrive-glow{
+  0%{box-shadow:0 0 0 2px var(--hot),0 0 60px color-mix(in srgb,var(--hot) 70%,transparent)}
+  100%{box-shadow:0 0 0 0 transparent,0 0 0 transparent}
+}
+@keyframes coco-arrive-sheen{from{background-position:120% 0}to{background-position:-120% 0}}
+@keyframes coco-arrive-label{0%{color:#fff;text-shadow:0 0 14px var(--hot)}100%{text-shadow:none}}
+
+@media(prefers-reduced-motion:reduce){
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
+}

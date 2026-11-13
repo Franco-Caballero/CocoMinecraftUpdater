@@ -25,8 +25,10 @@ test('game hover sources are curated, bounded, official Steam CDN media, never u
     }
     const url=new URL(clip.url);
     assert.equal(url.protocol,'https:');
-    assert.ok(['cdn.akamai.steamstatic.com','shared.akamai.steamstatic.com'].includes(url.hostname));
+    // Newer store trailers (2025+) live on video.akamai under /store_trailers/<app>/…/microtrailer.webm.
+    assert.ok(['cdn.akamai.steamstatic.com','shared.akamai.steamstatic.com','video.akamai.steamstatic.com'].includes(url.hostname));
     assert.match(url.pathname,/\/(microtrailer\.webm|extras\/[0-9a-f]{32}\.mp4)$/);
+    if(url.hostname==='video.akamai.steamstatic.com')assert.match(url.pathname,new RegExp(`^/store_trailers/${clip.steamAppId}/`));
     assert.ok(Number.isSafeInteger(clip.bytes)&&clip.bytes>10000&&clip.bytes<=6_000_000);
     assert.ok(Number.isSafeInteger(clip.steamAppId)&&clip.steamAppId>0);
   }

@@ -19,14 +19,15 @@ export async function publishVerifiedCatalog<T>(
   gate:CatalogRefreshGate,
   read:()=>Promise<readonly T[]>,
   valid:(entries:readonly T[])=>boolean,
-  paint:(entries:readonly T[])=>void,
+  paint:(entries:readonly T[])=>void|Promise<void>,
   enrich:(isCurrent:()=>boolean)=>Promise<void>,
 ):Promise<boolean>{
   const ticket=gate.begin();
   const entries=await read();
   if(!gate.current(ticket))return false;
   if(!valid(entries))throw new Error('Catálogo nativo inválido');
-  paint(entries);
+  // A paint may run inside a view transition: enrichment waits until the new cards exist.
+  await paint(entries);
   // Starts after the trusted catalog is ready. Independent read-only hints
   // should never delay a successful import, navigation, or catalogue paint.
   void enrich(()=>gate.current(ticket)).catch(error=>console.warn('Optional catalog hints unavailable:',error));

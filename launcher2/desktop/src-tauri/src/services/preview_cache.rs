@@ -13,7 +13,8 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
 const CURATED: &str = include_str!("../../../src/game-hover-previews.json");
-const ALLOWED_HOSTS: [&str; 2] = ["cdn.akamai.steamstatic.com", "shared.akamai.steamstatic.com"];
+// Newer store trailers (2025+) are served from video.akamai under /store_trailers/.
+const ALLOWED_HOSTS: [&str; 3] = ["cdn.akamai.steamstatic.com", "shared.akamai.steamstatic.com", "video.akamai.steamstatic.com"];
 const MAX_CLIP_BYTES: u64 = 64 * 1024 * 1024;
 const WEBM_MAGIC: [u8; 4] = [0x1A, 0x45, 0xDF, 0xA3];
 const HEADER_BYTES: usize = 8;
@@ -33,8 +34,12 @@ struct CuratedClip { url: String }
 pub struct CachedPreview { pub id: String, pub path: String }
 
 fn curated() -> Result<BTreeMap<String, CuratedClip>, String> {
-    let all: BTreeMap<String, CuratedClip> = serde_json::from_str(CURATED)
+    let mut all: BTreeMap<String, CuratedClip> = serde_json::from_str(CURATED)
         .map_err(|error| format!("Invalid curated previews: {error}"))?;
+    // Clips that arrived with the signed catalog channel are host-curated too.
+    for (id, extra) in crate::services::catalog::channel_extras() {
+        if let Some(preview) = extra.preview { all.insert(id, CuratedClip { url: preview.url }); }
+    }
     Ok(all.into_iter().filter(|(_, clip)| allowed_url(&clip.url)).collect())
 }
 
