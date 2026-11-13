@@ -552,7 +552,7 @@
       "ui": {
         "imagePath": "assets/experiences/big-walk.png"
       },
-      "description": "Juego cooperativo de aventura y puzles en equipo. Ãšnanse usando el Join Code del Host.",
+      "description": "Juego cooperativo de aventura y puzles en equipo. Únanse usando el Join Code del Host.",
       "instanceId": "big-walk",
       "managementMode": "managed",
       "runtime": {
@@ -1273,7 +1273,7 @@
       "ui": {
         "imagePath": "assets/experiences/heart-signal-s05.jpg"
       },
-      "description": "Un grupo de jÃ³venes comparte casa mientras intenta descubrir quiÃ©n siente algo por quiÃ©n. Gestos cotidianos, citas y mensajes anÃ³nimos alimentan un juego de intuiciones romÃ¡nticas.",
+      "description": "Un grupo de jóvenes comparte casa mientras intenta descubrir quién siente algo por quién. Gestos cotidianos, citas y mensajes anónimos alimentan un juego de intuiciones románticas.",
       "instanceId": "heart-signal",
       "managementMode": "managed",
       "runtime": {
@@ -1336,7 +1336,7 @@
         "accentColor": "#FF2E93",
         "imagePath": "assets/experiences/love-island.jpg"
       },
-      "description": "Un grupo de solteros convive en una villa donde las citas, las nuevas parejas y las votaciones ponen a prueba cada romance. Solo las conexiones mÃ¡s fuertes llegan al final.",
+      "description": "Un grupo de solteros convive en una villa donde las citas, las nuevas parejas y las votaciones ponen a prueba cada romance. Solo las conexiones más fuertes llegan al final.",
       "instanceId": "love-island-us",
       "managementMode": "managed",
       "runtime": {
@@ -1377,11 +1377,11 @@
       "id": "the-drama-2026",
       "name": "The Drama",
       "ui": {
-        "badge": "PelÃ­cula",
+        "badge": "Película",
         "accentColor": "#8E44AD",
         "imagePath": "assets/experiences/the-drama.jpg"
       },
-      "description": "A pocos dÃ­as de su boda, una pareja enamorada ve tambalear su relaciÃ³n cuando una revelaciÃ³n inesperada transforma los preparativos en una crisis llena de tensiÃ³n y humor incÃ³modo.",
+      "description": "A pocos días de su boda, una pareja enamorada ve tambalear su relación cuando una revelación inesperada transforma los preparativos en una crisis llena de tensión y humor incómodo.",
       "instanceId": "the-drama",
       "managementMode": "managed",
       "runtime": {
@@ -1422,11 +1422,11 @@
       "id": "leviticus-2026",
       "name": "Leviticus",
       "ui": {
-        "badge": "PelÃ­cula",
+        "badge": "Película",
         "accentColor": "#2C3E50",
         "imagePath": "assets/experiences/leviticus.jpg"
       },
-      "description": "Dos adolescentes enamorados intentan escapar de una entidad violenta que adopta la apariencia de la persona que mÃ¡s desean: el uno al otro. Terror sobrenatural sobre el deseo y la represiÃ³n.",
+      "description": "Dos adolescentes enamorados intentan escapar de una entidad violenta que adopta la apariencia de la persona que más desean: el uno al otro. Terror sobrenatural sobre el deseo y la represión.",
       "instanceId": "leviticus",
       "managementMode": "managed",
       "runtime": {
@@ -1467,11 +1467,11 @@
       "id": "mickey-17-2025",
       "name": "Mickey 17",
       "ui": {
-        "badge": "PelÃ­cula",
+        "badge": "Película",
         "accentColor": "#E67E22",
         "imagePath": "assets/experiences/mickey-17.jpg"
       },
-      "description": "PelÃ­cula de ciencia ficciÃ³n (2025) dirigida por Bong Joon-ho y protagonizada por Robert Pattinson. Mickey 17 es un empleado prescindible enviado a colonizar un mundo helado; cuando una versiÃ³n muere, un clon toma su lugar con sus recuerdos intactos.",
+      "description": "Película de ciencia ficción (2025) dirigida por Bong Joon-ho y protagonizada por Robert Pattinson. Mickey 17 es un empleado prescindible enviado a colonizar un mundo helado; cuando una versión muere, un clon toma su lugar con sus recuerdos intactos.",
       "instanceId": "mickey-17",
       "managementMode": "managed",
       "runtime": {
@@ -1664,7 +1664,7 @@
       "ui": {
         "imagePath": "assets/experiences/rhythm-doctor.jpg"
       },
-      "description": "Juego de ritmo donde curas pacientes al compÃ¡s de los latidos de su corazÃ³n.",
+      "description": "Juego de ritmo donde curas pacientes al compás de los latidos de su corazón.",
       "instanceId": "rhythm-doctor",
       "managementMode": "managed",
       "runtime": {
@@ -1738,7 +1738,7 @@
       "ui": {
         "imagePath": "assets/experiences/move-or-die.jpg"
       },
-      "description": "Juego de fiesta frenÃ©tico para 4 jugadores donde las reglas cambian cada 20 segundos y tu salud baja constantemente si te quedas quieto.",
+      "description": "Juego de fiesta frenético para 4 jugadores donde las reglas cambian cada 20 segundos y tu salud baja constantemente si te quedas quieto.",
       "instanceId": "move-or-die",
       "managementMode": "managed",
       "runtime": {
@@ -1886,7 +1886,7 @@
       "ui": {
         "imagePath": "assets/experiences/mimic-party.jpg"
       },
-      "description": "Juego multijugador online por voz de 1 a 5 jugadores donde todos imitan sonidos simultÃ¡neamente, evaluando tono y ritmo en una divertida competencia party.",
+      "description": "Juego multijugador online por voz de 1 a 5 jugadores donde todos imitan sonidos simultáneamente, evaluando tono y ritmo en una divertida competencia party.",
       "instanceId": "mimic-party",
       "managementMode": "managed",
       "runtime": {
@@ -2183,7 +2183,7 @@
         "accentColor": "#4A2E18",
         "imagePath": "assets/experiences/pilgrim.jpg"
       },
-      "description": "Pilgrim es una aventura de terror medieval cooperativa de 1 a 4 jugadores. Â¿PodrÃ¡n tÃº y tus amigos llegar al final de The Road?",
+      "description": "Pilgrim es una aventura de terror medieval cooperativa de 1 a 4 jugadores. ¿Podrán tú y tus amigos llegar al final de The Road?",
       "instanceId": "pilgrim",
       "managementMode": "managed",
       "runtime": {
@@ -2264,7 +2264,7 @@
       "ui": {
         "imagePath": "assets/experiences/yapyap-official.jpg"
       },
-      "description": "Terror cooperativo para hasta 6 jugadores: infiltren torres mÃ¡gicas, lancen hechizos con la voz y causen el caos mientras evitan monstruos.",
+      "description": "Terror cooperativo para hasta 6 jugadores: infiltren torres mágicas, lancen hechizos con la voz y causen el caos mientras evitan monstruos.",
       "instanceId": "yapyap",
       "managementMode": "managed",
       "runtime": {
@@ -2346,7 +2346,7 @@
       "ui": {
         "imagePath": "assets/experiences/crack.jpg"
       },
-      "description": "Aventura incremental cooperativa para hasta 4 jugadores: descubran quÃ© esconde un misterioso huevo gigante en un laboratorio.",
+      "description": "Aventura incremental cooperativa para hasta 4 jugadores: descubran qué esconde un misterioso huevo gigante en un laboratorio.",
       "instanceId": "crack",
       "managementMode": "managed",
       "runtime": {
@@ -2498,7 +2498,7 @@
       "ui": {
         "imagePath": "assets/experiences/party-animals.jpg"
       },
-      "description": "Peleas de fiesta con animales y fÃ­sicas disparatadas: empuja, lanza y derriba a tus amigos en partidas locales u online.",
+      "description": "Peleas de fiesta con animales y físicas disparatadas: empuja, lanza y derriba a tus amigos en partidas locales u online.",
       "instanceId": "party-animals",
       "managementMode": "managed",
       "runtime": {
@@ -2628,7 +2628,7 @@
       "ui": {
         "imagePath": "assets/experiences/golf-it.jpg"
       },
-      "description": "Minigolf multijugador con fÃ­sicas: supera pistas llenas de obstÃ¡culos y compite con tus amigos, con editor de circuitos y mapas de la comunidad.",
+      "description": "Minigolf multijugador con físicas: supera pistas llenas de obstáculos y compite con tus amigos, con editor de circuitos y mapas de la comunidad.",
       "instanceId": "golf-it",
       "managementMode": "managed",
       "runtime": {
@@ -2759,11 +2759,11 @@
       "id": "resident-evil-2026",
       "name": "Resident Evil",
       "ui": {
-        "badge": "PelÃ­cula",
+        "badge": "Película",
         "accentColor": "#B72C38",
         "imagePath": "assets/experiences/resident-evil-2026.jpg"
       },
-      "description": "Un mensajero mÃ©dico queda atrapado en una noche de caos y criaturas aterradoras. Cada entrega se convierte en una carrera por sobrevivir en esta historia de terror del universo Resident Evil.",
+      "description": "Un mensajero médico queda atrapado en una noche de caos y criaturas aterradoras. Cada entrega se convierte en una carrera por sobrevivir en esta historia de terror del universo Resident Evil.",
       "instanceId": "resident-evil-2026",
       "managementMode": "managed",
       "runtime": {
@@ -2882,7 +2882,7 @@
       "ui": {
         "imagePath": "assets/experiences/gamble-with-your-friends.jpg"
       },
-      "description": "Explorador de casinos cooperativo para hasta 6 jugadores: tus amigos y tÃº comparten una cuenta bancaria y una deuda descomunal. Apuesten, compren objetos sospechosos y tomen malas decisiones para llegar a la cuota diaria en 5 minutosâ€¦ o sufran las consecuencias.",
+      "description": "Explorador de casinos cooperativo para hasta 6 jugadores: tus amigos y tú comparten una cuenta bancaria y una deuda descomunal. Apuesten, compren objetos sospechosos y tomen malas decisiones para llegar a la cuota diaria en 5 minutos… o sufran las consecuencias.",
       "instanceId": "gamble-with-your-friends",
       "managementMode": "managed",
       "runtime": {
@@ -2963,7 +2963,7 @@
       "ui": {
         "imagePath": "assets/experiences/gang-beasts.jpg"
       },
-      "description": "Peleas absurdas entre personajes gelatinosos en escenarios peligrosos: el clÃ¡sico party brawler de Boneloaf. Combates locales y en lÃ­nea para hasta 8 jugadores, con modos melee y gÃ¡ngsters, fÃ­sicas impredecibles y caÃ­das que dan risa.",
+      "description": "Peleas absurdas entre personajes gelatinosos en escenarios peligrosos: el clásico party brawler de Boneloaf. Combates locales y en línea para hasta 8 jugadores, con modos melee y gángsters, físicas impredecibles y caídas que dan risa.",
       "instanceId": "gang-beasts",
       "managementMode": "managed",
       "runtime": {
@@ -3137,7 +3137,7 @@
       "ui": {
         "imagePath": "assets/experiences/grocery-store-simulator.jpg"
       },
-      "description": "Simulador de supermercado en primera persona: repone productos, atiende clientes, gestiona las cajas y amplÃ­a tu tienda, solo o en cooperativo.",
+      "description": "Simulador de supermercado en primera persona: repone productos, atiende clientes, gestiona las cajas y amplía tu tienda, solo o en cooperativo.",
       "instanceId": "grocery-store-simulator",
       "managementMode": "managed",
       "runtime": {
@@ -3191,7 +3191,7 @@
       "pack": {
         "packId": "standalone-grocery-store-simulator",
         "lockPath": "launcher/experiences/grocery-store-simulator.lock.json",
-        "version": "1.2.4.1",
+        "version": "1.2.4.2",
         "sha256": "b95f6408f0b250922e651fee518be82036ccef4ea02987c110abc93a9ac0aa51",
         "size": 6623041407,
         "archives": [
@@ -3418,7 +3418,7 @@
       "ui": {
         "imagePath": "assets/experiences/bopl-battle.jpg"
       },
-      "description": "Bopl Battle es un juego de peleas de plataformas por rondas para hasta 4 jugadores, con habilidades absurdas que se combinan para crear caos total. Uno de los lanzamientos indie mÃ¡s virales de 2023.",
+      "description": "Bopl Battle es un juego de peleas de plataformas por rondas para hasta 4 jugadores, con habilidades absurdas que se combinan para crear caos total. Uno de los lanzamientos indie más virales de 2023.",
       "instanceId": "bopl-battle",
       "managementMode": "managed",
       "runtime": {
@@ -3454,7 +3454,7 @@
       "pack": {
         "packId": "standalone-bopl-battle",
         "lockPath": "launcher/experiences/bopl-battle.lock.json",
-        "version": "2.5.1",
+        "version": "2.5.1.1",
         "sha256": "ceae061b8afe0f3b5ad49c37eec9fcb6b61bf34b8b6697be2843b9f03d3bade0",
         "size": 158799305,
         "archives": [

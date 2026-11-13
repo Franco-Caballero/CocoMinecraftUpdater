@@ -1413,7 +1413,7 @@
     "id": "grocery-store-simulator",
     "instanceId": "grocery-store-simulator",
     "workflow": "coco-standalone",
-    "version": "1.2.4.1",
+    "version": "1.2.4.2",
     "archives": [
       {
         "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part01.zip",
@@ -1601,7 +1601,7 @@
     "id": "bopl-battle",
     "instanceId": "bopl-battle",
     "workflow": "coco-standalone",
-    "version": "2.5.1",
+    "version": "2.5.1.1",
     "archives": [
       {
         "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/bopl-battle-2.5.1/bopl-battle-2.5.1-part01.zip",

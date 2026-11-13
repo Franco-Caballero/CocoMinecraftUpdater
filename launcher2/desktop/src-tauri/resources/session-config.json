@@ -207,7 +207,7 @@
     },
     {
       "id": "grocery-store-simulator",
-      "packVersion": "1.2.4.1",
+      "packVersion": "1.2.4.2",
       "host": "",
       "port": 0
     },
@@ -225,7 +225,7 @@
     },
     {
       "id": "bopl-battle",
-      "packVersion": "2.5.1",
+      "packVersion": "2.5.1.1",
       "host": "",
       "port": 0
     },
