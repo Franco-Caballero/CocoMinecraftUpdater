@@ -1,213 +1,198 @@
-# AnkerGames: notas del agente
+# AnkerGames → Coco 2: receta rápida
 
-Documento de trabajo para agregar juegos de `ankergames.net` a Coco Launcher 2. Complementa [`AGENT_ADD_GAME.md`](AGENT_ADD_GAME.md); no lo sustituye. Aquí se acumula lo que ya funcionó, los selectores/endpoints, los tropiezos y los datos de cada alta.
+Receta para «agrega este juego: `https://ankergames.net/game/<slug>`». Sigue los pasos en orden sin investigar de nuevo lo que ya está resuelto aquí. Lo general (canal, Setup, Online-Fix, medios de Steam) está en [`AGENT_ADD_GAME.md`](AGENT_ADD_GAME.md); este documento solo cubre lo propio de AnkerGames y los atajos probados con 7 juegos.
 
-## Regla de oro
+Tiempo real esperado: 15–25 min para 1–3 GB; la mayor parte es descarga, reempaquetado y subida.
 
-- **Todo lo pesado vive en `D:`** (`D:\CocoWork\<id>`): ZIP descargado, extracción, partes, caché de prueba e instalación nativa. Nunca dejes el ZIP grande en `%USERPROFILE%\.t3\userdata\server-browser\downloads` (C:).
-- **Descarga desatendida**: el navegador solo se usa para *mintear* el enlace; el archivo grande se baja con `curl -L` directo a `D:`. Sin diálogo de guardar, sin esperar la cuenta atrás con la pestaña oculta.
-- El ZIP de AnkerGames se **reempaqueta** (no se sube tal cual): hay que quitar el `1337` del `OnlineFix.ini`, los accesos `.url` y los archivos promocionales.
-- `%TEMP%`/`%TMP%` del proceso apuntan a `D:\CocoWork\<id>\temp` antes de invocar scripts Python/PowerShell pesados.
+## Reglas que ahorran más tiempo
 
-## Flujo probado (Gang Beasts, Pummel, Grocery y Paint; 1,0–6,6 GB)
+- **Todo lo pesado en `D:\CocoWork\<id>`**, con `TEMP`/`TMP` del proceso allí. Nunca dejes que el navegador guarde el ZIP (queda en C: con nombre UUID).
+- **El navegador solo sirve para obtener el enlace**; el archivo se baja con `curl` directo a D:.
+- **El enlace `download-file` es de un solo uso.** Ni `HEAD`, ni `curl -I`, ni una prueba previa: el primer acceso lo gasta y el siguiente devuelve la página «Ops matey no downloads here» (HTML de ~190 KB). Compruébalo **después** de bajar (tamaño y magic). Si lo gastaste, vuelve a pedir uno (paso 2).
+- Las herramientas del navegador de T3 (`preview_open`, `preview_evaluate`, `preview_navigate`, `preview_wait_for`, `t3_preview_close`) son **herramientas**, no comandos de la terminal.
+- En PowerShell `"\n"` es una barra y una n, no un salto de línea (usa `` `n ``), y no existen los heredoc `<<'EOF'`: para editar JSON escribe un `.py` en `D:\CocoWork\<id>\temp` y ejecútalo con `python -I`.
+- `Publish-Coco2Catalog.mjs` tarda **2–3 minutos** (espera a que GitHub sirva el catálogo nuevo). Dale un timeout de 10 min o ejecútalo en segundo plano. Si se cortó, mira la secuencia en `coco2-catalog-head.json` antes de repetir; repetirlo es seguro (`unchanged`).
+- Si tocas código Rust/TS para que un juego funcione, eso **no** viaja por el canal: hace falta un Setup nuevo (sección «Publicar una versión nueva» de la guía maestra). Nunca lo dejes sin commit.
 
-### 1. Abrir la ficha y obtener el `downloadId`
+## 1. Datos de la ficha (sin navegador)
 
-La ficha es `https://ankergames.net/game/<slug>`. En el HTML hay un modal Alpine con:
-
-```html
-<a class="download-button" @click.prevent="generateDownloadUrl(198)">Download</a>
+```powershell
+$d='D:\CocoWork\<id>'; New-Item -ItemType Directory -Force "$d\temp","$d\prepared","$d\assets" | Out-Null
+curl.exe -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://ankergames.net/game/<slug>" -o "$d\temp\page.html"
+Select-String -Path "$d\temp\page.html" -Pattern 'generateDownloadUrl\((\d+)\)','softwareVersion[^,]*','steam/apps/(\d+)' -AllMatches |
+  ForEach-Object { $_.Matches.Value } | Select-Object -Unique
 ```
 
-Ese `198` es el **downloadId** (no el id de la ficha: Gang Beasts es `ankergames://game/210`). Búscalo con:
+- `generateDownloadUrl(<n>)` → **downloadId** (no es el id de la ficha).
+- `steam/apps/<n>` → **Steam AppId** (confírmalo con el `RealAppId` del `OnlineFix.ini`).
+- **Versión** (debe ser numérica con puntos, el canal no acepta letras): `V 1.14.1k` → `1.14.1`; `Build 3911030` → `3911030`; sin versión → fecha del paquete `AAAA.MM.DD`. El `FileVersion` del `.exe` Unity/Unreal es el del motor: no sirve.
+
+Mientras tanto, pide portada, clip y capturas de Steam (guía maestra, «Tarjeta completa»).
+
+## 2. Enlace de descarga (navegador, ~15 s)
+
+El POST pasa por Cloudflare y **falla con `curl`**; hazlo dentro de la página. Abre `https://ankergames.net/game/<slug>` con `preview_open` y ejecuta con `preview_evaluate`:
 
 ```js
-[...document.querySelectorAll('[role="dialog"] a.download-button')]
-  .map(a => a.getAttribute('@click.prevent'))
+(async () => {
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const r = await fetch('/generate-download-url/<downloadId>', {method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf}, body: '{}'});
+  return (await r.json()).download_url;   // https://ankergames.net/download/<payload>/<firma>
+})()
 ```
 
-Si el modal aún no está en el DOM, el botón principal tiene `@click="$dispatch('open-download-modal')"`; el modal real se teleporta a `<body>`.
-
-### 2. Mintear el enlace de descarga
-
-El POST a `/generate-download-url/<downloadId>` requiere CSRF y pasa por Cloudflare. **Cloudflare bloquea el POST hecho con `curl`** (devuelve el HTML de "Just a moment..."). Hazlo desde la sesión del navegador:
+Luego `preview_navigate` a ese `download_url`, `preview_wait_for` con el texto `Download Ready` (5–10 s, no hace falta Turnstile ni cuenta atrás), y lee el enlace final:
 
 ```js
-const meta = document.querySelector('meta[name="csrf-token"]');
-const r = await fetch('/generate-download-url/198', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': meta.content},
-  body: '{}'
-});
-const {download_url} = await r.json();
+[...document.querySelectorAll('a[href*="/download-file/"]')].map(a => a.href)[0]
 ```
 
-`download_url` es `https://ankergames.net/download/<payload>/<hash>`.
+(No uses `a.download-button` como selector: hay varios y el primero no siempre es el enlace.) Cierra la pestaña con `t3_preview_close`.
 
-### 3. Leer el enlace final desde la página de descarga
-
-Navega a `download_url` y espera a que exista `a.download-button` (la página muestra "Download Ready 100%"). Su `href` es:
-
-```
-https://ankergames.net/download-file/<token>
-```
-
-Ese `download-file` responde `302` a `https://tunnel5.dlproxy.uk/download/ag1...`. **No necesita cookies** y se puede bajar con `curl`:
+## 3. Descargar e inspeccionar
 
 ```powershell
-curl.exe -L --fail --retry 3 --retry-delay 5 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" `
-  -o 'D:\CocoWork\gang-beasts\Gang-Beasts-AnkerGames.zip' `
-  "https://ankergames.net/download-file/<token>"
+curl.exe -L --fail --retry 3 --retry-delay 5 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -o "$d\game.zip" "<download-file>"
+$b=[IO.File]::ReadAllBytes("$d\game.zip")[0..3]; '{0:X2} {1:X2} {2:X2} {3:X2}' -f $b[0],$b[1],$b[2],$b[3]   # 50 4B = ZIP, 52 61 = RAR
+& 'C:\Program Files\7-Zip\7z.exe' x -y -o"$d\source" "$d\game.zip" | Out-Null
 ```
 
-Comprueba `Content-Length` con `curl -sIL` antes de bajar. Gang Beasts: `1,085,266,103` bytes en 32 s (~32 MB/s).
+- Usa siempre 7-Zip: hay ZIP con entradas Zstandard (.NET falla) y RAR disfrazados (Grocery Store Simulator).
+- Un HTML pequeño en vez del ZIP = enlace gastado: vuelve al paso 2.
+- ~32 MB/s: 1 GB en 30–40 s.
 
-> No hace falta resolver el Turnstile a mano ni esperar la cuenta atrás: cuando la página ya muestra "Download Ready", el `href` está listo. El error clásico era dejar que el navegador guardara el archivo (queda en C: y con nombre UUID).
+Busca en `source` (sin ejecutar nada): el `.exe` del juego, cada `OnlineFix.ini`, `OnlineFix64.dll`/`OnlineFix.dll`, y la basura del empaquetador. Clasifica el juego con esta tabla:
 
-> **El token no sirve antes de "Download Ready".** Si haces `curl` (o incluso un `HEAD`) con el `download-file` recién minteado, recibes un HTML de **190.888 B** con "Ops matey no downloads here". Hay que navegar de verdad a `download_url`, esperar el texto "Download Ready" o `a.download-button`, y solo entonces leer el `href` y bajar. El mismo token funciona después. Haz una descarga a la vez; los tokens caducan en ~4 h.
+| Dónde está Online-Fix | Ejemplo | `--executable` | `--require` | Primer arranque invisible |
+|---|---|---|---|---|
+| `OnlineFix64.dll` junto al `.exe` (Unity 64 bits) | Pummel, Paint, Gang Beasts | `<Juego>/<Juego>.exe` | exe, `OnlineFix64.dll`, `winmm.dll`, `OnlineFix.ini`, `UnityPlayer.dll`, `steam_api64.dll` (+ `GameAssembly.dll` si es IL2CPP) | Sí |
+| Unreal: `Binaries/Win64` junto a `-Shipping.exe` | Grocery Store Simulator | el `.exe` de la raíz | ese exe, el `-Shipping.exe` y los del fix | Sí (Coco arranca el `-Shipping.exe`) |
+| Dentro de `steam_api.dll` en `<Juego>_Data/Plugins` (Unity 32 bits, sin `OnlineFix*.dll`) | Stick Fight | `<Juego>/<Juego>.exe` | exe, `winmm.dll`, `Plugins/OnlineFix.ini`, `Plugins/steam_api.dll`, `Plugins/steam_api_of.dll` | Sí desde Coco **0.6.55** |
+| Otro | — | — | — | Compruébalo en el paso 7 antes de publicar |
 
-### 3.1 Variantes de empaquetado
+## 4. Limpiar la copia y empaquetar
 
-- **ZIP normal**: Pummel (1,6 GB), Paint (2,6 GB).
-- **RAR**: Grocery Store Simulator. Magic `52 61 72 21` ("Rar!"), no `PK`. 7-Zip lo extrae igual; el reempaquetado posterior sí produce ZIP.
-- **Zstandard**: algunas entradas de ZIP de AnkerGames; 7-Zip las maneja.
-- **Unreal Engine** (Grocery): el `.exe` de la raíz (`Simulatorita.exe`) es el lanzador; el binario real es `<Juego>/<Juego>/Binaries/Win64/<Juego>-Win64-Shipping.exe`. Incluye ambos en `requiredFiles`.
-- **Unity** (Pummel, Paint): `<Juego>.exe` + `UnityPlayer.dll` + `GameAssembly.dll` (Paint usa IL2CPP).
+En la **copia** `source` (nunca en la fuente del anfitrión):
 
-### 4. Inspeccionar y limpiar antes de hashear
+- **Borra carpetas enteras** que no son el juego: `Fix Repair` (un fix de repuesto: Coco lo trataría como segunda carpeta del fix) y cualquier `Saves`/`saves` (el empaquetador rechaza rutas con `Saves` aunque las excluyas). `--exclude` solo acepta **archivos** exactos, no carpetas.
+- INI sin el `1337` del empaquetador, sin BOM:
 
-El ZIP de AnkerGames puede usar **Zstandard** en algunas entradas: `System.IO.Compression` falla con "método de compresión no compatible". Usa 7-Zip (`C:\Program Files\7-Zip\7z.exe`) para extraer.
+  ```powershell
+  $ini="$d\source\<ruta>\OnlineFix.ini"; $t=[IO.File]::ReadAllText($ini)
+  $t=[Text.RegularExpressions.Regex]::Replace($t,'(?m)^1337=.*\r?\n?','')
+  [IO.File]::WriteAllText("$d\prepared\OnlineFix.ini",$t,(New-Object Text.UTF8Encoding($false)))
+  [regex]::Match($t,'(?m)^0=([0-9a-f]{128})').Groups[1].Value   # hash0 para online-fix.json
+  ```
 
-Comprueba el magic antes de elegir herramienta: `50 4B 03 04` = ZIP; `52 61 72 21` = RAR (Grocery Store Simulator). 7-Zip cubre ambos.
-
-Extrae a `D:\CocoWork\<id>\source` y revisa:
-
-- `OnlineFix.ini`: `RealAppId`, `hash0`, y una línea `1337=` del empaquetador. **Quita la línea `1337=`** y conserva `0`, `1` y el resto.
-- `.url`, `Read Me.txt`, `Run Me!.bat`: material promocional, se excluyen.
-- `Saves/`: el empaquetador rechaza cualquier ruta con un segmento `Saves` (datos persistentes). En Gang Beasts era `Gang Beasts/Saves/0/Input.txt` (mapeo de teclado por defecto): bórralo de la **copia temporal** `source` antes de empaquetar; el juego lo regenera. No toques partidas reales.
-- El ejecutable real es `<Juego>/<Juego>.exe`; el `FileVersion` de un `.exe` Unity/Unreal no sirve como versión.
-
-Prepara el INI sin BOM:
+- Excluye **cada** archivo promocional, también los de subcarpetas (en Grocery se coló un `Read Me.txt` dentro de la carpeta del juego). Lista rápida: `Get-ChildItem $d\source -Recurse -File -Include *.url,*.bat,'Read Me.txt',dlllist.txt,Log.txt,output_log.txt`.
 
 ```powershell
-$t=[IO.File]::ReadAllText($srcIni)
-$t=[Text.RegularExpressions.Regex]::Replace($t,'(?m)^1337=.*\r?\n?','')
-[IO.File]::WriteAllText($dstIni,$t,(New-Object Text.UTF8Encoding($false)))
+$env:TEMP="$d\temp"; $env:TMP=$env:TEMP
+python -I launcher2/desktop/scripts/New-CocoMultipartArchives.py "$d\source" "$d\archives" `
+  --prefix <id>-<version> --base-url 'https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/<id>-<version>' `
+  --override "<ruta del ini>=$d\prepared\OnlineFix.ini" `
+  --exclude 'AnkerGames - Free Pre-installed PC Games.url' --exclude 'Read Me.txt' --exclude 'Run Me!.bat' `
+  --compression deflate --level 1 --jobs 2      # + --split-large si un archivo pasa de 1,8 GB
+python -I launcher2/desktop/scripts/Check-CocoGamePackage.py "$d\archives"   # debe terminar sin PROBLEM
 ```
 
-### 5. Empaquetar (un ZIP o partes)
+`Check-CocoGamePackage.py` lee los ZIP finales e informa de `1337`, `.url`/`.bat`/`Read Me`/logs, `Saves`, `Fix Repair` y cuántas carpetas del fix verá Coco. No subas nada hasta que pase.
+
+## 5. Release, borrador y catálogo
 
 ```powershell
-$env:TEMP='D:\CocoWork\gang-beasts\temp'; $env:TMP=$env:TEMP
-python -I launcher2/desktop/scripts/New-CocoMultipartArchives.py 'D:\CocoWork\gang-beasts\source' 'D:\CocoWork\gang-beasts\archives' `
-  --prefix gang-beasts-1.28 `
-  --base-url 'https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gang-beasts-1.28' `
-  --override 'Gang Beasts/OnlineFix.ini=D:\CocoWork\gang-beasts\prepared\OnlineFix.ini' `
-  --exclude 'AnkerGames - Free Pre-installed PC Games.url' `
-  --exclude 'Read Me.txt' --exclude 'Run Me!.bat' `
-  --compression deflate --level 1 --jobs 2
+$files=@(Get-ChildItem "$d\archives" -Filter *.zip | Sort-Object Name | ForEach-Object FullName)   # @() o gh recibe una letra
+gh release create <id>-<version> -R Franco-Caballero/CocoMinecraftUpdater --prerelease --latest=false `
+  --title '<Nombre> <version> - Coco 2' --notes '<Nombre> <version> para Coco Launcher 2.' @files
+gh release view <id>-<version> -R Franco-Caballero/CocoMinecraftUpdater --json assets | ConvertFrom-Json | ForEach-Object assets | Select-Object name,size,state
+
+python -I launcher2/desktop/scripts/New-CocoMultipartCandidate.py --inventory "$d\archives\inventory.json" `
+  --id <id> --name '<Nombre>' --version <version> --executable '<exe>' --cover "$d\assets\cover.jpg" `
+  --description '<resumen en español, con tildes>' --require '<cada archivo de la tabla del paso 3>'
+& .\launcher2\desktop\scripts\Apply-CocoStandaloneDraft.ps1 -DraftId <id> -SourceZipDirectory "$d\archives"
+# y con el SHA que imprime:  ... -Apply -ApproveReviewedLicenseRights -ExpectedCatalogSha256 <sha>
 ```
 
-Gang Beasts: `1,077,893,081` bytes en 82,6 s (una parte). Si el juego supera 1,8 GB por archivo, añade `--split-large`.
+- `curl -sIL` a un asset de release da `Content-Length: 0` (redirige); la lista de `gh release view` ya muestra tamaño y `uploaded`.
+- Descripción: español natural **con tildes** (el script escribe los escapes `\u00e1`), género, objetivo y jugadores; mira las de juegos vecinos en `launcher/catalog.template.json`. Ese archivo es CRLF: si lo editas a mano, consérvalo.
 
-`--split-large` parte un archivo individual (p. ej. `Simulatorita-Windows.ucas`, 6,18 GB) en `.part1..partN` y el instalador nativo lo reconstruye. Sin ese flag el empaquetador aborta con `ValueError: File exceeds part budget: <ruta>`. Verifica tras la instalación que el archivo reconstruido tiene el tamaño/SHA del inventario y que no quedan `.part*`.
+## 6. Online-Fix, clip, capturas y sync
 
-### 6. Release, draft y catálogo
+- `launcher2/desktop/src-tauri/resources/online-fix.json`: añade `games.<id>` y `apps.<RealAppId>` con `realAppId`, `hash0` y `hash1337: ""`, **como texto** (copia el bloque del último juego y pégalo antes del cierre de cada objeto); `JSON.stringify` reordena `apps`.
+- `launcher2/desktop/src/game-hover-previews.json`: igual, como texto (`url`, `steamAppId`, `trailerId`, `bytes`).
+- Desde `launcher2/desktop`: `node scripts/sync-steam-screenshots.mjs; node scripts/sync-catalog.mjs`.
 
-```powershell
-gh release create <tag> -R Franco-Caballero/CocoMinecraftUpdater --prerelease --latest=false `
-  --title '<Nombre> <version> - Coco 2' --notes '...' 'D:\CocoWork\<id>\archives\<parte>.zip'
-# verificar Content-Length servido con curl -sIL
-
-python -I launcher2/desktop/scripts/New-CocoMultipartCandidate.py --inventory 'D:\CocoWork\<id>\archives\inventory.json' `
-  --id <id> --name '<Nombre>' --version <version> --executable '<Juego>/<Juego>.exe' `
-  --description '<español>' --cover 'D:\CocoWork\<id>\cover.jpg' `
-  --require '<Juego>/OnlineFix64.dll' --require '<Juego>/winmm.dll' --require '<Juego>/OnlineFix.ini' `
-  --require '<Juego>/UnityPlayer.dll' --require '<Juego>/GameAssembly.dll' `
-  --require '<Juego>/<Juego>_Data/Plugins/x86_64/steam_api64.dll'
-
-& .\launcher2\desktop\scripts\Apply-CocoStandaloneDraft.ps1 -DraftId <id> -SourceZipDirectory 'D:\CocoWork\<id>\archives'
-# revisar y aplicar con -Apply -ApproveReviewedLicenseRights -ExpectedCatalogSha256 <hash>
-```
-
-### 7. Online-Fix, medios y sync
-
-- `online-fix.json`: añade `games.<id>` y `apps.<RealAppId>` con `realAppId`, `hash0` (el `0=` del INI) y `hash1337: ""`. **`hash1337: ""` no borra un 1337 existente**; el 1337 se elimina del INI en el paso 4. No agregues `hash1` al JSON: `game_prepare.rs::with_hashes` conserva la línea `1=` que ya trae el INI (Paint la necesita).
-- Portada: cápsula oficial 616×353 (`.../store_item_assets/steam/apps/<appid>/capsule_616x353.jpg`) a `assets/experiences/<id>.jpg`.
-- Preview: `game-hover-previews.json` con `url`, `steamAppId`, `trailerId`, `bytes`. Los juegos antiguos usan `https://cdn.akamai.steamstatic.com/steam/apps/<trailerId>/microtrailer.webm`.
-- Capturas: `node scripts/sync-steam-screenshots.mjs` (12 por juego) y `node scripts/sync-catalog.mjs`.
-- Edita los JSON **como texto**; `JSON.stringify` reordena `apps` y cambia todo el espaciado.
-
-### 8. Instalación y primer arranque
+## 7. Instalar y primer arranque (obligatorio antes de publicar)
 
 ```powershell
-$sha='<sha-parte>'
-New-Item -ItemType HardLink -Path "D:\CocoWork\<id>\cache\$sha.zip" -Target 'D:\CocoWork\<id>\archives\<parte>.zip'
-$env:COCO2_HOST_SMOKE_ID='<id>'; $env:COCO2_HOST_SMOKE_TARGET='D:\CocoWork\<id>\install-test'; $env:COCO2_HOST_SMOKE_CACHE='D:\CocoWork\<id>\cache'
+New-Item -ItemType Directory -Force "$d\cache" | Out-Null
+(Get-Content "$d\archives\inventory.json" -Raw | ConvertFrom-Json).archives | ForEach-Object {
+  New-Item -ItemType HardLink -Path "$d\cache\$($_.sha256).zip" -Target "$d\archives\$(Split-Path $_.archiveUrl -Leaf)" -Force | Out-Null }
+cd launcher2\desktop\src-tauri
+$env:COCO2_HOST_SMOKE_ID='<id>'; $env:COCO2_HOST_SMOKE_TARGET="$d\install-test"; $env:COCO2_HOST_SMOKE_CACHE="$d\cache"
 cargo test --lib host_package_install_smoke -- --ignored --nocapture
-
-$env:COCO_PRIME_ROOT='D:\CocoWork\<id>\install-test'; $env:COCO_PRIME_EXE='<Juego>/<Juego>.exe'
+$env:COCO_PRIME_ROOT="$d\install-test"; $env:COCO_PRIME_EXE='<exe relativo>'
 cargo test --lib real_first_run -- --ignored --nocapture
 ```
 
-Esperado: `conclusive true` y `credits box on screen afterwards: false`. `hashes changed: false` es lo normal cuando el `hash0` del INI ya es el de esta PC (Pummel, Grocery y Paint); `true` solo indica que el loader reescribió hashes. Cualquiera de los dos es aceptable si `conclusive` es `true`.
+Lee la primera línea: `fix folder <carpeta> -> Some(<exe>)`. Esperado al final: `conclusive true` y `credits box on screen afterwards: false` (`hashes changed: false` es normal cuando el `0=` del INI ya vale en este PC).
 
-El dry-run del canal lista **todos** los juegos posteriores al último Setup, no solo el nuevo (el canal es un snapshot completo). Es esperado que vuelvan a aparecer Pummel/Grocery en la secuencia siguiente.
+Si sale `-> None` («sin ejecutable junto al fix»), Coco no sabe qué programa carga el fix en esa distribución. Entonces:
 
-### 9. Publicar el canal
+- El juego **igual se abre**: el detector de avisos y el bloqueo de navegadores siguen activos. Pero cada partida intentará de nuevo el primer arranque.
+- La solución es una regla nueva en `game_prepare.rs::first_run_exe`, con su prueba en `a_first_run_starts_the_program_that_loads_the_fix_in_every_layout`.
+  - Hazla **específica** a la distribución. Nunca devuelvas «el exe del juego» en general: un lanzador que abre otro proceso fallaría dentro del arranque que solo admite uno.
+  - Después: Rust en verde, prueba real con `-> Some(...)`, y un Setup nuevo.
+
+## 8. Publicar, guardar y limpiar
 
 ```powershell
 cd launcher2\desktop
-node scripts/Publish-Coco2Catalog.mjs --dry-run
-node scripts/Publish-Coco2Catalog.mjs
+node scripts/Publish-Coco2Catalog.mjs --dry-run      # lista TODOS los juegos posteriores al último Setup: es normal
+node scripts/Publish-Coco2Catalog.mjs                # 2–3 min; timeout ≥ 10 min
 ```
 
-No requiere Git limpio ni Setup. El juego aparece en los Coco abiertos en minutos. Si el dry-run dice que el juego "necesita un Setup", revisa argumentos de lanzamiento, `files` extra, versión no numérica, ZIP fuera del repo o hosting distinto de `p2p`.
+Después:
+
+- **Comprobar la publicación:** `coco2-catalog-head.json` sube de secuencia.
+- **Guardar en git:** commit en `main` de tu alta y nada más. Los archivos van con `git add` explícito: catálogo, lock, portada, recursos, previews, capturas y docs.
+- **Limpiar:** `Remove-Item -Recurse -Force D:\CocoWork\<id>`. Mata antes cualquier `UnityCrashHandler`/juego que siga abierto.
 
 ## Datos por juego
 
-| Juego | Ficha | downloadId | Steam | Versión | ZIP final | SHA-256 | Release | Estado |
+| Juego | Ficha | downloadId | Steam | Versión | Paquete | Release | Distribución del fix | Estado |
 |---|---|---|---|---|---|---|---|---|
-| Buckshot Roulette | `/game/buckshot-roulette` | 775 | 2835570 | 2.2.0.6 | 1,006,059,895 B | `27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d` | `buckshot-roulette-2026` | En Setup 0.6.53 (baseline) |
-| Gang Beasts | `/game/gang-beasts` | 198 | 285900 | 1.28 | 1,077,893,081 B | `50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45` | `gang-beasts-1.28` | Canal firmado secuencia 2 |
-| Pummel Party | `/game/pummel-party` | 166 | 880940 | 1.14.1 | 1,592,306,707 B (2 partes) | `e39ac7468651b013a6d8bf418d43b107b70f661f5c537897b3e9e8779adb533b` (part01) | `pummel-party-1.14.1` | Canal firmado secuencia 5 |
-| Grocery Store Simulator | `/game/grocery-store-simulator` | 92 | 2961880 | 1.2.4 | 6,623,041,166 B (5 partes) | `b95f6408f0b250922e651fee518be82036ccef4ea02987c110abc93a9ac0aa51` (part01) | `grocery-store-simulator-1.2.4` | Canal firmado secuencia 5 |
-| Paint the Town Red | `/game/paint-the-town-red` | 716 | 337320 | 1.3.4 | 2,527,207,121 B (2 partes) | `89522e27e85cc41d29757a587b29b97918ecacb67893679bcab5789d47f53be6` (part01) | `paint-the-town-red-1.3.4` | Canal firmado secuencia 5 |
+| Buckshot Roulette | `/game/buckshot-roulette` | 775 | 2835570 | 2.2.0.6 | 1.006.059.895 B | `buckshot-roulette-2026` | Godot, `OnlineFix64.dll` junto al exe | Setup 0.6.53 |
+| Gang Beasts | `/game/gang-beasts` | 198 | 285900 | 1.28 | 1.077.893.081 B | `gang-beasts-1.28` | Unity 64 | Setup 0.6.54 |
+| Pummel Party | `/game/pummel-party` | 166 | 880940 | 1.14.1 | 1.592.306.707 B (2 partes) | `pummel-party-1.14.1` | Unity 64 | Setup 0.6.55 |
+| Grocery Store Simulator | `/game/grocery-store-simulator` | 92 | 2961880 | 1.2.4 | 6.623.041.166 B (5 partes, RAR de origen, `--split-large`) | `grocery-store-simulator-1.2.4` | Unreal, `Binaries/Win64` | Setup 0.6.55 (lleva un `Read Me.txt` inofensivo) |
+| Paint the Town Red | `/game/paint-the-town-red` | 716 | 337320 | 1.3.4 | 2.527.207.121 B (2 partes) | `paint-the-town-red-1.3.4` | Unity 64 IL2CPP (conserva `1=`) | Setup 0.6.55 |
+| Stick Fight: The Game | `/game/stick-fight-the-game` | 3174 | 674940 | 3911030 | 129.229.822 B | `stick-fight-the-game-3911030` | Unity 32, fix en `StickFight_Data/Plugins/steam_api.dll` | Setup 0.6.55 |
 
-Gang Beasts: ZIP original `1,085,266,103` B SHA-256 `da78bdf52537a921657cb47521cc531bc13f1563eb383f5d10adcd27b3b4d035`; INI preparado `e07c10f2d451a2da42b522c1ee9ed0d4c0c27f5366d61399d6e681e15ee4411c` (623 B); `hash0` `28e860b2...`; preview `257075225` (2,199,673 B); 12 capturas; excluidos `.url`, `Read Me.txt`, `Run Me!.bat`, `Saves/0/Input.txt`.
+Gamble With Your Friends no vino de AnkerGames por enlace: era una carpeta ya descargada (receta de la guía maestra).
 
-## Tiempos reales (host, 2026-11-12)
+## Tiempos reales (anfitrión)
 
 | Etapa | Tiempo |
 |---|---|
-| Descarga curl 1,0 GB | 32 s |
-| Reempaquetado deflate nivel 1 | 82,6 s |
-| Instalación nativa (smoke) | 31,3 s |
-| Primer arranque invisible (prime) | 5,3 s |
-| Total alta (sin contar espera de propagación) | ~25 min |
+| Datos de la ficha + enlace | ~1 min |
+| Descarga | ~32 MB/s (1 GB ≈ 35 s) |
+| Reempaquetado deflate nivel 1 | 1 GB ≈ 80 s; 6,6 GB ≈ 8 min |
+| Subida a GitHub | similar a la descarga |
+| Instalación nativa de prueba | 30–70 s |
+| Primer arranque invisible | 5–20 s |
+| Publicar el canal | 2–3 min |
 
-## Errores que costaron tiempo
+## Errores que ya costaron tiempo
 
-- **Cloudflare** bloquea `curl` en `/generate-download-url/<id>`: usa el navegador para el POST y solo baja con `curl` el `download-file`.
-- **ZIP con Zstandard**: .NET falla al extraer; usa 7-Zip.
-- **`Saves/`**: el empaquetador lo rechaza aunque lo pongas en `--exclude`; bórralo de la copia temporal.
-- **`hash1337: ""` no borra**: el INI debe salir sin `1337=` antes de hashear.
-- **No guardes el ZIP con el navegador**: queda en C: con nombre UUID; usa `curl -o D:\...`.
-- **`gh release upload archivo#label`** cambia la etiqueta, no el nombre del asset.
-- **Reemplazar un asset** cambia los bytes/hash y rompe clientes con caché: sube versión de paquete nueva.
-- **PowerShell 5.1** `Set-Content -Encoding UTF8` añade BOM; usa `UTF8Encoding($false)`.
-- **`powershell -File script.ps1 -RequiredPaths a,b`** llega como un solo string; invoca con `&` y `@('a','b')`.
-
-## Checklist rápido
-
-- [ ] `git status --short` revisado; cambios ajenos intactos.
-- [ ] `D:\CocoWork\<id>` y `TEMP`/`TMP` en D:.
-- [ ] Enlace final obtenido y `Content-Length` verificado.
-- [ ] `1337=` y `.url`/`Read Me`/`Run Me`/`Saves` fuera del paquete.
-- [ ] ZIP final con SHA-256 y tamaño; release prerelease (nunca Latest).
-- [ ] Draft aplicado; `online-fix.json`, portada, preview y capturas.
-- [ ] `sync-steam-screenshots.mjs` y `sync-catalog.mjs`.
-- [ ] Tests: catálogo, launch, Node, `tsc`, Rust Online-Fix.
-- [ ] Instalación nativa + prime (`conclusive true`, `credits box false`).
-- [ ] `Publish-Coco2Catalog.mjs --dry-run` y publicación; head/body/firma servidos.
-- [ ] Limpieza de `D:\CocoWork\<id>` y descargas temporales.
+- `curl -sIL` al `download-file` antes de bajar: gasta el enlace (Stick Fight).
+- Publicación «cortada» a los 2 min por el timeout del agente cuando GitHub ya la tenía: revisa el head antes de repetir.
+- Cambio de Rust sin Setup ni commit: los amigos no lo reciben.
+- Una regla de primer arranque demasiado general: habría hecho fallar los juegos Unreal con lanzador.
+- `Read Me.txt` en una subcarpeta (Grocery): usa `Check-CocoGamePackage.py`.
+- `"\n"` en PowerShell insertó `\n` literales en `game-hover-previews.json`.
+- `$files` sin `@()` hizo que `gh release create` recibiera `D`.
+- Descripciones sin tildes («fisica», «creacion»): escríbelas bien desde el principio.
+- `hash1337: ""` en `online-fix.json` no borra un `1337` que traiga el INI.
+- `gh release upload archivo#label` cambia la etiqueta, no el nombre; un asset publicado no se reemplaza (los clientes con caché fallarían el hash): versión de paquete nueva.

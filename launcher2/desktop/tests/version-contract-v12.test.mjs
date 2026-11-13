@@ -14,12 +14,12 @@ test('the release carries one new version everywhere, without reusing SemVer',as
     read('src-tauri/tauri.conf.json').then(JSON.parse),
     read('src-tauri/Cargo.toml'),read('src-tauri/Cargo.lock'),
   ]);
-  assert.equal(packageJson.version,'0.6.54');
+  assert.equal(packageJson.version,'0.6.55');
   assert.equal(packageLock.version,packageJson.version);
   assert.equal(packageLock.packages[''].version,packageJson.version);
   assert.equal(tauri.version,packageJson.version);
-  assert.match(cargo,/\[package\]\s*name = "coco-launcher-2"\s*version = "0.6.54"/);
-  assert.match(cargoLock,/\[\[package\]\]\s*name = "coco-launcher-2"\s*version = "0.6.54"/);
+  assert.match(cargo,/\[package\]\s*name = "coco-launcher-2"\s*version = "0.6.55"/);
+  assert.match(cargoLock,/\[\[package\]\]\s*name = "coco-launcher-2"\s*version = "0.6.55"/);
   assert.equal(tauri.plugins.updater.requireSignedVersion,true);
   assert.equal(tauri.bundle.windows.nsis.installMode,'currentUser');
   assert.deepEqual(tauri.bundle.fileAssociations.flatMap(a=>a.ext),['coco2pack']);
