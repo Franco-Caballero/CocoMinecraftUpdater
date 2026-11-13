@@ -4,6 +4,8 @@
 
 Este repositorio mantiene **Coco Launcher**, un launcher de experiencias Minecraft aisladas, y conserva **Coco original** como una experiencia heredada. No asumas que la versión, loader, mods o configuración de Coco original aplican a las demás experiencias.
 
+> **PRIORIDAD ACTUAL — COCO LAUNCHER 2 (Tauri/Rust/React):** Para cualquier orden como «agrega este juego», «actualiza este juego» o «haz que aparezca para mis amigos», empieza en **[`launcher2/docs/AGENT_ADD_GAME.md`](launcher2/docs/AGENT_ADD_GAME.md)**. El modelo es **HOST-CURATED / AGENT-OPERATED**: el agente prepara y valida; **solo el anfitrión decide los juegos publicados**. Los clientes NO pueden introducir juegos propios mediante importaciones locales sin firma. El flujo histórico de Minecraft y las recetas de esta guía antigua NO sustituyen ese contrato. Minecraft sigue pospuesto. Lee además [`launcher2/AGENTS.md`](launcher2/AGENTS.md) para rutas y normas locales de Coco 2.
+
 ## Empieza aquí
 
 Antes de modificar:
@@ -36,6 +38,7 @@ No leas todas las referencias por defecto. Abre las necesarias según el cambio.
 - Essential es la única exclusión global. Todas las demás dependencias declaradas, requeridas u opcionales, se incluyen por defecto.
 - Todos los jugadores usan identidad local/offline. CustomSkinLoader debe resolver exactamente una variante compatible por versión de Minecraft. La skin propia es opcional y nunca debe bloquear instalación, red o lanzamiento.
 - Nunca publiques secretos, tokens ZeroTier, credenciales o datos personales en código, manifiestos, locks, logs o releases.
+- No agregues firmas `Co-Authored-By` de modelos, asistentes o bots a los commits; conserva la identidad Git del propietario o colaborador humano.
 
 ## Cambio rápido de una experiencia
 

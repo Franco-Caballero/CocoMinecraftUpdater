@@ -1,0 +1,35 @@
+/* Coco 2 quick discovery: one compact keyboard-first search, not another page. */
+.coco2-desktop .discovery-search-wrap{position:relative;flex:0 1 360px;width:min(360px,29vw);min-width:190px;z-index:44}
+.coco2-desktop .discovery-search-wrap .search-control{width:100%;min-width:0;display:flex;align-items:center;gap:10px;padding:0 12px;box-sizing:border-box;transition:border-color .16s ease,box-shadow .16s ease}
+.coco2-desktop .discovery-search-wrap .search-control svg{flex:none;color:#ba8bd5}
+.coco2-desktop .discovery-search-wrap input{flex:1;min-width:0;width:100%;border:0;outline:0;background:none;color:#f7eaff;font:500 12px 'Instrument Sans Variable',sans-serif}
+.coco2-desktop .discovery-search-wrap input::placeholder{color:#baa3cd}
+.coco2-desktop .discovery-search-wrap kbd{flex:none;font-size:10px;color:#a78cba;white-space:nowrap;border:1px solid #b08bc33b;padding:3px 5px;border-radius:5px}
+.coco2-desktop .coco-discovery-results{position:absolute;top:calc(100% + 9px);left:0;width:min(440px,calc(100vw - 36px));max-height:min(520px,calc(100vh - 145px));overflow-y:auto;overscroll-behavior:contain;padding:11px;background:linear-gradient(145deg,#241631f5,#140e21fa);border:1px solid #b27de28c;border-radius:17px;box-shadow:0 25px 75px #080212d9,0 0 0 1px #e8b6ff0b;backdrop-filter:blur(26px);animation:coco-discovery-appear .18s cubic-bezier(.2,1,.3,1) both}
+.coco2-desktop .coco-discovery-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 7px 10px;color:#d9b7ed;font-family:'Big Shoulders Display Variable',sans-serif;font-size:12px;font-weight:700}
+.coco2-desktop .coco-discovery-heading small{font:500 10px 'Instrument Sans Variable',sans-serif;color:#ac92bb}
+.coco2-desktop .coco-discovery-option{width:100%;min-height:66px;display:flex;align-items:center;text-align:left;gap:12px;padding:7px 9px;border-radius:12px;border:1px solid transparent;background:transparent;color:#e9dbfa;cursor:pointer;transition:background .14s ease,border-color .14s ease}
+.coco2-desktop .coco-discovery-option:hover,.coco2-desktop .coco-discovery-option.active{background:#a75bd827;border-color:#c18be866}
+.coco2-desktop .coco-discovery-option:focus-visible{outline:2px solid #ddadff;outline-offset:-2px}
+.coco2-desktop .coco-discovery-option img{width:83px;height:49px;flex:none;border-radius:8px;border:1px solid #b681d44c;object-fit:cover;background:#2a1937}
+.coco2-desktop .coco-discovery-label{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.coco2-desktop .coco-discovery-label strong{font:700 13px/1.25 'Big Shoulders Display Variable',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coco2-desktop .coco-discovery-label small{font-size:10px;line-height:1.35;color:#bba1cc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coco2-desktop .coco-discovery-option>svg{color:#c798ee;flex:none}
+.coco2-desktop .coco-discovery-empty{margin:0;padding:16px 8px;color:#c3b0d2;font-size:12px}
+.coco2-desktop .coco-discovery-bottom{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:7px;padding:11px 7px 2px;border-top:1px solid #b791cb27;color:#a993bc;font-size:10px;line-height:1.4}
+.coco2-desktop .coco-discovery-bottom button{flex:none;color:#d8adf1;border:1px solid #ab7ccb56;border-radius:8px;background:#aa65dd16;padding:5px 9px;font-size:10px;cursor:pointer}
+@keyframes coco-discovery-appear{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:1050px){.coco2-desktop .discovery-search-wrap{width:min(280px,27vw)}.coco2-desktop .discovery-search-wrap kbd{display:none}}
+@media(max-width:830px){.coco2-desktop .discovery-search-wrap{flex:1;min-width:135px;width:auto}.coco2-desktop .coco-discovery-results{left:auto;right:-55px;max-width:calc(100vw - 26px)}.coco2-desktop .coco-discovery-heading small{font-size:9px}}
+@media(max-width:580px){.coco2-desktop .coco-discovery-results{position:fixed;top:118px;left:12px;right:12px;width:auto;max-height:calc(100vh - 130px)}.coco2-desktop .coco-discovery-option img{width:70px;height:42px}.coco2-desktop .coco-discovery-label strong{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.coco2-desktop .coco-discovery-results{animation:none}.coco2-desktop .coco-discovery-option,.coco2-desktop .discovery-search-wrap .search-control{transition:none}}
+.coco2-desktop .coco-action-hint{margin:8px 0 0;padding:9px 12px;border:1px solid #b381d54f;border-radius:9px;background:#a66bc312;color:#d6badf;font-size:11px;line-height:1.55}
+.coco2-desktop .coco-security-help{margin-top:18px;padding:10px 12px;border-radius:11px;border:1px solid #9869b53d;background:#6b489013}
+.coco2-desktop .coco-security-help summary{display:flex;align-items:center;gap:9px;cursor:pointer;color:#c6a5d6;font-size:11px;font-weight:700;list-style:none}
+.coco2-desktop .coco-security-help summary::-webkit-details-marker{display:none}
+.coco2-desktop .coco-security-help>p{line-height:1.6;color:#bfaacf;font-size:11px}
+.coco2-desktop .coco-security-help>.filter-button{margin:5px 8px 5px 0}
+.coco2-desktop .coco-security-path{display:grid;gap:6px;padding:11px 0;max-width:100%}
+.coco2-desktop .coco-security-path span{font-size:11px;color:#d5b5ef}
+.coco2-desktop .coco-security-path code{padding:7px;border-radius:8px;overflow-wrap:anywhere;background:#1a1024;color:#e6c9f2;user-select:text;font-size:11px}

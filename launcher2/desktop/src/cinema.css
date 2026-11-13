@@ -1,0 +1,148 @@
+/* ---- Coco Cinema: the player fills the window, its chrome floats over the film and steps aside
+   while it plays. Entrance and exit are the same motion, played forwards and backwards. ---- */
+.coco-player-shell{position:fixed;z-index:65;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 120%,color-mix(in srgb,var(--hot) 16%,#050408),#050408 62%);color:var(--cream);outline:none;animation:coco-cinema-in .42s var(--snap) both}
+.coco-player-shell.is-closing{animation:coco-cinema-out .23s ease-in both;pointer-events:none}
+.coco-player-shell.is-idle{cursor:none}
+@keyframes coco-cinema-in{from{opacity:0}}
+@keyframes coco-cinema-out{to{opacity:0}}
+.coco-player-frame{position:absolute;inset:0;display:grid;place-items:center;animation:coco-cinema-stage .7s var(--snap) both}
+.coco-player-shell.is-closing .coco-player-frame{animation:coco-cinema-stage-out .23s ease-in both}
+@keyframes coco-cinema-stage{from{opacity:0;scale:.93;filter:blur(8px) brightness(.6)}}
+@keyframes coco-cinema-stage-out{to{opacity:0;scale:.96;filter:blur(4px)}}
+.coco-player-frame video{grid-area:1/1;display:block;width:100%;height:100%;object-fit:contain;background:#000;cursor:pointer}
+.coco-player-shell.is-idle .coco-player-frame video{cursor:none}
+.coco-native-canvas{grid-area:1/1;display:block;object-fit:contain;background:#000;cursor:pointer;max-width:100%;max-height:100%}
+.coco-player-shell.is-native .coco-player-frame video{display:none}
+.coco-player-shell.is-idle .coco-native-canvas{cursor:none}
+.coco-media-type{position:absolute;z-index:2;right:18px;top:20px;padding:3px 6px;border:1px solid var(--line-soft);border-radius:2px;font:400 9px/1 var(--mono);letter-spacing:.12em;color:var(--faint);pointer-events:none;transition:opacity .3s}
+
+/* Chrome: a title strip on top and the controls below, each over its own shade. */
+.coco-player-top,.coco-player-controls{position:absolute;z-index:6;left:0;right:0;transition:opacity .35s,translate .45s var(--snap)}
+.coco-player-top{top:0;display:flex;align-items:center;gap:14px;padding:22px 28px 32px;background:linear-gradient(180deg,#000a,transparent);animation:coco-cinema-drop .6s var(--snap) .12s both}
+.coco-player-controls{bottom:0;padding:40px 28px 22px;background:linear-gradient(0deg,#000a,transparent);animation:coco-cinema-rise .6s var(--snap) .16s both}
+@keyframes coco-cinema-drop{from{opacity:0;translate:0 -14px}}
+@keyframes coco-cinema-rise{from{opacity:0;translate:0 16px}}
+.coco-player-shell.is-idle :is(.coco-player-top,.coco-player-controls,.coco-media-type){opacity:0;pointer-events:none}
+.coco-player-shell.is-idle .coco-player-top{translate:0 -10px}
+.coco-player-shell.is-idle .coco-player-controls{translate:0 12px}
+.coco-player-eyebrow{display:flex;align-items:center;gap:7px;font:400 10px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--hot)}
+.coco-player-eyebrow::before{content:"";flex:none;width:6px;height:6px;rotate:45deg;background:var(--hot);box-shadow:0 0 9px var(--hot)}
+.coco-player-heading{display:flex;flex-direction:column;gap:5px;min-width:0}
+.coco-player-heading strong{font:800 clamp(22px,2.4vw,32px)/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coco-player-back{flex:none;display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:#0b0a0fa6;color:var(--cream);backdrop-filter:blur(8px);cursor:pointer;transition:background .2s,border-color .2s,color .2s,transform .25s var(--snap)}
+.coco-player-back:hover{background:var(--hot);border-color:var(--hot);color:#16061a;transform:translateX(-3px)}
+
+/* Scrubber: thin while watching, thick with a thumb and a time bubble under the pointer. */
+.coco-player-scrub{position:relative;height:18px;margin:0 0 6px;cursor:pointer;touch-action:none;outline:none}
+.coco-player-scrub::before,.coco-player-buffered,.coco-player-played{content:"";position:absolute;left:0;top:50%;height:4px;translate:0 -50%;border-radius:99px;transition:height .2s var(--snap)}
+.coco-player-scrub::before{right:0;background:#ffffff26}
+.coco-player-buffered{background:#ffffff4d}
+.coco-player-played{background:linear-gradient(90deg,var(--hot),color-mix(in srgb,var(--hot) 55%,var(--gold)));box-shadow:0 0 14px color-mix(in srgb,var(--hot) 55%,transparent)}
+.coco-player-scrub:is(:hover,.is-dragging,:focus-visible)::before,.coco-player-scrub:is(:hover,.is-dragging,:focus-visible) :is(.coco-player-buffered,.coco-player-played){height:7px}
+.coco-player-thumb{position:absolute;top:50%;width:15px;height:15px;translate:-50% -50%;scale:0;border-radius:50%;background:#fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--hot) 45%,transparent),0 2px 10px #000a;transition:scale .2s var(--snap)}
+.coco-player-scrub:is(:hover,.is-dragging,:focus-visible) .coco-player-thumb{scale:1}
+.coco-player-bubble{position:absolute;bottom:22px;translate:-50% 0;padding:4px 7px;border-radius:3px;background:var(--cream);color:#16061a;font:600 11px/1 var(--mono);white-space:nowrap;pointer-events:none;animation:coco-rise-in .16s var(--snap)}
+.coco-player-scrub:focus-visible{outline:2px solid var(--hot);outline-offset:4px;border-radius:4px}
+
+.coco-player-bar{display:flex;align-items:center;gap:6px}
+.coco-player-bar button{display:grid;place-items:center;flex:none;min-width:38px;height:38px;padding:0 9px;border:0;border-radius:4px;background:none;color:var(--cream);cursor:pointer;transition:background .18s,color .18s,transform .2s var(--snap)}
+.coco-player-bar button:hover{background:#ffffff1f;color:#fff}
+.coco-player-bar button:active{transform:scale(.92)}
+.coco-player-bar button:focus-visible,.coco-player-back:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+.coco-player-bar button[aria-pressed="true"]{color:var(--hot)}
+.coco-player-bar .coco-player-play{width:46px;height:46px;margin-right:6px;border-radius:50%;background:var(--hot);color:#16061a;box-shadow:0 6px 22px color-mix(in srgb,var(--hot) 45%,transparent)}
+.coco-player-bar .coco-player-play:hover{background:var(--hot);color:#16061a;transform:scale(1.07)}
+.coco-player-volume{display:flex;align-items:center}
+.coco-player-volume input{width:0;opacity:0;height:4px;margin:0;appearance:none;-webkit-appearance:none;border-radius:99px;background:linear-gradient(90deg,var(--cream) var(--level),#ffffff33 var(--level));cursor:pointer;transition:width .3s var(--snap),opacity .2s,margin .3s var(--snap)}
+.coco-player-volume:is(:hover,:focus-within) input{width:88px;opacity:1;margin:0 10px 0 2px}
+.coco-player-volume input::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--hot) 40%,transparent)}
+.coco-player-time{margin-left:8px;font:400 12px/1 var(--mono);color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}
+.coco-player-time b{font-weight:600;color:var(--cream)}
+.coco-player-spacer{flex:1}
+.coco-player-bar .coco-player-next{display:flex;gap:7px;padding:0 13px;border:1px solid var(--line);font:800 13px var(--display);letter-spacing:.05em;text-transform:uppercase}
+.coco-player-bar .coco-player-next:hover{border-color:var(--hot);background:color-mix(in srgb,var(--hot) 16%,transparent)}
+.coco-player-bar .coco-player-rate{font:600 12px/1 var(--mono);font-variant-numeric:tabular-nums}
+
+/* Center feedback for play, pause, seeks and volume: shows the change, then gets out of the way. */
+.coco-player-flash{grid-area:1/1;z-index:5;display:grid;place-content:center;justify-items:center;gap:3px;width:92px;height:92px;border-radius:50%;background:#0b0a0fb8;backdrop-filter:blur(6px);color:#fff;pointer-events:none;animation:coco-cinema-flash .62s var(--snap) both}
+.coco-player-flash small{font:600 11px/1 var(--mono)}
+@keyframes coco-cinema-flash{from{opacity:0;scale:.7}25%{opacity:1;scale:1}to{opacity:0;scale:1.25}}
+.coco-player-state{grid-area:1/1;z-index:4;display:grid;justify-items:center;gap:12px;font:400 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);pointer-events:none;animation:coco-rise-in .3s var(--snap) .25s backwards}
+.coco-player-ring{width:46px;height:46px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 30%,var(--hot) 70%,var(--gold));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));animation:coco-cinema-spin .9s linear infinite}
+@keyframes coco-cinema-spin{to{rotate:1turn}}
+.coco-player-bigplay{grid-area:1/1;z-index:5;display:grid;place-items:center;width:96px;height:96px;padding-left:5px;border:0;border-radius:50%;background:var(--hot);color:#16061a;cursor:pointer;box-shadow:0 0 0 12px color-mix(in srgb,var(--hot) 22%,transparent),0 18px 50px #000;animation:coco-cinema-pop .45s var(--snap);transition:transform .25s var(--snap)}
+.coco-player-bigplay:hover{transform:scale(1.07)}
+@keyframes coco-cinema-pop{from{opacity:0;scale:.85}}
+
+/* Cards that float over the film: resume, up next, the end, the shortcut sheet and errors. */
+:is(.coco-player-toast,.coco-player-upnext,.coco-player-end,.coco-player-help,.coco-player-error){position:absolute;z-index:7;border:1px solid var(--line);background:color-mix(in srgb,var(--ink-2) 88%,transparent);backdrop-filter:blur(14px);box-shadow:0 20px 60px #000c}
+:is(.coco-player-toast,.coco-player-upnext,.coco-player-end,.coco-player-error) button{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:1px solid var(--line);border-radius:3px;background:none;color:var(--cream);font:800 13px var(--display);letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:background .18s,border-color .18s,color .18s,filter .18s}
+:is(.coco-player-toast,.coco-player-upnext,.coco-player-end,.coco-player-error) button:hover{border-color:var(--hot);background:color-mix(in srgb,var(--hot) 15%,transparent)}
+:is(.coco-player-upnext,.coco-player-end) button.is-primary,.coco-player-error button{border-color:var(--hot);background:var(--hot);color:#16061a}
+:is(.coco-player-upnext,.coco-player-end) button.is-primary:hover,.coco-player-error button:hover{background:var(--hot);filter:brightness(1.12)}
+.coco-player-error button:disabled{opacity:.6;cursor:wait}
+.coco-player-toast{left:28px;bottom:128px;display:flex;align-items:center;gap:14px;padding:9px 9px 9px 16px;border-radius:4px;font-size:12.5px;color:var(--dim);animation:coco-cinema-toast .5s var(--snap) both}
+.coco-player-toast b{color:var(--cream);font:600 12.5px var(--mono)}
+@keyframes coco-cinema-toast{from{opacity:0;translate:-16px 0}}
+.coco-player-upnext{right:28px;bottom:128px;display:grid;gap:8px;width:min(340px,calc(100% - 56px));padding:16px 16px 14px;border-radius:5px;overflow:hidden;animation:coco-cinema-slide .5s var(--snap) both}
+@keyframes coco-cinema-slide{from{opacity:0;translate:16px 0}}
+.coco-player-upnext strong{font:800 21px/1 var(--display);text-transform:uppercase}
+.coco-player-upnext>i{position:absolute;left:0;top:0;height:3px;width:calc(var(--left)*100%);background:var(--hot);box-shadow:0 0 10px var(--hot);transition:width 1s linear}
+.coco-player-upnext div,.coco-player-end div{display:flex;gap:8px;margin-top:4px}
+.coco-player-end{grid-area:1/1;position:relative;display:grid;justify-items:center;gap:12px;padding:30px 36px;border-radius:6px;text-align:center;animation:coco-cinema-pop .5s var(--snap) both}
+.coco-player-end strong{font:900 clamp(30px,4vw,48px)/.92 var(--display);text-transform:uppercase}
+.coco-player-help{right:28px;bottom:128px;width:min(330px,calc(100% - 56px));padding:16px 18px;border-radius:5px;animation:coco-cinema-slide .4s var(--snap) both}
+.coco-player-help dl{display:grid;grid-template-columns:auto 1fr;gap:9px 16px;margin:13px 0 0}
+.coco-player-help dt{font:600 11px/1.3 var(--mono);color:var(--cream);white-space:nowrap}
+.coco-player-help dd{margin:0;font-size:12px;line-height:1.3;color:var(--dim)}
+.coco-player-error{grid-area:1/1;position:relative;display:grid;justify-items:center;gap:10px;max-width:400px;padding:28px 32px;border-radius:6px;text-align:center;color:var(--cream);animation:coco-cinema-pop .4s var(--snap) both}
+.coco-player-error svg{color:var(--hot)}
+.coco-player-error strong{font:800 24px/1 var(--display);text-transform:uppercase}
+.coco-player-error span{font-size:12.5px;line-height:1.5;color:var(--dim)}
+.coco-player-loading{position:fixed;z-index:70;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;background:#050408;color:var(--dim);font:400 10px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+@media(max-width:720px){.coco-player-top{padding:14px 14px 50px}.coco-player-controls{padding:60px 14px 14px}.coco-player-volume input,.coco-player-bar .coco-player-next span,.coco-player-bar .coco-player-rate{display:none}:is(.coco-player-toast,.coco-player-upnext,.coco-player-help){left:14px;right:14px;width:auto;bottom:112px}}
+
+
+/* ---- Picking what to watch, in a title's detail ---- */
+.coco-media-eyebrow{display:flex;align-items:center;gap:7px;font:400 10px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--hot)}
+.coco-media-eyebrow::before{content:"";flex:none;width:6px;height:6px;rotate:45deg;background:var(--hot);box-shadow:0 0 9px var(--hot);animation:coco-breathe 2s ease-in-out infinite}
+.coco2-desktop .coco-media-loading{display:flex;align-items:center;gap:8px;margin-top:16px;font:400 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+/* The main button doubles as a progress bar once a title is started. */
+.coco2-desktop .primary-button.coco-watch{position:relative;overflow:hidden}
+.coco-watch-progress{position:absolute;left:0;bottom:0;height:3px;background:#16061aa6;transition:width .5s var(--snap)}
+.coco2-desktop .coco-resume{display:grid;gap:11px;margin-top:16px;padding:14px 16px 15px;border:1px solid var(--line-soft);border-radius:4px;background:var(--ink-3);animation:coco-rise-in .45s var(--snap) .2s backwards}
+.coco-resume-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.coco-resume-head small{font:400 11px var(--mono);color:var(--dim)}
+.coco-resume-bar{display:block;height:4px;border-radius:99px;background:#ffffff1a;overflow:hidden}
+.coco-resume-bar b{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--hot),color-mix(in srgb,var(--hot) 55%,var(--gold)));box-shadow:0 0 12px color-mix(in srgb,var(--hot) 50%,transparent);animation:coco-resume-fill .9s var(--snap) .35s backwards}
+@keyframes coco-resume-fill{from{width:0!important}}
+.coco2-desktop .coco-resume-restart{justify-self:start;display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:3px;background:none;color:var(--cream);font:800 13px var(--display);letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:border-color .18s,background .18s}
+.coco2-desktop .coco-resume-restart:hover:not(:disabled){border-color:var(--hot);background:color-mix(in srgb,var(--hot) 14%,transparent)}
+.coco2-desktop .coco-resume-restart svg{transition:rotate .45s var(--snap)}
+.coco2-desktop .coco-resume-restart:hover:not(:disabled) svg{rotate:-200deg}
+
+/* Episodes: outlined numbers that fill in, a bar that slides in, and the play button arriving. */
+.coco2-desktop .coco-episodes{margin-top:18px}
+.coco-episodes-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
+.coco-episodes-head small{font:400 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.coco2-desktop .coco-episodes ol{display:grid;margin:0;padding:0;list-style:none}
+.coco2-desktop .coco-episodes li{animation:coco-rise-in .45s var(--snap) backwards;animation-delay:calc(.18s + min(var(--i),10)*45ms)}
+.coco2-desktop .coco-episode{position:relative;display:grid;grid-template-columns:62px minmax(0,1fr) 36px;align-items:center;width:100%;padding:13px 4px 13px 0;border:0;border-bottom:1px solid var(--line-soft);background:none;color:var(--cream);text-align:left;cursor:pointer;overflow:hidden;transition:background .3s}
+.coco2-desktop .coco-episode::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;background:var(--hot);box-shadow:0 0 12px var(--hot);scale:1 0;transition:scale .3s var(--snap)}
+.coco2-desktop .coco-episode:is(:hover,:focus-visible):not(:disabled){background:linear-gradient(90deg,color-mix(in srgb,var(--hot) 13%,transparent),transparent 75%);outline:none}
+.coco2-desktop .coco-episode:is(:hover,:focus-visible):not(:disabled)::before,.coco2-desktop .coco-episode.is-loading::before{scale:1}
+.coco-episode-num{padding-left:14px;font:900 34px/1 var(--display);color:transparent;-webkit-text-stroke:1px var(--faint);transition:color .3s,-webkit-text-stroke-color .3s,translate .35s var(--snap)}
+.coco-episode.is-next .coco-episode-num{-webkit-text-stroke-color:var(--hot)}
+.coco-episode.is-watched .coco-episode-num{color:var(--line);-webkit-text-stroke-color:transparent}
+.coco-episode:is(:hover,:focus-visible):not(:disabled) .coco-episode-num,.coco-episode.is-loading .coco-episode-num{color:var(--hot);-webkit-text-stroke-color:transparent;translate:5px 0}
+.coco-episode-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.coco-episode-copy strong{font:800 17px/1.05 var(--display);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:translate .35s var(--snap)}
+.coco-episode-copy small{font:400 10px var(--mono);letter-spacing:.04em;color:var(--dim)}
+.coco-episode.is-next .coco-episode-copy small{color:var(--hot)}
+.coco-episode.is-watched .coco-episode-copy strong{color:var(--dim)}
+.coco-episode:is(:hover,:focus-visible):not(:disabled) .coco-episode-copy strong{translate:3px 0}
+.coco-episode-go{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--line);border-radius:50%;color:var(--dim);opacity:.55;translate:-6px 0;transition:opacity .25s,translate .35s var(--snap),background .25s,border-color .25s,color .25s}
+.coco-episode.is-watched .coco-episode-go{color:#7dffb0;border-color:color-mix(in srgb,#7dffb0 35%,transparent)}
+.coco-episode:is(:hover,:focus-visible):not(:disabled) .coco-episode-go,.coco-episode.is-loading .coco-episode-go{opacity:1;translate:0 0;background:var(--hot);border-color:var(--hot);color:#16061a}
+.coco-episode-progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--hot);box-shadow:0 0 8px var(--hot)}
+.coco2-desktop .coco-episode:disabled:not(.is-loading){cursor:default;opacity:.55}

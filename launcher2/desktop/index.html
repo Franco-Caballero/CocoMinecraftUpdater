@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es" class="coco-booting">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#e23df5" />
+    <link rel="preload" as="image" href="/reyna-2.webp" />
+    <!-- Only the two allowlisted Steam promotional CDN hosts. Preconnect
+         overlaps TLS setup with React boot; no clip is downloaded here. -->
+    <link rel="preconnect" href="https://cdn.akamai.steamstatic.com" crossorigin />
+    <link rel="preconnect" href="https://shared.akamai.steamstatic.com" crossorigin />
+    <title>Coco Launcher 2</title>
+    <!-- The presentation's color from the very first frame, before any script or stylesheet. -->
+    <style>html.coco-booting,html.coco-booting body{background:#e23df5!important}@media(prefers-reduced-motion:reduce){html.coco-booting,html.coco-booting body{background:#0b0a0f!important}}</style>
+  </head>
+  <body style="margin:0;background:#0b0a0f">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

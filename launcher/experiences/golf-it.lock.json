@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "golf-it",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part01.zip",
+    "sha256": "d84deb775bcd86da4ec7d40372f1eccb89246f098dcb145b6f910aea15604723",
+    "size": 304753084
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part01.zip",
+      "sha256": "d84deb775bcd86da4ec7d40372f1eccb89246f098dcb145b6f910aea15604723",
+      "size": 304753084
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part02.zip",
+      "sha256": "fb33835d317c4efdc2ed886a4b220a0930083fba4f4c9f99554d1bf2a3c0d61f",
+      "size": 532986181
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part03.zip",
+      "sha256": "4f261b6d3c850e320a719fa1c8dcf837a82b08b0023e3d5fca7d2aad337851b6",
+      "size": 497004622
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part04.zip",
+      "sha256": "65627d5faee7059175e4323aae62dce5887d9795da97219bc1f0bb32d1af9dfc",
+      "size": 634147499
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part05.zip",
+      "sha256": "df96380e60ca7aa61c58bb193975e2aff6a06fc2367404f2fc0dfddf60c0f770",
+      "size": 681079718
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part06.zip",
+      "sha256": "426853ceabe277b3d144f9a102756cc11ab4a5c970deb33200e32bc619e5818b",
+      "size": 293252710
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part07.zip",
+      "sha256": "23b9cd54e8d611493a30be5ca60fad7d4e9e3d1f9e038620dabd1956fbc6da56",
+      "size": 589681382
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part08.zip",
+      "sha256": "d9b005cdf9668d115d8bf6c6ff62b3d5a67cc8ffbc43d7fffb673856be92f887",
+      "size": 781701163
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part09.zip",
+      "sha256": "ea653dc1ded7d79dae91ab782077a67835e3a228cb04456b4e5cedcbb2b605e1",
+      "size": 779722564
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part10.zip",
+      "sha256": "cfc4fe8a851281d66a2e12ac739d1262b55445e55fd541f8e1c75f4cbfad7c13",
+      "size": 868267959
+    }
+  ]
+}

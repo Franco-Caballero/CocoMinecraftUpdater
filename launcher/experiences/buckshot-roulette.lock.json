@@ -1,0 +1,13 @@
+{
+    "schemaVersion":  1,
+    "experienceId":  "buckshot-roulette",
+    "type":  "standalone",
+    "files":  [
+
+              ],
+    "archive":  {
+                    "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/buckshot-roulette-2026/buckshot-roulette.zip",
+                    "sha256":  "27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d",
+                    "size":  1006059895
+                }
+}

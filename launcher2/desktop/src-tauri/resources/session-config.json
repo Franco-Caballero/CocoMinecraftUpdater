@@ -1,0 +1,191 @@
+{
+  "discovery": {
+    "host": "10.77.37.1",
+    "port": 25564,
+    "timeoutMs": 1500,
+    "maxResponseBytes": 32768,
+    "maxTtlSeconds": 120
+  },
+  "experiences": [
+    {
+      "id": "dread-arrenek",
+      "packVersion": "3.1.0",
+      "host": "10.77.37.1",
+      "port": 25565
+    },
+    {
+      "id": "into-the-backrooms",
+      "packVersion": "2.0.3",
+      "host": "10.77.37.1",
+      "port": 25565
+    },
+    {
+      "id": "cobbleverse",
+      "packVersion": "1.7.42-CF",
+      "host": "10.77.37.1",
+      "port": 25565
+    },
+    {
+      "id": "zombie-apocalypse-slow-zombies",
+      "packVersion": "2.1",
+      "host": "10.77.37.1",
+      "port": 25565
+    },
+    {
+      "id": "nightfallcraft",
+      "packVersion": "2.2.8.6",
+      "host": "10.77.37.1",
+      "port": 25565
+    },
+    {
+      "id": "valorant-craft",
+      "packVersion": "1.1.0-csmain-beta.1",
+      "host": "10.77.37.1",
+      "port": 25565
+    },
+    {
+      "id": "big-walk",
+      "packVersion": "1.0.0",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "shift-at-midnight",
+      "packVersion": "1.0.3",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "peak",
+      "packVersion": "2.1.a",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "machine-party",
+      "packVersion": "1.0.6",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "content-warning",
+      "packVersion": "1.24.0",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "scam-line",
+      "packVersion": "23042026",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "lockdown-protocol",
+      "packVersion": "16122025",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "cooking-simulator-2",
+      "packVersion": "1.11.8838be4",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "repo",
+      "packVersion": "0.4.4.3",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "how-to-fish",
+      "packVersion": "1.0.10",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "twisted-party",
+      "packVersion": "1.0.7",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "rhythm-doctor",
+      "packVersion": "0.10.1",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "move-or-die",
+      "packVersion": "15.1.2",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "worms-wmd",
+      "packVersion": "23062019",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "mimic-party",
+      "packVersion": "0.1.60",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "the-cabin",
+      "packVersion": "1.0.0",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "ghost-janitors",
+      "packVersion": "1.0.0",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "pilgrim",
+      "packVersion": "0.1.2",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "yapyap",
+      "packVersion": "1.0.3.606",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "crack",
+      "packVersion": "1.1.29",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "heavenly-bodies",
+      "packVersion": "2023.08.08",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "party-animals",
+      "packVersion": "1.17.2.0",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "golf-it",
+      "packVersion": "1.0.1.1953",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "buckshot-roulette",
+      "packVersion": "2.2.0.6",
+      "host": "",
+      "port": 0
+    }
+  ]
+}

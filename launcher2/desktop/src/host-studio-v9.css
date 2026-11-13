@@ -1,0 +1,130 @@
+/* Host Studio v9: small, scoped hierarchy over the existing app design.
+   Never overrides shared launcher CSS or other windows. */
+.coco-studio .studio-v9-form {
+  gap: 13px;
+  align-items: end;
+}
+.coco-studio .studio-v9-intro {
+  padding: 12px 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(188, 145, 225, .32);
+  background: rgba(134, 83, 181, .10);
+}
+.coco-studio .studio-executable-confirm{
+  display:flex;align-items:flex-start;gap:10px;min-height:48px;padding:12px 14px;
+  border:1px solid rgba(179,137,216,.57);border-radius:11px;
+  background:linear-gradient(135deg,rgba(117,67,154,.2),rgba(46,27,67,.35));
+  cursor:pointer;
+}
+.coco-studio .studio-executable-confirm input{
+  width:17px;height:17px;accent-color:#d6a4ff;flex:none;margin:2px 0 0;
+}
+.coco-studio .studio-executable-confirm span{display:flex;flex-direction:column;gap:5px;min-width:0}
+.coco-studio .studio-executable-confirm strong{font-size:12px;line-height:1.45;color:#f1dbff}
+.coco-studio .studio-executable-confirm small{font-family:'Big Shoulders Display Variable',sans-serif;font-size:10px;overflow-wrap:anywhere;color:#cdaede}
+.coco-studio .studio-executable-confirm:focus-within{outline:2px solid #d9a7ff;outline-offset:2px}
+.coco-studio .studio-v9-intro strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f5e5ff;
+  font-size: 13px;
+}
+.coco-studio .studio-v9-intro strong svg {
+  color: #c9a6ea;
+}
+.coco-studio .studio-v9-intro p,
+.coco-studio .studio-v9-cover p,
+.coco-studio .studio-v9-form label small {
+  color: #c7acd8;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.coco-studio .studio-v9-intro p {
+  margin: 5px 0 0;
+}
+.coco-studio .studio-v9-form label small {
+  display: block;
+  margin-top: 3px;
+}
+.coco-studio .studio-v9-cover {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 13px;
+  border: 1px solid rgba(173, 121, 218, .42);
+  border-radius: 12px;
+  background: rgba(34, 19, 49, .56);
+}
+.coco-studio .studio-v9-cover > div {
+  flex: 1 1 55%;
+  min-width: 0;
+}
+.coco-studio .studio-v9-cover strong {
+  font-size: 12px;
+}
+.coco-studio .studio-v9-cover p {
+  margin: 4px 0 0;
+}
+.coco-studio .studio-v9-cover .studio-picker {
+  flex: 1 1 45%;
+  min-width: 0;
+  padding: 11px;
+}
+.coco-studio .studio-v9-missing {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: #efc9aa;
+}
+.coco-studio .studio-v9-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 45px;
+  font-weight: 700;
+}
+.coco-studio .studio-v9-ready {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.coco-studio .studio-v9-ready > .studio-package-result {
+  margin: 0;
+}
+.coco-studio .studio-v9-form .studio-release-fields {
+  display: block;
+}
+.coco-studio .studio-v9-form .studio-release-fields summary {
+  cursor: pointer;
+  color: #c9addd;
+  font-size: 11px;
+}
+.coco-studio .studio-v9-form .studio-release-fields[open] summary {
+  margin-bottom: 9px;
+}
+.coco-studio .studio-v9-form .studio-release-inputs {
+  margin-top: 12px;
+}
+.coco-studio .studio-v9-form .studio-release-inputs label {
+  gap: 7px;
+}
+.coco-studio :is(.studio-v9-action,.studio-v9-cover button):focus-visible {
+  outline: 2px solid #e2b8ff;
+  outline-offset: 3px;
+}
+@media(max-width:650px){
+  .coco-studio .studio-v9-cover {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .coco-studio .studio-v9-cover > div,
+  .coco-studio .studio-v9-cover .studio-picker {
+    flex: none;
+    width: 100%;
+  }
+  .coco-studio .studio-v9-form .studio-release-inputs {
+    grid-template-columns: 1fr;
+  }
+}

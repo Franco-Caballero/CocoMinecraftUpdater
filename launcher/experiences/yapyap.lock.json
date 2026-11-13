@@ -1,0 +1,13 @@
+{
+    "schemaVersion":  1,
+    "experienceId":  "yapyap",
+    "type":  "standalone",
+    "files":  [
+
+              ],
+    "archive":  {
+                    "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yapyap-2026/yapyap.zip",
+                    "sha256":  "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b",
+                    "size":  1273589527
+                }
+}

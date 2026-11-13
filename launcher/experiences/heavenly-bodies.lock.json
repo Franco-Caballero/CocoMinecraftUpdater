@@ -1,0 +1,13 @@
+{
+    "schemaVersion":  1,
+    "experienceId":  "heavenly-bodies",
+    "type":  "standalone",
+    "files":  [
+
+              ],
+    "archive":  {
+                    "url":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heavenly-bodies-2026/heavenly-bodies.zip",
+                    "sha256":  "99fb5aaef8e1819301cb0a5912d9e2cb144b78921b4b2339f90edee6c6f26071",
+                    "size":  1348568057
+                }
+}

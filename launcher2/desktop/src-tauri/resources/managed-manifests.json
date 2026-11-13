@@ -1,0 +1,4378 @@
+[
+  {
+    "id": "dread-arrenek",
+    "instanceId": "dread-arrenek",
+    "workflow": "coco-managed",
+    "minecraftVersion": "1.19.2",
+    "loader": "forge",
+    "loaderVersion": "43.5.0",
+    "packVersion": "3.1.0",
+    "assets": [
+      {
+        "path": "mods/asset_419699_5137942.jar",
+        "sha256": "61c2482c0bfaa8a917f042edd7b8d73107005602115bcdbb4638ec817dd56fa7",
+        "size": 559099,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/419699/files/5137942/download"
+      },
+      {
+        "path": "mods/asset_499980_5567102.jar",
+        "sha256": "4811d325e2c24d0dd9c1a527c58f3bd6da2a8ac56c9c2a93f0b311b64a60eafc",
+        "size": 836351,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/499980/files/5567102/download"
+      },
+      {
+        "path": "mods/asset_453763_4360370.jar",
+        "sha256": "c31ee77457517dcad5fd1b38cfd7f71cd19c831803f8c2ab9fc19463ed108d80",
+        "size": 470506,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/453763/files/4360370/download"
+      },
+      {
+        "path": "mods/asset_238222_5846858.jar",
+        "sha256": "4ca677c4d7b8234da2071b3e93424a2e1eedd06906c20f55ff22a078cfd6e3b2",
+        "size": 1177872,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/238222/files/5846858/download"
+      },
+      {
+        "path": "mods/asset_421850_4876062.jar",
+        "sha256": "da0e8682b0be608c2df0758bb188a4eafb138f308ff62e94ec6335ba6fadeb51",
+        "size": 293336,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/421850/files/4876062/download"
+      },
+      {
+        "path": "mods/asset_582464_4392014.jar",
+        "sha256": "0cc4c9e1d0ab03251c56fd65037014373373b80def36d2a7f2351e0bb2d66dc5",
+        "size": 289117,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/582464/files/4392014/download"
+      },
+      {
+        "path": "mods/asset_521480_6356166.jar",
+        "sha256": "d2f744d10b51605573b71a79399f98acc860a1bb4273643496950dcba2a3d475",
+        "size": 483655,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/521480/files/6356166/download"
+      },
+      {
+        "path": "mods/asset_790530_4719507.jar",
+        "sha256": "8090ecd5f7175d66c42c210102deb432a18032d43fd002a0dc7bd5d283e6dbbf",
+        "size": 2208505,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/790530/files/4719507/download"
+      },
+      {
+        "path": "mods/asset_916895_4956464.jar",
+        "sha256": "5c1094f414f6edb03d87046fa720bea04320e93bf0a14c14a6d0acd2a38a201d",
+        "size": 439304,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/916895/files/4956464/download"
+      },
+      {
+        "path": "mods/asset_1090771_6307421.jar",
+        "sha256": "8616763958606f625f3610b8b21c2b9acb30e7eae61e5ef979d170589cd504da",
+        "size": 54395,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1090771/files/6307421/download"
+      },
+      {
+        "path": "mods/asset_670986_5161845.jar",
+        "sha256": "36bb852d46343fc29cdb737a6cc17f2eb74543266373ba20693508270fec2b4e",
+        "size": 99426,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/670986/files/5161845/download"
+      },
+      {
+        "path": "mods/asset_495476_4600775.jar",
+        "sha256": "bb95c2854dd24d60f0bf93c7f3e45e79661067920618ed590e140000cc67210d",
+        "size": 395272,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/495476/files/4600775/download"
+      },
+      {
+        "path": "mods/asset_1252004_7310666.jar",
+        "sha256": "2cd856e78ce0942fd11236c47c7df8dce7b1a21def8fcd6fbc47c5f6b797e5b7",
+        "size": 827328,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1252004/files/7310666/download"
+      },
+      {
+        "path": "mods/asset_256717_4153347.jar",
+        "sha256": "ca3441d5f84212a9f7262afc5ea7521257b8b9b378e5882afa845448fe674421",
+        "size": 19083,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/256717/files/4153347/download"
+      },
+      {
+        "path": "mods/asset_513689_4577851.jar",
+        "sha256": "28e4463122468b30513e888e0ed94faa7408460111b88293c8bc0c37490c2568",
+        "size": 69768,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/513689/files/4577851/download"
+      },
+      {
+        "path": "mods/asset_831401_4559917.jar",
+        "sha256": "80aa565f5d661b67843d9c2a4bbdf33f89b75cde85e61098ad0983890ad294d8",
+        "size": 6234,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/831401/files/4559917/download"
+      },
+      {
+        "path": "mods/asset_233258_4057652.jar",
+        "sha256": "6e16281c35b521df034570d6652d723b0bf52aed40e55632dbdb23bc70fbd735",
+        "size": 9680,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/233258/files/4057652/download"
+      },
+      {
+        "path": "mods/asset_1028108_6069349.jar",
+        "sha256": "7dcc94b055afbaaa547510cc264a9cf80be104cdab2c0298198dbc5325caf12c",
+        "size": 39143619,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1028108/files/6069349/download"
+      },
+      {
+        "path": "mods/asset_658587_4418149.jar",
+        "sha256": "80fb5397ce77981d63e56cb4d6953c5657ad3b96783152ec2048a90568431a76",
+        "size": 181297,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/658587/files/4418149/download"
+      },
+      {
+        "path": "mods/asset_631278_4081277.jar",
+        "sha256": "33aa6aa638dfbbb5256620c9b180abbb540db2023096d502afa3c943b3f3b254",
+        "size": 120083,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/631278/files/4081277/download"
+      },
+      {
+        "path": "mods/asset_938643_4983999.jar",
+        "sha256": "c9ce1a75bf33ff10bd1dd6074a7b39ed49fc7e03173e7ea9dc7d61715bd3d11b",
+        "size": 37177,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/938643/files/4983999/download"
+      },
+      {
+        "path": "mods/asset_1248540_7221695.jar",
+        "sha256": "3248304811b1a273c5476c668ae09c728e492b43b5b7bcf2af52e6e9486840ea",
+        "size": 6797004,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1248540/files/7221695/download"
+      },
+      {
+        "path": "mods/asset_337243_4143529.jar",
+        "sha256": "8c7c594b771f3ba23059f97e8d1696180f833d61b28af879e30cabe089d3906d",
+        "size": 29654,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/337243/files/4143529/download"
+      },
+      {
+        "path": "mods/asset_1043571_7572115.jar",
+        "sha256": "8ed04dbf313000f1346de2796c2ae36eeffd568c7b9077f56e8121cd735bb2da",
+        "size": 2867315,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1043571/files/7572115/download"
+      },
+      {
+        "path": "mods/asset_314906_5710631.jar",
+        "sha256": "1ff6b4c8cc4579d9af2b9bd4681c42fee1bbefbcb6b97bf5cab67d5d7bb9e7f3",
+        "size": 836309,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/314906/files/5710631/download"
+      },
+      {
+        "path": "mods/asset_1087342_5876948.jar",
+        "sha256": "53e5f7d0954bdf882e1055a5cd3156169b2e6287654ab7f523e9745a940a60ca",
+        "size": 948879,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1087342/files/5876948/download"
+      },
+      {
+        "path": "mods/asset_840873_4792069.jar",
+        "sha256": "d958f6019aaabfc7d73d57c3dc398342027165ef303c263087a28f961a5e2401",
+        "size": 19555,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/840873/files/4792069/download"
+      },
+      {
+        "path": "mods/asset_348932_4059181.jar",
+        "sha256": "b4fcb9c7f20e43d2ef222df5398151cd5c31ef90d21828704b576be0acbd593c",
+        "size": 12632,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/348932/files/4059181/download"
+      },
+      {
+        "path": "mods/asset_1009423_5571105.jar",
+        "sha256": "061382399639a2a0e2c44e0174c4cdf90b77dd5a3cb93f92fe5343f5ffd77e31",
+        "size": 131653,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1009423/files/5571105/download"
+      },
+      {
+        "path": "mods/asset_853916_4506203.jar",
+        "sha256": "3416f1356e7bd0e0b7facd36e7c373528af5b5db65f06699ab27d9ec79bf6bdb",
+        "size": 1050351,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/853916/files/4506203/download"
+      },
+      {
+        "path": "mods/asset_639842_4534619.jar",
+        "sha256": "a5f36a6bb3d8fb6c25439aa8e0c03248053f30e633c832a3ee29946580a5d72b",
+        "size": 904072,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/639842/files/4534619/download"
+      },
+      {
+        "path": "mods/asset_322506_6514910.jar",
+        "sha256": "b6e79a4f5746bd0b2bd8d54bb4c430539e7e747e8679ac985bc07368422e4e09",
+        "size": 1121678,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/322506/files/6514910/download"
+      },
+      {
+        "path": "mods/asset_333287_6733383.jar",
+        "sha256": "e96576c97383ef5b36799689f387b0bf8c13b55446c76d676cc30733abf88e1d",
+        "size": 513248,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/333287/files/6733383/download"
+      },
+      {
+        "path": "mods/asset_233263_4570995.jar",
+        "sha256": "68e2463d990e0bc233ad1ead107613aef1ab0514e7c3e1ab38e6be04e5f52362",
+        "size": 18708152,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/233263/files/4570995/download"
+      },
+      {
+        "path": "mods/asset_923133_5775472.jar",
+        "sha256": "18016c44ed0f49731aa405de82879f568dd0c3509309f474543c257d42e946bc",
+        "size": 19806509,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/923133/files/5775472/download"
+      },
+      {
+        "path": "mods/asset_416089_7904976.jar",
+        "sha256": "480d7ec0538f8215980ba0a021185bab74006a39cbe5786e23cf95330addd808",
+        "size": 5341707,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/416089/files/7904976/download"
+      },
+      {
+        "path": "mods/asset_551736_4285414.jar",
+        "sha256": "1a00b4728d60be3c76be956dbe5551224894abd0f668db6acca6edda328151a9",
+        "size": 90207,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/551736/files/4285414/download"
+      },
+      {
+        "path": "mods/asset_500273_4455250.jar",
+        "sha256": "d1cd8b856c59bcbf4a9f985ed23aeadd6ce0a0117de6987b05dafa786f0dcd3b",
+        "size": 82918,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/500273/files/4455250/download"
+      },
+      {
+        "path": "mods/asset_316582_5816905.jar",
+        "sha256": "59bf5b26ce8f946c41e213507f471ffb239a89a3fffaf93c8017ff14975ee630",
+        "size": 242007,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/316582/files/5816905/download"
+      },
+      {
+        "path": "mods/asset_274259_5141759.jar",
+        "sha256": "59e6e1cba7df6f5480745e8a44a54e2b07645c05025d673cdc1af32ba08a5d03",
+        "size": 440569,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/274259/files/5141759/download"
+      },
+      {
+        "path": "mods/asset_964969_5167869.jar",
+        "sha256": "ba6da738694c567e1726e57fdfa173c6987fb168e9e1c0b5753511ab8e4536ea",
+        "size": 297431,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/964969/files/5167869/download"
+      },
+      {
+        "path": "mods/asset_939211_5568636.jar",
+        "sha256": "f07a2db60d1e3dea51bd640fae23277df64239a09b45e919be0a47a31bec72c3",
+        "size": 43941,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/939211/files/5568636/download"
+      },
+      {
+        "path": "mods/asset_398521_5051241.jar",
+        "sha256": "a766849a5f61b9520c1c2aba86a9652a392c9e276faf5bb388b989bd65477f5f",
+        "size": 2769499,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/398521/files/5051241/download"
+      },
+      {
+        "path": "mods/asset_790626_5803581.jar",
+        "sha256": "e14ea99b7341d7479e34e0dd6d96e0ee0b86914f2936eccbf23a5036f476580c",
+        "size": 777028,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/790626/files/5803581/download"
+      },
+      {
+        "path": "mods/asset_679270_5857347.jar",
+        "sha256": "8debfb78831abc0ca81b59a1841d2c722cf0a0a76b83136ddf453880d447bf76",
+        "size": 212141,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/679270/files/5857347/download"
+      },
+      {
+        "path": "mods/asset_410295_5028409.jar",
+        "sha256": "2c1902deb1587f28a35874b0e9c4a367111ebb3ea7e39838dd0050b37b483832",
+        "size": 628963,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/410295/files/5028409/download"
+      },
+      {
+        "path": "mods/asset_258587_5491932.jar",
+        "sha256": "01edf0e3dcb84f25a4f80f2304c3c188f5a6147a2273a1f19769819b7424ce89",
+        "size": 47226,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/258587/files/5491932/download"
+      },
+      {
+        "path": "mods/asset_1282709_6629455.jar",
+        "sha256": "cd349066aae310c23453a64c01e1a857f69ffd31b3b78d441992e8c4fc1aa2c4",
+        "size": 83260,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1282709/files/6629455/download"
+      },
+      {
+        "path": "mods/asset_254284_5491930.jar",
+        "sha256": "257d29cdcbef4c1d45c4f337af4f9f537dd8ca5ad9bb20fcc19f5fc1652b8f65",
+        "size": 84253098,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/254284/files/5491930/download"
+      },
+      {
+        "path": "mods/asset_1001299_5902696.jar",
+        "sha256": "4bdef675c799dc760ebd36da5e63ed56242c7af362a3c284df0eeb60e0539252",
+        "size": 498071,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1001299/files/5902696/download"
+      },
+      {
+        "path": "mods/asset_922411_5010445.jar",
+        "sha256": "5de62912e3097ed30506f1d60b2503f571f0675dbdc7197ce68c084ddbd4872e",
+        "size": 1927868,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/922411/files/5010445/download"
+      },
+      {
+        "path": "mods/asset_267244_3924887.jar",
+        "sha256": "8b5cb7f17f569c683d0151626df7c0a89117857df48e3f8ffd532fca5bbe9d0a",
+        "size": 6339,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/267244/files/3924887/download"
+      },
+      {
+        "path": "mods/asset_380413_5642533.jar",
+        "sha256": "784451233c7a09b067c199dd2f9573cbc16f64e7ded4476ddd217ac6d2a1ad46",
+        "size": 4864,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/380413/files/5642533/download"
+      },
+      {
+        "path": "mods/asset_360203_5116175.jar",
+        "sha256": "7e343c518582d1352fe143024b47a3a7e5f64d04229db7afccf13c84c557fbbd",
+        "size": 198235,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/360203/files/5116175/download"
+      },
+      {
+        "path": "mods/asset_257007_4269991.jar",
+        "sha256": "4285648837a4097a5b05e730d1ec5d8430f415dc82b8a5a1d543659fefbe405c",
+        "size": 51402,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/257007/files/4269991/download"
+      },
+      {
+        "path": "mods/asset_407174_3759881.jar",
+        "sha256": "ac97131b1e1e9e21e0f855d093ef96ce8ac0aa172c0399d65be95df03af6caab",
+        "size": 4748,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/407174/files/3759881/download"
+      },
+      {
+        "path": "mods/asset_404468_4611938.jar",
+        "sha256": "2233122cfddfccafd5f4840ae63a556edd7088ad15e177fb1288367adef142f7",
+        "size": 220052,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/404468/files/4611938/download"
+      },
+      {
+        "path": "mods/asset_482378_7760587.jar",
+        "sha256": "096fcc2809e1db288d9876c31949e27b722e4571e131854a3ab74fb2a4d604d6",
+        "size": 1133239,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/482378/files/7760587/download"
+      },
+      {
+        "path": "mods/asset_510089_4073204.jar",
+        "sha256": "0ec801ccaa72b92ce696b9587736f4eb907e0fbf8077a6a3d7c4102ef0b89c41",
+        "size": 997998,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/510089/files/4073204/download"
+      },
+      {
+        "path": "mods/asset_525796_4166312.jar",
+        "sha256": "3bdfe4054683173dfba82c5c9203bf6f99b8d5e49865e90e5a240e842e5c175c",
+        "size": 5319,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/525796/files/4166312/download"
+      },
+      {
+        "path": "mods/asset_945562_5149895.jar",
+        "sha256": "8a9b7da0d1b6d5d864a2979eff4dc81b718acf5350175c13b0f06c6dc294e670",
+        "size": 7349247,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/945562/files/5149895/download"
+      },
+      {
+        "path": "mods/asset_225608_3922622.jar",
+        "sha256": "1426645459fa4a0bedfeddf2aa0e69416d9676dc022aaf879333aea89d7794dd",
+        "size": 5650155,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/225608/files/3922622/download"
+      },
+      {
+        "path": "mods/asset_303657_5063293.jar",
+        "sha256": "7667178051e13644a283817e3a501708a6716dffa255a73bb7424c3e52b9e44b",
+        "size": 422898,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/303657/files/5063293/download"
+      },
+      {
+        "path": "mods/asset_546670_7806131.jar",
+        "sha256": "cfb8212faa7fe91bdbccf020e76da23598f2109e23ed742b06420aa4912c7b05",
+        "size": 51099607,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/546670/files/7806131/download"
+      },
+      {
+        "path": "mods/asset_1357723_7974254.jar",
+        "sha256": "2e328a3744a44477d2d774045e0904d07533ff0e10b90f6d891208dc242d9444",
+        "size": 2023257,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1357723/files/7974254/download"
+      },
+      {
+        "path": "mods/asset_378979_3906414.jar",
+        "sha256": "dba29b5981e34016515fc7702edf67e04168992860f34836904405ff5ddb08a5",
+        "size": 44144,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/378979/files/3906414/download"
+      },
+      {
+        "path": "mods/asset_638111_3993293.jar",
+        "sha256": "47687bf19654b0d5b30170ee7138fb3f10622b54671b1f2fb452a5ae4309d6f8",
+        "size": 51537,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/638111/files/3993293/download"
+      },
+      {
+        "path": "mods/asset_308663_4779691.jar",
+        "sha256": "fb2f58bc8aa2b5c3eb53efb1437a1c294bec6aaf53fbf456775aa42384615b94",
+        "size": 165816,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/308663/files/4779691/download"
+      },
+      {
+        "path": "mods/asset_423602_7364629.jar",
+        "sha256": "a07f1aa52d2ba7c98b9d32305b0836168ebfe164c84b656b7814c6ea8e171da0",
+        "size": 748589,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/423602/files/7364629/download"
+      },
+      {
+        "path": "mods/asset_1025461_7323033.jar",
+        "sha256": "6b22eb4bfd247fab19b5ad5a40d8094b38f6268f6f8296c3999440bf1dc927b9",
+        "size": 1198830,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1025461/files/7323033/download"
+      },
+      {
+        "path": "mods/asset_348521_5729096.jar",
+        "sha256": "350519f45e3b477b0255342e33952cdb55ccdc2485ffafdd100a3cd716dcf68a",
+        "size": 1176412,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/348521/files/5729096/download"
+      },
+      {
+        "path": "mods/asset_557796_4017700.jar",
+        "sha256": "f8ee05c457456a52a91751f9957994207baaf6eb6a5d839f949e5c9f362e0bf8",
+        "size": 742233,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/557796/files/4017700/download"
+      },
+      {
+        "path": "mods/asset_656378_3920298.jar",
+        "sha256": "1edba9aaea80ac91ddb255d68327b3ab8b84b5522552b23f4f7ed92f29eb2251",
+        "size": 56076,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/656378/files/3920298/download"
+      },
+      {
+        "path": "mods/asset_664719_6738438.jar",
+        "sha256": "b78848fbd262136b0375aa992e8d8208e8ecc3d1eb0e0c267778151c5ded2659",
+        "size": 725928,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/664719/files/6738438/download"
+      },
+      {
+        "path": "mods/asset_608235_5019497.jar",
+        "sha256": "5a58421089573f3ebf8cb641eadd8c12fa4a2e2e1258bc05732145529876dc39",
+        "size": 283975,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/608235/files/5019497/download"
+      },
+      {
+        "path": "mods/asset_535489_5525251.jar",
+        "sha256": "951264d2305ca1aa9f7f6c7091ede8d03e82238e31ed03b1624c83ed3e3a159f",
+        "size": 194996,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/535489/files/5525251/download"
+      },
+      {
+        "path": "mods/asset_389665_4876097.jar",
+        "sha256": "ef305173fa339d82f8ca10ed75c07e84ccdde887ba2354aacec5baaad20849c5",
+        "size": 273478,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/389665/files/4876097/download"
+      },
+      {
+        "path": "mods/asset_448233_4404949.jar",
+        "sha256": "14686b41719756b50dd8d90e4d1754f752e5c370c99a280df00ecc64baf63534",
+        "size": 60289,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/448233/files/4404949/download"
+      },
+      {
+        "path": "mods/asset_684718_5279724.jar",
+        "sha256": "d6411ae8a1290508e169518aa7945042c77b672e30df33c36c2a297e3d743f92",
+        "size": 212588,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/684718/files/5279724/download"
+      },
+      {
+        "path": "mods/asset_897203_4674980.jar",
+        "sha256": "5eaffdb6e0e8215bbe8fec30efdc0508b877f44ebec963487ac1203584bd5786",
+        "size": 15099,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/897203/files/4674980/download"
+      },
+      {
+        "path": "mods/asset_457570_4462837.jar",
+        "sha256": "f6a92830ff3729c3422b80c2cddfb0bcd62bf51d165784e22b3c75da3d99703c",
+        "size": 311480,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/457570/files/4462837/download"
+      },
+      {
+        "path": "mods/asset_1157858_7234863.jar",
+        "sha256": "75ec5c9029c8492605bbe3c204da26c156d40c9fe9dfa43ece63724e671d4602",
+        "size": 1895947,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1157858/files/7234863/download"
+      },
+      {
+        "path": "mods/asset_453315_3986517.jar",
+        "sha256": "7b8f56cacf59d80c36a0c8574b1757d504d189665d198c249c29ae47d33e4197",
+        "size": 8773,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/453315/files/3986517/download"
+      },
+      {
+        "path": "mods/asset_367706_6918974.jar",
+        "sha256": "6d44ffdfd3ccc34d318a94c4693637f78e07d3b07ec2cf3b900fc27f73451acf",
+        "size": 6090075,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/367706/files/6918974/download"
+      },
+      {
+        "path": "mods/asset_633412_5016277.jar",
+        "sha256": "3418761fd5f711bd4a2311cc549d640a23bfc6bb7fa9b34daddf0e21a9767f2a",
+        "size": 40952,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/633412/files/5016277/download"
+      },
+      {
+        "path": "mods/asset_574856_4763255.jar",
+        "sha256": "fc500860374072a77a0e61f45f1d4c59237b897872d60b68e36fe07de723a468",
+        "size": 1407451,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/574856/files/4763255/download"
+      },
+      {
+        "path": "mods/asset_1090895_5730218.jar",
+        "sha256": "e47db7df34f6d7a9591b5c0af330e714fdfc954f4c75ae9c25f2703ded4063f4",
+        "size": 434381,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1090895/files/5730218/download"
+      },
+      {
+        "path": "mods/asset_624895_4880494.jar",
+        "sha256": "6fbaf9ad485ada9c8c4453d4fd095691d69b6b08f2b7ba5494f3c3fad897b984",
+        "size": 6539,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/624895/files/4880494/download"
+      },
+      {
+        "path": "mods/asset_531761_4751735.jar",
+        "sha256": "b35e87c6a8c5f0053afe2a5006072e9322e8747d4e980580cb1de34ca4b926c2",
+        "size": 314084,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/531761/files/4751735/download"
+      },
+      {
+        "path": "mods/asset_429235_4117906.jar",
+        "sha256": "b9dc9b61a14e8326c6e464acef2851b9b08cf421880901a47a79c75fb6ab51e9",
+        "size": 116824,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/429235/files/4117906/download"
+      },
+      {
+        "path": "mods/asset_1166889_7910001.jar",
+        "sha256": "95647e6133d270aedbe44bc4d193b2a719389f2b7304ab35c1dc2ebb99ceaa11",
+        "size": 1000462,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1166889/files/7910001/download"
+      },
+      {
+        "path": "mods/asset_984445_7979238.jar",
+        "sha256": "1118403421715e80c634f1f36e8ebf6bd8fd429e091e5918430fdf8c7a545eda",
+        "size": 1383750,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/984445/files/7979238/download"
+      },
+      {
+        "path": "mods/asset_551520_5100224.jar",
+        "sha256": "822ccda161cd7ce46eb1f6b191135f8fef2b041dbbbfd4999fc6b6fbc53e3189",
+        "size": 17012,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/551520/files/5100224/download"
+      },
+      {
+        "path": "mods/asset_359540_7255611.jar",
+        "sha256": "dda2ac3f5444a845877a48b1d26e5419a7bc5766a1050530881864b784996fe0",
+        "size": 1985354,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/359540/files/7255611/download"
+      },
+      {
+        "path": "mods/asset_248787_3872808.jar",
+        "sha256": "3a7c90665e5324ea5b5493862afa1655965bb1876d21f387a6f7283b43bb696e",
+        "size": 46991,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/248787/files/3872808/download"
+      },
+      {
+        "path": "mods/asset_558126_7255706.jar",
+        "sha256": "f3c3a2ec3bdde375190c71826839fb4a2c4150b0039e31122b1692c0da723209",
+        "size": 177499,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/558126/files/7255706/download"
+      },
+      {
+        "path": "mods/asset_653838_4561309.jar",
+        "sha256": "d4d32ed033f52b7c732ad2890ecca44e002db516a324666af1b5ea42f43bd1b4",
+        "size": 6195,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/653838/files/4561309/download"
+      },
+      {
+        "path": "mods/asset_890565_5361337.jar",
+        "sha256": "7bcfc0d85cad1c5a8941d3d1a721129f0ad3c5d7afb857a7421096b41dd74d8f",
+        "size": 7551706,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/890565/files/5361337/download"
+      },
+      {
+        "path": "mods/asset_1447882_7798056.jar",
+        "sha256": "c7e4ba4661b22de8c999659aa2128a2c17ce185a66e42137a7796f4536ecd3f7",
+        "size": 31096,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1447882/files/7798056/download"
+      },
+      {
+        "path": "mods/asset_227887_5733848.jar",
+        "sha256": "a4b0c7a55099c9ea61c4de57a08ddc61370fee66d8babb2568e4c5e821fc8b29",
+        "size": 37769,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/227887/files/5733848/download"
+      },
+      {
+        "path": "mods/asset_636540_4441631.jar",
+        "sha256": "49de3de56ef6e71ad778cf457cc7145c4380099803a924d426bef7d28f1e8d3c",
+        "size": 1243852,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/636540/files/4441631/download"
+      },
+      {
+        "path": "mods/asset_581495_6020961.jar",
+        "sha256": "bf3bebed5c756af93f1c882c08f081be2b801d34cfacde7a648a12023ae64eb4",
+        "size": 3503720,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/581495/files/6020961/download"
+      },
+      {
+        "path": "mods/asset_230976_3894512.jar",
+        "sha256": "fab9ef7b1997b8e859e494dcbff78d0ba108e67ff8c0aec2aac5dbd4f26bc546",
+        "size": 11295,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/230976/files/3894512/download"
+      },
+      {
+        "path": "mods/asset_508379_4194334.jar",
+        "sha256": "71aed78d43521e1b79b211a8973acd3cbd9ddf26f21fad238dd9d764993716a0",
+        "size": 5218,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/508379/files/4194334/download"
+      },
+      {
+        "path": "mods/asset_1292547_6809559.jar",
+        "sha256": "e4560436196fd061423d165821d9a0722fd1371e925f14269e6e975b7155e4c0",
+        "size": 183476,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1292547/files/6809559/download"
+      },
+      {
+        "path": "mods/asset_433068_4291556.jar",
+        "sha256": "ffea5229f79610aa59f7ffad46d0862b0a506624b5dd5f307fd0a21315f6dac3",
+        "size": 7176267,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/433068/files/4291556/download"
+      },
+      {
+        "path": "mods/asset_990406_6105669.jar",
+        "sha256": "91c2549cb3a462ca3d493a72a0ab478dc5fa74b047ac1b2a664d86a0f6f51f2d",
+        "size": 251791,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/990406/files/6105669/download"
+      },
+      {
+        "path": "mods/asset_232131_4635884.jar",
+        "sha256": "7f1a24055c7f6ae0a6e3a1813ba2fa3476b05569525abbe4f370b22ebfcd95a6",
+        "size": 86980,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/232131/files/4635884/download"
+      },
+      {
+        "path": "mods/asset_255389_5493552.jar",
+        "sha256": "2c9cfd2739a7122d2d2ffa2ad4727e03f248997b80f343d6258ec39e348a060a",
+        "size": 4705488,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/255389/files/5493552/download"
+      },
+      {
+        "path": "mods/asset_388172_4407241.jar",
+        "sha256": "b4fd4aba01943d4cc62bba9e2d0fb41d85c871a95fad972fbb2248d3d826ea02",
+        "size": 2938383,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/388172/files/4407241/download"
+      },
+      {
+        "path": "mods/asset_60089_3871353.jar",
+        "sha256": "bf918fbaee669121d431c295337bd24ad90d2f9cb5e88bc46a241991ab401f81",
+        "size": 75983,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/60089/files/3871353/download"
+      },
+      {
+        "path": "mods/asset_410811_5120109.jar",
+        "sha256": "fcba275b69e377aa6895cde14da3ac62fcbc27b0b3dc17023e00144fb77397d7",
+        "size": 103262,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/410811/files/5120109/download"
+      },
+      {
+        "path": "mods/asset_390717_5473394.jar",
+        "sha256": "832e8910700c8ab21526ce176079de1c65924234fa7f021e7863f5ac2deddf53",
+        "size": 183853,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/390717/files/5473394/download"
+      },
+      {
+        "path": "mods/asset_379887_4542072.jar",
+        "sha256": "8e3097293115f87168eb227df38d1abaaf62d91f4e352b86c8b4b09a66920cd6",
+        "size": 24870,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/379887/files/4542072/download"
+      },
+      {
+        "path": "mods/asset_910274_6807120.jar",
+        "sha256": "c18039858480a808695f689ebd7979afd03aff0d3ff7f52d5aab5aca6829102e",
+        "size": 396440,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/910274/files/6807120/download"
+      },
+      {
+        "path": "mods/asset_404465_4661834.jar",
+        "sha256": "1ba0d7fa626ddb2e3c31e77e20b573ca79eb92e7667cca5b9a3e985fc22d1592",
+        "size": 603296,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/404465/files/4661834/download"
+      },
+      {
+        "path": "mods/asset_844662_5304249.jar",
+        "sha256": "de8852f577e62340eab34248067c61c5c66c47a857238455f935e68a5306d0f7",
+        "size": 381815,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/844662/files/5304249/download"
+      },
+      {
+        "path": "mods/asset_383269_7873296.jar",
+        "sha256": "77baaeb8469acf33c6f852aa70336d09cda781322dd32cb599eb6089ab4f323c",
+        "size": 18977120,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/383269/files/7873296/download"
+      },
+      {
+        "path": "mods/asset_823106_4906350.jar",
+        "sha256": "afeb6d8fa4bd3b70e839af4e09aa669132b1b55d69ee2a0e98097647116ff933",
+        "size": 67526,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/823106/files/4906350/download"
+      },
+      {
+        "path": "mods/asset_818481_4380110.jar",
+        "sha256": "31284feb5e9d73558d76985aae19baea49be6654973b1a79a3e7ab252585a094",
+        "size": 6128,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/818481/files/4380110/download"
+      },
+      {
+        "path": "mods/asset_520110_4300529.jar",
+        "sha256": "b9c1ebdf11e7538761aa30f229fb6ce3890057a2af13f11be93c299da9125d1c",
+        "size": 109565,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/520110/files/4300529/download"
+      },
+      {
+        "path": "mods/asset_442354_4924317.jar",
+        "sha256": "3ae3a26acc58cbd743eea39d3d21d47d230e114e1e8fdf20818a3ae4ee17565c",
+        "size": 154996,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/442354/files/4924317/download"
+      },
+      {
+        "path": "mods/asset_558905_4632201.jar",
+        "sha256": "8d2dc00dedd20d93711186f014b3d3a994164963559a33112817ec86ceda8b1b",
+        "size": 63223,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/558905/files/4632201/download"
+      },
+      {
+        "path": "mods/asset_819030_4369142.jar",
+        "sha256": "96342a9e1b6332164f2efc2921bf6ddce9d1c91ad735db9218379c151835b3fe",
+        "size": 11700,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/819030/files/4369142/download"
+      },
+      {
+        "path": "mods/asset_628663_4483699.jar",
+        "sha256": "a06300df64f522cc3e77022ecbf04ceea3a1f8fbffb04940ad51f125c252c4f8",
+        "size": 2983,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/628663/files/4483699/download"
+      },
+      {
+        "path": "mods/asset_1132901_6943753.jar",
+        "sha256": "905a8112923c0af34faf7c1655d61b9201405349b9b40ea4bdddfc124c52f50b",
+        "size": 26548,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1132901/files/6943753/download"
+      },
+      {
+        "path": "mods/asset_1088877_5656711.jar",
+        "sha256": "e7de2e71ade9a2c983d7546459107a975a17046e56488774ba941f9d06e1a1f3",
+        "size": 297109,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1088877/files/5656711/download"
+      },
+      {
+        "path": "mods/asset_231800_3916056.jar",
+        "sha256": "18d8143a7a3c194b957fed096a046e4da5eb13ac977abcfd2304046b001ce3d1",
+        "size": 12393,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/231800/files/3916056/download"
+      },
+      {
+        "path": "mods/asset_314905_4781637.jar",
+        "sha256": "9eac08315f55ba84bbfc1a448d1ddb6dfb7b59b811b28efef122924a2c94f5bc",
+        "size": 79727,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/314905/files/4781637/download"
+      },
+      {
+        "path": "mods/asset_243190_7720588.jar",
+        "sha256": "56207a99b5163d44f813020307e9067936b681d64cf7dfd72fd8fc6e9b64208a",
+        "size": 263686,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/243190/files/7720588/download"
+      },
+      {
+        "path": "mods/asset_1395870_7543999.jar",
+        "sha256": "95c2841103b4d1e0c222f29b49d9500c0d5306772aa18c6eb11925be6ff7507e",
+        "size": 3830072,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1395870/files/7543999/download"
+      },
+      {
+        "path": "mods/asset_581854_7418953.jar",
+        "sha256": "607ae634da90637f207f85a5a5bf887a5fd0e3a41d14168422ba5c9221ed05d2",
+        "size": 270837,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/581854/files/7418953/download"
+      },
+      {
+        "path": "mods/asset_592449_4689815.jar",
+        "sha256": "19c9c36a40c26348b8b5cde93b9bbccb0bb4188d0d82f2cd71cec2e9c15de2cb",
+        "size": 2694404,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/592449/files/4689815/download"
+      },
+      {
+        "path": "mods/asset_834607_6312806.jar",
+        "sha256": "baa016badd6c9ad38f600e22aad2ffff51d6a347ed46881ce9b82453af324a48",
+        "size": 229020,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/834607/files/6312806/download"
+      },
+      {
+        "path": "mods/asset_511770_6412197.jar",
+        "sha256": "1973d04dc9fdda46614559f6265946a9be42105b346bf2c84488611dcd1394e4",
+        "size": 240125,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/511770/files/6412197/download"
+      },
+      {
+        "path": "mods/asset_257814_5491926.jar",
+        "sha256": "c9fe181e7d6180a1d89a5d9e933e35cbd184fa70683a104d4f776191bcc80fd5",
+        "size": 1116183,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/257814/files/5491926/download"
+      },
+      {
+        "path": "mods/asset_349559_4821386.jar",
+        "sha256": "9c9dfc59e8023a217eb996d0e959839e3f6c9bc118a71f10fbfc22a6c4fab836",
+        "size": 406121,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/349559/files/4821386/download"
+      },
+      {
+        "path": "mods/asset_291874_4037228.jar",
+        "sha256": "c562d3e90338338221a5d5b5c542b19a77710fb3001f397bb99416450e96fac5",
+        "size": 143030,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/291874/files/4037228/download"
+      },
+      {
+        "path": "mods/asset_239197_6256046.jar",
+        "sha256": "08b13ff6198c0080b682b4bd3470f1e76a5983b8dfc5f484a39b8b37f1df76b9",
+        "size": 3044307,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/239197/files/6256046/download"
+      },
+      {
+        "path": "mods/asset_513688_4823693.jar",
+        "sha256": "4f74497c92b224a12be231b32c50e55db41e6051ebba5d87ce63aad78204b663",
+        "size": 2990344,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/513688/files/4823693/download"
+      },
+      {
+        "path": "mods/asset_568563_5300624.jar",
+        "sha256": "bc3bfef0bf4a41da99832275eae121b9950aefcabf676e13f108961269e6b77e",
+        "size": 542503,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/568563/files/5300624/download"
+      },
+      {
+        "path": "mods/asset_326652_5170313.jar",
+        "sha256": "a825115faf3b33796aedef49328cb9316e0e62b68ea6b27a9dff1aa6a6038dfc",
+        "size": 24766,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/326652/files/5170313/download"
+      },
+      {
+        "path": "mods/asset_532127_4278509.jar",
+        "sha256": "866f0773f15a085896652d7db9f92101ca83ba156ae99687f03d2ee0868b3d5d",
+        "size": 54346,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/532127/files/4278509/download"
+      },
+      {
+        "path": "mods/asset_840788_4451885.jar",
+        "sha256": "088bd1ed68bd1f5d1fe968bf20fba9b319cc6f15bb1d3b9cb92576dd36f83943",
+        "size": 18831,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/840788/files/4451885/download"
+      },
+      {
+        "path": "mods/asset_869524_7281929.jar",
+        "sha256": "cdd8e1b50e4dee0892c5ed02724cea6b1a74d2b718c7e974c9cfc0efa8c10389",
+        "size": 37046674,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/869524/files/7281929/download"
+      },
+      {
+        "path": "mods/asset_724387_4808086.jar",
+        "sha256": "0ffeda99ca2953eedc01104bb391d7a2a5b133e5e1c9ab172f30cb59183229d4",
+        "size": 87546,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/724387/files/4808086/download"
+      },
+      {
+        "path": "mods/asset_297680_4770171.jar",
+        "sha256": "6e53a1d9845b13f9331e1b42d9eeb89649f032f59b89cc42117f26abe27d3d01",
+        "size": 1493535,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/297680/files/4770171/download"
+      },
+      {
+        "path": "mods/asset_853424_4505759.jar",
+        "sha256": "9ed1293ebae789f8ec26b7ac0420c371032726916dc8e1f9075334f9b3f72914",
+        "size": 258866,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/853424/files/4505759/download"
+      },
+      {
+        "path": "mods/asset_433760_6356201.jar",
+        "sha256": "2b42ada9f3de7318bfbc585ad8036d8abbbad5010d811435bec707380c5a19f1",
+        "size": 453501,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/433760/files/6356201/download"
+      },
+      {
+        "path": "mods/asset_1033202_5409669.jar",
+        "sha256": "4ca74e9aa030e9219fc837d5390df38f5784465e5d38c336547bc3304b5d04e5",
+        "size": 37842,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1033202/files/5409669/download"
+      },
+      {
+        "path": "mods/asset_310343_4046618.jar",
+        "sha256": "fc10155729515c2ddf89c7982b10a756b654d13d332766c50d3d432f4bb870c6",
+        "size": 70259,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/310343/files/4046618/download"
+      },
+      {
+        "path": "mods/asset_342584_5460518.jar",
+        "sha256": "9e9176b6b54cb5186e9095613bf3e95a47c6827711f4205a6e20820e8bc2bc1d",
+        "size": 618144,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/342584/files/5460518/download"
+      }
+    ],
+    "extraFiles": [
+      {
+        "path": "mods/mcwifipnp-1.7.6-1.19.2-forge.jar",
+        "sha256": "413e355f61bd1de46cd77fa045cf27511418abd6bfa65f668a766a644f88b86f",
+        "size": 78414,
+        "role": "host",
+        "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/POh7VlMI/mcwifipnp-1.7.6-1.19.2-forge.jar"
+      }
+    ],
+    "sourceArchive": {
+      "path": "mods/DREAD REBORN 3.1.0.zip",
+      "sha256": "386a3385b0cd795426227a3cdfe542748294259148721ad8395543795ab1e0e2",
+      "size": 202361221,
+      "sourceUrl": "https://www.curseforge.com/api/v1/mods/953413/files/8017613/download"
+    }
+  },
+  {
+    "id": "into-the-backrooms",
+    "instanceId": "into-the-backrooms",
+    "workflow": "coco-managed",
+    "minecraftVersion": "1.20.1",
+    "loader": "fabric",
+    "loaderVersion": "0.19.3",
+    "packVersion": "2.0.3",
+    "assets": [
+      {
+        "path": "mods/asset_561885_6290217.jar",
+        "sha256": "feb1442828c93f37a62d1dff5a5284b9c9e6a86a051e67aaa871ea51dba1f813",
+        "size": 196623,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/561885/files/6290217/download"
+      },
+      {
+        "path": "mods/asset_1009556_5572389.jar",
+        "sha256": "881c519b9a9f96da082a725475495587f67a9d312a871666f1323e280e4db368",
+        "size": 14256,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1009556/files/5572389/download"
+      },
+      {
+        "path": "mods/asset_416797_5142502.jar",
+        "sha256": "f87fc3ab29a8df63a5214fdfa58d2f9fa645255af64d38ba598a9f56fafccdb6",
+        "size": 892067,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/416797/files/5142502/download"
+      },
+      {
+        "path": "mods/asset_580683_4606406.jar",
+        "sha256": "3aa35ad44bf3436c01c18cce65bc88b54ec680bfcd880fcdadd78695c6166299",
+        "size": 49395,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/580683/files/4606406/download"
+      },
+      {
+        "path": "mods/asset_380969_6444562.jar",
+        "sha256": "0eada3bb5eaa841e85bc35f97e4739b977b77cc2b035b42416092f8df553b90a",
+        "size": 1074526,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/380969/files/6444562/download"
+      },
+      {
+        "path": "mods/asset_459857_4810977.jar",
+        "sha256": "c7ba1118a05b2da900d1c369fbe1017a3e3ec3cafe5e51398b851279b9becf24",
+        "size": 125197,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/459857/files/4810977/download"
+      },
+      {
+        "path": "mods/asset_433760_8274894.jar",
+        "sha256": "3eadee3d7fa85455be61e73ea894f2defbfeafc0b28fc9b0657a976bbdf30fde",
+        "size": 1944718,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/433760/files/8274894/download"
+      },
+      {
+        "path": "mods/asset_495476_6918566.jar",
+        "sha256": "855034e7a858f2f9ee76c1181aa1f4d5b9e605d63d8a81f7bba155faba2da7c5",
+        "size": 1084397,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/495476/files/6918566/download"
+      },
+      {
+        "path": "mods/asset_614516_4670440.jar",
+        "sha256": "7e607382aa82b9c457c1a76358cfb8219e0629d9f7216e7adbf8d07b67682bbb",
+        "size": 14269,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/614516/files/4670440/download"
+      },
+      {
+        "path": "mods/asset_416089_8280439.jar",
+        "sha256": "35ebc901597920d583deeaf3682fb91182e4d52f017c41438459a6bc553d6bc2",
+        "size": 5264842,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/416089/files/8280439/download"
+      },
+      {
+        "path": "mods/asset_1317593_7576800.jar",
+        "sha256": "e56a32697fa9c2f190161da30e2616ea906df21d5ba0ae8aff88a4b159a616b7",
+        "size": 390241,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1317593/files/7576800/download"
+      },
+      {
+        "path": "mods/asset_1317771_6883912.jar",
+        "sha256": "48eda72b04f77cf2af6cbf82b2c9bbd01bf378cf1337d5990e1d9519e8a64ec5",
+        "size": 1701417,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1317771/files/6883912/download"
+      },
+      {
+        "path": "mods/asset_488090_8028804.jar",
+        "sha256": "0076f2fbd47c1a13df7ed83a7a4058a488d1cab0dd2c44373cfdb3a5c6c35629",
+        "size": 59401,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/488090/files/8028804/download"
+      },
+      {
+        "path": "mods/asset_507127_4767994.jar",
+        "sha256": "f86cc43ca7f4e10f2a83e9aa9f3b00e9851840cb5a6c3da8fdb899547be6011f",
+        "size": 211115,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/507127/files/4767994/download"
+      },
+      {
+        "path": "mods/asset_306612_8073259.jar",
+        "sha256": "4056979ccaa1012354dfff14f39fdb085aefb3f1e0224ff45c3af41e4ffed5fd",
+        "size": 2111565,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/306612/files/8073259/download"
+      },
+      {
+        "path": "mods/asset_1051342_7519088.jar",
+        "sha256": "7f7894302a51ce9d6bef370d5e9bd4e5dfbeb6c0d275ac43d712927429545593",
+        "size": 1974800,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1051342/files/7519088/download"
+      },
+      {
+        "path": "mods/asset_1308554_6793334.jar",
+        "sha256": "b54f0908c29614cf60f75870759e5fdea6f7fa769d6709f5f484e80975f4af45",
+        "size": 18377,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1308554/files/6793334/download"
+      },
+      {
+        "path": "mods/asset_1564378_8194739.jar",
+        "sha256": "e650329be79310a52905872958b6a3f1a4ef0dee4bc1dd45f9d1310fac0dd4a7",
+        "size": 945898,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1564378/files/8194739/download"
+      },
+      {
+        "path": "mods/asset_547434_7260491.jar",
+        "sha256": "337a8f6c5ba48ef3b3da828f4f6a75d0552ba33f48ce97d3195befdb570e427a",
+        "size": 396628,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/547434/files/7260491/download"
+      },
+      {
+        "path": "mods/asset_1021348_5638424.jar",
+        "sha256": "a8308ab6ffb9bf38a29e0d26d06d9abbb4c067684e7e1be0a136a2c318abc311",
+        "size": 268834,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1021348/files/5638424/download"
+      },
+      {
+        "path": "mods/asset_521480_8274802.jar",
+        "sha256": "9f76e7018eca0a20bb6c4f269d7192e14beba375f7fb9064425804d6fbdaab96",
+        "size": 1988537,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/521480/files/8274802/download"
+      },
+      {
+        "path": "mods/asset_388172_8285786.jar",
+        "sha256": "ed2e76a7f818fd1a044fe986a8b7f7f870131d6746cd5bcf584b7ac9c27df483",
+        "size": 969015,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/388172/files/8285786/download"
+      },
+      {
+        "path": "mods/asset_333287_7956744.jar",
+        "sha256": "f53519d2afa660b8badc5e6f126ffcfc6858df5096d00e3e61d276ea915bf6ff",
+        "size": 1616237,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/333287/files/7956744/download"
+      },
+      {
+        "path": "mods/asset_1565164_8198547.jar",
+        "sha256": "17a3596576c26e85ef610a76c7e68398c5009ab8538363fb848529e78054dc1d",
+        "size": 949096,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1565164/files/8198547/download"
+      },
+      {
+        "path": "mods/asset_457570_5180902.jar",
+        "sha256": "e48fa65de9e361facc8abf0c13b5dc3dcc4922d832c1e02cab39dc8b99285057",
+        "size": 591886,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/457570/files/5180902/download"
+      },
+      {
+        "path": "mods/asset_1340183_6960817.jar",
+        "sha256": "8810e5ddad0035876e3f8851066cf1260967af22d3007c24498b39261628379a",
+        "size": 14113,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1340183/files/6960817/download"
+      },
+      {
+        "path": "mods/asset_1566209_8203496.jar",
+        "sha256": "952b45712f5cc4a3ad8f9b0c5033d49323d7fd5104dd47dbbfb1bcee2f629eae",
+        "size": 14580,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1566209/files/8203496/download"
+      },
+      {
+        "path": "mods/asset_1158094_8237481.jar",
+        "sha256": "a9b864c19a090c465390d0fd8382266393e7ca4fcf0f36c6c5f3bf9add075b80",
+        "size": 48348,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1158094/files/8237481/download"
+      },
+      {
+        "path": "mods/asset_551215_6184827.jar",
+        "sha256": "8d451a5f6800379c92800ca22d6d7255da11bc0f9b8f4531b0a557c2236f8651",
+        "size": 23729,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/551215/files/6184827/download"
+      },
+      {
+        "path": "mods/asset_1284211_8137148.jar",
+        "sha256": "21fa5810f1e60817112ae75bddc9774e7e08b5815d779118847895811af303b6",
+        "size": 115866331,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1284211/files/8137148/download"
+      },
+      {
+        "path": "mods/asset_342584_8271946.jar",
+        "sha256": "593b9098c9e7a81524207cb47a2148f8c39e8082c0f7f8ee1fe777de1108f065",
+        "size": 723677,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/342584/files/8271946/download"
+      },
+      {
+        "path": "mods/asset_975120_5855462.jar",
+        "sha256": "3a5974fc1fb82eed22e759aa788c3c387402a25042ccf8865678be06a1c4d6fb",
+        "size": 79729,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/975120/files/5855462/download"
+      },
+      {
+        "path": "mods/asset_859798_4670750.jar",
+        "sha256": "cf3a27b3bb0939f5cc426002a000073649aa60447704bc889c639692d4f7b05a",
+        "size": 15407,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/859798/files/4670750/download"
+      },
+      {
+        "path": "mods/asset_353890_6598272.jar",
+        "sha256": "3d6184d1a008997810de492ff506cb4696a541fffcdc8028558936b68234f1df",
+        "size": 138548,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/353890/files/6598272/download"
+      },
+      {
+        "path": "mods/asset_1308490_6778301.jar",
+        "sha256": "dbb1b5d46d3ce49c664a22e3bdf8e0cb4afbdb2ab6eb6f3954ad9876a6af403d",
+        "size": 7022,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1308490/files/6778301/download"
+      },
+      {
+        "path": "mods/mcwifipnp-1.7.6-1.20.1-fabric.jar",
+        "sha256": "ee285dc03f82afaf91e5a86a67df583d8bb824b7df9c5112dfa6c10a8d397661",
+        "size": 82266,
+        "role": "host",
+        "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/azDO3k7E/mcwifipnp-1.7.6-1.20.1-fabric.jar"
+      }
+    ],
+    "extraFiles": [],
+    "sourceArchive": {
+      "path": "mods/Into the backrooms- Found Footage (horror)-2.0.3.zip",
+      "sha256": "2cbe4bb1b160056a7dfe5459421fba7b3ddaf9215db349870b6e002938d21d50",
+      "size": 79750,
+      "sourceUrl": "https://www.curseforge.com/api/v1/mods/1256625/files/8292234/download"
+    }
+  },
+  {
+    "id": "cobbleverse",
+    "instanceId": "cobbleverse",
+    "workflow": "coco-managed",
+    "minecraftVersion": "1.21.1",
+    "loader": "fabric",
+    "loaderVersion": "0.18.4",
+    "packVersion": "1.7.42-CF",
+    "assets": [
+      {
+        "path": "mods/lenientdeath-1.2.5+1.21.1.jar",
+        "sha256": "117175de6d7a8cc9cf36d48fd55a8460183dd30f4d25c0e7230ba8fe470f79b4",
+        "size": 920915,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/506536/files/5619920/download"
+      },
+      {
+        "path": "mods/MoreCobblemonTweaks-fabric-1.3.3.jar",
+        "sha256": "8adee1d12c9dd86626e5472d6e1bbcb70b08ed62fea5bdd09db9180cc8411cae",
+        "size": 137626,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1082538/files/7593364/download"
+      },
+      {
+        "path": "mods/tooltipfix-1.1.1-1.20.jar",
+        "sha256": "50c6c45d16c62b0d9a832692b7f6250d5561f0b28bf7729d8ab25fe1162c90d2",
+        "size": 12432,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/411557/files/4577194/download"
+      },
+      {
+        "path": "mods/balm-fabric-1.21.1-21.0.63.jar",
+        "sha256": "4c3604961b74e9cbc91efb1a93daa2f4e55354a46afc93cb74f0de543fd86391",
+        "size": 809717,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/500525/files/8424819/download"
+      },
+      {
+        "path": "mods/villagerconfig-fabric-4.5.4+1.21.1.jar",
+        "sha256": "627483b71a24679d51321c618fa6c8abe8df64cf770b001b319412677adab49b",
+        "size": 355303,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/400741/files/8252200/download"
+      },
+      {
+        "path": "mods/xaerominimap-fabric-1.21.1-26.4.2.jar",
+        "sha256": "85342f8f7c098e98f2f200fbba308a243af1204cb1afd7668360420e635aa2f8",
+        "size": 2233608,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/263420/files/8449818/download"
+      },
+      {
+        "path": "mods/melody_fabric_1.0.10_MC_1.21.jar",
+        "sha256": "223ab859b9cc246d8d6e5cec5e734f97be3aac545de6cda7743750262428ed83",
+        "size": 188035,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/938643/files/5430438/download"
+      },
+      {
+        "path": "mods/resourcefullib-fabric-1.21-3.0.12.jar",
+        "sha256": "93064c5aff85bf5e6385470f311fd1c7de172f58b02fefb1d2920db76f8cd8b5",
+        "size": 485586,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/570073/files/5973189/download"
+      },
+      {
+        "path": "mods/playerxp-fabric-1.0.9+1.21.1.jar",
+        "sha256": "22133f464ea4442b481d0bc814ab928b0473890a86bf36fa90884ed660e3edf9",
+        "size": 10818,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1261726/files/7886106/download"
+      },
+      {
+        "path": "mods/entityculling-fabric-1.10.5-mc1.21.1.jar",
+        "sha256": "cfb5491f5ed9609784cf3d6a926bef046ca80cb74c7856e6134335d7d0ce839e",
+        "size": 1595131,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/448233/files/8287094/download"
+      },
+      {
+        "path": "mods/reeses-sodium-options-fabric-2.2.3+mc1.21.1.jar",
+        "sha256": "6f5a2964656552da24e015b6f6e03d4baac8cfed919978785e94920f3fd0f568",
+        "size": 259211,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/511319/files/8410879/download"
+      },
+      {
+        "path": "mods/pokeblocks-1.4.0-1.21.1.jar",
+        "sha256": "c113f9e61a7bef35c3bacc57651a7508f3f07c20218b51eade31766899f1176d",
+        "size": 1606467,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1078431/files/6376530/download"
+      },
+      {
+        "path": "mods/modernfix-fabric-5.25.1+mc1.21.1.jar",
+        "sha256": "3ce5a9ce75066961b7fa5382692bb1387cc3536cc984b064ab7d70b97f3c674c",
+        "size": 471258,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/790626/files/7200210/download"
+      },
+      {
+        "path": "mods/rechiseled-1.2.4-fabric-mc1.21.jar",
+        "sha256": "621eb411d88470508a1f1ad6797e569510ca8a63e650728e615b8a65c377b773",
+        "size": 11913849,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/558998/files/7687483/download"
+      },
+      {
+        "path": "mods/notenoughanimations-fabric-1.12.4-mc1.21.1.jar",
+        "sha256": "12e3bded47f6669030edf57b615e77de8d080f38d0313dd892c6d18833fc39fd",
+        "size": 1948132,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/433760/files/8274906/download"
+      },
+      {
+        "path": "mods/comforts-fabric-9.0.5+1.21.1.jar",
+        "sha256": "73ff17028967a2e30731ea79aee2e18dd8e2d59a5dcd075facd6491cae1b2231",
+        "size": 914494,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/276951/files/7515856/download"
+      },
+      {
+        "path": "mods/rctmod-fabric-1.21.1-0.18.1-beta.jar",
+        "sha256": "92951d3be475a0433f8ef508439730723e2e901dd1e3b2509c29205031d4eb51",
+        "size": 6757956,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1009534/files/7913182/download"
+      },
+      {
+        "path": "mods/brb-1.10.0-rc5+1.21.jar",
+        "sha256": "7ddc4761bf5ca59c34703d9586e6edaf6c7a7a3939ed7cdb6c103ab9fec6707b",
+        "size": 1213168,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/486485/files/5512414/download"
+      },
+      {
+        "path": "mods/customsplashscreen-2.2.0.jar",
+        "sha256": "142aacb23fc97e467ded7e279a72b00252018c43d12d803d928d07d4fe8d8678",
+        "size": 660554,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/438252/files/5437540/download"
+      },
+      {
+        "path": "mods/beautify-2.0.0+1.21.1.jar",
+        "sha256": "134da1a8e3841f0a14004e839bd1e0a9d091cc5769a82b0052cebda2804ac4fd",
+        "size": 837607,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/809311/files/7553989/download"
+      },
+      {
+        "path": "mods/Only Bottle Caps-1.3.0.jar",
+        "sha256": "f18d5ddfaa0a77d0ef68b9db470a41095522878e25b1cc2a5282e747c784f09d",
+        "size": 250451,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1299655/files/7253785/download"
+      },
+      {
+        "path": "mods/sophisticatedcore-1.21.1-1.2.9.21.168.jar",
+        "sha256": "48e99847012a2319fa76b9ae9f277b675d6e60008a5e587c6b966126c092e914",
+        "size": 2996065,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/979317/files/7344653/download"
+      },
+      {
+        "path": "mods/fightorflight-fabric-0.10.9.jar",
+        "sha256": "7eee034d17281b43324cbdcc41a3836b6c44a93798d40a608538ed12a72279c1",
+        "size": 1424525,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1168140/files/8404742/download"
+      },
+      {
+        "path": "mods/neruina-3.3.3+1.21.1-fabric.jar",
+        "sha256": "a3a49320128920256b43857e5254e5cd2a481417da61d0999a249aceb6125b20",
+        "size": 860092,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/851046/files/8451082/download"
+      },
+      {
+        "path": "resourcepacks/Cobblemon Classic Grass Pack v1.0 MC1.21.1.zip",
+        "sha256": "82682159ca0132b3fe0f2b24d37324bac1bbd40e2f0c08b592af9073b0df8c92",
+        "size": 7538,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1024881/files/5971658/download"
+      },
+      {
+        "path": "mods/fabric-language-kotlin-1.13.13+kotlin.2.4.10.jar",
+        "sha256": "34ccdacf13bb9351fe43ce61912c2e09b72364e43e787d36ba3d2d04dec75a52",
+        "size": 8076363,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/308769/files/8439967/download"
+      },
+      {
+        "path": "mods/zfastnoise-1.0.13+1.21.jar",
+        "sha256": "da1b8702dfbdbea125aca0c0b1b3da5f8c3eb483977dff6482f32178fd007684",
+        "size": 38857,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1460602/files/8393128/download"
+      },
+      {
+        "path": "mods/sophisticatedstorage-1.21.1-1.3.7.9.139.jar",
+        "sha256": "938954b20c8d01c689166eb58364a67e37a2771091ed628c17d9be459837114c",
+        "size": 1670672,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/979326/files/7344673/download"
+      },
+      {
+        "path": "mods/MobsBeGone-0.0.7.jar",
+        "sha256": "ad45c9c1bfe8c018d372f9fb6eb3e95507d6252b6cb4204478d04653d9634e98",
+        "size": 9837,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1302442/files/6742844/download"
+      },
+      {
+        "path": "resourcepacks/-1.21.2 Fresh Moves v3.1 (With Animated Eyes).zip",
+        "sha256": "c433f3d831e86faa956836bf327ca00151bd813d1a8ab36aa064d518a58790f7",
+        "size": 321871,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/990406/files/6105672/download"
+      },
+      {
+        "path": "mods/betterbeds-fabric-1.4.0.jar",
+        "sha256": "d707f5df1c45150eb18b3135380519e74dd9103673a71032ef3de2b9038424aa",
+        "size": 39918,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/443782/files/5437848/download"
+      },
+      {
+        "path": "mods/xaeroworldmap-fabric-1.21.1-1.44.2.jar",
+        "sha256": "cd6109af335ad83af9e97cdae5c25023112349e2dc4df95a97640022f38b3856",
+        "size": 1448218,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/317780/files/8449918/download"
+      },
+      {
+        "path": "mods/BadOptimizations-2.4.1-1.21.1.jar",
+        "sha256": "22e2467892d3706f43d1cf2aa637785bb8601c20b0098a82ab956e6a8fc4d2ba",
+        "size": 283566,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/949555/files/7338300/download"
+      },
+      {
+        "path": "mods/supermartijn642configlib-1.1.8-fabric-mc1.21.jar",
+        "sha256": "63a29f2acf4be2c5ca89a81a046c1100111ad2865d9638f638e27ca161e7211c",
+        "size": 206993,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/438332/files/5546988/download"
+      },
+      {
+        "path": "mods/trinkets-3.10.0.jar",
+        "sha256": "349fd2aa8930b232050ee5304db55e4ef738b017971afe7c84acd589a95fda2f",
+        "size": 272944,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/341284/files/5534317/download"
+      },
+      {
+        "path": "mods/ResourcePackOverrides-v21.1.0-1.21.1-Fabric.jar",
+        "sha256": "5db1e3d3f07947ceb893ccd823a7660f62f8f794e2bf9a5b721a3c3d32dcbc59",
+        "size": 80827,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/832644/files/5733967/download"
+      },
+      {
+        "path": "mods/fzzy_config-0.7.6+1.21.jar",
+        "sha256": "323dc065cc3aaeb7f908be7e5d31070a25d4188b433ed770a79700ef8f5e8f7d",
+        "size": 2365335,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1005914/files/7568948/download"
+      },
+      {
+        "path": "mods/ScalableLux-0.1.0.1+fabric.d0d58ab-all.jar",
+        "sha256": "f32ed8d825c7af90b14ab9f7bbe1293818bcf411fea104ae20d18ecde30f8387",
+        "size": 177266,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1055925/files/6952368/download"
+      },
+      {
+        "path": "mods/soundsbegone-fabric-1.5.2+mc1.21.jar",
+        "sha256": "88a0dd266a5639e89c33c9320685c57d482641738f9bc5b6e6800c3c34b80b32",
+        "size": 6151935,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/874633/files/8312695/download"
+      },
+      {
+        "path": "mods/zoomify-2.15.2+1.21.1.jar",
+        "sha256": "6c317987df28922e227ab3ac4e39090460d99b965bcb9c8da8f9a4493b705d00",
+        "size": 872937,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/574741/files/7591960/download"
+      },
+      {
+        "path": "mods/ForgeConfigAPIPort-v21.1.6-1.21.1-Fabric.jar",
+        "sha256": "2e3a8f0e3bda85a7d722720e7ce879cbd9d028d9395c6fc224d329b3c982d9b1",
+        "size": 633065,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/547434/files/7213608/download"
+      },
+      {
+        "path": "resourcepacks/Cobblemon 3D Poké Rods 1.0.zip",
+        "sha256": "c93e9c866658bb752976c44414ca0e04fa90246060f114a183599abe1de4ca9e",
+        "size": 167546,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1173260/files/6060565/download"
+      },
+      {
+        "path": "mods/paginatedadvancements-2.5.1.jar",
+        "sha256": "776d8006401781bc036199acc9ba80f7dce6c3bcebbbfa260a774add750c4d2d",
+        "size": 71859,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/618770/files/5679657/download"
+      },
+      {
+        "path": "mods/fancymenu_fabric_3.9.8_MC_1.21.1.jar",
+        "sha256": "19e5faf15a769ba4841815fb2320f1efc9f97ddffbc24c95299b6480b50af201",
+        "size": 25757227,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/367706/files/8440209/download"
+      },
+      {
+        "path": "mods/netherportalfix-fabric-1.21.1-21.1.3.jar",
+        "sha256": "c6589e3a95ee6dbced2442682caeec53789999bc6a2883f9919e039b1bee98c6",
+        "size": 213294,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/241160/files/6204047/download"
+      },
+      {
+        "path": "mods/geckolib-fabric-1.21.1-4.9.2.jar",
+        "sha256": "eac4cf55e1cb99b22cb91ea87c774d2a670c1711a80f4aff50e6ad56b6c58e7e",
+        "size": 660416,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/388172/files/8350058/download"
+      },
+      {
+        "path": "mods/libjf-3.17.3.jar",
+        "sha256": "bcf972e8a0ffc24ddff25319e3fc89feb7cee3d26833bf16e8f53d16ae01b359",
+        "size": 1283376,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/482600/files/5794349/download"
+      },
+      {
+        "path": "mods/biomereplacer-2.1-hippo-fabric.jar",
+        "sha256": "ec6eeda3d4d32d9740c3e6f24177db3fcfa06866f73e341c0ad4ea090d0055ac",
+        "size": 138694,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/910274/files/6807126/download"
+      },
+      {
+        "path": "mods/catchindicator-fabric-1.7.0.jar",
+        "sha256": "bcebcfa5692f93de8d8aff33973510517a7434d48656c5ad167d33df841bc122",
+        "size": 318477,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1431831/files/8236117/download"
+      },
+      {
+        "path": "mods/catchrate-display-fabric-2.8.22.jar",
+        "sha256": "0a2c2ae61e6796a3b524556022c28dada75da73d6391613849cfd98230d91210",
+        "size": 260470,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1450604/files/8050484/download"
+      },
+      {
+        "path": "mods/entity_model_features-3.2.4-1.21-fabric.jar",
+        "sha256": "3c3f800b4bf911a158435c36dac0cf4176bec36d837c0696fdfae39d7ec5f976",
+        "size": 565280,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/844662/files/8063557/download"
+      },
+      {
+        "path": "mods/krypton-0.2.8.jar",
+        "sha256": "94f195819b24e5da64effdc9da15cdd84836cc75e8ff0fd098bab6bc2f49e3fe",
+        "size": 161045,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/428912/files/5460550/download"
+      },
+      {
+        "path": "mods/rctapi-fabric-1.21.1-0.15.2-beta.jar",
+        "sha256": "e5bd96b1b74aad41588acc078e7385ca72f66a862aae47adda3d55b44c1d5ba8",
+        "size": 234250,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1152792/files/7952421/download"
+      },
+      {
+        "path": "mods/ferritecore-7.0.3-fabric.jar",
+        "sha256": "98c3ab1d5aab8f14b5d082d3f1a467727fd335f02d124555c94339761c4c18f2",
+        "size": 123450,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/459857/files/7524152/download"
+      },
+      {
+        "path": "mods/defaultoptions-fabric-1.21.1-21.1.7.jar",
+        "sha256": "8fff8fad699028a6578c61df3d1690d6fb5abbdc9a7c436e94cc9f51138be790",
+        "size": 105044,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/232131/files/8286308/download"
+      },
+      {
+        "path": "mods/iris-fabric-1.8.14-beta.1+mc1.21.1.jar",
+        "sha256": "0ceb694040b4628bf3fa02286cfe5f0db833195669ab07f8caa4001359763eff",
+        "size": 2791343,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/455508/files/8242801/download"
+      },
+      {
+        "path": "mods/Debugify-1.21.1+1.0.jar",
+        "sha256": "e61e83875190150337a2366d9374f04865654de7bdf83e6ab29d9915899f8d7a",
+        "size": 292202,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/596224/files/5691544/download"
+      },
+      {
+        "path": "mods/Controlling-fabric-1.21.1-19.0.5.jar",
+        "sha256": "c0150c5bfbc77f27b92f24a5a9c2edc462eba8c8f912635757c5deb3a0a93f8d",
+        "size": 83679,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/250398/files/6368974/download"
+      },
+      {
+        "path": "mods/entity_texture_features_1.21-fabric-7.1.jar",
+        "sha256": "d1b54ad6fd34eaf7187fb62556f2c5cacdc2ea3023a6217e3b2d823285aea148",
+        "size": 745421,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/568563/files/7930621/download"
+      },
+      {
+        "path": "mods/accessories_compat_layer-fabric-0.1.12+1.21.1.jar",
+        "sha256": "c77c281616618ee51bb4f9bced4708be6d1baa690b3e8564a68d04df9f080980",
+        "size": 398321,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1315611/files/7585679/download"
+      },
+      {
+        "path": "resourcepacks/Fully Hisuian Starters 1.1.1.zip",
+        "sha256": "a12cbdd26881621404bce13b7ce022aa18872067bdfefaa80d8d1c22bd6fc4b0",
+        "size": 202557,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1017383/files/7550982/download"
+      },
+      {
+        "path": "resourcepacks/Icon Fresh 0.4.zip",
+        "sha256": "6a77950346e51262adfa266a7d52acb0b35798528f4ccf73f518d1c69fc729d8",
+        "size": 852471,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1159273/files/7402610/download"
+      },
+      {
+        "path": "mods/AdvancementPlaques-1.21.1-fabric-1.6.8.jar",
+        "sha256": "dda6cc159edd450d05b9ff15832747b951dacd068c601018c219bca833ce5bef",
+        "size": 195505,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/514882/files/5905997/download"
+      },
+      {
+        "path": "mods/globalpacks-fabric-1.21.1-21.0.6.jar",
+        "sha256": "391d960afb1d8f0b63ccfb677970512d68642102b6928a4830ebcd6d3fdba2cc",
+        "size": 394707,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/317134/files/6634587/download"
+      },
+      {
+        "path": "mods/musicnotification-fabric-3.0.0+mc1.21.1.jar",
+        "sha256": "747b2527aa373a76e9d378ad1059369400c66fb50fb3ab22a409ac6d8154a614",
+        "size": 139713,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/817206/files/7918233/download"
+      },
+      {
+        "path": "mods/packetfixer-3.3.1-1.20.5-1.21.X-merged.jar",
+        "sha256": "2979a8a3f44e5d5df4f9f6315d18c220f3debf736bb8a2c2740acdfb13bd820f",
+        "size": 46623,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/689467/files/7221528/download"
+      },
+      {
+        "path": "mods/moreculling-fabric-1.21.1-1.0.8.jar",
+        "sha256": "19c7e65794511ab21eed63cab9e2efbf43a29fd2ea20234b23f92cb71c6a2aa2",
+        "size": 332100,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/630104/files/8087868/download"
+      },
+      {
+        "path": "mods/toms_storage_fabric-1.21-2.3.0.jar",
+        "sha256": "fad39f7ed0ac20ab0345aeb7dbe1be0b2732fa11fd333b6874629e925c45d5d1",
+        "size": 1962781,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/396826/files/7659873/download"
+      },
+      {
+        "path": "mods/athena-fabric-1.21.1-4.0.6.jar",
+        "sha256": "e17aad84c690ac4e46300a4180b3ae4077ffa4f526dbc82d117afbbff4ee83e4",
+        "size": 88425,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/841890/files/8061949/download"
+      },
+      {
+        "path": "mods/konkrete_fabric_1.9.9_MC_1.21.jar",
+        "sha256": "06e912f99d59bf81c0676f1db936150ad4443d5674f59b3c55604540ba620841",
+        "size": 786695,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/416797/files/5430434/download"
+      },
+      {
+        "path": "mods/supermartijn642corelib-1.1.21-fabric-mc1.21.jar",
+        "sha256": "462756caa1efeff760a752a29136d59d40c5ad6047603472785f65a44d1da6e3",
+        "size": 616830,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/454372/files/7783365/download"
+      },
+      {
+        "path": "mods/highlight-fabric-1.21-3.0.0.jar",
+        "sha256": "08932afc913f74e9676b9a59a87bdf817d959cf6d861a9269897778240f11df2",
+        "size": 457352,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/667245/files/5447147/download"
+      },
+      {
+        "path": "resourcepacks/Cobblemon Interface v1.6.0.zip",
+        "sha256": "eb40bd047c2e1443c43731e4d1ef1b9d7d0624476336f540b52a3e8fcb9eb315",
+        "size": 14108266,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/860898/files/7220886/download"
+      },
+      {
+        "path": "mods/Iceberg-1.21.1-fabric-1.3.2.jar",
+        "sha256": "9214790af6fb75c19ef6b95e0e47999addf018e8c7a1630a5118c4252e6d8d36",
+        "size": 413302,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/539382/files/6423860/download"
+      },
+      {
+        "path": "mods/CobbleDollars-fabric-2.0.0+Beta-5.1+1.21.1.jar",
+        "sha256": "5d8690980ecc79b5f33005dd274d148d0b9b7713ff5e8223c7011aa8bb08401a",
+        "size": 369528,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/859232/files/6604561/download"
+      },
+      {
+        "path": "mods/continuity-3.0.0+1.21.jar",
+        "sha256": "99fd46b834874d167ea2349a9a72947cbfa7192f927aa99bbeb4b0637aa208d4",
+        "size": 1014044,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/531351/files/5962881/download"
+      },
+      {
+        "path": "mods/owo-lib-0.12.15.4+1.21.jar",
+        "sha256": "825180ce17bc012fb450653b14df9f32479dcdd073fc3f133bb47462f5a63cec",
+        "size": 1183559,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/532610/files/6446006/download"
+      },
+      {
+        "path": "mods/Carved Wood-fabric-1.21.1-1.9.7-B.jar",
+        "sha256": "90b0784cd66b656343ec4b42c9e5562e92175f15ed91404a03a39e386a23847c",
+        "size": 2891665,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1335174/files/8444854/download"
+      },
+      {
+        "path": "mods/LegendaryMonuments-Cobbleverse.jar",
+        "sha256": "34901d7c95bff58242384c44abc6acc50c2e06310b85f7e80bcd70f7c7e5b0b6",
+        "size": 5736792,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1263645/files/7564151/download"
+      },
+      {
+        "path": "mods/Platform-fabric-1.21.1-1.3.3.jar",
+        "sha256": "52f49993d4440d266fa3a077090e8091983cd1bda5942f176ae75f3e9e350779",
+        "size": 735744,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/997634/files/8075944/download"
+      },
+      {
+        "path": "mods/ImmediatelyFast-Fabric-1.6.11+1.21.1.jar",
+        "sha256": "05a5f3c716ae631af3cc925c8144894368c632156f2d581dd8295cc223ea2f6d",
+        "size": 336763,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/686911/files/8348516/download"
+      },
+      {
+        "path": "resourcepacks/Comforts Modernized - V1.1.zip",
+        "sha256": "b3050d84c0be41dae853e550c07acb1f768880c41472b44d701c03e9b1bc4734",
+        "size": 72956,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/990594/files/5876060/download"
+      },
+      {
+        "path": "mods/CobbleverseBadges-1.3.jar",
+        "sha256": "d215d075d4ae80a4ed5e20cb5caf442bb3f3607d2a41dc134ebad035f6a8da77",
+        "size": 137015,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1258911/files/7251451/download"
+      },
+      {
+        "path": "mods/LumyMon-0.6.6.jar",
+        "sha256": "00ad0ddb4bbac26b6f1b83ad80255008be98ab72056d89de3eb9107b01d7eefb",
+        "size": 2331858,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1301989/files/8411677/download"
+      },
+      {
+        "path": "mods/architectury-13.0.8-fabric.jar",
+        "sha256": "10cbbb6f5f96a2f1853b0cc68428424cec8903409517b299ff02350756b6399d",
+        "size": 600915,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/419699/files/5786326/download"
+      },
+      {
+        "path": "mods/forgivingvoid-fabric-1.21.1-21.1.7.jar",
+        "sha256": "ee45266cc7c10b0a17d9a87b021a57fb8616529e4c33af0fff5a506de71960b1",
+        "size": 78531,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/271009/files/7966155/download"
+      },
+      {
+        "path": "mods/timcore-fabric-1.7.3-1.32.0.jar",
+        "sha256": "8daaf896de6bc2ee0c097ff24659d248d800a31d7a8373c93a9790d2afb48d1d",
+        "size": 304444,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1295910/files/7938282/download"
+      },
+      {
+        "path": "mods/Ping-Wheel-1.12.2-fabric-1.21.1.jar",
+        "sha256": "9ba63ca5f33c86d0ce3aec2b04fafcc2fbcb8e705e46a7be20ff66382331c3e3",
+        "size": 152703,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/734339/files/7996933/download"
+      },
+      {
+        "path": "mods/cobblecuisine-2.0.1-1.7-rc1.jar",
+        "sha256": "081d9ba2ddaae3f9b3240c0b4d49b75c4f93ab2b6e9bbb7bb69a3bc05520e1d9",
+        "size": 683115,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1254643/files/7265785/download"
+      },
+      {
+        "path": "mods/repurposed_structures-7.5.21+1.21.1-fabric.jar",
+        "sha256": "c3a6ab373dce927c57ce79d14c1ebc9ef4f49d58abcaf9e4caa89a38aab08b8c",
+        "size": 8202318,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/391366/files/8237898/download"
+      },
+      {
+        "path": "resourcepacks/FreshAnimations_v1.10.4.zip",
+        "sha256": "8e44b29560d2e7d952c0a4f77f0451e6dcb048f827189bffc712b446be8de7f2",
+        "size": 850941,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/453763/files/7670377/download"
+      },
+      {
+        "path": "mods/BetterF1-Fabric-1.1+1.21.7.jar",
+        "sha256": "abfb3f37f130ae4dea89e282f1d0fc0e9c4b2235762745931329defb9387bbdf",
+        "size": 22834,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/959591/files/6707091/download"
+      },
+      {
+        "path": "mods/sodium-fabric-0.8.12+mc1.21.1.jar",
+        "sha256": "9ad11a616d1ca759867de8a5bbafcde5ab50b68dbd674110c7b90aeea251b793",
+        "size": 1573180,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/394468/files/8382327/download"
+      },
+      {
+        "path": "mods/LumyREI-1.1.3.jar",
+        "sha256": "e6ac62bb3a858af78948397b0310efb281b911f4cda31392c989c9cdaf9ed4b1",
+        "size": 66283,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1399760/files/7864606/download"
+      },
+      {
+        "path": "mods/CobbleFurnies-fabric-1.2.jar",
+        "sha256": "c1230a58ca2369b973bfade68a0ffcac86ffcbf9dd2a845999ed8c5348bfef93",
+        "size": 2337235,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1188698/files/8340198/download"
+      },
+      {
+        "path": "mods/configurable-3.5.2+1.21.1-fabric.jar",
+        "sha256": "70f7728d67ff8c420a53ef3c08ec73732517882317ab20a084b273773aa1e5e2",
+        "size": 545247,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1092048/files/8438543/download"
+      },
+      {
+        "path": "mods/respackopts-4.11.3.jar",
+        "sha256": "1c3634a90548c839cb9e78409d346d712b1af73be839fa7c7ad59428b6398dea",
+        "size": 530926,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/430090/files/5799816/download"
+      },
+      {
+        "path": "mods/waystones-fabric-1.21.1-21.1.37.jar",
+        "sha256": "1cef833ec178bc6ea92a221b8a75bc6637e9e4d38d23f3963610fd772f1b2f95",
+        "size": 1226801,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/245755/files/8450086/download"
+      },
+      {
+        "path": "mods/cobblenav-fabric-2.3.3.jar",
+        "sha256": "e66eb486f5cfbeef2215910193eba0000c191bbf774fa59f3e0b955ce13cae45",
+        "size": 1090821,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/976014/files/7940648/download"
+      },
+      {
+        "path": "mods/handcrafted-fabric-1.21.1-4.0.3.jar",
+        "sha256": "9609c27e2eeaed4c633ade2d68ad980cfbed0442a10239846a67e9c62bc1b230",
+        "size": 7127377,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/538214/files/6330032/download"
+      },
+      {
+        "path": "resourcepacks/Cobblemon Interface Modded v1.9.4.zip",
+        "sha256": "3175cde27f4528eb7c2dc6a53b9952d937e0d1ead2b2f0fdbf1809075e9eb7eb",
+        "size": 1053517,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/989454/files/7057797/download"
+      },
+      {
+        "path": "mods/particle_core-0.3.3+1.21.jar",
+        "sha256": "e7cfef3eb16d5b73c00915a5f2b820d66555c23d13e0636125d7b07384a443e4",
+        "size": 147812,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/985426/files/7581173/download"
+      },
+      {
+        "path": "mods/cloth-config-15.0.140-fabric.jar",
+        "sha256": "33894e95da3af59014b39d126586d5241e07ea39f8618763e30dab637405f95f",
+        "size": 1157166,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/348521/files/5729125/download"
+      },
+      {
+        "path": "mods/accessories-fabric-1.1.0-beta.53+1.21.1.jar",
+        "sha256": "51e6f6d52cb2523199ad36e5bc04802230f86904c35ac3dbf36e59c86b2c30d1",
+        "size": 1095802,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/938917/files/7583323/download"
+      },
+      {
+        "path": "mods/sophisticatedbackpacks-1.21.1-3.23.4.3.106.jar",
+        "sha256": "bbcd0d01b204efa0d51d7426d9ff08db2d2206017782c21306c500a9c294967e",
+        "size": 988478,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/979322/files/6844426/download"
+      },
+      {
+        "path": "mods/SafePastures-1.1.1+1.21.1.jar",
+        "sha256": "41d1c286db3e02a3249346a5efda6f95799ab895aa40c03a87cdcd81a95e4b45",
+        "size": 16518,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1248185/files/7248017/download"
+      },
+      {
+        "path": "mods/cobblemonraiddens-fabric-0.11.3+1.21.1.jar",
+        "sha256": "0a09f8ae544412e2f0f599a38b033928ec0a553ad53506c10bca3db734877c7b",
+        "size": 2690197,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1349231/files/8358837/download"
+      },
+      {
+        "path": "mods/NoChatRestrictions-Fabric-MC1.21.11-v1.0.0.jar",
+        "sha256": "bc8b10f71e17822ca274936e487104e6572f60e8969b81bfe23f30fc11300a94",
+        "size": 9907,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1442925/files/7544192/download"
+      },
+      {
+        "path": "mods/Luckys-Cozyhome-Refurnished-1.1.20.jar",
+        "sha256": "0915e3e54c12fe40622cab94005418d32cbde011fa9c2d7c27756eb7d5313a66",
+        "size": 3121070,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/825733/files/7273189/download"
+      },
+      {
+        "path": "mods/capturexp-fabric-1.7.3-1.3.0.jar",
+        "sha256": "8f5ab9ce3ea2957f75033f3adc8a6195d303a96c3a8c1eebd1d5ee254bf88cf7",
+        "size": 22848,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/901059/files/7568498/download"
+      },
+      {
+        "path": "mods/StackDeobfuscatorFabric-1.4.3+08e71cc.jar",
+        "sha256": "335627367b8212c17e58978866874ede8d0d9a159053fbb38e56123fff83d0f9",
+        "size": 321213,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/840896/files/5511110/download"
+      },
+      {
+        "path": "mods/midnightlib-1.7.5-fabric+1.21.1.jar",
+        "sha256": "b75155a638d15df61922bb635e2c5aae6102897ccaa1e226060a7f5ff4218091",
+        "size": 62853,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/488090/files/6772064/download"
+      },
+      {
+        "path": "mods/EuphoriaPatcher-1.9.3-r5.8.1-fabric.jar",
+        "sha256": "b42bd00c7ab6e044d21f845dedc58a4524e45643f3685bf1c2343098e74d662e",
+        "size": 4296552,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/915902/files/8177593/download"
+      },
+      {
+        "path": "mods/Terralith_1.21.x_v2.5.8.jar",
+        "sha256": "00333a130ac38b7b9ca93700098d5e02e0612bdc2d3522aada2f36e5600621bf",
+        "size": 3115385,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/513688/files/6090387/download"
+      },
+      {
+        "path": "mods/lithium-fabric-0.15.4+mc1.21.1.jar",
+        "sha256": "92329d98c57f5a22091a0adb509fdb1d60113a5602c708b799b13134bad13baa",
+        "size": 797454,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/360438/files/8330364/download"
+      },
+      {
+        "path": "mods/better-pokedex-scanner-1.0.0.jar",
+        "sha256": "aca37fa43fe9226cf99f75f194bf6cb9ec27d71dad1ae6c732d0791636231180",
+        "size": 350293,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1514948/files/7931023/download"
+      },
+      {
+        "path": "mods/c2me-fabric-mc1.21.1-0.4.0-alpha.0.23.jar",
+        "sha256": "6a77c69140f3da10e20b25ee8a75da039c5835b73f9c7a03615fbd968b574e5e",
+        "size": 3757044,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/533097/files/8480674/download"
+      },
+      {
+        "path": "resourcepacks/COBBLEVERSE-CCC.zip",
+        "sha256": "0200e6ef4454afc46204bc8f7c298bf59c243679442ffee7f5b913a5ff2d973f",
+        "size": 8536643,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1258311/files/7812941/download"
+      },
+      {
+        "path": "mods/fusion-1.2.12-fabric-mc1.21.jar",
+        "sha256": "904b53bd8e0aacf200c700997c7467bc0c66cca1fb4a17c9999afb8eb62942e8",
+        "size": 515411,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/854949/files/7471453/download"
+      },
+      {
+        "path": "mods/particular-1.21.1-Fabric-1.5.5.jar",
+        "sha256": "47d724637888227d18e4bc49a11f67b50f0e39d21f4d494cf92215be96f8873c",
+        "size": 285813,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1219053/files/8275090/download"
+      },
+      {
+        "path": "mods/cobblemon-battle-extras-fabric-1.13.45.jar",
+        "sha256": "099c3dafd5c7d29e8d91f954a9598565fdd07dac235bb9c49ab305d9af37f826",
+        "size": 1515972,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1396525/files/7968868/download"
+      },
+      {
+        "path": "mods/sound-physics-remastered-fabric-1.21.1-1.5.1.jar",
+        "sha256": "8884ded0f53f97a6cb2fca9ef035947af8c3376a406e0bdaa8309bfe87801799",
+        "size": 205671,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/535489/files/7032249/download"
+      },
+      {
+        "path": "mods/particlerain-4.0.0-beta.10+1.21.1-fabric.jar",
+        "sha256": "49bf60c5b95ea954efa51c63609f0a4668230e12f870f0eb6bdb63d207a22dc8",
+        "size": 608651,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/421897/files/8055418/download"
+      },
+      {
+        "path": "resourcepacks/E19 Cobblemon Minimap Icons.zip",
+        "sha256": "8732ecb1ee0b8cceda4ad973ffcf53e0c6689f503652320107d2569c0cd7f9ba",
+        "size": 19398814,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/958737/files/7585194/download"
+      },
+      {
+        "path": "mods/VanillaBackport-fabric-1.21.1-1.1.7.10.jar",
+        "sha256": "6aba8f56fd71b9b5b724812b22f14d11a71e9ca0bf7e84b52b4c8b91736e0734",
+        "size": 54994072,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/417430/files/8229731/download"
+      },
+      {
+        "path": "mods/RoughlyEnoughItems-16.0.799-fabric.jar",
+        "sha256": "098c840780940010f2ba48cb758b77c1b991e69ab3fbec8725af099351653c9d",
+        "size": 2451799,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/310111/files/6199139/download"
+      },
+      {
+        "path": "mods/zamega-fabric-1.7.3.jar",
+        "sha256": "0d134591a9db9834f5f2bffdce4bd4cd0976a1b7879aa7f52ce064c38199cfaa",
+        "size": 2387420,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1452045/files/7961235/download"
+      },
+      {
+        "path": "mods/BetterThirdPerson-Fabric-1.21-1.9.0.jar",
+        "sha256": "f9ec9dc6508b20d32a3c770ecc77641e8f87c98e298d58e2757a6ef14abbb457",
+        "size": 52188,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/435044/files/5439141/download"
+      },
+      {
+        "path": "mods/yet_another_config_lib_v3-3.8.2+1.21.1-fabric.jar",
+        "sha256": "6ab420b7d1326fc9851b96a8967504bd644da421ed6438ceb9a9d9c993a408b1",
+        "size": 1131265,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/667299/files/7437855/download"
+      },
+      {
+        "path": "shaderpacks/ComplementaryUnbound_r5.8.1.zip",
+        "sha256": "bb89b1fc54687d4147a837fb2e3c3f7261a13bee51819761e9b6a91cb7915965",
+        "size": 546928,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/385587/files/8123288/download"
+      },
+      {
+        "path": "mods/BetterF3-11.0.3-Fabric-1.21.1.jar",
+        "sha256": "e0e4bb25fbe23b16b7574474ee9fde5cdc9757d05885bc43978f4ea5e8e258ad",
+        "size": 1810710,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/401648/files/5873256/download"
+      },
+      {
+        "path": "mods/MouseTweaks-fabric-mc1.21-2.26.jar",
+        "sha256": "3e9fa4800fafef616fbf1545d62f5898f55c83fbd4126ce2b48b5e0077243fc0",
+        "size": 75984,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/60089/files/5437294/download"
+      },
+      {
+        "path": "mods/pastureLoot-1.0.5+1.21.1.jar",
+        "sha256": "48a705eb70a3f129d64af565ff79cfe164d0e59fe2bbc20a903024d0cc844b8f",
+        "size": 45871,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1507970/files/7893511/download"
+      },
+      {
+        "path": "mods/fabric-api-0.116.14+1.21.1.jar",
+        "sha256": "333f15bceb117a0ac41e3396eac9873fa6c325c31e746d679809f9a7a0228196",
+        "size": 2451978,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/306612/files/8443376/download"
+      },
+      {
+        "path": "mods/Cobblemon-fabric-1.7.3+1.21.1.jar",
+        "sha256": "f7c25955176badc444ad6211fc556514fedbdba776227f105fe899f8819d74e3",
+        "size": 135801550,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/687131/files/7553235/download"
+      },
+      {
+        "path": "mods/mega_showdown-fabric-1.8.4+1.7.3+1.21.1.jar",
+        "sha256": "0cf4568128805816a8d6f3cbab08374b2e0261784c3d6e8c091c602f79bebf51",
+        "size": 17213370,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1189523/files/8102864/download"
+      },
+      {
+        "path": "mods/advancementdisable-fabric-1.0.1+1.21.jar",
+        "sha256": "b2a51c10b3dbe2e81bbca10ad56e2d9df9e7e70bbf7ee8e1cfcd65b4e6de120e",
+        "size": 430412,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1055905/files/5510149/download"
+      },
+      {
+        "path": "mods/interactic-0.2.3+1.21.jar",
+        "sha256": "fad6a5321f0a69c70dcbe62c631166b6549b1d9656929c011e6c1d57b1dea0da",
+        "size": 118011,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/510974/files/5592999/download"
+      },
+      {
+        "path": "mods/Searchables-fabric-1.21.1-1.0.2.jar",
+        "sha256": "0b58a40a41db4a4af4ef84475b0ea330be3b18fdcac2eca68ede46d9f4df3d76",
+        "size": 79531,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/858542/files/5831690/download"
+      },
+      {
+        "path": "mods/notenoughcrashes-fabric-4.4.9+1.21.1.jar",
+        "sha256": "1a3a0ec9e7bb60f9c15938ca4287beaf5e49e81183ac273d1a02d734aa327a74",
+        "size": 601087,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/353890/files/6598102/download"
+      },
+      {
+        "path": "mods/modmenu-11.0.4.jar",
+        "sha256": "a88e0d67c82b0434cbf56776c482587c275ed660f635d33f53ba485dfa30dcc3",
+        "size": 973059,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/308702/files/7808443/download"
+      },
+      {
+        "path": "mods/huge-structure-blocks-fabric-1.1.6.jar",
+        "sha256": "759071bd7b1db4367f232db35872ce6a30e8adee57a8543d0967d0b39b37819d",
+        "size": 100230,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/474114/files/7065479/download"
+      }
+    ],
+    "extraFiles": [
+      {
+        "path": "mods/DistantHorizons-3.2.0-b-1.21.1-fabric-neoforge.jar",
+        "sha256": "d6a7a963f794501678113e2545d8b25c90e123ef6b9256bb5716907d059e1ef5",
+        "size": 30207268,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/uCdwusMi/versions/ZpKb4kZp/DistantHorizons-3.2.0-b-1.21.1-fabric-neoforge.jar"
+      },
+      {
+        "path": "mods/mcwifipnp-1.9.0-1.21-fabric.jar",
+        "sha256": "0c660a930eba4ed70f869e090846d68b36c82321ef7d7626a5bef500233dc455",
+        "size": 124782,
+        "role": "host",
+        "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/RkAsw6nA/mcwifipnp-1.9.0-1.21-fabric.jar"
+      }
+    ],
+    "sourceArchive": {
+      "path": "mods/COBBLEVERSE-1.7.42-CF.zip",
+      "sha256": "809685d8a40b62ea0dd8a0a2a95c4974811c2f08b393e7843cb88418af38a683",
+      "size": 225761641,
+      "sourceUrl": "https://www.curseforge.com/api/v1/mods/1210677/files/8488030/download"
+    }
+  },
+  {
+    "id": "zombie-apocalypse-slow-zombies",
+    "instanceId": "zombie-apocalypse-slow-zombies",
+    "workflow": "coco-managed",
+    "minecraftVersion": "1.12.2",
+    "loader": "forge",
+    "loaderVersion": "14.23.5.2855",
+    "packVersion": "2.1",
+    "assets": [
+      {
+        "path": "mods/asset_229067_2487081.jar",
+        "sha256": "81df380818d38ca5ac965da978d3fe39dbd6cb3c0de409e37a47d0f300da3e45",
+        "size": 22320,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/229067/files/2487081/download"
+      },
+      {
+        "path": "mods/asset_228529_2631951.jar",
+        "sha256": "c5af6d490661a641bc8878df869f5166bbe32ec9188ad3469f4558e9ae52a182",
+        "size": 926081,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/228529/files/2631951/download"
+      },
+      {
+        "path": "mods/asset_354571_2842452.jar",
+        "sha256": "7dc3742f54927b1fc9bb4016606dbff4e62c806bac64a805be2f8f303999eca1",
+        "size": 29389,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/354571/files/2842452/download"
+      },
+      {
+        "path": "mods/asset_357178_3076610.jar",
+        "sha256": "b39b073b1c05016ea06086545d57618dfdc1426bbcdec740a19b5e1f8437b561",
+        "size": 1066150,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/357178/files/3076610/download"
+      },
+      {
+        "path": "mods/asset_298408_3039432.jar",
+        "sha256": "45575bba077ad3b2cd39273123925a31caca2fbe83f21dcfec8ff219c2bb1ea5",
+        "size": 7151,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/298408/files/3039432/download"
+      },
+      {
+        "path": "mods/asset_252239_2712229.jar",
+        "sha256": "9b8eb232a035987d57b4bf285e619ef9610ac4afce033e6d9d8faced1bbb415f",
+        "size": 430944,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/252239/files/2712229/download"
+      },
+      {
+        "path": "mods/asset_220318_2842510.jar",
+        "sha256": "33343221c7b84098b41b093db8f2a4def42cc776beb18f5e3d354a321720e286",
+        "size": 4702147,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/220318/files/2842510/download"
+      },
+      {
+        "path": "mods/asset_238403_2691084.jar",
+        "sha256": "0bb50f545b87f19087d9dbdb9930d6be2d66ee8c76d2a1982eef9e3d2bb43108",
+        "size": 77866,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/238403/files/2691084/download"
+      },
+      {
+        "path": "mods/asset_310059_3194413.jar",
+        "sha256": "a8db3a4f84ac871bfdd0aa87b2650c0fca1c9eaab8d6c7d759c2231ad6cdd971",
+        "size": 14381704,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/310059/files/3194413/download"
+      },
+      {
+        "path": "mods/asset_278141_2830166.jar",
+        "sha256": "02ec413508dcbbe48b9717e8a4c7cb12d357a937a52ba3cdb2541e804c71c481",
+        "size": 937558,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/278141/files/2830166/download"
+      },
+      {
+        "path": "mods/asset_291991_2555453.jar",
+        "sha256": "fc97c707047b42e22eff305e16cb9fba52dc2291cac800413d4c1077ab84221e",
+        "size": 126499,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/291991/files/2555453/download"
+      },
+      {
+        "path": "mods/asset_453925_3231561.jar",
+        "sha256": "961667eb20f445469f19c6018ffd85239cef5fc07729bc6ac39d1d04b6746803",
+        "size": 165452,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/453925/files/3231561/download"
+      },
+      {
+        "path": "mods/asset_312822_3447519.jar",
+        "sha256": "8afa1cf24a82b87c99e5122fdd3f6472c4854960ed18817c2f203bd10291d2d5",
+        "size": 6098330,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/312822/files/3447519/download"
+      },
+      {
+        "path": "mods/asset_359540_2909603.jar",
+        "sha256": "5efa339045e3dc89a288f38b4f3a0906616f68903c77a4f8d95358caddd767c8",
+        "size": 593528,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/359540/files/2909603/download"
+      },
+      {
+        "path": "mods/asset_237749_2902920.jar",
+        "sha256": "a16c09b2ac5894078cc1aef5b6fe11a04cb5bf43f2a703a5b9545fb8be0b748a",
+        "size": 2327451,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/237749/files/2902920/download"
+      },
+      {
+        "path": "mods/asset_237754_2663393.jar",
+        "sha256": "b3bf5e8d33bba7b691c8ebd15f134c36dde40809f89acac3d51bdd2a9da42f2b",
+        "size": 285951,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/237754/files/2663393/download"
+      },
+      {
+        "path": "mods/asset_250363_2746011.jar",
+        "sha256": "d8610a94da8f30815db4612b3291ecdcfd8204eaf1a4db8c5d0663c7b1191d91",
+        "size": 108306,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/250363/files/2746011/download"
+      },
+      {
+        "path": "mods/asset_246391_2710969.jar",
+        "sha256": "bc2e0190e54b85bb00285f2c5f7027aa7f2efdee69e3f85aef29cd4764dc66f3",
+        "size": 357504,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/246391/files/2710969/download"
+      },
+      {
+        "path": "mods/asset_248453_2785465.jar",
+        "sha256": "ccfcad80ef73ab815875a91979128ed58c262c479c7c0e5da65b225954bee197",
+        "size": 6278399,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/248453/files/2785465/download"
+      },
+      {
+        "path": "mods/asset_243121_2924091.jar",
+        "sha256": "b72490ac2de814df2fd764afd6071e4e8731281ef68b3862f282c5233224259d",
+        "size": 3877577,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/243121/files/2924091/download"
+      },
+      {
+        "path": "mods/asset_228189_2712101.jar",
+        "sha256": "c68f433e6d8c18ba6e142ae6c8454c4b62b95a5e3d8ca5427cede4b93cc39c0e",
+        "size": 2351429,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/228189/files/2712101/download"
+      },
+      {
+        "path": "mods/asset_233258_2810152.jar",
+        "sha256": "eec9e1013f3a7bc6a4ae2fb8527d2fb6ea9c1d3b4d2aebd0f764a2583a6d23ec",
+        "size": 14818,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/233258/files/2810152/download"
+      },
+      {
+        "path": "mods/asset_309710_2781333.jar",
+        "sha256": "cd584746a88948e8d67fc243f8f6a6b2dbb0403f33efcd3190007a2b7c30b84c",
+        "size": 128876,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/309710/files/2781333/download"
+      },
+      {
+        "path": "mods/asset_64760_3109599.jar",
+        "sha256": "abcda39bd17f305bcf45df9a8c429cb2e386b0f0ca7b90451bfd3af994370c7b",
+        "size": 1738598,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/64760/files/3109599/download"
+      },
+      {
+        "path": "mods/asset_260262_2988767.jar",
+        "sha256": "d29059be412c4f2fb6a9fbf451b098133d58e0792586305ade7767e289980553",
+        "size": 160290,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/260262/files/2988767/download"
+      },
+      {
+        "path": "mods/asset_238891_3098835.jar",
+        "sha256": "38ec972b7f1999754c598be8bfb4e0c15ea491b1b3364d69e049d86b52a257d3",
+        "size": 15040104,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/238891/files/3098835/download"
+      },
+      {
+        "path": "mods/asset_307806_2820815.jar",
+        "sha256": "4483d8cc2b0334b82b7d0f5bb6354a2020a0e00ce63a48379e8ba5eb7d79eef9",
+        "size": 341728,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/307806/files/2820815/download"
+      },
+      {
+        "path": "mods/asset_363569_2884962.jar",
+        "sha256": "e243520b4d1baa9a64817b904b5bd54edbfa9ee8713569f678e8f35202508704",
+        "size": 124758,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/363569/files/2884962/download"
+      },
+      {
+        "path": "mods/asset_378646_3340797.jar",
+        "sha256": "7004c7d3cb68eb0f5d20505f7ba06ee2c9b6f4f84bbe8054182efc582dabbc5d",
+        "size": 552150,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/378646/files/3340797/download"
+      },
+      {
+        "path": "mods/asset_238222_3043174.jar",
+        "sha256": "9dbc2c0ec8c28821fdd5dca487909089501607ee25c0e8470c43c9fd0bd12053",
+        "size": 653210,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/238222/files/3043174/download"
+      },
+      {
+        "path": "mods/asset_257820_3018335.jar",
+        "sha256": "5356753bbd5120a72470cc045eed9cdf5af47dcf18dc052a85a4db6b88112730",
+        "size": 480692,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/257820/files/3018335/download"
+      },
+      {
+        "path": "mods/asset_229060_2801262.jar",
+        "sha256": "e0b90727cbe54a11fe568f3d60cd59d64ff3c14f82437e1d1c10b575886ab8a3",
+        "size": 581963,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/229060/files/2801262/download"
+      },
+      {
+        "path": "mods/asset_226321_2537917.jar",
+        "sha256": "1d6082293067e1a1af002c65527a41df3919f8125eaa25a9c7c9d16ba25c4d06",
+        "size": 47505,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/226321/files/2537917/download"
+      },
+      {
+        "path": "mods/Techguns-1.12.2-2.0.2.0_pre3.2.jar",
+        "sha256": "154d3d794cfd74252f2cec979a6e72f5187bb9c21897ed4b42f45771a0e558f7",
+        "size": 28126750,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/244201/files/2958103/download"
+      },
+      {
+        "path": "resourcepacks/Tissous Zombie Pack 1.12.2 - 2.6.zip",
+        "sha256": "e1551750e9d76ab9ad6f16a3aeb2d92b0efdf9b0f21864e9b5809d3cf6760087",
+        "size": 14172277,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/312822/files/4034040/download"
+      },
+      {
+        "path": "shaderpacks/MakeUp-UltraFast-9.5c.zip",
+        "sha256": "8b62b38e6572f230b89035a14c13f596e85c29a7a7422d6a654204aac9ee8a05",
+        "size": 398840,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/izsIPI7a/versions/zt4eHisU/MakeUp-UltraFast-9.5c.zip"
+      },
+      {
+        "path": "shaderpacks/Tea_V2.0.0_Dev7.zip",
+        "sha256": "fd8008b73d07d9b4ac1cfde1978ca3a4732d32a6e66f345fe6dcfd63a8d2da17",
+        "size": 155192,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/7eXucZxq/versions/5gkAG9Q0/Tea_V2.0.0_Dev7.zip"
+      },
+      {
+        "path": "shaderpacks/BSL_v10.1.3.zip",
+        "sha256": "185774628b5259c36255183fc1adeb0f64f89235f7ea2c826fa327d1112687a8",
+        "size": 1127026,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/Q1vvjJYV/versions/hIibTfxn/BSL_v10.1.3.zip"
+      },
+      {
+        "path": "mods/OptiFine_1.12.2_HD_U_G5.jar",
+        "sha256": "3b0006797771feb97f2d0d2908ae7c9a78cefb2e730af1c2e85d08a839ba271e",
+        "size": 2669107,
+        "role": "all",
+        "sourceUrl": "https://optifine.net/download?f=OptiFine_1.12.2_HD_U_G5.jar"
+      },
+      {
+        "path": "mods/foamfix-0.10.15-1.12.2.jar",
+        "sha256": "e6752973cf884f96fcd3835fe6c184b3b4180a27fd955ca07c561cf77e837dda",
+        "size": 229335,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/jupr7Bf5/versions/oEGIQQnQ/foamfix-0.10.15-1.12.2.jar"
+      },
+      {
+        "path": "mods/Clumps-3.1.2.jar",
+        "sha256": "f3ce670e0087f4c6b770fd05ae5c3dfd8462f74c62397932ea72954d1c6c8df4",
+        "size": 13792,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/Wnxd13zP/versions/nZvGITpT/Clumps-3.1.2.jar"
+      },
+      {
+        "path": "mods/CustomMainMenu-MC1.12.2-2.0.9.1.jar",
+        "sha256": "63b8e4d86b336739c9df8275d28e61519c73c815d0ba9ec18fb8d0cf8a218488",
+        "size": 91121,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/226406/files/2857869/download"
+      },
+      {
+        "path": "mods/lostcities-1.12-2.0.22.jar",
+        "sha256": "d29a3fb8fa4c4d74dfadb9deee2eb501e5840c6217be80e24370dcbb709d32b3",
+        "size": 789743,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/8VDCUS3b/versions/dKHWZOQm/lostcities-1.12-2.0.22.jar"
+      },
+      {
+        "path": "mods/InitialInventory-3.0.0.jar",
+        "sha256": "9f1ba4dd157bbeedf82ca0fca6333e6f244e83d5c92ca7354951ced38678a3e6",
+        "size": 7863,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/L4ZloL5E/versions/YQpko79k/InitialInventory-3.0.0.jar"
+      },
+      {
+        "path": "mods/CraftTweaker2-1.12-4.1.20.698.jar",
+        "sha256": "b2e5e443f18d0d5bcfd1364f9ec89565e6a1e2ad4568b899c590aa5507978b27",
+        "size": 1589140,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/Xg35A4rS/versions/YRKoIQBv/CraftTweaker2-1.12-4.1.20.698.jar"
+      },
+      {
+        "path": "mods/MTLib-3.0.7.jar",
+        "sha256": "e978ce61b6177ec07a9db231d05a64415239c836f43f5cbcc0cf01bd9da4b3e2",
+        "size": 30009,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/vtzPfzFT/versions/POz7FSh2/MTLib-3.0.7.jar"
+      },
+      {
+        "path": "mods/journeymap-forge-1.12.2-6.0.0-beta.2.jar",
+        "sha256": "357ef3d955d7dbb9b2fa9df211a1196f933ddb5b896bd305de0db9c48d2c00cd",
+        "size": 5876048,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/lfHFW1mp/versions/rZsh7fow/journeymap-forge-1.12.2-6.0.0-beta.2.jar"
+      },
+      {
+        "path": "mods/lanserverproperties-1.0.jar",
+        "sha256": "15577c28814cda5ce0d6c0e9039a093a6227e2c9ec3716dae9c840ec0a99e263",
+        "size": 7742,
+        "role": "host",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/387365/files/2994188/download"
+      }
+    ],
+    "extraFiles": [],
+    "sourceArchive": {
+      "path": "mods/Mustard-Virus-2.1.zip",
+      "sha256": "df316561d7e6db7e67e32dd6f60a17fe2571fba2142434504673df79fc2954f4",
+      "size": 181815,
+      "sourceUrl": "https://www.curseforge.com/api/v1/mods/445369/files/3510753/download"
+    }
+  },
+  {
+    "id": "nightfallcraft",
+    "instanceId": "nightfallcraft",
+    "workflow": "coco-managed",
+    "minecraftVersion": "1.20.1",
+    "loader": "forge",
+    "loaderVersion": "47.4.4",
+    "packVersion": "2.2.8.6",
+    "assets": [
+      {
+        "path": "shaderpacks/MakeUp-UltraFast-9.4c.zip",
+        "sha256": "f88931d65e971807148d09b71ee4aa85e293184cac94405c7d84350b22cb91d9",
+        "size": 402680,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/431203/files/7684712/download"
+      },
+      {
+        "path": "mods/Iceberg-1.20.1-forge-1.1.25.jar",
+        "sha256": "91ad6b459e0c7a16a9f3dc90230248a696600ceec6646aa23263559b8648dbc3",
+        "size": 134551,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/520110/files/5838149/download"
+      },
+      {
+        "path": "mods/YungsBetterNetherFortresses-1.20-Forge-2.0.6.jar",
+        "sha256": "12cffc99dccca69d294ba5bc39c331367794b339061572a6f3773620303a2f51",
+        "size": 619255,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/817651/files/5193465/download"
+      },
+      {
+        "path": "resourcepacks/MandalasGUI+Dakmode_1.21.8_v2.5.zip",
+        "sha256": "a4f90e90b406c1cceb7ffd29d9db647cdc86d307e0f7b22df5478e56862f6bd4",
+        "size": 727410,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/664719/files/7564643/download"
+      },
+      {
+        "path": "mods/epicfight-extra-1.2-mc1.20.1-forge-all.jar",
+        "sha256": "d886a8b32d72c26a6ae8b3f511ec4aea84154b4b298985c572778b141d99739f",
+        "size": 23720352,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1434276/files/7961244/download"
+      },
+      {
+        "path": "mods/p1nero_bow-forge1.20.1-20.14.1.6.jar",
+        "sha256": "0fdeae02be1aefbd7e965ae832efdaa3d51fe7200caeb2d790ddbad6e15dccf9",
+        "size": 932621,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1338443/files/7725196/download"
+      },
+      {
+        "path": "mods/tcrmeshes-1.0.0.jar",
+        "sha256": "2a22f47e917db3414e90ae40429dbd0b74e43fe6ce3788ad27fc565607270609",
+        "size": 173664,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1453870/files/7710887/download"
+      },
+      {
+        "path": "mods/tcrcore-2.8.6.jar",
+        "sha256": "a61b0fa073c3de9dae51c717961e6b6a01523e1588dad7ce2aa97c67d1357667",
+        "size": 39015906,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1325071/files/8544783/download"
+      },
+      {
+        "path": "mods/curios-forge-5.14.1+1.20.1.jar",
+        "sha256": "1e817919a35b37cf30524aaec73f0ca5130452f23f168f844854df282eb8e51f",
+        "size": 398066,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/309927/files/6418456/download"
+      },
+      {
+        "path": "mods/EpicFight Nightfall-3.4.0.jar",
+        "sha256": "3bb5a7849436aa81fab8f8020a36a0d50a308739d67b28d74b74c02327c4d219",
+        "size": 53100071,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1307848/files/8366962/download"
+      },
+      {
+        "path": "mods/aether-1.20.1-1.5.2-neoforge.jar",
+        "sha256": "5cb64ab1f27e78e8338fe67f9c766578904aad9bc1f8bcc90f306ea52aea3fc5",
+        "size": 39746319,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/255308/files/6134920/download"
+      },
+      {
+        "path": "mods/Zeta-1.0-31.jar",
+        "sha256": "cd1786902a79434f8fd762d741019d9c8a79725fef7e30a89c153c934e1e6a9e",
+        "size": 1006518,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/968868/files/7335229/download"
+      },
+      {
+        "path": "mods/Nightfall Enhance-1.1.4-all.jar",
+        "sha256": "246fe5094c2a7e34a4de60e0eec2ce9965eace8d1977b41f1930f1461bf31ba8",
+        "size": 8815210,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1469082/files/8392781/download"
+      },
+      {
+        "path": "mods/moonlight-1.20-2.16.30-forge.jar",
+        "sha256": "056494483634004d4a82bcf95ef80ac0912ee0f88ccb7b29c7f71e6947aa71d1",
+        "size": 1389600,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/499980/files/7945711/download"
+      },
+      {
+        "path": "mods/better_structure_block-forge1.20.1-2.1.0-all.jar",
+        "sha256": "50740c77a5b9ef33b2b912e586d33d513ad38e26e088db7400a81adfcdca7476",
+        "size": 646346,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/970671/files/7828543/download"
+      },
+      {
+        "path": "mods/efs_iss-1.0.3.jar",
+        "sha256": "d7f7a0405ff5b1c859513ff4baf54238b18542fb43d7d3a84a1629f4ec328aca",
+        "size": 299741,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1454101/files/7644948/download"
+      },
+      {
+        "path": "mods/bountiful_npc-forge-1.20.1-1.0.5.jar",
+        "sha256": "b4faae83a7607cfd6ae9f7c149b8dde287bf205685cf5342024fc70efdbeca7a",
+        "size": 149528,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1373610/files/8061267/download"
+      },
+      {
+        "path": "mods/ftb-library-forge-2001.2.12.jar",
+        "sha256": "f09335944fff8ca3ef37a40e0b125ffb6707759ede258c73f9ce9bac61bfbf96",
+        "size": 780523,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/404465/files/7296748/download"
+      },
+      {
+        "path": "mods/Towns-and-Towers-1.12-Fabric+Forge.jar",
+        "sha256": "9c8115af7109579da990249fdd67b38323a45be70f8a3a962b61da69c7021984",
+        "size": 2864275,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/626761/files/4923828/download"
+      },
+      {
+        "path": "mods/cupboard-1.20.1-3.7.jar",
+        "sha256": "7c6069d42e3693dc4f80d06632f008fffe6f2507902dfca6c02bf035776ccaf3",
+        "size": 31643,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/326652/files/7905744/download"
+      },
+      {
+        "path": "mods/aaa_particles_world-forge-1.20.1-2.0.0.jar",
+        "sha256": "9f4abdfd0ba6f0ad1c4b0039e6dad0e72ce417a238e01b71723cc1bb85bdf5d7",
+        "size": 5257257,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1157870/files/8278666/download"
+      },
+      {
+        "path": "mods/jei-1.20.1-forge-15.20.0.130.jar",
+        "sha256": "36d3dfb2214b9dca38c447fd971dd2dedc5f69719a5aca6ffcef69b2840ece0a",
+        "size": 1409705,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/238222/files/7920915/download"
+      },
+      {
+        "path": "mods/Prism-1.20.1-forge-1.0.5.jar",
+        "sha256": "b1a576f920faeb2175f693e3ee7ba9e5ff0bcf0e404da29f1824ea3c66efd240",
+        "size": 52205,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/638111/files/4650325/download"
+      },
+      {
+        "path": "mods/betterendcities-1.0.0-1.20.1.jar",
+        "sha256": "162853b270c7b47395704025f7e4e6ff2983c3e19fc6a806f0fc04ab6e422a29",
+        "size": 81018,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/959431/files/5238542/download"
+      },
+      {
+        "path": "mods/Ash Of Sin-Custom Anti Seat Entity-1.20.1-1.0.1.jar",
+        "sha256": "54a66eda5af6088235ac9a3a5c1b8991bedadfdbf3dcf91b196b025af8f95680",
+        "size": 63730,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/981547/files/7197156/download"
+      },
+      {
+        "path": "mods/Oh-The-Trees-Youll-Grow-forge-1.20.1-1.6.0.jar",
+        "sha256": "67009ac61403300c88757289acc1dbdfa2ed52f58bc710b619712101e4e369ff",
+        "size": 168345,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/962544/files/7864095/download"
+      },
+      {
+        "path": "mods/ModernUI-Forge-1.20.1-3.12.0.1-universal.jar",
+        "sha256": "49fea599522316ef7abd8897e8bcad3ed742d935f0a53726eba1f00c9ca8fe4c",
+        "size": 25104473,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/352491/files/6956345/download"
+      },
+      {
+        "path": "mods/cloth-config-11.1.136-forge.jar",
+        "sha256": "1e895e85cf5b1e1905ef3178ec155c8badfe22a1577b92c09143a5aa1f4ce0f2",
+        "size": 1181413,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/348521/files/5729105/download"
+      },
+      {
+        "path": "mods/uniqueaccessories-1.3.3-forge-mc1.20.1.jar",
+        "sha256": "5e7db68e978cbafacf78bbaba9dbc058dab9417ff2da584d71d4220c2edfe0b1",
+        "size": 521352,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1336987/files/7293163/download"
+      },
+      {
+        "path": "mods/cosmeticarmorreworked-1.20.1-v1a.jar",
+        "sha256": "c790e8671625b05ec0aa19272e0ea74ea95619f953e3c6f39a6736af0d386804",
+        "size": 88752,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/237307/files/4600191/download"
+      },
+      {
+        "path": "mods/geckolib-forge-1.20.1-4.8.3.jar",
+        "sha256": "8b90e11871a58b63816e99c529e6c932bc88e6beb3fec97ad618e22217df3250",
+        "size": 1039046,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/388172/files/7553267/download"
+      },
+      {
+        "path": "mods/chatplus-forge-2.8.1.jar",
+        "sha256": "f30736ebfbeb7f422401e780458ce23b0a9f6e97edef63151fa373becf90ea29",
+        "size": 27070339,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1023333/files/7699589/download"
+      },
+      {
+        "path": "mods/Fancy-Trail1.20.1-1.2.3-all.jar",
+        "sha256": "9141b5005f236c729148ad36bb2f5900727443b9f0d40dcfd38a8c2316180b73",
+        "size": 5906048,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1380365/files/8250099/download"
+      },
+      {
+        "path": "mods/zmedievalmusic-1.20.1-2.2.jar",
+        "sha256": "afe5d3d0b6623fb2df6622a76e8fc93d8ab8b32cd9384ca138dec1944049ac84",
+        "size": 304415885,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/521932/files/6863096/download"
+      },
+      {
+        "path": "mods/NaturesCompass-1.20.1-1.12.0-forge.jar",
+        "sha256": "bc3601e9e050802569647de843fe9d3160934c5f31412cba62ca2ea8c1485197",
+        "size": 227495,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/252848/files/7892948/download"
+      },
+      {
+        "path": "mods/EnchantingInfuser-v8.0.3-1.20.1-Forge.jar",
+        "sha256": "2563fb5ed1c4737c2adbc379ab4782dee89cc80a25ca938d3294a6fe0b13f6a4",
+        "size": 177437,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/551151/files/5528724/download"
+      },
+      {
+        "path": "mods/WeaponsOfMiracles-2.0.15-mc1.20.1-forge.jar",
+        "sha256": "a208c7b74edf5d09c5a8696fcd3d5f646cdf7a72069c28bf6da62a8b00a96eed",
+        "size": 20276434,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/918614/files/7517612/download"
+      },
+      {
+        "path": "mods/iss_ponder-forge1.20.1-1.0.0-all.jar",
+        "sha256": "7012d0eab929f9c1799d5e339f28708561c87aac4e5933c48b838c0f03fd30f1",
+        "size": 1592136,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1630849/files/8535548/download"
+      },
+      {
+        "path": "mods/entityculling-forge-1.10.2-mc1.20.1.jar",
+        "sha256": "34da8e10cf31ade2b86b02e4f55c4d3b480a0992148ac12f9ec49eb7be4bfda0",
+        "size": 1587585,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/448233/files/8053757/download"
+      },
+      {
+        "path": "mods/Ash Of Sin-No More Too Many Structures-1.20.1-1.0.13.jar",
+        "sha256": "4aeb623267e3c87a4adb5c3989d6db8b245cc7bd7224622986ec6b7680fb679f",
+        "size": 94448,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1499971/files/8187124/download"
+      },
+      {
+        "path": "mods/limitedchunks-1.20.1-4.1.jar",
+        "sha256": "5ff4d22551dcd74680f5da79c9055faae44dfc0c5348c273447200e464eeac59",
+        "size": 16405,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/456640/files/5387592/download"
+      },
+      {
+        "path": "mods/epic-knights-1.20.1-forge-10.11.jar",
+        "sha256": "6043fdc77ea9651b1293e8602c8e858c728628f6f6b6e9efa247e4281f4ca733",
+        "size": 2913733,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/509041/files/7756534/download"
+      },
+      {
+        "path": "mods/TerraBlender-forge-1.20.1-3.0.1.10.jar",
+        "sha256": "c109016f46ca9bdae69976bf080bbf2e8e5968cb66c0a78845f8ca6af5dbbeb1",
+        "size": 107532,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/563928/files/6290448/download"
+      },
+      {
+        "path": "mods/biomespy-1.3.3-all.jar",
+        "sha256": "e1bb7f07b14c28ef216e391eb19b11520ebff30570bef4e53f90bb3fdbdea86f",
+        "size": 231424,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1376024/files/7488030/download"
+      },
+      {
+        "path": "mods/tectonic-forge-1.20.1-2.4.1.jar",
+        "sha256": "1e8a9f1c929ccea1adda609233dad8b52f0d44d73b5c73254bed92a8b0d0f992",
+        "size": 349125,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/686836/files/5676419/download"
+      },
+      {
+        "path": "mods/p1nero_ec-20.14.0.9.jar",
+        "sha256": "a079ae0561c6526c89ead33211c04df3518d6e038e27d80f23cee88ac9d5b69d",
+        "size": 4080772,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1325059/files/8212859/download"
+      },
+      {
+        "path": "mods/ATi Structures Default V1.4.2 (1.20+).jar",
+        "sha256": "1db9d6bbcc5032ed42e47adf42d2a719b5a768cc42af6b999ac2b1208d0730a7",
+        "size": 3149756,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1158208/files/6727019/download"
+      },
+      {
+        "path": "mods/player-animation-lib-forge-1.0.2-rc1+1.20.jar",
+        "sha256": "90d9965cb9efdbda29fdc5610be3914cf7008bf5c392ff34f7ab25f96a852691",
+        "size": 181437,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/658587/files/4587214/download"
+      },
+      {
+        "path": "mods/explorerscompass-edited-1.20.1-1.4.0-forge.jar",
+        "sha256": "216e13b90e5bd04595f33aa674f2496130019a43b8631f56a3ff8bc4cf31e1ac",
+        "size": 186196,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1203888/files/7175635/download"
+      },
+      {
+        "path": "mods/better_trident_model-1.1.0-all.jar",
+        "sha256": "537a30b18cfc239e22ceff00bec23057d7769f4a2ab068c62b6a5899402c6993",
+        "size": 293863,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1401130/files/7647914/download"
+      },
+      {
+        "path": "mods/resourcefulconfig-forge-1.20.1-2.1.3.jar",
+        "sha256": "c404b9e5cf8595427a72d4ca6ee5730289168762b463f169be3ae5dfe3727ded",
+        "size": 136923,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/714059/files/6231176/download"
+      },
+      {
+        "path": "mods/cristellib-1.1.6-forge.jar",
+        "sha256": "3856ad565ea45d6189452d813e2f021b365b686d3b1adae5f747c56a1e535d9f",
+        "size": 431318,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/856996/files/5869180/download"
+      },
+      {
+        "path": "mods/trek-B0.6.jar",
+        "sha256": "78c27ae931278eca9e2fd86e73b08f44ff5962cac4d1a3f701a26c257d6e32ef",
+        "size": 25458242,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1418999/files/7715726/download"
+      },
+      {
+        "path": "resourcepacks/epicfightx_better_trail1.5.zip",
+        "sha256": "76752f36d4173743fb43d8d80128da45da84af2b053e2256ac6fdcef60ff5a80",
+        "size": 90172,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1453643/files/7690496/download"
+      },
+      {
+        "path": "mods/lionfishapi-2.7.jar",
+        "sha256": "aa3191415ca5263a86b7baedead2aeaffaa94f093dcd42381e4b258e450130e3",
+        "size": 122522,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1001614/files/7923140/download"
+      },
+      {
+        "path": "resourcepacks/DMC5 yamato for Nightfall v1.2.zip",
+        "sha256": "9171601622529fcf4a153543691adcd2764fd9e323709ff0a4f3f348f18d8fd5",
+        "size": 102783,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1369431/files/7432571/download"
+      },
+      {
+        "path": "mods/azurelib-neo-1.20.1-3.1.9.jar",
+        "sha256": "2fc5e5d1115d202b9dc813c4ea28c67f24d98c2e87e9c07a835b3e810f398e69",
+        "size": 1059994,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/817423/files/7961055/download"
+      },
+      {
+        "path": "mods/mimic-1.0.5.jar",
+        "sha256": "d36e71a424411cde08187bc35a11a650b681ee4f0f29897904f34313c4294dae",
+        "size": 6409566,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1360684/files/7760168/download"
+      },
+      {
+        "path": "mods/fdlib-1.0.9-1.20.1.jar",
+        "sha256": "27dc0b1bd0ec9fae0ab97ebeb09cc4d8cf16cdae7eae12d2e0e49c0264e0cd6b",
+        "size": 1647611,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1271749/files/7844812/download"
+      },
+      {
+        "path": "mods/drippyloadingscreen_forge_3.1.0_MC_1.20.1.jar",
+        "sha256": "5dc8087df6d6d8849fe1df5a6a342268a6986731ee801cb46a58d725d9e1e204",
+        "size": 285003,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/511770/files/7248426/download"
+      },
+      {
+        "path": "mods/extrasounds-1.5.4+1.20.1-forge.jar",
+        "sha256": "931656ac7a6d95e2b9289e20f08c9d862b530705eaa523b7ca4c2c802b7ac15f",
+        "size": 534488,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/946784/files/7815334/download"
+      },
+      {
+        "path": "mods/jecharacters-1.20.1-forge-4.6.3.jar",
+        "sha256": "3a08f732a13dcf0e9209ba135d3e8691667e9ad3f164e1f1c2331f6669d1b1fb",
+        "size": 267125,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/250702/files/7411324/download"
+      },
+      {
+        "path": "mods/servercore-forge-1.5.2+1.20.1.jar",
+        "sha256": "d9ad4f456b6c36bac17a71cd12935fdccae69ca1e1fcd33857210758cb58e586",
+        "size": 1508496,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/550579/files/5929264/download"
+      },
+      {
+        "path": "mods/InvMove-0.9.3+1.20.1-Forge.jar",
+        "sha256": "fed951da0863669dea424fc7f9542e95f2bffe2fd53bef914e254fa9969d7885",
+        "size": 270522,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/581854/files/7418952/download"
+      },
+      {
+        "path": "mods/ApothicAttributes-1.20.1-1.3.7.jar",
+        "sha256": "68487b11c0d4e2f67a85f2b04bf65e99ac15294f2923f4391f83e9542293187a",
+        "size": 227511,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/898963/files/5634071/download"
+      },
+      {
+        "path": "mods/MouseTweaks-forge-mc1.20.1-2.25.1.jar",
+        "sha256": "6c27d16aa715ac6613a55fc463739e2c7b78279e4e4c4cede299e4a2d4a70f08",
+        "size": 76237,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/60089/files/5338457/download"
+      },
+      {
+        "path": "mods/smoothchunk-1.20.1-4.1.jar",
+        "sha256": "0ee48f7bf78070a7cb5858492faa6fe7d58443acbd97a92547bd664ee710e5c1",
+        "size": 14249,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/582327/files/6296598/download"
+      },
+      {
+        "path": "mods/domesticationinnovation-1.7.1-1.20.1.jar",
+        "sha256": "00f20efea12ea981b8d75e257a136c08e0c00c324554e69cf20193376c942e97",
+        "size": 853614,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/591149/files/4911955/download"
+      },
+      {
+        "path": "mods/falchionmoveset-20.14.0.jar",
+        "sha256": "248de50d448aac5f39b2813dd3facbfd30d5702a68e2b5c8820b21b995fad6c6",
+        "size": 127553,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/900642/files/7416260/download"
+      },
+      {
+        "path": "mods/tudigong-forge1.20.1-1.4.1.jar",
+        "sha256": "fe3c10522019c33f3b8bc7992dd1c88390b20a51c82c6fd25e2bdca09a4d6b66",
+        "size": 282993,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1350265/files/8525246/download"
+      },
+      {
+        "path": "mods/architectury-9.2.14-forge.jar",
+        "sha256": "218b471d0b8a1f6cda14cfc1beb9eeb0df54304500acc6c5613d9b88ec65d9af",
+        "size": 580602,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/419699/files/5137938/download"
+      },
+      {
+        "path": "mods/epic-fight-invincible-lib-20.14.8.2-mc1.20.1-forge.jar",
+        "sha256": "0017db1a54bca5ac90ac7e4010e3a59a93ab287ad2a6b68b6781dd5beabf31ed",
+        "size": 268536,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1184379/files/7679941/download"
+      },
+      {
+        "path": "mods/coroutil-forge-1.20.1-1.3.7.jar",
+        "sha256": "11448808a42c17425cf2ea39701841008683d6ad6e2838a34eef0253251a870f",
+        "size": 64187,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/237749/files/5096038/download"
+      },
+      {
+        "path": "mods/Corgilib-Forge-1.20.1-4.0.3.4.jar",
+        "sha256": "9e638c7e73d997bb4ecba4aa40de90e89dd15fdbc4235fb997eed9ad43c10cd3",
+        "size": 360700,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/693313/files/6616784/download"
+      },
+      {
+        "path": "mods/ferritecore-6.0.1-forge.jar",
+        "sha256": "9c2c9396a49e796d88497758caa4637d2bcbb433c318e2dd9cebcffbaf0f6c54",
+        "size": 123034,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/429235/files/4810975/download"
+      },
+      {
+        "path": "resourcepacks/Mandalas GUI - Dark Mode KOTS Compat 2.8.zip",
+        "sha256": "001a4ac9f9d3cf32ff50cfbbb7b4e6886ff2e2260fe5b1b6e3de4b1e2f796f6e",
+        "size": 1450082,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1452633/files/8005127/download"
+      },
+      {
+        "path": "mods/rebind_narrator-1.20.1-forge-2025.12.23.jar",
+        "sha256": "ee3ecace8b723cc41996e074be42c578f68f9d73d37c8bc393b243aa28194735",
+        "size": 214624,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/296996/files/7370949/download"
+      },
+      {
+        "path": "mods/Tab-Stats-1.20-1.0.5.jar",
+        "sha256": "d7bfb7d75a1807d7633a97de7e418f2d6ea54b1397085f90aa6026c97f9b759f",
+        "size": 107129,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/521717/files/4594930/download"
+      },
+      {
+        "path": "mods/BOMD-Forge-1.20.1-1.1.2.jar",
+        "sha256": "9d064557007fbf8a48da92034209b209edd99a16a5017ee104cdc13206390441",
+        "size": 1753623,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/941573/files/5067728/download"
+      },
+      {
+        "path": "mods/noworldgenwarning-1.0.1.jar",
+        "sha256": "e92b73f9a7b9a29de872d543f721e5593513c3541d11850495ff99d419a19d57",
+        "size": 5349,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1463007/files/7986935/download"
+      },
+      {
+        "path": "mods/0Pack2Reload-Forge-1.20.1-1.0.1.jar",
+        "sha256": "b5144ad9c250f1c2a52743d0c730c86973c6d637739c6b87c7addb977e2cdf54",
+        "size": 8537,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/923755/files/4812698/download"
+      },
+      {
+        "path": "mods/artifacts-forge-9.5.19.jar",
+        "sha256": "f1e4dc786866b6e4f2a48142f2acf63bb9bee54ac2f31621ad5d8f18ab54c7b0",
+        "size": 850974,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/312353/files/7903806/download"
+      },
+      {
+        "path": "resourcepacks/true_nitwit_texture.zip",
+        "sha256": "ec20a52d3309f3b607dd9d1b3be62fb071aa66fe52601cc7dc98a835a9d2ba99",
+        "size": 4843,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1376684/files/7174830/download"
+      },
+      {
+        "path": "mods/ftb-quests-forge-2001.4.21.jar",
+        "sha256": "b85384ac0435802f8a0afafcb62b37def97965fe3457e9e10ee6ec45e5896436",
+        "size": 1254018,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/289412/files/7909594/download"
+      },
+      {
+        "path": "resourcepacks/EclecticTrove-1.20.1-1.3.0.zip",
+        "sha256": "6f7b33c0339094c8038ed1c00a51d72fd454ae552974b5f8f632d0a6318903eb",
+        "size": 11977,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/538850/files/4933725/download"
+      },
+      {
+        "path": "mods/TaxFreeLevels-1.4.17-forge-1.20.1.jar",
+        "sha256": "69bb1a5275402f048af9120d8ba9cb38fb48116ef168715d5440b77bc66cf9a8",
+        "size": 223855,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/462128/files/7841314/download"
+      },
+      {
+        "path": "mods/structure_gel-1.20.1-2.16.2.jar",
+        "sha256": "1584a5aed31c0f63e53c29d53cf4e069cdabf358e785240cc500702dc5918e3e",
+        "size": 966028,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/378802/files/5278429/download"
+      },
+      {
+        "path": "mods/Placebo-1.20.1-8.6.3.jar",
+        "sha256": "1cdf906cfbcbb5e5be2ef1bb721f79a24b01bd2ac559c8cdbfb7693f62421571",
+        "size": 282474,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/283644/files/6274231/download"
+      },
+      {
+        "path": "mods/preloading-tricks-3.5.10.jar",
+        "sha256": "5c514001423f979e2caace7f3543cf995b4197047ac3c1f3980fe6390d9b5c1f",
+        "size": 1781202,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1372086/files/7905033/download"
+      },
+      {
+        "path": "mods/Quark-4.0-462.jar",
+        "sha256": "c90b96f049d92825c4a103721988c80d72e5ad380d17be46a0f53e114874c478",
+        "size": 14935230,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/243121/files/6427817/download"
+      },
+      {
+        "path": "mods/ftb-xmod-compat-forge-2.1.3.jar",
+        "sha256": "16a8eb9de88d5c33d29cb076cc39dfb337b2c54348e1ef1efe9dd60cf85e5f72",
+        "size": 129725,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/889915/files/6402486/download"
+      },
+      {
+        "path": "mods/sword_soaring-20.14.2.8-mc1.20.1-forge.jar",
+        "sha256": "286359a3546b6cd87c58e2ed01fda8cd9d854868e08a6d096ec10e3a84a41765",
+        "size": 17017922,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1011068/files/7984120/download"
+      },
+      {
+        "path": "mods/xaerominimap-forge-1.20.1-26.4.2.jar",
+        "sha256": "8143f332ed20a61a518692b42c793e021b6bd2d0d9d61cf3938fb9cfa07eb59c",
+        "size": 2195245,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/263420/files/8449808/download"
+      },
+      {
+        "path": "mods/aaa_particles-forge-1.20.1-2.2.3.jar",
+        "sha256": "2d9e540e61feb5b7795c77014662f1556c73aee063391f1b0297ad60e62424fc",
+        "size": 5253752,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/979809/files/8402758/download"
+      },
+      {
+        "path": "mods/spark-1.10.53-forge.jar",
+        "sha256": "eba275ba9bb0cb5b542913c3138c6eeff6a752898266d63d125d185f26ac99ed",
+        "size": 3114590,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/361579/files/4738952/download"
+      },
+      {
+        "path": "mods/Find me-1.2.4.jar",
+        "sha256": "4ee9ba85da5469f38ae9a774dba7c1e5d6c7daab22d761fba19f0adcc3eb8fed",
+        "size": 603372,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1572205/files/8379239/download"
+      },
+      {
+        "path": "mods/structure_layout_optimizer-forge-1.0.11.jar",
+        "sha256": "14bfc4b1e82ea24118402fccd90dffde45fa6d9e2238bfaa19a43b3fb88ee49c",
+        "size": 246413,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1087831/files/7139029/download"
+      },
+      {
+        "path": "mods/epicfight_arachne-1.0.0.jar",
+        "sha256": "1dd8683b53e5fa3b021939163e87f06ea4872aef5ab77f2e60c7496ea6be35d4",
+        "size": 7338704,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1445154/files/7529944/download"
+      },
+      {
+        "path": "mods/epic_fight_avalon-20.12.6.4.jar",
+        "sha256": "596462a617e203cc1ead934387477d95382ac84a2bcd0707cf927a794a5518ed",
+        "size": 645196,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1268823/files/7619938/download"
+      },
+      {
+        "path": "mods/konkrete_forge_1.8.0_MC_1.20-1.20.1.jar",
+        "sha256": "e78686b92c3761ec26eb9d3c53efdd3d6ca77981cbd3723995e1163b7103ae0b",
+        "size": 625185,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/410295/files/5028413/download"
+      },
+      {
+        "path": "mods/alexsmobs-1.22.9.jar",
+        "sha256": "16bc5bcc19db9029c24f951346ec71098e6f5b0afef96e61894a2e9407aad37c",
+        "size": 26350793,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/426558/files/5698791/download"
+      },
+      {
+        "path": "mods/melody_forge_1.0.3_MC_1.20.1-1.20.4.jar",
+        "sha256": "933e2a7e79c4594f965f7f7d00b1f28a98ec2a180ad8f9f90310a266fe5cf5d8",
+        "size": 37178,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/938643/files/5109692/download"
+      },
+      {
+        "path": "mods/epicfight_leonidas-1.0.1.jar",
+        "sha256": "1a6ee8b1867caedbfb27798ffac09e16e9632fcc4514ede8098ba7961bf226f7",
+        "size": 8366555,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1445144/files/7619585/download"
+      },
+      {
+        "path": "mods/bookofdragons-1.31-1.20.1.jar",
+        "sha256": "87abe5953c1e93460bc5eb47c1df1404c32143ecb35beec158d24abb56300753",
+        "size": 4343370,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1413424/files/7870334/download"
+      },
+      {
+        "path": "mods/sodiumdynamiclights-forge-1.0.10-1.20.1.jar",
+        "sha256": "dff5325abb58c0c8526dffb80e764188bde045fd02ca6ed5e2bb76f0897d46f4",
+        "size": 511601,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/551736/files/6044481/download"
+      },
+      {
+        "path": "mods/citadel-2.6.3-1.20.1.jar",
+        "sha256": "56c7ab87348a5292583aac787b6cf11b5193e77f02af1d17ea75a96f8640b3ce",
+        "size": 3185275,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/331936/files/7476570/download"
+      },
+      {
+        "path": "mods/L_Enders_Cataclysm-3.27-curios-fix.jar",
+        "sha256": "c8fae93cf480eb3b94e988d279ef9c03147866a431c390ac816807f6eb830962",
+        "size": 73915890,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/551586/files/7934870/download"
+      },
+      {
+        "path": "mods/ftb-essentials-forge-2001.2.4.jar",
+        "sha256": "e0022bfe29dc10e373947701dae1bc4ce75ee15fe21f6d89269677fbb9aebf73",
+        "size": 157732,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/410811/files/7609948/download"
+      },
+      {
+        "path": "mods/Dodos Mobs 1.0.1 beta.jar",
+        "sha256": "dec65b8aba9b3a583b78209b54541f0fa6753b90afcb0deb0a206e475b60e9e9",
+        "size": 1197246,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1349823/files/7018547/download"
+      },
+      {
+        "path": "mods/spiral_tower_village-0.0.3.jar",
+        "sha256": "8a69c413afd1adf4a60b11511d58f6d97e25deb1c32201ab2e757fc7ccb31fbe",
+        "size": 10661678,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1280127/files/7814289/download"
+      },
+      {
+        "path": "mods/sound-physics-remastered-forge-1.20.1-1.5.1.jar",
+        "sha256": "591fa317c4e462039dae01967bf370acb284d5118cf5839a33f1d01b6c0def3c",
+        "size": 206984,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/535489/files/7032235/download"
+      },
+      {
+        "path": "mods/indestructible-20.13.0.jar",
+        "sha256": "6de25c515f8284febb9e2f0b2d35e0ecad5a520cde279c424d8a6f2be1554685",
+        "size": 264932,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/915201/files/7125700/download"
+      },
+      {
+        "path": "mods/iss_scroll_description-1.0.0.jar",
+        "sha256": "2e120b4cf99f93c9cad500037025a4cddbb4d8b6f9511017040153ece2c5b5a3",
+        "size": 5945,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1454137/files/7576978/download"
+      },
+      {
+        "path": "mods/defaultoptions-forge-1.20.1-18.0.4.jar",
+        "sha256": "88b89d7734a4f5d99e9464fc368428a72e5052c3570865a954cf74ef98a2581b",
+        "size": 94684,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/232131/files/6972483/download"
+      },
+      {
+        "path": "mods/armourersworkshop-forge-1.20.1-3.2.7-beta.jar",
+        "sha256": "b7c8cb6b672e477e177979f6f9390477638fbc1d38d266c8674fe89c15bef45b",
+        "size": 5904485,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/229523/files/7165521/download"
+      },
+      {
+        "path": "mods/JustEnoughResources-1.20.1-1.4.0.247.jar",
+        "sha256": "311d3a83db489d27b96cd15deb690ce64c78cffb552c25c3dff85956a14ec09e",
+        "size": 276231,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/240630/files/5057220/download"
+      },
+      {
+        "path": "mods/TravelersTitles-1.20-Forge-4.0.2.jar",
+        "sha256": "e72bcce5e31ab2d5f09eff53697969b32e56c35801b3014e03d558b442b9d38b",
+        "size": 228191,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/504908/files/5065825/download"
+      },
+      {
+        "path": "mods/AttributeFix-Forge-1.20.1-21.0.5.jar",
+        "sha256": "43ccfd91c1a24d1b3c9d3ccf2dd6a86e9f0c2ba442b111a2238fbff3cf88af11",
+        "size": 19499,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/280510/files/7612291/download"
+      },
+      {
+        "path": "mods/VIX-1.1.0-all.jar",
+        "sha256": "fac6590cfe18cd7239b07c33eec0334e93a838e40c10051734c8b23ea4dd7dcb",
+        "size": 506870,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1531111/files/8401057/download"
+      },
+      {
+        "path": "mods/cataclysm_dimension-forge1.20.1-1.6.2.jar",
+        "sha256": "1666d567b095123de74fa1022d4dc6850cd04aae738dd6bf1e9707a39588ea4b",
+        "size": 152827,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1303494/files/7748030/download"
+      },
+      {
+        "path": "mods/lang_amend-forge1.20.1-1.0.0-all.jar",
+        "sha256": "3d4da4a9a7549ed1d4ca7fc0f3d723125e43054f7b28ca0d4689bffe0a688560",
+        "size": 638710,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1478308/files/7717321/download"
+      },
+      {
+        "path": "resourcepacks/xali's Enhanced Vanilla -1.11.2b-rev.54d51d4.zip",
+        "sha256": "ae69dcb419174a645a42eb3655da96cc51da9db19d3c5edbcd332071ed8561df",
+        "size": 807859,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/513425/files/5596851/download"
+      },
+      {
+        "path": "mods/epic-fight-20.14.17-mc1.20.1-forge.jar",
+        "sha256": "69566cf70ae2d91d3f2564c608f014c87e290cef6215c2a27719851165485f73",
+        "size": 8071119,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/405076/files/8049910/download"
+      },
+      {
+        "path": "mods/dummmmmmy-1.20-2.0.12-forge.jar",
+        "sha256": "bd7f168ec56f14a25d36d9d0dc4d281e88f77b1ba678907b5c570e5c051a5ca4",
+        "size": 839685,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/225738/files/7963208/download"
+      },
+      {
+        "path": "mods/chloride-FORGE-mc1.20.1-v1.7.5.jar",
+        "sha256": "ed964374effd0c196b01c0a5ed4f275fccecbc6c1f540bbafe44926ce5bcc4fe",
+        "size": 956080,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/931925/files/7378010/download"
+      },
+      {
+        "path": "mods/expandability-9.0.4.jar",
+        "sha256": "c1f7c3ba5873bb4797d2124c57bab3189acdb62d02f63217db1456d232dac20f",
+        "size": 80765,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/465066/files/5301414/download"
+      },
+      {
+        "path": "mods/Kambrik-6.1.1+1.20.1-forge.jar",
+        "sha256": "37d0c2b03a1f3aacb30498d67c35adaca99dc9ecd30f66f383016f4cbc85be8e",
+        "size": 325546,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/455585/files/4654401/download"
+      },
+      {
+        "path": "mods/quick-pack-forge-1.3.2+1.20.1-all.jar",
+        "sha256": "0569603e02b764532d0996613c138994ef3550d5af87c37d575e11b858bfce12",
+        "size": 639057,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1380888/files/8384343/download"
+      },
+      {
+        "path": "mods/smsn-forge-1.4.1-1.20.1.jar",
+        "sha256": "b076d167ac860456dc6a2bc021c11a5049ef544c0d540facdf4461322551edba",
+        "size": 132399,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1129397/files/8012309/download"
+      },
+      {
+        "path": "mods/DungeonsArise-1.20.x-2.1.58-release.jar",
+        "sha256": "f8f1254dbe7ed7c1d5403f20361a36f0d0587c82b71313e3f427c7f1ce7c8a90",
+        "size": 8762342,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/442508/files/4983862/download"
+      },
+      {
+        "path": "mods/tcrmodfilter-1.0.6.jar",
+        "sha256": "23430c3b43ca97b3329e32a7573a741176e0aaa898b3e92602810474fe5a3fc8",
+        "size": 4548,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1385997/files/7797342/download"
+      },
+      {
+        "path": "mods/balm-forge-1.20.1-7.3.38-all.jar",
+        "sha256": "cbe8008218f0f574bc1f78b532cac5f978c33bf36ae2e14805340eab445fdb08",
+        "size": 591397,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/531761/files/7420617/download"
+      },
+      {
+        "path": "mods/beyonddimensions-1.20.1-forge-0.7.19.jar",
+        "sha256": "44e003895bd5fca443494d045a994c9693380abf099b5cf91c2b5ca0cf6982df",
+        "size": 1568656,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1222890/files/8142917/download"
+      },
+      {
+        "path": "mods/embeddium-0.3.31+mc1.20.1.jar",
+        "sha256": "eed3d1325f2acc2fd4e69bb495e5ccb91d962126ac5330f0582ebc2a3daf47fb",
+        "size": 1320675,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/908741/files/5681725/download"
+      },
+      {
+        "path": "mods/fantasy_armor-forge-1.2.4-1.20.1.jar",
+        "sha256": "60723448eb979d29da51bd6fe71e6ef1b695decd3d91da76f1e970664bf80693",
+        "size": 544856,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1083998/files/7850802/download"
+      },
+      {
+        "path": "mods/configured-forge-1.20.1-2.2.3.jar",
+        "sha256": "05dceddd57825f911135c929504ef320b75953d05e7dc918dba58a0574e5315f",
+        "size": 418929,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/457570/files/5180900/download"
+      },
+      {
+        "path": "mods/Bountiful-6.0.4+1.20.1-forge.jar",
+        "sha256": "ba171d8cf146faa138563b4b7114742e1589fc444fce7503a1779eb80a8a4765",
+        "size": 502662,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/309516/files/5937417/download"
+      },
+      {
+        "path": "resourcepacks/Vulmoons calaclysm remake_0.5.zip",
+        "sha256": "c146eff2d40485a04c148d44305b0d16a7413652880dc3f51348c1a05e40904b",
+        "size": 73627,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1359195/files/8066785/download"
+      },
+      {
+        "path": "mods/kotlinforforge-4.12.0-all.jar",
+        "sha256": "6a66c6a68ec09f8717cdbf06883394f0ee24d7cd826b7134a0f81839e8e720ae",
+        "size": 7442998,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/351264/files/7291067/download"
+      },
+      {
+        "path": "mods/Bookshelf-Forge-1.20.1-20.2.15.jar",
+        "sha256": "7980d4a0beed1dcd2c283cf65f3c93f6b0085833f3ac490014979c95f1dfaf67",
+        "size": 343925,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/228525/files/7612389/download"
+      },
+      {
+        "path": "mods/fancytoasts-forge-1.20.1-1.4.7.jar",
+        "sha256": "69ffead0faeba049b7448a10d5ca7a1d6e85ffe35d1d04173bd63ab9084ed52c",
+        "size": 378003,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1326436/files/7985495/download"
+      },
+      {
+        "path": "mods/YungsBetterOceanMonuments-1.20-Forge-3.0.4.jar",
+        "sha256": "bea2640c4afeb5231362a756d886ca4f246c7951175c91348272b3ce5d483bae",
+        "size": 1033262,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/689238/files/4883003/download"
+      },
+      {
+        "path": "mods/super_golem-20.12.2.jar",
+        "sha256": "6078ca8fd19984c95645afc61b86bd36a794d3679c9e96d95c27bd2777d551d5",
+        "size": 2168184,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1236331/files/7090178/download"
+      },
+      {
+        "path": "mods/globalshaderpackproperties-1.1.0-all.jar",
+        "sha256": "da81b47c01ec26a72c95dc4829e85b9afc98e719e1f4d637ff010237aee3e5b5",
+        "size": 697968,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1344473/files/7369913/download"
+      },
+      {
+        "path": "mods/oculus-mc1.20.1-1.8.0.jar",
+        "sha256": "0945df0cba0f62b3901dd80c3268e5311b770ece78c78037a45db12ac0425fef",
+        "size": 2851119,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/581495/files/6020952/download"
+      },
+      {
+        "path": "mods/BEB-Forge-1.20.1-6.0.0.jar",
+        "sha256": "f6b0bf62ca159c17473a8c79d32c27c6bed20d4120900d98e88a61641586a358",
+        "size": 1884205,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1083202/files/7268147/download"
+      },
+      {
+        "path": "mods/lootr-forge-1.20-0.7.35.94.jar",
+        "sha256": "01200ee5889e6bcc3c5fa8f32b7b49a4bd58e653699eeb655c6f2dd314e3ce51",
+        "size": 463485,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/361276/files/7263076/download"
+      },
+      {
+        "path": "mods/flerovium-forge-1.20.1-1.2.18-all.jar",
+        "sha256": "12b79b6f4e8129ddbddd61525bb9251add9be737b7c5ec347febc1dec3e463cb",
+        "size": 253961,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1142875/files/7584065/download"
+      },
+      {
+        "path": "mods/Oh-The-Biomes-Weve-Gone-Forge-1.7.5.jar",
+        "sha256": "3aed757e3509013d7c32b0b707c8b3e070248722f02e953293cf8e8325b8363f",
+        "size": 19308698,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1070751/files/7759426/download"
+      },
+      {
+        "path": "mods/YouDied-1.20-3.0.0.17-forge.jar",
+        "sha256": "d8aeda20ee3f49d7ba607243e75781e3117c24742163f435b0c8ec7ccc141ee4",
+        "size": 289212,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/582464/files/4574925/download"
+      },
+      {
+        "path": "mods/multiplayer_boss_fight-forge1.20.1-1.0.3.jar",
+        "sha256": "798d49cb14f03ed0470e77b6a9cdd53df206a71c259b1e0ee70a2f3f1a8ed10d",
+        "size": 19187,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1541678/files/8165247/download"
+      },
+      {
+        "path": "mods/YungsApi-1.20-Forge-4.0.6.jar",
+        "sha256": "101c30d01d0cf9d86190f578eb1e43bd06b64092e95662a00ef52946f472c7b1",
+        "size": 370524,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/421850/files/5769971/download"
+      },
+      {
+        "path": "resourcepacks/more_power.zip",
+        "sha256": "1186754359fea8479c04ffc05535f5a73407ddff58bc868c78fd1b0fa744fe82",
+        "size": 106896,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1380269/files/7690641/download"
+      },
+      {
+        "path": "mods/killcam-1.0.3.jar",
+        "sha256": "4cee7a89747aafe3097952c5a5330acb92b6b2dada3f8819468689d6a7ef2cda",
+        "size": 141468,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1489164/files/7787111/download"
+      },
+      {
+        "path": "shaderpacks/ComplementaryUnbound_r5.7.1.zip",
+        "sha256": "5cbf4d99bc7ce4f0df5c15974d276e0949bf6974d48d88a77d5e307b0b9be8af",
+        "size": 522973,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/385587/files/7574260/download"
+      },
+      {
+        "path": "mods/waystones-forge-1.20.1-14.1.20.jar",
+        "sha256": "5ecc6535596b5954f6293224be6b35805c64f4d4aedc2b9e32d9508dd529cabd",
+        "size": 533738,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/245755/files/7682270/download"
+      },
+      {
+        "path": "resourcepacks/【Released】BDHill Reforge the Sword Edge-2.0_1.20.1.zip",
+        "sha256": "4d0fd37a123eb4835145aaba83eddeb403c545e0ab665a1f841ac8f64f37878d",
+        "size": 1115235,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1331176/files/7631787/download"
+      },
+      {
+        "path": "mods/wraithon-forge1.20.1-1.1.11.jar",
+        "sha256": "f059eda3cf27634323a1571bfb219ea8df2537ba6a199ecbf4dce26105ebebe0",
+        "size": 31054582,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1354901/files/7702162/download"
+      },
+      {
+        "path": "mods/JadeAddons-1.20.1-Forge-5.5.0.jar",
+        "sha256": "3fa00b2ee33ee154ef155997fc7e12fb0e4d7f4f06d1bfd47dd6ee3c6a1549d4",
+        "size": 91771,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/583345/files/6274674/download"
+      },
+      {
+        "path": "mods/entityrespawner-1.1.0.jar",
+        "sha256": "3a05e0add7c3c1cf143a539ed209e8a72f1f81608dd0318fb6f90bafe4de9f7e",
+        "size": 23220,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1363764/files/7971871/download"
+      },
+      {
+        "path": "mods/fluid-tick-structure-processor-0.1.0.dirty-forge-1.20.1.jar",
+        "sha256": "b79d588aefb76de6bdf73ef2ab48b7a60223b60aff40676ffe033442c4089519",
+        "size": 37448,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1369713/files/7133622/download"
+      },
+      {
+        "path": "mods/supplementaries-1.20-3.1.43-forge.jar",
+        "sha256": "6132fc23a2fe1da0ca57439b35526ee9a1a8d898397ff8e61b2d08fb951cdf6a",
+        "size": 13667742,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/412082/files/7884611/download"
+      },
+      {
+        "path": "mods/Krypton FNP-forge-1.20.1-0.2.28.2-1.20.1.jar",
+        "sha256": "4a3ee9c1fceff4c480024c78b9b3626a50b6839ee977aa0ff9095242cc4fcf0e",
+        "size": 1794016,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1269169/files/7464032/download"
+      },
+      {
+        "path": "mods/gnetum-2.4.3.jar",
+        "sha256": "3710dcf11c87828c9a564ffe52426e613573bcee572b94f4da4b8f8ea0417172",
+        "size": 725063,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1220460/files/8021295/download"
+      },
+      {
+        "path": "mods/Patchouli-1.20.1-85-FORGE.jar",
+        "sha256": "05f7b5d52f6b8f0fd7f8b4822fa07a192d1394d83a264309c9d221d6d4fd21c5",
+        "size": 642732,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/306770/files/7731017/download"
+      },
+      {
+        "path": "mods/radiantgear-forge-2.2.0+1.20.1.jar",
+        "sha256": "2a6c7e0825c69bd38dc1bb1ce8a8d6b097cac835e16e46afaa0f207fb819bb96",
+        "size": 47170,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/602199/files/6029352/download"
+      },
+      {
+        "path": "mods/LegendaryTooltips-1.20.1-forge-1.4.5.jar",
+        "sha256": "15521ab414b92f60e75bdd49724eb65bb6aa8b3d6f72c157cc261011d58d625e",
+        "size": 55258,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/532127/files/4662781/download"
+      },
+      {
+        "path": "resourcepacks/trident trail.zip",
+        "sha256": "f3ee1a91e756979d00a53d953c29e6f70d1e68d5cc9cf9805e33fb1bacc67b09",
+        "size": 66369,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1409363/files/7355973/download"
+      },
+      {
+        "path": "mods/p1neros-dialogue-lib-2.3.0-mc1.20.1-forge.jar",
+        "sha256": "a7050b148de4c8e558c1b83cf58385b15d6118771ae55b93d85fc11f0d6cbc4e",
+        "size": 83337,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1274526/files/7706756/download"
+      },
+      {
+        "path": "mods/CustomSkinLoader_Universal-15.0.1.jar",
+        "sha256": "026d8b38ea93edccd647f60568193e79801a377b7bd4e916dcfc0d5482b767fc",
+        "size": 218215,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/286924/files/8291183/download"
+      },
+      {
+        "path": "shaderpacks/ComplementaryReimagined_r5.7.1.zip",
+        "sha256": "24a20634a7832d422d3cd5023be16829f26840e25c69404dd418306ea79f63f0",
+        "size": 522970,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/627557/files/7574259/download"
+      },
+      {
+        "path": "mods/ItemBorders-1.20.1-forge-1.2.2.jar",
+        "sha256": "23710606b68c5367ef28d2efa55d8efc4a7d1df8ac1f232e4327977cd1a16b56",
+        "size": 20832,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/513769/files/5903326/download"
+      },
+      {
+        "path": "mods/fast_tpa-forge1.20.1-1.3.0.jar",
+        "sha256": "7485d9d2419e1b593f3e51aa95cd3c225b90743d16c6770c15328134477968ea",
+        "size": 30707,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1122207/files/7821088/download"
+      },
+      {
+        "path": "mods/packetfixer-3.3.2-1.18-1.20.4-merged.jar",
+        "sha256": "12f96ecb8e61e0b3d3f0ca5701f479904904501dd251aa7bb60205afdf6bc2ce",
+        "size": 188661,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/689467/files/7872374/download"
+      },
+      {
+        "path": "mods/lost_aether_content-1.20.1-1.2.3.jar",
+        "sha256": "699cc6fed1ddf8f46becb169f0ffc38acf4a3e93fcdf7f7cdf1ce28deff15505",
+        "size": 20264145,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/318602/files/4927038/download"
+      },
+      {
+        "path": "mods/irons_spellbooks-1.20.1-3.15.4.jar",
+        "sha256": "dbeabd73fa35b5e5622a7190dcadbb5b91d8fb45dd7f5013658fd4fccf2ec140",
+        "size": 15144197,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/855414/files/7691158/download"
+      },
+      {
+        "path": "mods/Ribbits-1.20.1-Forge-3.0.5.jar",
+        "sha256": "e04aa665df7e96844fe8833f29cc343feefac8ad7b949399d7b4a60475123e2b",
+        "size": 2223589,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/622967/files/7354928/download"
+      },
+      {
+        "path": "mods/Clear-Water-2.1.jar",
+        "sha256": "39a6f2a2451e0f7512c4ab8ba2c6c989b39dab626d340b53c0c7b6ca0ba4c6f3",
+        "size": 24435,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/286098/files/4744630/download"
+      },
+      {
+        "path": "mods/mixin-booster-0.1.3+1.20.1.jar",
+        "sha256": "b311e0bed06affaf28c1e7cf62c464c429178f5bce4b958ad651996560fbb61f",
+        "size": 1312078,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/980731/files/7711418/download"
+      },
+      {
+        "path": "mods/ares_hud-1.2.3-all.jar",
+        "sha256": "7340d429d8024b65e5b746b81d7aaca3ffa584fc1564e3aab8efcb46e76f70ba",
+        "size": 872773,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1477275/files/8421842/download"
+      },
+      {
+        "path": "mods/HungerStrike-1.20.1-8.0.0.jar",
+        "sha256": "b9cc8763c8898bf33a8771c3245fa9dba9524ec92e532461fe7f2ccdbf8f09b9",
+        "size": 33579,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/75334/files/5574481/download"
+      },
+      {
+        "path": "mods/visual_keybinder-1.20.1 - 0.1.12.jar",
+        "sha256": "9dadb23df8b1b232499565bc486220af6f81f62d2bfe6fe6e9deeb9502df0847",
+        "size": 258438,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1020759/files/7776129/download"
+      },
+      {
+        "path": "mods/EnchantmentDescriptions-Forge-1.20.1-17.1.21.jar",
+        "sha256": "909d1941d4ef6e4b7336738ee31380d6e1117c3c22feb70b64fed47f1cba2b07",
+        "size": 66883,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/250419/files/7612607/download"
+      },
+      {
+        "path": "mods/PuzzlesLib-v8.1.33-1.20.1-Forge.jar",
+        "sha256": "f3077a9f817629b8e8929c1951042d1a1adc62d30b72adebd54d2b074a4faf4f",
+        "size": 1342987,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/495476/files/6918565/download"
+      },
+      {
+        "path": "mods/Jade-1.20.1-Forge-11.13.2.jar",
+        "sha256": "31949971a7a8d5a5bc95ad9d400cbedfd2d65ffbfb3cea7c0b2fa3b47431a0a5",
+        "size": 552486,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/324717/files/6855440/download"
+      },
+      {
+        "path": "mods/cinematiccataclysm-1.0.1-1.20.1.jar",
+        "sha256": "2bd504cd4fa0d1cd8981d4e4f26a37a8bb0e900b8011b3cbb0ec048f824eb139",
+        "size": 700109,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1399324/files/7817167/download"
+      },
+      {
+        "path": "mods/betterlockon-2.0.11-forge.jar",
+        "sha256": "0a0718eedeeeb51a9b962a3ed95d275be80ff6cc2a7c8966584d39d9cd4f17fa",
+        "size": 452022,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1339577/files/8332801/download"
+      },
+      {
+        "path": "mods/ba_bt-1.20.1-3.0.0-beta3.2.1.jar",
+        "sha256": "df9cbc8b7f657858d1fa823c6eabe1af027e02c0e9b5fdbd5c4398ae97653ed6",
+        "size": 54453322,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/542294/files/7453586/download"
+      },
+      {
+        "path": "mods/acceleratedrendering-1.0.8-1.20.1-alpha.jar",
+        "sha256": "08c94eef7116790e09926074a09807f42ad3ddc685e400d5a27c457f5fb92f46",
+        "size": 686792,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1314021/files/7342975/download"
+      },
+      {
+        "path": "mods/xaeroworldmap-forge-1.20.1-1.44.2.jar",
+        "sha256": "cc20a74887923eecf5b614ffbf5a58e6c749d98a657003bde4a77d04212dee0d",
+        "size": 1421224,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/317780/files/8449908/download"
+      },
+      {
+        "path": "shaderpacks/BSL_v8.4.zip",
+        "sha256": "f57821c6f0d744ca72b41d3ad9762452e53d5b0eb3a888c0636ad29b7d0d1548",
+        "size": 1105442,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/322506/files/5905130/download"
+      },
+      {
+        "path": "mods/lithostitched-forge-1.20.1-1.4.11.jar",
+        "sha256": "c19a5a36c0e6cb3782cf7ca5b9648fb1bce5fc41fd737bed423a1f4971bccf75",
+        "size": 476347,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/936015/files/6742615/download"
+      },
+      {
+        "path": "mods/CombatEvolution-2.2.0.jar",
+        "sha256": "74b0a0b567897d4f7fea5faf97dd2c85fa5a31cdb540c7cb90c48ba575222b77",
+        "size": 2752207,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1377795/files/8368239/download"
+      },
+      {
+        "path": "mods/pbf1-1.1.2.jar",
+        "sha256": "a9bcccdb683518f99a77f81ec2136a9db981a09313754002ec3fc2466d56217a",
+        "size": 5297745,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1369741/files/7689122/download"
+      },
+      {
+        "path": "mods/yet_another_config_lib_v3-3.6.6+1.20.1-forge.jar",
+        "sha256": "bd05da3d9df29b914165583f1c6dfd918a138996447ff32c0418329824027a8f",
+        "size": 1105891,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/667299/files/6336646/download"
+      },
+      {
+        "path": "mods/epicfight-skilltree-forge-20.2.8.1-1.20.1.jar",
+        "sha256": "661ef9bc1210cb36cb50bb674cfac6b11b8b38db34a3297bfacad318d295b0c3",
+        "size": 326712,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1295882/files/8375059/download"
+      },
+      {
+        "path": "mods/tcr_bosses-1.1.11-all.jar",
+        "sha256": "abfe644256b6800c7d85c297da73c6ab182da450e49f24336534988229ba3d3f",
+        "size": 1172001,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1387898/files/8187619/download"
+      },
+      {
+        "path": "mods/mowziesmobs-1.8.2.jar",
+        "sha256": "e8ce1768cda6f1e1fadd2321c92921b473bd0cee45ba4b8387fb30f8326cb31c",
+        "size": 36033850,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/250498/files/7815705/download"
+      },
+      {
+        "path": "mods/certain_questing_additions-forge-1.1.7+mc1.20.1.jar",
+        "sha256": "2c767c5441672123b19794e17c2fd8ff5254b2d228da8649702eab972cfc3978",
+        "size": 1141295,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1372051/files/8048068/download"
+      },
+      {
+        "path": "resourcepacks/Stay_True_1.20.zip",
+        "sha256": "508bc459fe7125378e595681c3f571724648ff9f0be6dd21e31a83f7eeb1f8e0",
+        "size": 2139266,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/353554/files/4624707/download"
+      },
+      {
+        "path": "mods/lazyyyyy-lexforge-core-0.14.19.jar",
+        "sha256": "5a34ec4c93990f46813c6bde29fd401c1b2954e3d6f8872f6d861a2a0719801e",
+        "size": 2639494,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1142812/files/7010786/download"
+      },
+      {
+        "path": "mods/incontrol-1.20-9.4.6.jar",
+        "sha256": "85d64d0f81f6eb6e1e2fa2a97a0aeabcea9e371498c3853b12c3697891e57f2c",
+        "size": 361894,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/257356/files/7436213/download"
+      },
+      {
+        "path": "mods/tlc_forge-1.0.3-R-1.20.X.jar",
+        "sha256": "bb7da52ed3f577b7b1d16bd97951d1cc15552195cc494a7efe35d109198d9878",
+        "size": 713860,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/687118/files/4614797/download"
+      },
+      {
+        "path": "resourcepacks/OurStory FTB Theme - 2.0 - 1.20.1.zip",
+        "sha256": "bf9b8a101cecbbba47f8a6de32d4ab8b2a4c742eedd488722ab2a354646debcd",
+        "size": 1987939,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1258522/files/7340950/download"
+      },
+      {
+        "path": "mods/dodge_parry_reward-1.20.1forge-20.14.3.jar",
+        "sha256": "bbc35d121f7d9951c852eb471683f7df0e8735e5ed659142feaa9b6dea6c4e8f",
+        "size": 287404,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1304607/files/7867343/download"
+      },
+      {
+        "path": "mods/YungsBetterEndIsland-1.20-Forge-2.0.6.jar",
+        "sha256": "05c2f43a67116f0bbca32d903b55ce1655b9319ed6554080de02bd1d0c232a83",
+        "size": 387111,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/901344/files/5193815/download"
+      },
+      {
+        "path": "mods/ftb-teams-forge-2001.3.2.jar",
+        "sha256": "b1cb4d82ea9f137a87e12a7aaf3329619294b56f7d70337dfd557a76e10b6e07",
+        "size": 252579,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/404468/files/7499810/download"
+      },
+      {
+        "path": "shaderpacks/Solas Shader V3.0.zip",
+        "sha256": "70761ed8a7b540c4df60e6775100415fa0de0f24f57c6182d09eab6323c4c78c",
+        "size": 1306582,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/678384/files/7019905/download"
+      },
+      {
+        "path": "mods/fancymenu_forge_3.8.1_MC_1.20.1.jar",
+        "sha256": "ba1ddf0f61def8ea87e7757ebb45f1390e1da0f7ebce1aff299b0a169b045858",
+        "size": 4472193,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/367706/files/7256735/download"
+      },
+      {
+        "path": "mods/Ash Of Sin-No More Invalid Statistic-1.20.1-1.0.0.jar",
+        "sha256": "82fab621c78b273ea17576fb28378ca0a7f2603eff69629dd6aadd01eb6073a7",
+        "size": 66292,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1491005/files/7785616/download"
+      },
+      {
+        "path": "mods/super_warden-20.13.0.jar",
+        "sha256": "d6a5ca943ce726e5260132622c5c865fceb0c68b25b9ab1f01b130ffae1990b9",
+        "size": 1089990,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1272352/files/7144759/download"
+      },
+      {
+        "path": "mods/CerbonsAPI-Forge-1.20.1-1.1.0.jar",
+        "sha256": "54a0a20da56ab1af2d0d7f5cf1133c059a7523485d567521084f822e81505dfb",
+        "size": 241148,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/955605/files/5050080/download"
+      },
+      {
+        "path": "mods/modernfix-forge-5.27.66+mc1.20.1.jar",
+        "sha256": "7db0c735b9037937757dcc9d40e0b6e2dee5f01336096e1a3a2a371ed0cfda4d",
+        "size": 1002234,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/790626/files/8459635/download"
+      },
+      {
+        "path": "mods/FastEvent-1.20.1-1.1.1.jar",
+        "sha256": "fad6bd3c5d882a924934f119d4df83570c24610a06c4f76ac2c36b487edc7727",
+        "size": 32785,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1249053/files/6527838/download"
+      },
+      {
+        "path": "mods/summoningrituals-forge-1.20.1-2.0.8.jar",
+        "sha256": "1941d866fafd467e9746a043eaee81b55db8fc22418e91da784b45ebebacd247",
+        "size": 218380,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/671040/files/5446506/download"
+      }
+    ],
+    "extraFiles": [
+      {
+        "path": "mods/tcresptranslation-1.0.2.jar",
+        "sha256": "31a3d7f1c92c0d72e06991dd54ce6137c293d66551f0ba57fa40e24fd85bff0d",
+        "size": 4384554,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/MdYH8B12/versions/VwymBm4z/tcresptranslation-1.0.2.jar"
+      },
+      {
+        "path": "mods/DistantHorizons-3.2.0-b-1.20.1-fabric-forge.jar",
+        "sha256": "27cc6df2189e142671e4174ad7b2d773318b1b871758ec27756538947052a302",
+        "size": 29561297,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/uCdwusMi/versions/FWGxbEM3/DistantHorizons-3.2.0-b-1.20.1-fabric-forge.jar"
+      },
+      {
+        "path": "mods/mcwifipnp-1.7.6-1.20.1-forge.jar",
+        "sha256": "6355f4569ec26046c0877f45fbc37a28d57b656999945f3f6491cf0109f23aa0",
+        "size": 82482,
+        "role": "host",
+        "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/NW8GxGB5/mcwifipnp-1.7.6-1.20.1-forge.jar"
+      }
+    ],
+    "sourceArchive": {
+      "path": "mods/The Casket of Reveries -2.2.8.6.zip",
+      "sha256": "aa6856b3fb826e160e1dbe174f2176053a44ec6639254168b4652cdd428c7002",
+      "size": 160278,
+      "sourceUrl": "https://www.curseforge.com/api/v1/mods/1354886/files/8544899/download"
+    }
+  },
+  {
+    "id": "valorant-craft",
+    "instanceId": "valorant-craft",
+    "workflow": "coco-managed",
+    "minecraftVersion": "1.20.1",
+    "loader": "forge",
+    "loaderVersion": "47.4.4",
+    "packVersion": "1.1.0-csmain-beta.1",
+    "assets": [
+      {
+        "path": "mods/tacz-1.20.1-1.1.8-hotfix.jar",
+        "sha256": "9ed8ada1283ed7a793a70cc1b51c4a340f367ce84707e1a7b8cf21ee3d288d77",
+        "size": 57465167,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/SzzJttH8/versions/yOVIzIJR/tacz-1.20.1-1.1.8-hotfix.jar"
+      },
+      {
+        "path": "mods/csmain-1.0.0-beta.1.jar",
+        "sha256": "a263470939a773b3aa7bb9fe88ec071930e77cd4c8958a40422e5ea249fab7f3",
+        "size": 236754,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1472644/files/7682938/download"
+      },
+      {
+        "path": "tacz/Valorant_gunpack_v0.1.3_hotfix_4.zip",
+        "sha256": "aec346aec55dece5993c1891a85b0ba32c5091c92b666a41c6f6c1fe7b4ae51b",
+        "size": 6923006,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1268425/files/8072551/download"
+      },
+      {
+        "path": "mods/geckolib-forge-1.20.1-4.8.4.jar",
+        "sha256": "4518779a31b6c2abb92c98b5ad17ef3d60177df68626bfc86c44de2764913c2b",
+        "size": 1038209,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/8BmcQJ2H/versions/aC5KMoNg/geckolib-forge-1.20.1-4.8.4.jar"
+      },
+      {
+        "path": "mods/player-animation-lib-forge-1.0.2-rc1+1.20.jar",
+        "sha256": "90d9965cb9efdbda29fdc5610be3914cf7008bf5c392ff34f7ab25f96a852691",
+        "size": 181437,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/gedNE4y2/versions/xe2EVE6q/player-animation-lib-forge-1.0.2-rc1%2B1.20.jar"
+      },
+      {
+        "path": "mods/lrtactical-1.20.1-0.4.1.jar",
+        "sha256": "42f3b2f5a4194baa10ce76720b5770290a64105634f0dcd9182fc0ef33800e6e",
+        "size": 5439652,
+        "role": "all",
+        "sourceUrl": "https://cdn.modrinth.com/data/AiwNM9O0/versions/McZNhhZ1/lrtactical-1.20.1-0.4.1.jar"
+      },
+      {
+        "path": "mods/Valorant Knife Pack-0.1.0.jar",
+        "sha256": "8475ccdc41c6d767908f5b512468903af50c620da39396e8344587b6ca22bf55",
+        "size": 2521866,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1607535/files/8418809/download"
+      },
+      {
+        "path": "mods/origins-forge-1.20.1-1.10.0.9-all.jar",
+        "sha256": "5244b8b4434cd1bb6f4ebb71a36008218e700ed3245c14f867b8dc5487137c64",
+        "size": 2307868,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/474438/files/5314209/download"
+      },
+      {
+        "path": "mods/Valorant_Origins+forge1.20.1+1.4.0.jar",
+        "sha256": "8c36858648f17af27d0a1de2f9357503c8d5440673d131ca75ce878cd2be408a",
+        "size": 95654,
+        "role": "all",
+        "sourceUrl": "https://www.curseforge.com/api/v1/mods/1079617/files/6229799/download"
+      },
+      {
+        "path": "mods/mcwifipnp-1.7.6-1.20.1-forge.jar",
+        "sha256": "6355f4569ec26046c0877f45fbc37a28d57b656999945f3f6491cf0109f23aa0",
+        "size": 82482,
+        "role": "host",
+        "sourceUrl": "https://cdn.modrinth.com/data/RTWpcTBp/versions/NW8GxGB5/mcwifipnp-1.7.6-1.20.1-forge.jar"
+      },
+      {
+        "path": "mods/coco-valorant-tools-0.1.0.jar",
+        "sha256": "97d07c264ca138021b44919863a8849e348ee324edcffd7e879878b21453f9cc",
+        "size": 15531,
+        "role": "all",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.78/coco-valorant-tools-0.1.0.jar"
+      }
+    ],
+    "extraFiles": [],
+    "sourceArchive": null
+  }
+]

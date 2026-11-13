@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "party-animals",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part01.zip",
+    "sha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651",
+    "size": 1375450423
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part01.zip",
+      "sha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651",
+      "size": 1375450423
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part02.zip",
+      "sha256": "0785be87ac0ff691d0282dd2ec18bdb4d0f00d1d49886fbe71c776cf0d7f9703",
+      "size": 1793130049
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part03.zip",
+      "sha256": "b59e89ffaf55c6e93b06e7c76bfcaaf0a4f2ba5e859dfbb198087041890143e3",
+      "size": 1793376382
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part04.zip",
+      "sha256": "e13152276b9d0f84bf74216c24fde6cc8f5dbf1a2dc7a91dbc79327ce34653fa",
+      "size": 1787094187
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part05.zip",
+      "sha256": "a423e8545f5a062ba18a85d70409a10f64cc1dfca91e592ac3796b3704dc2b9d",
+      "size": 1776219800
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part06.zip",
+      "sha256": "c8eb87054595db2a6cda5dbf885c05c51ae6ae69e45c82c37066ab8dc5da0c48",
+      "size": 1709217433
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part07.zip",
+      "sha256": "8f2ebeaa35094cf2117193849c191163539698214c549517eaa0ab7b036423e3",
+      "size": 1771007138
+    }
+  ]
+}

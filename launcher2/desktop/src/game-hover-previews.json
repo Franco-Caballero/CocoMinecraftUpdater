@@ -1,0 +1,139 @@
+{
+    "big-walk":  {
+                     "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257146859/microtrailer.webm",
+                     "steamAppId":  1478500,
+                     "trailerId":  257146859,
+                     "bytes":  3084496
+                 },
+    "shift-at-midnight":  {
+                              "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257204079/microtrailer.webm",
+                              "steamAppId":  3722330,
+                              "trailerId":  257204079,
+                              "bytes":  1935916
+                          },
+    "peak":  {
+                 "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257155585/microtrailer.webm",
+                 "steamAppId":  3527290,
+                 "trailerId":  257155585,
+                 "bytes":  2024755
+             },
+    "content-warning":  {
+                            "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257012412/microtrailer.webm",
+                            "steamAppId":  2881650,
+                            "trailerId":  257012412,
+                            "bytes":  1851638
+                        },
+    "lockdown-protocol":  {
+                              "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257039398/microtrailer.webm",
+                              "steamAppId":  2780980,
+                              "trailerId":  257039398,
+                              "bytes":  1162028
+                          },
+    "repo":  {
+                 "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257160735/microtrailer.webm",
+                 "steamAppId":  3241660,
+                 "trailerId":  257160735,
+                 "bytes":  1985173
+             },
+    "rhythm-doctor":  {
+                          "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257206268/microtrailer.webm",
+                          "steamAppId":  774181,
+                          "trailerId":  257206268,
+                          "bytes":  1922096
+                      },
+    "move-or-die":  {
+                        "url":  "https://cdn.akamai.steamstatic.com/steam/apps/256659999/microtrailer.webm",
+                        "steamAppId":  323850,
+                        "trailerId":  256659999,
+                        "bytes":  1437747
+                    },
+    "worms-wmd":  {
+                      "url":  "https://cdn.akamai.steamstatic.com/steam/apps/256669378/microtrailer.webm",
+                      "steamAppId":  327030,
+                      "trailerId":  256669378,
+                      "bytes":  1510499
+                  },
+    "ghost-janitors":  {
+                           "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257009903/microtrailer.webm",
+                           "steamAppId":  2772990,
+                           "trailerId":  257009903,
+                           "bytes":  1278649
+                       },
+    "pilgrim":  {
+                    "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257022082/microtrailer.webm",
+                    "steamAppId":  2965660,
+                    "trailerId":  257022082,
+                    "bytes":  1288899
+                },
+    "machine-party":  {
+                          "url":  "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4108000/extras/001a124236e922b1eeed6e530bc46a22.mp4",
+                          "steamAppId":  4108000,
+                          "bytes":  3029381
+                      },
+    "scam-line":  {
+                      "url":  "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2794590/extras/a79e4c084e0ffd98e8f241ccf618dba9.mp4",
+                      "steamAppId":  2794590,
+                      "bytes":  263807
+                  },
+    "cooking-simulator-2":  {
+                                "url":  "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1227350/extras/17daa106f2c9bd5e1a5b1cc04b8da0eb.mp4",
+                                "steamAppId":  1227350,
+                                "bytes":  225154
+                            },
+    "how-to-fish":  {
+                        "url":  "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4001890/extras/0008c602f36d38e49bf839f96b68aa67.mp4",
+                        "steamAppId":  4001890,
+                        "bytes":  2300297
+                    },
+    "twisted-party":  {
+                          "url":  "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4332910/extras/f5a8e6ee8a421bdbd2754b77e7035ff9.mp4",
+                          "steamAppId":  4332910,
+                          "bytes":  131656
+                      },
+    "mimic-party":  {
+                        "url":  "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/5053820/extras/75799a427221e264c7dd3c19cb55284c.mp4",
+                        "steamAppId":  5053820,
+                        "bytes":  767121
+                    },
+    "heavenly-bodies": {
+                  "url": "https://cdn.akamai.steamstatic.com/steam/apps/256833154/microtrailer.webm",
+                  "steamAppId": 1138850,
+                  "trailerId": 256833154,
+                  "bytes": 1271545
+              },
+    "crack": {
+                  "url": "/previews/crack-steam.mp4",
+                  "steamAppId": 4312190,
+                  "trailerId": 257479142,
+                  "bytes": 1752961
+              },
+    "yapyap": {
+                  "url": "/previews/yapyap-steam.mp4",
+                  "steamAppId": 3834090,
+                  "trailerId": 257268066,
+                  "bytes": 1934806
+              },
+    "the-cabin":  {
+                      "url":  "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4406280/extras/bed67ac3fd5a5411bead04c4a7c78f0c.mp4",
+                      "steamAppId":  4406280,
+                      "bytes":  463661
+                  },
+    "party-animals": {
+  "url": "https://cdn.akamai.steamstatic.com/steam/apps/257056877/microtrailer.webm",
+  "steamAppId": 1260320,
+  "trailerId": 257056877,
+  "bytes": 1305188
+},
+ "golf-it": {
+ "url": "https://cdn.akamai.steamstatic.com/steam/apps/256678818/microtrailer.webm",
+ "steamAppId": 571740,
+ "trailerId": 256678818,
+ "bytes": 1501031
+},
+ "buckshot-roulette": {
+ "url": "https://cdn.akamai.steamstatic.com/steam/apps/257082005/microtrailer.webm",
+ "steamAppId": 2835570,
+ "trailerId": 257082005,
+ "bytes": 1946137
+ }
+}

@@ -1,0 +1,348 @@
+/* Coco 2: an editorial game room, rather than a vertical admin dashboard. */
+.coco2-desktop{--bg:#0c0816;--surface:#171022;--surface-light:#21132e;--surface-hover:#302041;--border:#403052;--border-soft:rgba(221,181,255,.09);--text:#fbf6ff;--muted:#aa99bf;--subtle:#7e6b94;--accent:#c17bff;--accent-deep:#8d46ce;--ease:cubic-bezier(.19,1,.22,1);display:flex!important;flex-direction:column!important;min-height:100vh;background:radial-gradient(ellipse at 10% 20%,#36204946 0%,transparent 38%),radial-gradient(ellipse at 88% 85%,#3b195c36 0%,transparent 38%),#0c0816;font-family:'Instrument Sans Variable','Segoe UI Variable',sans-serif;color:#f9f1ff;overflow:hidden}
+.coco2-desktop *{scrollbar-color:#51356a #1c1329}
+.coco2-desktop .launcher-dock{height:75px;min-height:75px;display:flex;align-items:center;gap:18px;padding:0 19px 0 28px;border-bottom:1px solid #ffffff16;background:#130c1eea;backdrop-filter:blur(26px);position:sticky;top:0;z-index:18;box-shadow:0 6px 30px #06020c24}
+.coco2-desktop .brand-button{width:auto;display:flex;align-items:center;gap:10px;padding:0;margin:0;flex-shrink:0}
+.coco2-desktop .brand-mark{width:43px;height:43px;border-radius:13px;background:linear-gradient(135deg,#773ab2,#231432);box-shadow:0 0 24px #9a35ed37;transform:none}
+.coco2-desktop .brand-mark img{width:100%;height:100%;object-fit:cover;border-radius:13px}
+.coco2-desktop .brand-copy strong{font-family:'Big Shoulders Display Variable',sans-serif;font-size:27px;font-weight:750;letter-spacing:-2px}
+.coco2-desktop .brand-copy small{font-size:8px;letter-spacing:2.2px;margin-top:2px;color:#9c78b7}
+.coco2-desktop .navigation{display:flex;align-items:center;gap:4px;flex-direction:row;margin-left:clamp(16px,4vw,85px);height:100%}
+.coco2-desktop .navigation .nav-link{height:38px;width:auto;display:flex;align-items:center;gap:8px;white-space:nowrap;padding:0 13px;border-radius:11px;font-size:12px;color:#b19bbd;font-weight:750;border:1px solid transparent;transition:background .26s var(--ease),color .26s,transform .26s var(--ease)}
+.coco2-desktop .navigation .nav-link:hover{background:#c47cf017;color:#fff;transform:translateY(-2px)}
+.coco2-desktop .navigation .nav-link.active{background:#a55ad72b;border:1px solid #c279ea57;color:#f6e7ff;box-shadow:inset 0 0 12px #c178ff10,0 4px 15px #8f39d014}
+.coco2-desktop .nav-link.active:before{display:none}.coco2-desktop .navigation .nav-link svg{width:17px;height:17px}
+.coco2-desktop .dock-drag{height:100%;flex:1;min-width:8px}.coco2-desktop .dock-settings{background:#ffffff08;border:1px solid #ffffff19;color:#c5a4e0;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;transition:background .2s}.coco2-desktop .dock-settings:hover,.coco2-desktop .dock-settings.active{background:#9c55d142}
+.coco2-desktop .window-buttons{display:flex;gap:4px;padding-left:13px;border-left:1px solid #ffffff14}.coco2-desktop .window-buttons button{border:0;background:transparent;color:#b29cc4;display:grid;place-items:center;width:31px;height:32px;border-radius:8px;transition:background .15s,color .15s}.coco2-desktop .window-buttons button:hover{background:#ffffff16;color:#fff}.coco2-desktop .window-buttons .window-close:hover{background:#c1366d;color:#fff}
+.coco2-desktop .main-content{padding:0 clamp(22px,4vw,72px) 80px;width:100%;max-width:1650px;margin:0 auto;min-height:calc(100vh - 75px)}
+.coco2-desktop .topbar{padding:25px 0 22px;display:flex;gap:20px}.coco2-desktop .breadcrumb{display:flex;flex-direction:column;align-items:flex-start;gap:5px;color:#eee3f5}.coco2-desktop .breadcrumb .eyebrow{font-family:'Big Shoulders Display Variable',sans-serif;letter-spacing:2.6px;font-size:10px;color:#a370c6}.coco2-desktop .breadcrumb strong{font-family:'Big Shoulders Display Variable',sans-serif;font-size:18px;font-weight:600;letter-spacing:-.7px;color:#fff}
+.coco2-desktop .search-control{background:#231530;border:1px solid #634178;width:min(330px,28vw);height:42px;border-radius:13px}.coco2-desktop .search-control:focus-within{box-shadow:0 0 0 2px #af6fed50}.coco2-desktop .icon-button{height:42px;width:42px;background:#241530;border:1px solid #654278;border-radius:12px}.coco2-desktop .profile-button{gap:9px}.coco2-desktop .profile-avatar{width:33px;height:33px;border-radius:12px}.coco2-desktop .profile-avatar img{width:100%;height:100%;object-fit:cover}
+.coco2-desktop .page-content{padding-top:0}.coco2-desktop .hero{height:clamp(340px,34vw,490px);border:1px solid #c38bff4d;border-radius:26px;background:#2a1643;box-shadow:0 26px 88px #0903166c;overflow:hidden}
+.coco2-desktop .hero:before{z-index:1;background:linear-gradient(90deg,#160b29f7 0%,#1b0b32ea 35%,#25123b85 68%,#1d10322b 100%),linear-gradient(0deg,#160720bf,transparent 60%)}
+.coco2-desktop .hero-image{opacity:.65;filter:saturate(.76) brightness(.82);transform:scale(1.06);object-position:center;transition:transform 1.5s var(--ease)}
+.coco2-desktop .hero:hover .hero-image{transform:scale(1.1)}
+.coco2-desktop .hero-grid{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.26;background-image:linear-gradient(#c285ff15 1px,transparent 1px),linear-gradient(90deg,#c285ff12 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(90deg,transparent 30%,#000)}
+.coco2-desktop .hero-reyna{position:absolute;z-index:2;right:clamp(35px,11vw,185px);bottom:-8%;height:112%;width:auto;max-width:47%;object-fit:contain;object-position:bottom;filter:drop-shadow(-22px 22px 20px #09031686) drop-shadow(0 0 28px #8735c54a);pointer-events:none;animation:reyna-arrive .95s var(--ease) both,reyna-hover 6s ease-in-out 1s infinite alternate;transform-origin:bottom center}
+.coco2-desktop .hero-content{max-width:48%;left:clamp(30px,4.4vw,70px);top:50%;transform:translateY(-50%);z-index:3}.coco2-desktop .hero-chip{font-size:10px;letter-spacing:1.6px;border-color:#b381e67a;background:#6f319f55;color:#f7eaff}
+.coco2-desktop .hero h1{font-family:'Big Shoulders Display Variable',sans-serif;font-size:clamp(40px,4.7vw,70px);font-weight:760;letter-spacing:-3.6px;line-height:.98;margin:23px 0 20px;text-shadow:0 4px 36px #0007}.coco2-desktop .hero p{line-height:1.65;font-size:13px;color:#dccce8;margin-bottom:25px}.coco2-desktop .hero-dots{bottom:28px;right:29px;z-index:3}.coco2-desktop .hero-dots button.active{background:#e1aaff}
+.coco2-desktop .primary-button{background:linear-gradient(135deg,#d49aff,#a65bf2);border:1px solid #dfb6ff;color:#240e35;box-shadow:0 8px 20px #8d30d341}.coco2-desktop .primary-button:hover{background:linear-gradient(135deg,#e1b4ff,#b879ff);box-shadow:0 13px 35px #a543f255}
+.coco2-desktop .secondary-button{background:#271539bc;border:1px solid #9861bb85;color:#f7e8ff}.coco2-desktop .secondary-button:hover{background:#4c2768}
+.coco2-desktop .summary-strip{margin:22px 0 16px;display:flex;gap:11px}.coco2-desktop .summary-item{background:#1e132ba8;border:1px solid #8f5db23d;padding:15px 20px;border-radius:15px}.coco2-desktop .summary-icon{background:#ad68df22;color:#dbadff;border-radius:12px}.coco2-desktop .summary-item strong{font-size:19px;font-family:'Big Shoulders Display Variable',sans-serif}.coco2-desktop .summary-item small{color:#a993bb}
+.coco2-desktop .section-head{margin-top:32px;margin-bottom:17px}.coco2-desktop .section-head h2{font-family:'Big Shoulders Display Variable',sans-serif;font-size:24px;letter-spacing:-1.1px}.coco2-desktop .link-button{color:#d8a6fb}
+.coco2-desktop .experience-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.coco2-desktop .experience-card{border:1px solid #865fa343;background:#1d122b;border-radius:17px;box-shadow:0 9px 26px #0003;transition:transform .38s var(--ease),box-shadow .38s var(--ease),border-color .38s var(--ease)}.coco2-desktop .experience-card:hover{transform:translateY(-7px) scale(1.013);border-color:#bb7cec99;box-shadow:0 22px 48px #0301078a}.coco2-desktop .card-image-button{aspect-ratio:16/9}.coco2-desktop .experience-card:hover .card-image-button img{transform:scale(1.095)}
+.coco2-desktop .card-title{font-family:'Big Shoulders Display Variable',sans-serif;font-weight:670;font-size:14px}.coco2-desktop .card-meta{color:#a993bb}.coco2-desktop .card-open{background:#5d337733;border-color:#8856a96e;color:#e9d3fb}.coco2-desktop .favorite-button{border-color:#714d85;color:#d1a3e7}.coco2-desktop .cinema-grid .card-image-button{aspect-ratio:21/10}.coco2-desktop .cinema-grid .experience-card:first-child{grid-column:span 2}.coco2-desktop .cinema-grid .experience-card:first-child .card-image-button{aspect-ratio:16/7.4}
+.coco2-desktop .filter-button{background:#261730;border-color:#70468a;color:#c3aad4}.coco2-desktop .filter-button.active{background:#a366df35;color:#f3dafa;border-color:#ac70df83}.coco2-desktop .activity-panel,.coco2-desktop .settings-card{background:#1c1129;border-color:#76508d55}.coco2-desktop .detail-drawer{top:75px;background:#1c102b;border-color:#ba78e56b}.coco2-desktop .overlay{top:75px}.coco2-desktop .drawer-copy p{color:#bca3c8}.coco2-desktop .drawer-chips span{color:#e3c9fa}.coco2-desktop .verify-control{background:#2b1b3d;border-color:#8757a35c}.coco2-desktop .verify-progress{color:#e0b7ff}.coco2-desktop .progress-track{height:8px;background:#4c305f}.coco2-desktop .progress-fill{background:linear-gradient(90deg,#a95eed,#edbaff);animation:none}
+.coco2-desktop .operation-message{color:#e9c8ff}.coco2-desktop .settings-input{background:#150c21;border-color:#7950a0}
+body[data-motion='off'] .coco2-desktop *,body[data-motion='off'] .coco2-desktop *::before,body[data-motion='off'] .coco2-desktop *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+@keyframes reyna-arrive{from{opacity:0;transform:translateY(55px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes reyna-hover{from{translate:0 0}to{translate:0 -10px}}
+@media(max-width:1150px){.coco2-desktop .launcher-dock{gap:10px;padding:0 15px}.coco2-desktop .navigation{margin-left:14px}.coco2-desktop .navigation .nav-link{padding:0 9px;font-size:11px}.coco2-desktop .hero-reyna{right:0;height:105%}.coco2-desktop .hero-content{max-width:57%}.coco2-desktop .experience-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.coco2-desktop .launcher-dock{height:68px;min-height:68px}.coco2-desktop .navigation{margin-left:0}.coco2-desktop .navigation .nav-link span{display:none}.coco2-desktop .navigation .nav-link{width:38px;justify-content:center}.coco2-desktop .main-content{padding:0 22px 45px}.coco2-desktop .hero-content{max-width:65%}.coco2-desktop .hero h1{font-size:41px}.coco2-desktop .hero-reyna{opacity:.83;right:-35px}.coco2-desktop .experience-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.coco2-desktop .overlay,.coco2-desktop .detail-drawer{top:68px}}
+@media(max-width:600px){.coco2-desktop .brand-copy{display:none}.coco2-desktop .window-buttons{gap:0;padding-left:4px}.coco2-desktop .window-buttons button{width:28px}.coco2-desktop .topbar{align-items:flex-start}.coco2-desktop .search-control{width:145px}.coco2-desktop .search-control kbd{display:none}.coco2-desktop .profile-button span:last-child{display:none}.coco2-desktop .hero{height:360px}.coco2-desktop .hero-reyna{height:92%;right:-68px;opacity:.61}.coco2-desktop .hero-content{max-width:82%;left:24px}.coco2-desktop .hero h1{font-size:37px}.coco2-desktop .hero p{max-width:60%}.coco2-desktop .summary-strip{display:none}.coco2-desktop .experience-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.coco2-desktop .cinema-grid .experience-card:first-child{grid-column:auto}.coco2-desktop .detail-drawer{width:100%}}
+.coco2-desktop .media-episodes{margin:23px 0;background:#291839;border:1px solid #875caf77;border-radius:15px;padding:15px 12px;max-height:410px;overflow:auto}.coco2-desktop .media-episodes .verify-title{padding:0 8px 13px}.coco2-desktop .media-episode{display:flex;align-items:center;width:100%;gap:13px;padding:13px 12px;text-align:left;background:transparent;color:#e2c9fa;border:0;border-top:1px solid #c788ed19;transition:background .22s,color .22s}.coco2-desktop .media-episode:hover{background:#9c59ce26;color:#fff}.coco2-desktop .media-episode-name{flex:1;line-height:1.4;font-size:12px}.coco2-desktop .media-number{font-family:'Big Shoulders Display Variable',sans-serif;font-size:17px;color:#9a7aac;min-width:29px}.coco2-desktop .media-episode svg{width:15px;height:15px}
+.coco2-desktop .media-episode-play{display:flex;align-items:center;flex:1;gap:13px;text-align:left;background:transparent;border:0;color:inherit;min-width:0;padding:0;cursor:pointer}.coco2-desktop .media-episode-play:hover{color:#fff}.coco2-desktop .media-episode-play:disabled{opacity:.48;cursor:wait}.coco2-desktop .media-episode-download{display:grid;place-items:center;flex:none;background:#9559c525;color:#eac8ff;border:1px solid #9367bb63;border-radius:9px;width:34px;height:34px;transition:background .2s,color .2s}.coco2-desktop .media-episode-download:hover{background:#a46de459;color:#fff}.coco2-desktop .media-episode-download:disabled{opacity:.35;cursor:not-allowed}.coco2-desktop .media-downloaded{color:#c995f2;font-size:10px;white-space:nowrap}
+.coco2-desktop .network-panel{display:flex;align-items:center;gap:13px;border:1px solid #7b479f78;background:#251533;border-radius:14px;padding:12px 15px;margin-bottom:14px}.coco2-desktop .network-panel>div{flex:1}.coco2-desktop .network-panel strong{font-size:12px}.coco2-desktop .network-panel p{font-size:11px;color:#b68fce;margin:4px 0}.coco2-desktop .network-panel .filter-button{margin-left:auto}
+.coco2-desktop .update-banner{display:flex;align-items:center;gap:13px;background:#3a2156;border:1px solid #b977e89e;border-radius:13px;padding:12px 16px;margin-bottom:16px;color:#eccbff;font-size:12px}.coco2-desktop .update-banner span{flex:1}.coco2-desktop .update-banner .filter-button{margin-left:auto}
+.coco2-desktop .host-studio-button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 13px;background:#6a2f9259;border:1px solid #ac6de48c;color:#eccbff;border-radius:12px;font-weight:700;font-size:11px;white-space:nowrap}.coco2-desktop .host-studio-button:hover{background:#8f4cba7c}
+.coco-studio-backdrop{position:fixed;z-index:75;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:#090413dd;backdrop-filter:blur(15px)}.coco-studio{position:relative;width:min(710px,100%);max-height:calc(100vh - 60px);overflow:auto;background:radial-gradient(circle at top right,#5a33743d,transparent 55%),#1b102b;border:1px solid #9a63c577;border-radius:22px;color:#f7eaff;box-shadow:0 26px 110px #000a;animation:page-in .3s cubic-bezier(.19,1,.22,1)}.coco-studio-head{padding:25px 30px 18px;border-bottom:1px solid #ae75ce30;position:relative}.coco-studio-head .eyebrow{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:2px;color:#bb86e3}.coco-studio-head h2{font-family:'Big Shoulders Display Variable',sans-serif;font-size:28px;letter-spacing:-1.1px;margin:8px 0 0}.coco-studio-head>button{position:absolute;right:24px;top:25px;width:36px;height:36px;border:1px solid #a46dc44a;border-radius:10px;color:#eddbf8;background:#342041;display:grid;place-items:center}.coco-studio-content{padding:26px 30px 30px}.studio-picker{display:flex;align-items:center;gap:12px;width:100%;padding:16px;border:1px dashed #ad79da80;border-radius:13px;background:#251734;color:#dfc3f0;text-align:left;cursor:pointer}.studio-picker>span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.studio-picker:hover{background:#3a234e;border-color:#c18ef1}.studio-picker:disabled{opacity:.55;cursor:wait}.studio-stats{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 20px}.studio-stats span{background:#8d50bd30;border:1px solid #ad71d64b;border-radius:8px;padding:6px 9px;font-size:11px;color:#d8b8ed}.studio-progress{display:flex;align-items:center;gap:9px;padding:16px;color:#dec1ef;font-size:12px}.studio-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px 12px}.studio-form label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#c4a7d8}.studio-form input,.studio-form select{width:100%;min-width:0;padding:11px 12px;background:#130c20;color:#faefff;border:1px solid #745091;border-radius:10px;outline:none;font-family:inherit;font-size:12px}.studio-form input:focus,.studio-form select:focus{border-color:#c17ee9;box-shadow:0 0 0 2px #9f64d12c}.studio-form .studio-wide{grid-column:1/-1}.studio-form>button.primary-button{justify-content:center;min-height:42px}.studio-form>button.primary-button:disabled{opacity:.45;cursor:not-allowed}.studio-complete{padding:23px;border:1px solid #8c56b67a;border-radius:14px;background:#50286f38;display:flex;flex-direction:column;align-items:flex-start;gap:11px}.studio-complete>svg{color:#c993ed}.studio-complete>strong{font-size:17px}.studio-complete>p{font-size:12px;line-height:1.6;color:#cdb3e0}.studio-complete>code{width:100%;font-size:11px;word-break:break-all;color:#ecc8ff;white-space:normal}
+.studio-complete .studio-rights{display:flex;align-items:flex-start;gap:9px;color:#e1c8ef;font-size:12px;line-height:1.5}.studio-complete .studio-rights input{accent-color:#ae6dda;min-width:15px;height:15px;margin-top:2px}.studio-complete button.primary-button{min-height:40px;justify-content:center}.studio-complete button.primary-button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:770px){.coco2-desktop .host-studio-button span{display:none}.coco2-desktop .host-studio-button{min-width:38px;padding:0 10px}.coco-studio-content{padding:20px}.coco-studio-head{padding:20px}.studio-form{grid-template-columns:1fr}}
+.coco2-desktop .install-float{position:fixed;bottom:22px;right:24px;z-index:40;width:min(390px,calc(100% - 34px));padding:18px 18px 13px;background:#26143ae8;border:1px solid #bf83efac;border-radius:17px;box-shadow:0 17px 65px #000a;backdrop-filter:blur(28px);animation:page-in .35s var(--ease)}.coco2-desktop .install-float-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}.coco2-desktop .install-float-head>div{display:flex;flex-direction:column;flex:1;min-width:0;gap:3px}.coco2-desktop .install-float-head strong{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.coco2-desktop .install-float-head span{font-size:11px;color:#c59bdd}.coco2-desktop .install-spinner{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:#9e55d730}.coco2-desktop .install-spinner svg{animation:coco2spin 2s linear infinite}.coco2-desktop .install-percentage{font-family:'Big Shoulders Display Variable';font-size:20px;color:#eac0ff}.coco2-desktop .install-float-head button{display:grid;place-items:center;background:#ffffff09;color:#e7bcf8;border:1px solid #ffffff19;border-radius:9px;width:29px;height:29px}.coco2-desktop .install-bytes{color:#a78bbf;text-align:right;font-size:10px;margin-top:7px}
+
+@media(max-width:710px){.coco2-desktop .install-float{bottom:10px;right:10px}}
+
+/* Repair is a first-class workflow rather than a sequence of maintenance scripts. */
+.coco2-desktop .repair-workspace{background:linear-gradient(145deg,#39204c,#231633 66%);border:1px solid #bd89e36b;box-shadow:inset 0 1px #ffffff13,0 12px 40px #09031342}
+.coco2-desktop .repair-workspace .verify-title{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.coco2-desktop .repair-shield{margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:#ddc3ee;background:#a364d02b;border:1px solid #bb80e45b;padding:5px 8px;border-radius:999px;font-size:10px;white-space:nowrap}
+.coco2-desktop .repair-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:14px 0 8px}
+.coco2-desktop .repair-actions .primary-button{min-height:36px;padding:0 13px;display:inline-flex;align-items:center;gap:7px;font-size:11px}
+.coco2-desktop .repair-recover-action{font-size:10px;opacity:.88}
+.coco2-desktop .repair-live{display:flex;align-items:center;gap:12px;margin:10px 0;padding:12px 13px;border:1px solid #b480dc45;border-radius:11px;background:#1b0e29aa}
+.coco2-desktop .repair-live>div{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}.coco2-desktop .repair-live strong{font-size:12px;color:#f0dcfc}.coco2-desktop .repair-live small{font-size:10px;color:#bba4cc}.coco2-desktop .repair-live>span{font-family:'Big Shoulders Display Variable',sans-serif;font-weight:700;font-size:14px;color:#e8b5ff}
+.coco2-desktop .repair-advanced{border-top:1px solid #c18de522;margin-top:13px;padding-top:12px;color:#bba5cd;font-size:11px}.coco2-desktop .repair-advanced summary{cursor:pointer;color:#bd97d4;list-style-position:inside}.coco2-desktop .repair-advanced[open] p{margin-top:10px}
+.coco2-desktop .repair-workspace .progress-track{margin:10px 0}
+.coco2-desktop .repair-recovery-notice{display:flex;align-items:center;gap:8px;margin:12px 0;padding:11px 12px;border:1px solid #e6a0c176;background:#9d46602e;border-radius:10px;color:#ffe2eb;font-size:11px;line-height:1.5}
+.coco2-desktop .media-episode{border-radius:8px}.coco2-desktop .media-downloaded{border-radius:7px;padding:3px 6px;background:#9251b82b}
+.coco2-desktop .media-episode-partial{font-size:10px;color:#dcb6ff;white-space:nowrap}.coco2-desktop .media-episode-conflict{font-size:10px;color:#ffbed1;white-space:nowrap}
+.coco2-desktop :is(.studio-picker,.filter-button,.media-episode-download,.repair-actions button):focus-visible{outline:2px solid #ddb2ff;outline-offset:3px}
+@media(max-width:900px){.coco2-desktop .repair-shield{margin-left:0}}
+@media(prefers-reduced-motion:reduce){.coco2-desktop .repair-live svg,.coco2-desktop .install-spinner svg{animation:none}}
+
+/* Host Studio: quiet, visual step progress with explicit local-only review. */
+.studio-head-caption{color:#bda6d1;font-size:11px;margin:7px 0 0}
+.studio-steps{display:flex;gap:7px;align-items:center;justify-content:space-between;border:1px solid #a36bd445;border-radius:11px;background:#2b1a3b70;padding:10px 14px;margin-bottom:18px;color:#9279aa;font:600 10px 'Big Shoulders Display Variable',sans-serif;letter-spacing:.25px}
+.studio-steps .current{color:#f3ddff}.studio-steps svg{color:#895ea5}
+.studio-mode{display:flex;gap:4px;background:#130a20;border:1px solid #a276ca59;padding:4px;border-radius:11px;margin:0 0 15px}
+.studio-mode button{flex:1;border:0;border-radius:8px;background:transparent;color:#b39ac9;padding:9px 10px;font-size:11px;font-weight:700;transition:background .22s,color .22s;cursor:pointer}
+.studio-mode button.active{background:#9359c247;color:#faeaff;box-shadow:inset 0 1px #d5a3fd42}
+.studio-mode button:disabled{opacity:.45;cursor:wait}
+.studio-publish-review,.studio-package-result{display:flex;flex-direction:column;gap:11px;width:100%;padding:15px;background:#160d22b6;border:1px solid #b985dd65;border-radius:12px}
+.studio-publish-head{display:flex;align-items:center;gap:8px;color:#f1d7fa;font-size:12px}
+.studio-publish-review details{width:100%;border:1px solid #9b71b848;border-radius:9px;padding:10px;color:#c9a9df}
+.studio-publish-review details summary,.studio-local-promote summary{cursor:pointer;font-size:11px;color:#d2aaf2}
+.studio-publish-review pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:190px;overflow:auto;padding:11px;border-radius:7px;background:#0d0719;color:#c4add8;font:10px/1.55 Consolas,monospace}
+.studio-publish-review button.primary-button{align-self:flex-start;min-height:39px;padding:0 13px;display:flex;align-items:center;gap:7px}
+.studio-package-result{background:#5133734d}.studio-package-result>strong{font-size:13px}.studio-package-result code{word-break:break-word;font-size:10px}
+.studio-byte-progress{padding:11px 13px;border-radius:12px;border:1px solid #ae81d85e;background:#2617379f;margin-bottom:14px}.studio-byte-progress>div:first-child{display:flex;justify-content:space-between;gap:8px;color:#e5c9fa;font-size:11px;margin-bottom:8px}.studio-byte-progress strong{font-family:'Big Shoulders Display Variable';color:#f8e9ff}.studio-byte-progress .progress-track{height:7px;background:#4b3365}.studio-byte-progress small{display:block;text-align:right;color:#a995c4;font-size:10px;margin-top:6px}
+.studio-byte-progress .progress-indeterminate{overflow:hidden}.studio-byte-progress .progress-indeterminate .progress-fill{width:38%;height:100%;animation:coco-publish-indeterminate 1.55s ease-in-out infinite}
+@keyframes coco-publish-indeterminate{0%{transform:translateX(-115%)}100%{transform:translateX(295%)}}
+@media(prefers-reduced-motion:reduce){.studio-byte-progress .progress-indeterminate .progress-fill{animation:none;width:100%;opacity:.35}}
+
+/* Live catalog — editorial horizontal panel, never a second left sidebar. */
+.coco2-desktop .catalog-hub{position:relative;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:16px 20px;margin:0 0 22px;border:1px solid #a674d36d;border-radius:19px;background:radial-gradient(ellipse at 12% 0,#8d4bb03a,transparent 56%),linear-gradient(120deg,#261636,#191021);box-shadow:0 14px 45px #08030e50;overflow:hidden}
+.coco2-desktop .catalog-hub:before{content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(115deg,#bb84e50b 1px,transparent 1px);background-size:38px 100%;opacity:.65}
+.coco2-desktop .catalog-hub-head{display:flex;align-items:center;gap:13px;flex:1 1 300px;min-width:0;position:relative}
+.coco2-desktop .catalog-hub-icon{display:grid;place-items:center;flex:none;width:45px;height:45px;border-radius:13px;background:#aa68d72a;border:1px solid #ba84dc70;color:#efcaff;box-shadow:inset 0 1px #fff2}
+.coco2-desktop .catalog-hub-head>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.coco2-desktop .catalog-hub-head .eyebrow{font-size:9px;letter-spacing:2px;color:#bd8bdc}
+.coco2-desktop .catalog-hub-head strong{font:650 15px/1.25 'Big Shoulders Display Variable',sans-serif;letter-spacing:-.4px;color:#f6e5ff}
+.coco2-desktop .catalog-hub-head small{font-size:10px;color:#bca3ce}
+.coco2-desktop .catalog-hub-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;position:relative}
+.coco2-desktop .catalog-hub-actions button{display:flex;align-items:center;gap:7px;justify-content:center;min-height:37px;font-size:11px;font-weight:650}
+.coco2-desktop .catalog-hub-actions .catalog-import{background:#ae6cd125;color:#dfbbf2;border-color:#aa74d65c}
+.coco2-desktop .catalog-source{display:flex;align-items:center;gap:6px;color:#a38bb9;font-size:10px;width:100%;position:relative}
+.coco2-desktop .catalog-package-preview{width:100%;padding:16px 17px;background:#140a22e8;border:1px solid #c494e975;border-radius:14px;position:relative;animation:page-in .25s var(--ease)}
+.coco2-desktop .catalog-package-title{display:flex;align-items:center;gap:8px;color:#f4e0ff;font-size:13px}.coco2-desktop .catalog-package-title>span{margin-left:auto;font-size:11px;color:#c39cdc}.coco2-desktop .catalog-package-title>button{background:transparent;border:0;color:#c1a7d8;display:grid;place-items:center;padding:4px}
+.coco2-desktop .catalog-package-preview p{color:#bea6ce;font-size:11px;line-height:1.55;margin:12px 0}.coco2-desktop .catalog-consent{display:flex;align-items:center;gap:9px;font-size:11px;color:#e3ceef;margin:12px 0}.coco2-desktop .catalog-consent input{accent-color:#ad73df;width:16px;height:16px}.coco2-desktop .catalog-package-preview .primary-button{display:flex;align-items:center;gap:7px;min-height:37px;font-size:11px}.coco2-desktop .catalog-package-preview .primary-button:disabled{opacity:.45;cursor:not-allowed}
+.coco2-desktop .catalog-message,.coco2-desktop .catalog-error{display:flex;align-items:flex-start;gap:8px;width:100%;font-size:11px;line-height:1.5;position:relative}.coco2-desktop .catalog-message{color:#d5bae8}.coco2-desktop .catalog-error{color:#ffd0df}
+@media(max-width:760px){.coco2-desktop .catalog-hub{padding:14px}.coco2-desktop .catalog-hub-actions{width:100%}.coco2-desktop .catalog-hub-actions button{flex:1}.coco2-desktop .catalog-hub-head strong{font-size:14px}}
+.coco2-desktop .catalog-offline-note{display:flex;align-items:center;gap:9px;color:#d8bce8;font-size:11px;padding:10px 15px;margin-bottom:13px;border:1px solid #976bb659;border-radius:10px;background:#43295859}
+.studio-package-result .filter-button,.studio-local-import .primary-button{display:flex;align-items:center;gap:7px;min-height:38px;font-size:11px}.studio-local-import{display:flex;flex-direction:column;gap:9px;width:100%;padding:12px;border:1px solid #ad7bc16b;border-radius:10px;background:#160a28a3}.studio-local-import .studio-rights{font-size:11px}.studio-local-success{display:flex;align-items:center;gap:8px;color:#e2c7f3;font-size:11px}
+
+.coco2-desktop .upgrade-workspace{background:linear-gradient(135deg,#3b2259,#20132f 70%);border:1px solid #ca93ef8a;box-shadow:0 14px 42px #1b0b3170,inset 0 1px #fff1}
+.coco2-desktop .upgrade-workspace .verify-title{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.coco2-desktop .upgrade-version{display:flex;align-items:center;gap:11px;font:650 15px 'Big Shoulders Display Variable',sans-serif;color:#ad92c6;margin:14px 0 10px}
+.coco2-desktop .upgrade-version strong{color:#f7dfff;font-size:19px}
+.coco2-desktop .upgrade-version svg{color:#c390e1}
+.coco2-desktop .upgrade-float{border-color:#d8a6f9;box-shadow:0 20px 70px #1f0e349c}
+.coco2-desktop .upgrade-workspace .repair-actions .primary-button{display:flex;align-items:center;gap:8px;padding:0 14px;min-height:39px;font-size:12px}
+.studio-channel-review{display:flex;flex-direction:column;gap:9px;width:100%;padding:12px;background:#0e071c9c;border:1px solid #a875cd61;border-radius:10px}.studio-channel-review strong{display:flex;align-items:center;gap:8px;font-size:11px;color:#efd3ff}.studio-channel-review p{font-size:11px;line-height:1.5;color:#c4aed2}.studio-channel-review details{font-size:11px;width:100%;color:#cbafe0}.studio-channel-review summary{cursor:pointer}.studio-channel-review code{width:100%;display:block;word-break:break-word;margin:4px 0 9px;font-size:10px;color:#d8b9f3}
+.studio-local-promote{width:100%;padding:12px;border-top:1px solid #b580d359;color:#c5b0d2}.studio-local-promote .filter-button{margin:10px 0}.studio-local-promote .primary-button{margin-top:8px}
+@media(max-width:550px){.studio-steps{gap:3px;padding:10px 8px;font-size:9px}.studio-steps svg{width:10px}.coco-studio-head h2{font-size:23px}}
+
+/* First run: a compact editorial welcome integrated into the actual library,
+   never a blocking wizard or a demand for Minecraft/administrator setup. */
+.coco2-desktop .first-run{position:relative;display:flex;align-items:center;min-height:245px;margin-bottom:21px;border-radius:23px;border:1px solid #bc83e787;background:radial-gradient(ellipse at 80% 45%,#9653a95a,transparent 46%),linear-gradient(114deg,#3b2259,#160d24 76%);isolation:isolate;overflow:hidden;box-shadow:inset 0 1px #ffecff24,0 18px 55px #08020f66;animation:page-in .48s cubic-bezier(.19,1,.22,1)}
+.coco2-desktop .first-run-grid{position:absolute;inset:0;z-index:-1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 27px,#cd93fb0c 28px 29px),repeating-linear-gradient(90deg,transparent 0 27px,#cd93fb0a 28px 29px);mask-image:linear-gradient(90deg,transparent,#000 100%)}
+.coco2-desktop .first-run-reyna{position:absolute;right:2%;bottom:-36%;height:147%;max-width:49%;object-fit:contain;object-position:center bottom;pointer-events:none;filter:drop-shadow(0 18px 30px #08030d90);animation:first-reyna 1.1s cubic-bezier(.2,.9,.2,1) both}
+.coco2-desktop .first-run-copy{position:relative;z-index:1;display:flex;flex-direction:column;gap:13px;max-width:66%;padding:29px clamp(20px,4vw,40px)}
+.coco2-desktop .first-run-kicker{display:flex;align-items:center;gap:8px;font:750 10px 'Big Shoulders Display Variable',sans-serif;letter-spacing:2.1px;color:#d8a6fc}
+.coco2-desktop .first-run h2{font:700 clamp(22px,3vw,35px)/1.06 'Big Shoulders Display Variable',sans-serif;letter-spacing:-1.3px;max-width:460px;color:#f8eaff;margin:0;text-wrap:balance}
+.coco2-desktop .first-run-copy>p{font-size:12px;line-height:1.65;color:#dec8ed;max-width:420px;margin:0}
+.coco2-desktop .first-run-actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
+.coco2-desktop .first-run-actions button{display:flex;align-items:center;gap:8px;min-height:41px;font-size:11px;padding:0 13px;transition:transform .2s,background .2s,box-shadow .2s}
+.coco2-desktop .first-run-actions button:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 8px 24px #12071f73}
+.coco2-desktop .first-run-status{display:flex;flex-wrap:wrap;gap:13px 18px;margin-top:3px;color:#c3a6d7;font-size:10px}.coco2-desktop .first-run-status span{display:flex;align-items:center;gap:5px}.coco2-desktop .first-run-status svg{color:#d9b3f4}
+.coco2-desktop .first-run-dismiss{position:absolute;right:13px;top:13px;width:31px;height:31px;display:grid;place-items:center;border:1px solid #c08ed55d;border-radius:9px;color:#e9cafa;background:#2416329c;z-index:3}
+@keyframes first-reyna{from{transform:translateY(32px) scale(.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+@media(max-width:890px){.coco2-desktop .first-run-reyna{right:-10%;max-width:60%;opacity:.73}.coco2-desktop .first-run-copy{max-width:80%}.coco2-desktop .first-run h2{max-width:330px}}
+@media(max-width:570px){.coco2-desktop .first-run{min-height:320px;align-items:flex-start}.coco2-desktop .first-run-reyna{height:105%;bottom:-24%;right:-18%;max-width:80%;opacity:.3}.coco2-desktop .first-run-copy{max-width:100%;padding:25px 18px}.coco2-desktop .first-run h2{font-size:26px;max-width:270px}.coco2-desktop .first-run-copy>p{max-width:310px}.coco2-desktop .first-run-actions{gap:8px}.coco2-desktop .first-run-status{max-width:310px}}
+@media(prefers-reduced-motion:reduce){.coco2-desktop .first-run,.coco2-desktop .first-run-reyna{animation:none}.coco2-desktop .first-run-actions button{transition:none}}
+.coco2-desktop .catalog-entry-local,.coco2-desktop .catalog-origin-local{color:#e6b5fc}
+.coco2-desktop .catalog-entry-official,.coco2-desktop .catalog-origin-official{color:#b7d9f7}
+.coco2-desktop .drawer-chips .catalog-origin-local{background:#ac58e027;border-color:#cf91ff65}
+.coco2-desktop .drawer-chips .catalog-origin-official{background:#568cbb24;border-color:#88b7e173}
+.studio-release-checklist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.studio-release-checklist span{display:flex;align-items:center;gap:7px;min-height:36px;border:1px solid #9d79be60;padding:8px;background:#251333a5;border-radius:9px;color:#cfb4e0;font-size:10px;line-height:1.4}.studio-release-checklist svg{flex:none;color:#ddb7ff}
+.studio-channel-assets{display:flex;flex-direction:column;gap:8px}.studio-channel-asset{padding:9px 11px;border:1px solid #7c519a5e;border-radius:10px;background:#170d26a8}.studio-channel-asset>strong{display:flex;align-items:center;gap:7px;font-size:11px;color:#e9d5fb}.studio-channel-asset>small{display:block;margin-top:6px;font-size:10px;color:#baa1d1}.studio-channel-asset summary{cursor:pointer;margin-top:7px;font-size:10px;color:#c9a4e1}
+@media(max-width:660px){.studio-release-checklist{grid-template-columns:1fr}}
+.studio-release-fields{padding:13px 15px;background:#251538d5;border:1px solid #a67bcc66;border-radius:12px;display:flex;flex-direction:column;gap:9px}.studio-release-fields>strong{font-size:12px;color:#eddbfc}.studio-release-fields>p,.studio-release-fields>small{font-size:10px;line-height:1.5;color:#bca3ce}.studio-release-fields>code{font-size:10px;color:#e7bcfa;line-height:1.6;overflow-wrap:anywhere;user-select:text}.studio-release-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px}.studio-release-inputs label{min-width:0}.studio-portable-export{width:100%;padding:12px;display:flex;align-items:flex-start;gap:10px;background:#271b3896;border:1px solid #ba82e87a;border-radius:10px;color:#dfc6f4}.studio-portable-export>svg{flex:none}.studio-portable-export>div{min-width:0}.studio-portable-export strong{font-size:12px}.studio-portable-export p{margin:7px 0;color:#c8b1d9;font-size:11px;line-height:1.45}.studio-portable-export code{display:block;word-break:break-all}.studio-portable-export small{color:#ae90c5;font-size:10px}
+@media(max-width:580px){.studio-release-inputs{grid-template-columns:1fr}}
+.studio-delivery-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.studio-delivery-actions button{display:flex;align-items:center;gap:7px;min-height:37px;font-size:11px}.studio-delivery-verdict{padding:12px;border-radius:11px;background:#1a102bb7;border:1px solid #b08bc45c}.studio-delivery-verdict>strong{font-size:11px;color:#ead4fc}.studio-delivery-verdict>p{font-size:10px;line-height:1.5;color:#bfadd3;overflow-wrap:anywhere}.studio-delivery-assets{display:flex;flex-direction:column;gap:6px;margin-top:9px}.studio-delivery-assets>div{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:7px 9px;border-radius:8px;background:#765b8e1c}.studio-delivery-assets span{display:flex;gap:7px;align-items:center;color:#ecd5f8;font-size:10px}.studio-delivery-assets small{font-size:10px;text-align:right;color:#bba8cc;max-width:55%}
+@media(max-width:580px){.studio-delivery-assets>div{flex-direction:column}.studio-delivery-assets small{max-width:100%;text-align:left}}
+.coco2-desktop .catalog-hub-compact{padding:13px 17px;margin-bottom:17px;box-shadow:0 6px 27px #0c041b52}.coco2-desktop .catalog-hub-compact .catalog-hub-icon{width:39px;height:39px;border-radius:12px}.coco2-desktop .catalog-hub-compact .catalog-hub-head strong{font-size:14px}
+.coco2-desktop .catalog-legacy-import{position:relative;font-size:10px;color:#bea1d0}.coco2-desktop .catalog-legacy-import>summary{cursor:pointer;padding:6px 3px;white-space:nowrap}.coco2-desktop .catalog-legacy-import button{margin-top:4px}.coco2-desktop .catalog-package-preview{box-shadow:inset 0 1px #dab9f21b,0 10px 35px #08031255;animation:page-in .32s cubic-bezier(.22,1,.36,1)}
+.coco2-desktop .catalog-preview-body{display:flex;gap:16px;align-items:flex-start;margin-top:15px}.coco2-desktop .catalog-preview-art{display:block;flex:none;width:172px;aspect-ratio:16/10;max-height:140px;object-fit:cover;border-radius:11px;border:1px solid #b986eb5d;box-shadow:0 7px 24px #0a031b99}.coco2-desktop .catalog-preview-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}.coco2-desktop .catalog-preview-info>strong{font:700 20px/1.18 'Big Shoulders Display Variable',sans-serif;letter-spacing:-.6px;color:#f7eaff;overflow-wrap:anywhere}.coco2-desktop .catalog-version-pill{width:max-content;max-width:100%;font-size:10px;font-weight:650;color:#e0b7f4;background:#ab65ca24;border-radius:99px;padding:5px 11px;border:1px solid #a875cb5e}.coco2-desktop .catalog-preview-info p{margin:0;color:#c8afda}.coco2-desktop .catalog-review-tags{display:flex;align-items:center;flex-wrap:wrap;gap:7px}.coco2-desktop .catalog-review-tags>span{display:flex;gap:5px;align-items:center;border:1px solid #926bb55c;border-radius:6px;padding:5px 8px;color:#c8a5d8;font-size:10px}.coco2-desktop .catalog-preview-info details{font-size:10px;color:#cfb1e9}.coco2-desktop .catalog-preview-info summary{cursor:pointer}.coco2-desktop .catalog-trust-note{display:flex;gap:8px;align-items:flex-start;color:#d7b6e9!important;padding:8px 10px;background:#4f2d6130;border:1px solid #aa76c451;border-radius:9px}.coco2-desktop .catalog-trust-note svg{flex:none;margin-top:1px}.coco2-desktop .catalog-package-preview .primary-button{padding:0 14px;min-height:42px}
+@media(max-width:700px){.coco2-desktop .catalog-preview-art{width:132px}.coco2-desktop .catalog-preview-info>strong{font-size:17px}}
+@media(max-width:520px){.coco2-desktop .catalog-preview-body{flex-direction:column}.coco2-desktop .catalog-preview-art{width:100%;max-height:180px}.coco2-desktop .catalog-package-title{flex-wrap:wrap}.coco2-desktop .catalog-package-title>span{margin-left:0}}
+@media(prefers-reduced-motion:reduce){.coco2-desktop .catalog-package-preview{animation:none}}
+.coco2-desktop .coco-inbox-overlay{position:fixed;inset:0;z-index:1500;display:flex;justify-content:center;align-items:center;overflow-y:auto;padding:42px 20px;background:radial-gradient(ellipse at 70% 18%,#4b2b7284,#080610e9 69%);backdrop-filter:blur(14px);animation:page-in .26s cubic-bezier(.18,.9,.24,1)}
+.coco2-desktop .coco-inbox-dialog{position:relative;width:min(100%,750px);max-height:min(860px,calc(100vh - 50px));overflow-y:auto;overscroll-behavior:contain;background:linear-gradient(145deg,#1a1027,#10091b);border:1px solid #bc89e896;border-radius:21px;padding:18px;box-shadow:0 27px 90px #05030bd0,inset 0 1px #f5d7ff25}
+.coco2-desktop .coco-inbox-dialog:focus-visible{outline:2px solid #d2a4ec;outline-offset:3px}
+.coco2-desktop .coco-inbox-brand{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:10px;color:#caa6d9;margin:0 4px 12px}
+.coco2-desktop .coco-inbox-brand .eyebrow{font-weight:800;color:#dfb5fc;letter-spacing:2px}
+.coco2-desktop .coco-inbox-dialog .catalog-hub{margin:0;box-shadow:none;padding:17px;background:radial-gradient(ellipse at 12% 5%,#7d3dbb47,transparent 66%),linear-gradient(125deg,#2b1a40,#1a0e2a)}
+.coco2-desktop .coco-inbox-dialog .catalog-hub-head strong{font:750 20px/1.2 'Big Shoulders Display Variable',sans-serif}
+.coco2-desktop .coco-inbox-dialog .catalog-hub-actions .catalog-inbox-dismiss{font-size:11px;white-space:nowrap;border-color:#bf82d96d}
+.coco2-desktop .catalog-inbox-progress,.coco2-desktop .coco-inbox-loading{display:flex;gap:11px;align-items:center;color:#e3c6f4;font-size:12px;min-height:74px;padding:18px}
+.coco2-desktop .coco-inbox-dialog .catalog-package-preview{padding:17px 19px;background:#0e071ac9}
+.coco2-desktop .coco-inbox-dialog .catalog-preview-art{width:205px;max-height:175px}
+@media(max-width:690px){.coco2-desktop .coco-inbox-overlay{padding:12px}.coco2-desktop .coco-inbox-dialog{padding:12px;border-radius:14px;max-height:calc(100vh - 24px)}.coco2-desktop .coco-inbox-dialog .catalog-hub{padding:13px}.coco2-desktop .coco-inbox-dialog .catalog-preview-art{width:140px}.coco2-desktop .coco-inbox-dialog .catalog-hub-head strong{font-size:17px}}
+@media(max-width:510px){.coco2-desktop .coco-inbox-dialog .catalog-preview-art{width:100%;max-height:180px}.coco2-desktop .coco-inbox-dialog .catalog-hub-actions{width:100%}}
+@media(prefers-reduced-motion:reduce){.coco2-desktop .coco-inbox-overlay{animation:none;backdrop-filter:none}}
+/* Steam-style card motion previews. Keep the original cover fully visible
+   until the first decoded video frame is actually playing (no black flash). */
+.coco2-desktop .card-image-button{position:relative;isolation:isolate;overflow:hidden}
+.coco2-desktop .card-hover-slot{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none}
+.coco2-desktop .card-hover-video{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;object-position:center;opacity:0;pointer-events:none;background:#160e24;transition:opacity .12s ease}
+.coco2-desktop .card-image-button.card-video-playing .card-hover-video{opacity:1}
+.coco2-desktop .card-image-button.card-video-loading:not(.card-video-playing)::after{content:none;position:absolute;z-index:3;top:50%;left:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border:3px solid #e4b7ff66;border-top-color:#fbebff;border-radius:50%;pointer-events:none;opacity:0;animation:coco-preview-loading .66s linear .12s infinite, coco-preview-appear 0s linear .12s forwards;filter:drop-shadow(0 1px 7px #12061cb8)}
+.coco2-desktop .card-image-button.card-video-unavailable:is(:hover,:focus-visible)::after{content:none;position:absolute;z-index:3;bottom:10px;left:50%;transform:translateX(-50%);width:max-content;max-width:95%;padding:6px 10px;border:1px solid #dbafe858;border-radius:10px;background:#140923c9;box-shadow:0 3px 12px #0d071caa;color:#f0d4fb;font-size:11px;font-weight:650;pointer-events:none}
+@keyframes coco-preview-loading{to{transform:rotate(360deg)}}
+@keyframes coco-preview-appear{to{opacity:1}}
+.coco2-desktop .card-image-button>.card-type,.coco2-desktop .card-image-button>.card-local{z-index:2}
+body[data-motion='off'] .coco2-desktop .card-hover-video{display:none}
+@media(prefers-reduced-motion:reduce){.coco2-desktop .card-image-button.card-video-loading:not(.card-video-playing)::after{animation:coco-preview-appear 0s linear .12s forwards}}
+.coco2-desktop .coco-recovery-banner{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 17px;padding:13px 17px;border:1px solid #bc82d97b;border-radius:14px;background:linear-gradient(110deg,#352143,#20112e);color:#eccfff;box-shadow:0 9px 34px #0b041b53}.coco2-desktop .coco-recovery-banner>svg{flex:none;color:#d7a5fa}.coco2-desktop .coco-recovery-banner>div:nth-child(2){display:flex;flex-direction:column;gap:4px;flex:1 1 200px}.coco2-desktop .coco-recovery-banner strong{font-size:12px}.coco2-desktop .coco-recovery-banner p{font-size:10px;color:#bda5cb;line-height:1.4}.coco2-desktop .coco-recovery-buttons{display:flex;gap:7px;flex-wrap:wrap}.coco2-desktop .coco-recovery-buttons button{display:flex;gap:5px;align-items:center;font-size:10px;min-height:33px}.coco2-desktop .coco-recovery-buttons button:focus-visible{outline:2px solid #ecc0ff;outline-offset:2px}
+/* Local player activity: no paths or verification digests in user-facing UI. */
+.coco2-desktop .coco-activity-history{margin-top:22px;padding:17px 19px;border:1px solid #bf91e143;border-radius:18px;background:linear-gradient(130deg,#2a1838bf,#1b1228e6);box-shadow:0 14px 30px #0e071a2a}
+.coco2-desktop .coco-activity-history-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:13px}
+.coco2-desktop .coco-activity-history-head h2{font:750 18px/1.3 'Big Shoulders Display Variable',sans-serif;color:#f1dafa;margin:0 0 4px}
+.coco2-desktop .coco-activity-history-head p,.coco2-desktop .coco-activity-empty{color:#c0a9d1;font-size:12px;line-height:1.55;margin:0}
+.coco2-desktop .coco-activity-entries{display:flex;flex-direction:column;gap:4px}
+.coco2-desktop .coco-activity-entry{display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:11px;min-width:0}
+.coco2-desktop .coco-activity-entry:nth-child(odd){background:#c4a0ed0a}
+.coco2-desktop .coco-activity-entry>div{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.coco2-desktop .coco-activity-entry strong{font-size:12px;font-weight:700;color:#f0ddfb;overflow-wrap:anywhere}
+.coco2-desktop .coco-activity-entry time{font-size:10px;color:#bba1c8}
+.coco2-desktop .coco-activity-entry>.filter-button{flex:none}
+@media(max-width:540px){.coco2-desktop .coco-activity-history{padding:12px}.coco2-desktop .coco-activity-history-head{align-items:flex-start;flex-direction:column}.coco2-desktop .coco-activity-entry{gap:8px}.coco2-desktop .coco-activity-entry>.summary-icon{display:none}}
+
+
+
+
+
+
+
+
+
+.coco2-desktop .coco-more-cards{display:flex;align-items:center;justify-content:center;gap:14px;min-height:90px;padding:20px 0 8px;color:#bfa3d1;font-size:11px}
+.coco2-desktop .coco-more-cards .filter-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:0 16px}
+.coco2-desktop .coco-more-cards .filter-button:focus-visible{outline:2px solid #ecd1ff;outline-offset:3px}
+@media(max-width:600px){.coco2-desktop .coco-more-cards{flex-direction:column;gap:8px}}
+
+/* v12: compact, phase-specific native operation timeline. 100% of one
+   operation stage never masquerades as 100% of the overall installation. */
+.coco2-desktop .coco-native-stages{display:flex;flex-direction:column;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #c59ae734;min-width:0}
+.coco2-desktop .coco-native-stage-caption{font:600 10px/1.4 'Big Shoulders Display Variable',sans-serif;letter-spacing:.12px;color:#e7c9fc}
+.coco2-desktop .coco-native-stage-list{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:0;margin:0;list-style:none}
+.coco2-desktop .coco-native-stage-list li{display:flex;align-items:center;gap:5px;white-space:nowrap;font-size:9px;color:#947aa8;min-width:0}
+.coco2-desktop .coco-native-stage-marker{display:block;width:7px;height:7px;min-width:7px;border-radius:50%;background:#553569;border:1px solid #815994}
+.coco2-desktop .coco-native-stage-done{color:#c4abda!important}.coco2-desktop .coco-native-stage-done .coco-native-stage-marker{background:#a881e1;border-color:#caa5fa}
+.coco2-desktop .coco-native-stage-current{color:#f4e6ff!important;font-weight:750}.coco2-desktop .coco-native-stage-current .coco-native-stage-marker{background:#e7bbff;border-color:#f9e8ff;box-shadow:0 0 0 3px #ad66e82e}
+.coco2-desktop .coco-native-failure-card{padding:15px 15px 12px;margin-top:12px;border:1px solid #c29ae169;border-radius:13px;background:linear-gradient(150deg,#3c254b9c,#1a102a);box-shadow:inset 0 1px #f7ddff0f}
+.coco2-desktop .coco-native-failure-card>strong{font:750 13px 'Big Shoulders Display Variable',sans-serif;color:#f0d4ff}
+.coco2-desktop .coco-native-failure-card>p{margin:8px 0 13px;max-height:none;overflow:visible;font-size:11px;line-height:1.6;color:#d7bedf}
+.coco2-desktop .coco-native-failure-actions{display:flex;flex-wrap:wrap;gap:7px}
+.coco2-desktop .coco-native-failure-actions button,.coco2-desktop .coco-native-failure-path button{display:inline-flex;align-items:center;justify-content:center;min-height:35px;font-size:10px;margin:0}
+.coco2-desktop .coco-native-failure-actions button:focus-visible,.coco2-desktop .coco-native-failure-path button:focus-visible{outline:2px solid #eed8ff;outline-offset:2px}
+.coco2-desktop .coco-native-failure-path{display:flex;flex-direction:column;gap:7px;margin-top:12px;border-radius:9px;padding:10px;background:#150b23b5;border:1px solid #9f79bb50}
+.coco2-desktop .coco-native-failure-path small{line-height:1.5;font-size:10px;color:#baa4c8}
+.coco2-desktop .coco-native-failure-path code{font-size:10px;line-height:1.5;overflow-wrap:anywhere;user-select:text;color:#f4dafa}
+.coco2-desktop .coco-native-failure-path button{align-self:flex-start}
+@media(max-width:480px){.coco2-desktop .coco-native-stage-list{gap:3px}.coco2-desktop .coco-native-stage-list li{font-size:8px;gap:4px}.coco2-desktop .coco-native-stage-marker{width:6px;height:6px;min-width:6px}.coco2-desktop .coco-native-failure-actions button{width:100%}}
+@media(prefers-reduced-motion:reduce){.coco2-desktop .coco-native-stage-current .coco-native-stage-marker{box-shadow:none}}
+
+/* v12 responsive editorial layout. Keep Reyna full-body, framed and behind
+   legible typography on narrow windows rather than clipping the hero title. */
+.coco2-desktop .motion-sync-hint{max-width:280px;margin:10px 0;color:#c6afd7;font-size:11px;line-height:1.55}
+.coco2-desktop .motion-system-action{min-height:35px;font-size:10px;white-space:normal;text-align:left}
+.coco2-desktop .motion-system-action:disabled{opacity:.55}
+.coco2-desktop .settings-card:has(.motion-system-action){display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start}
+@media(max-width:440px){
+  .coco2-desktop .main-content{padding:0 14px 32px}
+  .coco2-desktop .experience-grid,.coco2-desktop .cinema-grid{grid-template-columns:minmax(0,1fr);gap:12px}
+  .coco2-desktop .experience-card{border-radius:16px}
+  .coco2-desktop .card-title{font-size:15px;letter-spacing:-.2px}
+  .coco2-desktop .hero{height:345px;isolation:isolate;overflow:hidden;border-radius:18px}
+  .coco2-desktop .hero-content{left:18px;top:48%;max-width:88%;z-index:4}
+  .coco2-desktop .hero-content h1{font-size:clamp(30px,8vw,36px);line-height:1.09;max-width:270px}
+  .coco2-desktop .hero-content p{font-size:11px;line-height:1.55;max-width:65%;margin-bottom:16px}
+  .coco2-desktop .hero-reyna{right:-22px;bottom:-1%;height:90%;max-width:62%;opacity:.5;object-fit:contain;object-position:right bottom}
+  .coco2-desktop .hero-grid{z-index:2;opacity:.85}
+  .coco2-desktop .hero-buttons{gap:8px;flex-wrap:wrap}
+  .coco2-desktop .hero-buttons button{min-height:36px;font-size:11px}
+  .coco2-desktop .section-head{margin-top:21px}
+  .coco2-desktop .install-float{right:8px;bottom:8px;width:calc(100% - 16px);padding:13px 12px 10px;border-radius:14px;backdrop-filter:blur(16px)}
+  .coco2-desktop .coco-native-failure-card{padding:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .coco2-desktop .hero-reyna,.coco2-desktop .experience-card,.coco2-desktop .card-image-button img{animation:none;transition:none}
+  .coco2-desktop .experience-card:hover{transform:none}
+}
+
+/* Read-only incident history: never equate a rejected native promise with
+   a failed durable commit. The player must inspect the current disk receipt. */
+.coco2-desktop .coco-activity-interrupted{border:1px solid #ca97da42;border-radius:11px;padding:12px;background:linear-gradient(125deg,#38264264,#1a122836)}
+.coco2-desktop .coco-activity-interrupted .summary-icon{color:#e2b8ff;background:#8046a32b}
+.coco2-desktop .coco-activity-interrupted>div:nth-child(2){min-width:0;flex:1}
+.coco2-desktop .coco-activity-interrupted small{display:block;font-size:10px;line-height:1.5;color:#bba4ca;margin-top:5px}
+.coco2-desktop .coco-activity-interrupted .filter-button{min-height:35px;border-color:#a873c38a;color:#edd0ff}
+.coco2-desktop .coco-activity-interrupted .filter-button:focus-visible{outline:2px solid #f3dbff;outline-offset:2px}
+@media(max-width:440px){.coco2-desktop .coco-activity-interrupted{flex-wrap:wrap;gap:8px}.coco2-desktop .coco-activity-interrupted .filter-button{margin-left:auto}}
+
+.coco2-desktop .coco-native-quoted-file{display:flex;flex-direction:column;gap:4px;border-top:1px solid #a77dc34d;margin-top:9px;padding-top:9px}
+.coco2-desktop .coco-native-quoted-file small{color:#c7a4dc;font-size:10px;line-height:1.5}
+.coco2-desktop .coco-native-quoted-file code{color:#f1d9fd;user-select:text;overflow-wrap:anywhere;font-size:10px}
+
+/* First Windows launch: the most likely task is receiving ONE portable game.
+ * The steps are informative only; an Explorer open still never imports or
+ * launches until the recipient has reviewed a native SHA-bound package. */
+.coco2-desktop .first-run{min-height:290px;background:radial-gradient(ellipse at 80% 38%,#a85fbd70,transparent 47%),radial-gradient(ellipse at 8% 100%,#7546b446,transparent 58%),linear-gradient(116deg,#3b2259,#160d24 80%)}
+.coco2-desktop .first-run-copy{max-width:71%;gap:12px}
+.coco2-desktop .first-run-reyna{height:100%;bottom:0;right:3%;max-width:42%;object-position:right bottom;filter:drop-shadow(-12px 12px 22px #09041595) drop-shadow(0 0 20px #9650da50)}
+.coco2-desktop .first-run-package-action{box-shadow:0 6px 26px #a748cf49;border:1px solid #e0aeff91}
+.coco2-desktop .first-run-package-action:not(:disabled):hover{box-shadow:0 7px 30px #b264f86b}
+.coco2-desktop .first-run-journey{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:6px;margin:3px 0 0;max-width:640px}
+.coco2-desktop .first-run-journey span{display:flex;align-items:center;gap:6px;min-width:0;padding:8px 9px;border:1px solid #b77ad346;border-radius:9px;background:#1c112aa8;color:#e4cfee;font:500 10px/1.4 'Instrument Sans Variable',sans-serif}
+.coco2-desktop .first-run-journey b{font:750 10px 'Big Shoulders Display Variable',sans-serif;color:#d8a8fa}
+.coco2-desktop .first-run-journey strong{font-weight:750;color:#f7e2ff}
+@media(max-width:850px){.coco2-desktop .first-run-copy{max-width:82%}.coco2-desktop .first-run-journey{grid-template-columns:repeat(2,minmax(0,1fr))}.coco2-desktop .first-run-reyna{opacity:.53}}
+@media(max-width:570px){.coco2-desktop .first-run{min-height:405px}.coco2-desktop .first-run-copy{gap:10px;padding-right:14px}.coco2-desktop .first-run-journey{grid-template-columns:1fr;gap:4px;max-width:270px}.coco2-desktop .first-run-journey span{padding:6px 10px}.coco2-desktop .first-run-reyna{right:-20%;opacity:.2}.coco2-desktop .first-run-actions button{min-height:39px}}
+
+/* v13: intentional first-day path and evidence-led Windows diagnosis. */
+.coco2-desktop .first-run-package-action{border:1px solid #d2a2ed8e;background:#8655ae2b;color:#f1d7ff}
+.coco2-desktop .first-run-package-action:hover{background:#9869cc51;box-shadow:0 8px 24px #160d2f44}
+.coco2-desktop .coco-defender-evidence{margin-top:12px;padding:10px 12px;background:#24152f;border-left:2px solid #cf9ae9;border-radius:0 9px 9px 0;font-size:11px;line-height:1.65;color:#d7bedf}
+.coco2-desktop .coco-publisher-help{display:flex;gap:18px;align-items:flex-start;max-width:920px;margin:12px 0 14px;padding:20px 22px;border:1px solid #aa7bca66;border-radius:17px;background:linear-gradient(140deg,#302044a8,#180d26e8);box-shadow:inset 0 1px #dfb9ff14}
+.coco2-desktop .coco-publisher-icon{width:45px;height:45px;flex:none;display:grid;place-items:center;border-radius:12px;background:#9865cc25;color:#dfb3ff;border:1px solid #bd8be964}
+.coco2-desktop .coco-publisher-help h2{font:750 16px 'Big Shoulders Display Variable',sans-serif;letter-spacing:-.2px;color:#eed9fd}
+.coco2-desktop .coco-publisher-help p{font-size:11px;color:#c5aed6;line-height:1.7;margin:9px 0;max-width:690px}
+.coco2-desktop .coco-publisher-help button{display:inline-flex;gap:7px;align-items:center;min-height:36px;margin-top:5px}
+.coco2-desktop .coco-publisher-help button:focus-visible,.coco2-desktop .first-run-package-action:focus-visible{outline:2px solid #f1d9ff;outline-offset:3px}
+@media(max-width:640px){
+  .coco2-desktop .coco-publisher-help{padding:16px 13px;gap:11px}
+  .coco2-desktop .coco-publisher-icon{width:36px;height:36px}
+  .coco2-desktop .coco-publisher-help h2{font-size:14px}
+  .coco2-desktop .first-run-package-action{flex:1 1 200px;justify-content:center}
+}
+@media(prefers-reduced-motion:reduce){.coco2-desktop .first-run-package-action:hover{transform:none}}
+.coco2-desktop .coco-package-deferred{display:flex;gap:10px;align-items:center;padding:11px 14px;margin:0 0 15px;border:1px solid #b182d477;border-radius:12px;background:linear-gradient(110deg,#342042cf,#1c1032df);color:#e7d4f5;font-size:11px;line-height:1.55}
+.coco2-desktop .coco-package-deferred svg{flex:none;color:#d9a9f4}
+
+/* v18: the catalog itself is the home screen. Reyna occupies a real lateral
+   column: no cropped sprite, cover replacement, or pointer interception. */
+.coco2-desktop{overflow:clip}
+.coco2-desktop .coco-catalog-stage{display:grid;grid-template-columns:minmax(0,1fr) clamp(178px,19vw,258px);gap:clamp(16px,2.4vw,34px);align-items:start}
+.coco2-desktop .coco-catalog-feed{min-width:0}
+.coco2-desktop .coco-catalog-feed .experience-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.coco2-desktop .coco-catalog-feed .desktop-page-head{margin:8px 0 21px;min-width:0}
+.coco2-desktop .coco-catalog-heading-tools{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:11px}
+.coco2-desktop .coco-favorites-filter{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border:1px solid #84559f76;border-radius:10px;color:#d9b7f1;background:#241530bf;transition:background .24s var(--ease),border-color .24s var(--ease),box-shadow .24s var(--ease)}
+.coco2-desktop .coco-favorites-filter:hover,.coco2-desktop .coco-favorites-filter.active{background:#9152c44b;border-color:#c38bea9c;box-shadow:0 6px 24px #a04cdf22}
+.coco2-desktop .coco-favorites-filter:focus-visible{outline:2px solid #eed6ff;outline-offset:3px}
+
+/* The outer shell previously used overflow:hidden, which creates a non-scrollable
+   sticky ancestor. The detail backdrop also began at 75px, leaving the dock
+   mysteriously bright/unblurred while an experience drawer was open. */
+.coco2-desktop .launcher-dock{position:sticky;top:0;z-index:32;background:linear-gradient(110deg,#170e25f5,#100a1af4);backdrop-filter:blur(26px) saturate(1.2);-webkit-backdrop-filter:blur(26px) saturate(1.2)}
+.coco2-desktop .topbar{position:sticky;top:75px;z-index:28;padding:16px 0 18px;margin-bottom:18px;border-bottom:1px solid #bc8ddb24;background:linear-gradient(95deg,#170e26eb,#110a1cf2);backdrop-filter:blur(24px) saturate(1.24);-webkit-backdrop-filter:blur(24px) saturate(1.24);box-shadow:0 13px 26px #06030e30}
+.coco2-desktop .overlay{top:0;z-index:60;background:#080511ba;backdrop-filter:blur(12px) saturate(.75);-webkit-backdrop-filter:blur(12px) saturate(.75)}
+.coco2-desktop .detail-drawer{z-index:61;top:75px}
+.coco2-desktop .navigation .nav-link.active{transition:background .24s var(--ease),border-color .24s var(--ease),box-shadow .3s var(--ease)}
+.coco2-desktop .navigation .nav-link.active svg{filter:drop-shadow(0 0 8px #d39cff5e)}
+.coco2-desktop .experience-card:focus-within{border-color:#ca97f1a3;box-shadow:0 15px 37px #05020b78,0 0 0 1px #a86ddd28}
+@media(max-width:1250px){.coco2-desktop .coco-catalog-feed .experience-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+@media(max-width:720px){
+  .coco2-desktop .coco-catalog-stage{display:flex;flex-direction:column;gap:13px}
+  .coco2-desktop .coco-catalog-feed{width:100%;order:1}
+  .coco2-desktop .coco-catalog-feed .desktop-page-head{margin:9px 0 16px}
+}
+@media(max-width:440px){
+  .coco2-desktop .coco-catalog-feed .experience-grid,.coco2-desktop .coco-catalog-feed .cinema-grid{grid-template-columns:minmax(0,1fr)}
+  .coco2-desktop .coco-catalog-feed .cinema-grid .experience-card:first-child{grid-column:auto}
+  .coco2-desktop .coco-catalog-heading-tools{gap:7px}
+}
+@media(prefers-reduced-motion:reduce){
+}

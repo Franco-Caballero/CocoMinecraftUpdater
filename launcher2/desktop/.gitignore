@@ -1,0 +1,9 @@
+node_modules/
+dist/
+public/catalog.json
+public/covers/
+public/reyna.webp
+public/favicon.ico
+src-tauri/target/
+src-tauri/gen/
+*.tsbuildinfo

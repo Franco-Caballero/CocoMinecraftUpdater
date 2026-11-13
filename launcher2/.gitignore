@@ -1,0 +1,8 @@
+# Generated installers and locally inspected game proposals do not belong in Git.
+dist/
+drafts/
+desktop/src-tauri/resources/.player-runtime/
+
+# Borradores antiguos con rutas locales y el MSI que el builder descarga y verifica solo.
+candidates/
+desktop/src-tauri/resources/ZeroTierOne.msi

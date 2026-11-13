@@ -1273,7 +1273,7 @@
             "ui": {
                 "imagePath": "assets/experiences/heart-signal-s05.jpg"
             },
-            "description": "Serie de episodios de video. Abre un episodio en el reproductor integrado; si hace falta, el launcher puede descargarlo en Downloads.",
+            "description": "Un grupo de jóvenes comparte casa mientras intenta descubrir quién siente algo por quién. Gestos cotidianos, citas y mensajes anónimos alimentan un juego de intuiciones románticas.",
             "instanceId": "heart-signal",
             "managementMode": "managed",
             "runtime": {
@@ -1336,7 +1336,7 @@
                 "accentColor": "#FF2E93",
                 "imagePath": "assets/experiences/love-island.jpg"
             },
-            "description": "Serie de telerrealidad (Temporada 6). Disfruta de los episodios en el reproductor integrado con subtítulos en español o descárgalos en tu carpeta Downloads.",
+            "description": "Un grupo de solteros convive en una villa donde las citas, las nuevas parejas y las votaciones ponen a prueba cada romance. Solo las conexiones más fuertes llegan al final.",
             "instanceId": "love-island-us",
             "managementMode": "managed",
             "runtime": {
@@ -1381,7 +1381,7 @@
                 "accentColor": "#8E44AD",
                 "imagePath": "assets/experiences/the-drama.jpg"
             },
-            "description": "Película (2026). Reproduce directamente en el reproductor integrado o descárgala en tu carpeta Downloads.",
+            "description": "A pocos días de su boda, una pareja enamorada ve tambalear su relación cuando una revelación inesperada transforma los preparativos en una crisis llena de tensión y humor incómodo.",
             "instanceId": "the-drama",
             "managementMode": "managed",
             "runtime": {
@@ -1426,7 +1426,7 @@
                 "accentColor": "#2C3E50",
                 "imagePath": "assets/experiences/leviticus.jpg"
             },
-            "description": "Película (2026). Reproduce directamente en el reproductor integrado o descárgala en tu carpeta Downloads.",
+            "description": "Dos adolescentes enamorados intentan escapar de una entidad violenta que adopta la apariencia de la persona que más desean: el uno al otro. Terror sobrenatural sobre el deseo y la represión.",
             "instanceId": "leviticus",
             "managementMode": "managed",
             "runtime": {
@@ -2257,6 +2257,628 @@
                 "minimumFreeBytes": 3000000000
             },
             "files": []
-        }
+        },
+        {
+            "id": "yapyap",
+            "name": "YAPYAP",
+            "ui": {
+                "imagePath": "assets/experiences/yapyap-official.jpg"
+            },
+            "description": "Terror cooperativo para hasta 6 jugadores: infiltren torres mágicas, lancen hechizos con la voz y causen el caos mientras evitan monstruos.",
+            "instanceId": "yapyap",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "yapyap.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Custom.dll",
+                        "sha256": "6df57da8da5cdbbf4b75dd58ab9ffc48fcc43a980d0c3d88e63fd4f6562c0fae",
+                        "size": 2202112,
+                        "archiveSha256": "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "75f9bfddf4ab6ba940b1aafdad2de37627f7e061edb90969c5af1d6e5b1fb996",
+                        "size": 12387840,
+                        "archiveSha256": "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b"
+                    },
+                    {
+                        "path": "UnityCrashHandler64.exe",
+                        "sha256": "592e575eb3f1ed6c292961cd0a654eafd3e2f5a1c7f4558b1a3b83718aae34a3",
+                        "size": 1531816,
+                        "archiveSha256": "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "fa70c36c87fa200cdfd2c16407a279df6d951043ef4ed52a46d622652bec1bf3",
+                        "size": 33724328,
+                        "archiveSha256": "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "1ef2c62bd00105afea1326f2df28bad16acb7ff712ea1f1cec4916164354bf57",
+                        "size": 506368,
+                        "archiveSha256": "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b"
+                    },
+                    {
+                        "path": "yapyap.exe",
+                        "sha256": "5a6d8594703ae82b89e0574a374ec1603e0d0bcf850e4dead4622ffe68cc590d",
+                        "size": 672256,
+                        "archiveSha256": "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b"
+                    },
+                    {
+                        "path": "yapyap_Data/Plugins/x86_64/steam_api64.dll",
+                        "sha256": "670d654aa3255c5061cf0236a1cdbb2f5076cbd5ae44f613b6f4921558e83e2d",
+                        "size": 319584,
+                        "archiveSha256": "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b"
+                    }
+                ]
+            },
+            "pack": {
+                "packId": "standalone-yapyap",
+                "lockPath": "launcher/experiences/yapyap.lock.json",
+                "version": "1.0.3.606",
+                "sha256": "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b",
+                "size": 1273589527,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yapyap-2026/yapyap.zip",
+                        "sha256": "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b",
+                        "size": 1273589527
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "arguments": [],
+                "autoJoin": false,
+                "serverName": "Coco - YAPYAP"
+            },
+            "files": []
+        },
+        {
+            "id": "crack",
+            "name": "CRACK",
+            "ui": {
+                "imagePath": "assets/experiences/crack.jpg"
+            },
+            "description": "Aventura incremental cooperativa para hasta 4 jugadores: descubran qué esconde un misterioso huevo gigante en un laboratorio.",
+            "instanceId": "crack",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "CRACK.exe",
+                "requiredFiles": [
+                    {
+                        "path": "CRACK.exe",
+                        "sha256": "7d6ed64d71862348da16e0a3d173a36c8725ad1a9c80bbbe4a4499fe22319615",
+                        "size": 667648,
+                        "archiveSha256": "403e935434806d4cfaff3c1d508c5cb6e500c499cab5f079aaf95f2caf2c4174"
+                    },
+                    {
+                        "path": "CRACK_Data/Plugins/x86_64/steam_api64.dll",
+                        "sha256": "1add7f151fa644870a735ae86e68d1f019f296130d8e7c0a7ed3ecc7482dccbc",
+                        "size": 300392,
+                        "archiveSha256": "403e935434806d4cfaff3c1d508c5cb6e500c499cab5f079aaf95f2caf2c4174"
+                    },
+                    {
+                        "path": "OnlineFix64.dll",
+                        "sha256": "fe45ada8cc8f25bc6809dc2de345fb4b7a6a194afd13cb38da9698b4ae84461a",
+                        "size": 13401600,
+                        "archiveSha256": "403e935434806d4cfaff3c1d508c5cb6e500c499cab5f079aaf95f2caf2c4174"
+                    },
+                    {
+                        "path": "UnityCrashHandler64.exe",
+                        "sha256": "e4b431aade01926a3088360ae2f2f7789f70ac5f8ea60f5d3bd14bc93119dfe6",
+                        "size": 1609640,
+                        "archiveSha256": "403e935434806d4cfaff3c1d508c5cb6e500c499cab5f079aaf95f2caf2c4174"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "0391df1b36e6b9edd3e9a5e5f67a5a3d92fa34057a22c7f9a37d827d7594ef78",
+                        "size": 35796904,
+                        "archiveSha256": "403e935434806d4cfaff3c1d508c5cb6e500c499cab5f079aaf95f2caf2c4174"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "350b435820a94644fac0116b841f5bb2b9c6ff632e8079429e4df16a1983dab4",
+                        "size": 502272,
+                        "archiveSha256": "403e935434806d4cfaff3c1d508c5cb6e500c499cab5f079aaf95f2caf2c4174"
+                    }
+                ]
+            },
+            "pack": {
+                "packId": "standalone-crack",
+                "lockPath": "launcher/experiences/crack.lock.json",
+                "version": "1.1.29",
+                "sha256": "403e935434806d4cfaff3c1d508c5cb6e500c499cab5f079aaf95f2caf2c4174",
+                "size": 943598331,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/crack-2026/crack.zip",
+                        "sha256": "403e935434806d4cfaff3c1d508c5cb6e500c499cab5f079aaf95f2caf2c4174",
+                        "size": 943598331
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "arguments": [],
+                "autoJoin": false,
+                "serverName": "Coco - CRACK"
+            },
+            "files": []
+        },
+        {
+            "id": "heavenly-bodies",
+            "name": "Heavenly Bodies",
+            "ui": {
+                "imagePath": "assets/experiences/heavenly-bodies.jpg"
+            },
+            "description": "Aventura espacial cooperativa: controla los brazos de un astronauta y resuelve tareas en gravedad cero.",
+            "instanceId": "heavenly-bodies",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "Heavenly Bodies.exe",
+                "requiredFiles": [
+                    {
+                        "path": "GameAssembly.dll",
+                        "sha256": "76b12ae88108b72260dd58158baec0205d1efdbfa94b5d354ac07c9886bf49b7",
+                        "size": 40028672,
+                        "archiveSha256": "99fb5aaef8e1819301cb0a5912d9e2cb144b78921b4b2339f90edee6c6f26071"
+                    },
+                    {
+                        "path": "Heavenly Bodies.exe",
+                        "sha256": "ba4cd17b788d1e09d6daa6cab433a1dcda8c7a335851503f05ee792eff56ff42",
+                        "size": 811736,
+                        "archiveSha256": "99fb5aaef8e1819301cb0a5912d9e2cb144b78921b4b2339f90edee6c6f26071"
+                    },
+                    {
+                        "path": "Heavenly Bodies_Data/Plugins/x86/steam_api.dll",
+                        "sha256": "19ad8f436cc80081f77272974b0b4de361f6c8ef46f09a9263fd764145dc9dfc",
+                        "size": 260840,
+                        "archiveSha256": "99fb5aaef8e1819301cb0a5912d9e2cb144b78921b4b2339f90edee6c6f26071"
+                    },
+                    {
+                        "path": "OnlineFix.dll",
+                        "sha256": "914ba95ec68b5da8c674188273a89849396755d84587b03f57c661f4fe63b5c4",
+                        "size": 7706624,
+                        "archiveSha256": "99fb5aaef8e1819301cb0a5912d9e2cb144b78921b4b2339f90edee6c6f26071"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "sha256": "15ba362217cad11dea10089553b5978193f6b687847d0e542ef3e1eb016ef7f7",
+                        "size": 23184408,
+                        "archiveSha256": "99fb5aaef8e1819301cb0a5912d9e2cb144b78921b4b2339f90edee6c6f26071"
+                    },
+                    {
+                        "path": "winmm.dll",
+                        "sha256": "bf43e99c2b999e337a061b62436154c5342f1324b942d48c2f8b6716dc3b7d2b",
+                        "size": 387072,
+                        "archiveSha256": "99fb5aaef8e1819301cb0a5912d9e2cb144b78921b4b2339f90edee6c6f26071"
+                    }
+                ]
+            },
+            "pack": {
+                "packId": "standalone-heavenly-bodies",
+                "lockPath": "launcher/experiences/heavenly-bodies.lock.json",
+                "version": "2023.08.08",
+                "sha256": "99fb5aaef8e1819301cb0a5912d9e2cb144b78921b4b2339f90edee6c6f26071",
+                "size": 1348568057,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heavenly-bodies-2026/heavenly-bodies.zip",
+                        "sha256": "99fb5aaef8e1819301cb0a5912d9e2cb144b78921b4b2339f90edee6c6f26071",
+                        "size": 1348568057
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "arguments": [],
+                "autoJoin": false,
+                "serverName": "Coco - Heavenly Bodies"
+            },
+            "files": []
+        },
+        {
+            "id": "party-animals",
+            "name": "Party Animals",
+            "ui": {
+                "imagePath": "assets/experiences/party-animals.jpg"
+            },
+            "description": "Peleas de fiesta con animales y físicas disparatadas: empuja, lanza y derriba a tus amigos en partidas locales u online.",
+            "instanceId": "party-animals",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "PartyAnimals.exe",
+                "requiredFiles": [
+                    {
+                        "path": "PartyAnimals.exe",
+                        "size": 666624,
+                        "sha256": "765badea939408f6a642012cd2a169d347ef8f5f15c7851b50e36a40b6dadc53",
+                        "archiveSha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651"
+                    },
+                    {
+                        "path": "version.dll",
+                        "size": 3316736,
+                        "sha256": "2f2648b84507c813da18c1dac5965d84a8c96973f767c8dc12b54a8bb3eb1b0c",
+                        "archiveSha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651"
+                    },
+                    {
+                        "path": "UnityPlayer.dll",
+                        "size": 31006120,
+                        "sha256": "15c7d26aaee4d0225bb40658f26a72f8251f5f049a8f304cd5159245247aafa3",
+                        "archiveSha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651"
+                    },
+                    {
+                        "path": "GameAssembly.dll",
+                        "size": 206329856,
+                        "sha256": "22bcc68edaf5d29080dc2c9dbc6e3823fb3d87662c276c6dc8ea7dcd6d3f8f0b",
+                        "archiveSha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651"
+                    },
+                    {
+                        "path": "baselib.dll",
+                        "size": 419760,
+                        "sha256": "1e35be4c04d748071d98247c199eaa6ddfcbd297e3de96842c27576777a691fd",
+                        "archiveSha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651"
+                    },
+                    {
+                        "path": "steam_appid.txt",
+                        "size": 3,
+                        "sha256": "ddfe0e8d462af661f81db36589c39882dc0f2330785b5d80cd34f2f520ad618f",
+                        "archiveSha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651"
+                    },
+                    {
+                        "path": "UnityCrashHandler64.exe",
+                        "size": 1185192,
+                        "sha256": "a76ba1f83d325fd246b652395ce46b1f311e77e60cf4e23e9b16d0f24d24e94e",
+                        "archiveSha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651"
+                    },
+                    {
+                        "path": "PartyAnimals_Data/Plugins/x86_64/steam_api64.dll",
+                        "size": 298856,
+                        "sha256": "a44e5537939ae4eebc69000589aa9b2437a667813a1657cc779198bae9b815a9",
+                        "archiveSha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651"
+                    },
+                    {
+                        "path": "PartyAnimals_Data/il2cpp_data/Metadata/global-metadata.dat",
+                        "size": 46647632,
+                        "sha256": "c9de60d915a846633b59f32470467343d8687cdc6cb21c7a27fd6f2b6a7be62f",
+                        "archiveSha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651"
+                    },
+                    {
+                        "path": "PartyAnimals_Data/globalgamemanagers",
+                        "size": 993316,
+                        "sha256": "6c80d49464c92ce00aed061165d45d83e23caf58370d226de750d00dccabb0e8",
+                        "archiveSha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651"
+                    }
+                ]
+            },
+            "pack": {
+                "packId": "standalone-party-animals",
+                "lockPath": "launcher/experiences/party-animals.lock.json",
+                "version": "1.17.2.0",
+                "sha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651",
+                "size": 12005495412,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part01.zip",
+                        "sha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651",
+                        "size": 1375450423
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part02.zip",
+                        "sha256": "0785be87ac0ff691d0282dd2ec18bdb4d0f00d1d49886fbe71c776cf0d7f9703",
+                        "size": 1793130049
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part03.zip",
+                        "sha256": "b59e89ffaf55c6e93b06e7c76bfcaaf0a4f2ba5e859dfbb198087041890143e3",
+                        "size": 1793376382
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part04.zip",
+                        "sha256": "e13152276b9d0f84bf74216c24fde6cc8f5dbf1a2dc7a91dbc79327ce34653fa",
+                        "size": 1787094187
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part05.zip",
+                        "sha256": "a423e8545f5a062ba18a85d70409a10f64cc1dfca91e592ac3796b3704dc2b9d",
+                        "size": 1776219800
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part06.zip",
+                        "sha256": "c8eb87054595db2a6cda5dbf885c05c51ae6ae69e45c82c37066ab8dc5da0c48",
+                        "size": 1709217433
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part07.zip",
+                        "sha256": "8f2ebeaa35094cf2117193849c191163539698214c549517eaa0ab7b036423e3",
+                        "size": 1771007138
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "arguments": [],
+                "autoJoin": false,
+                "serverName": "Coco - Party Animals"
+            },
+            "files": []
+        },
+        {
+            "id": "golf-it",
+            "name": "Golf It!",
+            "ui": {
+                "imagePath": "assets/experiences/golf-it.jpg"
+            },
+            "description": "Minigolf multijugador con físicas: supera pistas llenas de obstáculos y compite con tus amigos, con editor de circuitos y mapas de la comunidad.",
+            "instanceId": "golf-it",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "standalone",
+                "executable": "GolfIt/Binaries/Win64/GolfIt-Win64-Shipping.exe",
+                "requiredFiles": [
+                    {
+                        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/OnlineFix.ini",
+                        "size": 422,
+                        "sha256": "196b0dd4d36b57b9a48be028171822a5f19815acbd6f30089e1705d6c2019659",
+                        "archiveSha256": "cfc4fe8a851281d66a2e12ac739d1262b55445e55fd541f8e1c75f4cbfad7c13"
+                    },
+                    {
+                        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/OnlineFix64.dll",
+                        "size": 4513280,
+                        "sha256": "e9ff07d45aadfb25dc2a19514c4930b7d506a9de683be4febcba577b1b242dba",
+                        "archiveSha256": "cfc4fe8a851281d66a2e12ac739d1262b55445e55fd541f8e1c75f4cbfad7c13"
+                    },
+                    {
+                        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/steam_api64.dll",
+                        "size": 295336,
+                        "sha256": "e888d9f18301b02267c9d12d92d8f123eb7502892483bb44d9bf4e9bdb798d8f",
+                        "archiveSha256": "cfc4fe8a851281d66a2e12ac739d1262b55445e55fd541f8e1c75f4cbfad7c13"
+                    },
+                    {
+                        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/steam_api64.of",
+                        "size": 295336,
+                        "sha256": "4df999c0c8cb12589f0864d52be5d4c775577aeb27fee28b49b188f9ba083eea",
+                        "archiveSha256": "cfc4fe8a851281d66a2e12ac739d1262b55445e55fd541f8e1c75f4cbfad7c13"
+                    },
+                    {
+                        "path": "GolfIt.exe",
+                        "size": 17408,
+                        "sha256": "54b203698ae2f0794ce224aa3bf4868e5d4c153f168901db7beb579da07eb1e0",
+                        "archiveSha256": "d84deb775bcd86da4ec7d40372f1eccb89246f098dcb145b6f910aea15604723"
+                    },
+                    {
+                        "path": "GolfIt/Binaries/Win64/GolfIt-Win64-Shipping.exe",
+                        "size": 96778752,
+                        "sha256": "e307268cc915bdb398c33be270b864b1d892b4d3473b72c8ad9cbf4e0c98b2e4",
+                        "archiveSha256": "d84deb775bcd86da4ec7d40372f1eccb89246f098dcb145b6f910aea15604723"
+                    },
+                    {
+                        "path": "GolfIt/Content/Paks/GolfIt-WindowsNoEditor.utoc",
+                        "size": 5302944,
+                        "sha256": "1fce9ff9174983925cead9b0c158b0ded08eda3ea3ccdc48b69ccf56b1084bb3",
+                        "archiveSha256": "cfc4fe8a851281d66a2e12ac739d1262b55445e55fd541f8e1c75f4cbfad7c13"
+                    },
+                    {
+                        "path": "GolfIt/Content/Paks/global.utoc",
+                        "size": 573,
+                        "sha256": "c84f94e376ab740d8a4e36cea8a8205131d02f64febb1a87284449d5876b73ab",
+                        "archiveSha256": "d84deb775bcd86da4ec7d40372f1eccb89246f098dcb145b6f910aea15604723"
+                    }
+                ]
+            },
+            "pack": {
+                "packId": "standalone-golf-it",
+                "lockPath": "launcher/experiences/golf-it.lock.json",
+                "version": "1.0.1.1953",
+                "sha256": "d84deb775bcd86da4ec7d40372f1eccb89246f098dcb145b6f910aea15604723",
+                "size": 5962596882,
+                "archives": [
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part01.zip",
+                        "sha256": "d84deb775bcd86da4ec7d40372f1eccb89246f098dcb145b6f910aea15604723",
+                        "size": 304753084
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part02.zip",
+                        "sha256": "fb33835d317c4efdc2ed886a4b220a0930083fba4f4c9f99554d1bf2a3c0d61f",
+                        "size": 532986181
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part03.zip",
+                        "sha256": "4f261b6d3c850e320a719fa1c8dcf837a82b08b0023e3d5fca7d2aad337851b6",
+                        "size": 497004622
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part04.zip",
+                        "sha256": "65627d5faee7059175e4323aae62dce5887d9795da97219bc1f0bb32d1af9dfc",
+                        "size": 634147499
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part05.zip",
+                        "sha256": "df96380e60ca7aa61c58bb193975e2aff6a06fc2367404f2fc0dfddf60c0f770",
+                        "size": 681079718
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part06.zip",
+                        "sha256": "426853ceabe277b3d144f9a102756cc11ab4a5c970deb33200e32bc619e5818b",
+                        "size": 293252710
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part07.zip",
+                        "sha256": "23b9cd54e8d611493a30be5ca60fad7d4e9e3d1f9e038620dabd1956fbc6da56",
+                        "size": 589681382
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part08.zip",
+                        "sha256": "d9b005cdf9668d115d8bf6c6ff62b3d5a67cc8ffbc43d7fffb673856be92f887",
+                        "size": 781701163
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part09.zip",
+                        "sha256": "ea653dc1ded7d79dae91ab782077a67835e3a228cb04456b4e5cedcbb2b605e1",
+                        "size": 779722564
+                    },
+                    {
+                        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part10.zip",
+                        "sha256": "cfc4fe8a851281d66a2e12ac739d1262b55445e55fd541f8e1c75f4cbfad7c13",
+                        "size": 868267959
+                    }
+                ]
+            },
+            "hosting": {
+                "mode": "p2p"
+            },
+            "launch": {
+                "workflow": "coco-standalone",
+                "arguments": [],
+                "autoJoin": false,
+                "serverName": "Coco - Golf It!"
+            },
+            "files": []
+        },
+        {
+            "id": "resident-evil-2026",
+            "name": "Resident Evil",
+            "ui": {
+                "badge": "Película",
+                "accentColor": "#B72C38",
+                "imagePath": "assets/experiences/resident-evil-2026.jpg"
+            },
+            "description": "Un mensajero médico queda atrapado en una noche de caos y criaturas aterradoras. Cada entrega se convierte en una carrera por sobrevivir en esta historia de terror del universo Resident Evil.",
+            "instanceId": "resident-evil-2026",
+            "managementMode": "managed",
+            "runtime": {
+                "type": "media"
+            },
+            "content": {
+                "type": "movie",
+                "downloadFolderName": "resident evil",
+                "openAfterDownload": false,
+                "movie": {
+                    "id": "resident-evil-2026",
+                    "title": "Resident Evil (2026)",
+                    "fileName": "Resident.Evil.2026.1080p.HEVC10.AAC5.1.mp4",
+                    "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/resident-evil-2026/Resident.Evil.2026.1080p.HEVC10.AAC5.1.mp4",
+                    "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/resident-evil-2026/Resident.Evil.2026.1080p.HEVC10.AAC5.1.mp4",
+                    "size": 1682982853,
+                    "sha256": "3b8591e2171698fe907b0b2c52f3e1d248ba73ddf088f8d0e7456d9b7c03687c"
+                },
+                "episodes": [
+                    {
+                        "id": "resident-evil-2026",
+                        "title": "Resident Evil (2026)",
+                        "fileName": "Resident.Evil.2026.1080p.HEVC10.AAC5.1.mp4",
+                        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/resident-evil-2026/Resident.Evil.2026.1080p.HEVC10.AAC5.1.mp4",
+                        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/resident-evil-2026/Resident.Evil.2026.1080p.HEVC10.AAC5.1.mp4",
+                        "size": 1682982853,
+                        "sha256": "3b8591e2171698fe907b0b2c52f3e1d248ba73ddf088f8d0e7456d9b7c03687c"
+                    }
+                ]
+            },
+            "launch": {
+                "workflow": "coco-media",
+                "serverName": "Resident Evil"
+            },
+            "files": []
+        },
+        {
+    "id":  "buckshot-roulette",
+    "name":  "Buckshot Roulette",
+    "ui":  {
+               "imagePath":  "assets/experiences/buckshot-roulette.jpg"
+           },
+    "description":  "Ruleta rusa con una escopeta del calibre 12: cuatro entran y solo uno sale. Sobrevive a la banca, apuesta tu vida y, en cooperativo online para hasta cuatro jugadores, negocia, farolea y traiciona a tus amigos.",
+    "instanceId":  "buckshot-roulette",
+    "managementMode":  "managed",
+    "runtime":  {
+                    "type":  "standalone",
+                    "executable":  "Buckshot-Roulette-AnkerGames/Buckshot Roulette.exe",
+                    "requiredFiles":  [
+                                          {
+                                              "path":  "Buckshot-Roulette-AnkerGames/Buckshot Roulette.exe",
+                                              "sha256":  "df2f8a31bd469438a1a29f831945ccea7b26963ab735f73b32936792207b1663",
+                                              "size":  796325472,
+                                              "archiveSha256":  "27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d"
+                                          },
+                                          {
+                                              "path":  "Buckshot-Roulette-AnkerGames/OnlineFix.ini",
+                                              "sha256":  "359cda771f21e69bdb0b511f40db8961f551556e42e7bff330e267bb29ec56bb",
+                                              "size":  431,
+                                              "archiveSha256":  "27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d"
+                                          },
+                                          {
+                                              "path":  "Buckshot-Roulette-AnkerGames/OnlineFix64.dll",
+                                              "sha256":  "e933ab1f3e3a5ab735148218a1e6a26dd74f93946ec25cacd70a6f5183aacab5",
+                                              "size":  13081088,
+                                              "archiveSha256":  "27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d"
+                                          },
+                                          {
+                                              "path":  "Buckshot-Roulette-AnkerGames/steam_api64.dll",
+                                              "sha256":  "3e9487c77b8f41eafca49ff55bbfa438b3e7ad6853c40ae64f70b2f060d4f1e0",
+                                              "size":  302592,
+                                              "archiveSha256":  "27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d"
+                                          },
+                                          {
+                                              "path":  "Buckshot-Roulette-AnkerGames/steam_api64.of",
+                                              "sha256":  "dcfaa13aa419a0641917205957dbe15aa472e7cf09a28cf8d3cf429598e67799",
+                                              "size":  301928,
+                                              "archiveSha256":  "27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d"
+                                          },
+                                          {
+                                              "path":  "Buckshot-Roulette-AnkerGames/SteamOverlay64.dll",
+                                              "sha256":  "f784b4b85b627c7ea541bd2a90c9fc6e9736a0731707c31265aa86fe684dc2df",
+                                              "size":  117248,
+                                              "archiveSha256":  "27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d"
+                                          }
+                                      ]
+                },
+    "pack":  {
+                 "packId":  "standalone-buckshot-roulette",
+                 "lockPath":  "launcher/experiences/buckshot-roulette.lock.json",
+                 "version":  "2.2.0.6",
+                 "sha256":  "27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d",
+                 "size":  1006059895,
+                 "archives":  [
+                                  {
+                                      "archiveUrl":  "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/buckshot-roulette-2026/buckshot-roulette.zip",
+                                      "sha256":  "27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d",
+                                      "size":  1006059895
+                                  }
+                              ]
+             },
+    "hosting":  {
+                    "mode":  "p2p"
+                },
+    "launch":  {
+                   "workflow":  "coco-standalone",
+                   "arguments":  [
+
+                                 ],
+                   "autoJoin":  false,
+                   "serverName":  "Coco - Buckshot Roulette"
+               },
+    "files":  [
+
+              ]
+}
     ]
 }

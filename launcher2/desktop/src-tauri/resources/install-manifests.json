@@ -1,0 +1,1249 @@
+[
+  {
+    "id": "big-walk",
+    "instanceId": "big-walk",
+    "workflow": "coco-standalone",
+    "version": "1.0.0",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.88/Big-Walk-Part1.zip",
+        "sha256": "d6faf6d43b37e9d8162c3f9479704266c49f7abf4016a03484dc6a62d4b032c8",
+        "size": 1348039110
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.88/Big-Walk-Part2.zip",
+        "sha256": "2c9f0f740fdd06a000489481146c60a860ab3187de0f7d12b687358f749ba9a7",
+        "size": 1217176391
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.88/Big-Walk-Part3.zip",
+        "sha256": "7da9186a60f61e643030c1f2a2925ff7de0d2299160e5f030b2d056b4e4ad96a",
+        "size": 1282790241
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Big Walk.exe",
+        "sha256": "0a028a824131983558d0bec7fc7dfd89981894672263778d8e26bd3f76f308a6",
+        "size": 667136
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "ae23f76254fbcd88d36ff5d15f958708638cb63e6cebdc1d30247aa559c2340f",
+        "size": 13401600
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+        "size": 502272
+      },
+      {
+        "path": "Big Walk_Data/Plugins/x86_64/EOSSDK-Win64-Shipping.dll",
+        "sha256": "7cd18fdb679a3e603eb9689957ecd3178b8456cbb1a6937fdf56925d48c50a1f",
+        "size": 8600576
+      }
+    ],
+    "extraFiles": [
+      {
+        "path": "BepInEx/mods/big-walk-mods.zip",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.99/big-walk-bepinex-mods.zip",
+        "size": 2628289,
+        "sha256": "3fea51a77d6b793c6dc9b5c4af933a669f030c8517a98012ba4c0d2984363cea",
+        "role": "all",
+        "policy": "replace"
+      }
+    ]
+  },
+  {
+    "id": "shift-at-midnight",
+    "instanceId": "shift-at-midnight",
+    "workflow": "coco-standalone",
+    "version": "1.0.3",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.107/Shift-At-Midnight.zip",
+        "sha256": "92f88cd2ba472591b4029802271c3195e373f220566ff75f4516fdfa43b41669",
+        "size": 417406156
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "ShiftAtMidnight.exe",
+        "sha256": "037fcf50fe2b6468cc23297058610f189e13459e68121ec4b7c5bb7b44f3bb37",
+        "size": 672256
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "27a1c596c4b1de1e6672cb7e7fba2ba3d3124999493ff82a504beb6f6145e88f",
+        "size": 13820928
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+        "size": 502272
+      },
+      {
+        "path": "ShiftAtMidnight_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "670d654aa3255c5061cf0236a1cdbb2f5076cbd5ae44f613b6f4921558e83e2d",
+        "size": 319584
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "peak",
+    "instanceId": "peak",
+    "workflow": "coco-standalone",
+    "version": "2.1.a",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.108/PEAK-Part1.zip",
+        "sha256": "b777de7135b92e23a2284662d8ac1a0fc9e064d4e094fcf0b2344e6d558c399b",
+        "size": 684556663
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.108/PEAK-Part2.zip",
+        "sha256": "ccaca4e114d3cfa87305bb0416e0f352a4c673105dcebc72f39c078b7f0b9777",
+        "size": 712227092
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "PEAK.exe",
+        "sha256": "94361ef7f017412e1d03038e5175bc182733fab41f5439e1421d1f24b6d47b44",
+        "size": 667648
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+        "size": 11944448
+      },
+      {
+        "path": "Custom.dll",
+        "sha256": "8308061a7c6f18c59f36baadef297ee7ac7382ef4668238c61b2a953eeee58e7",
+        "size": 2202624
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "size": 506368
+      },
+      {
+        "path": "PEAK_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "670d654aa3255c5061cf0236a1cdbb2f5076cbd5ae44f613b6f4921558e83e2d",
+        "size": 319584
+      }
+    ],
+    "extraFiles": [
+      {
+        "path": "BepInEx/mods/peak-unlimited-mods.zip",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.166/peak-unlimited-mods.zip",
+        "size": 1264555,
+        "sha256": "90271a53211bed207853a03ed57ca24e959bc02fea7ea23b54820ec04a5c8601",
+        "role": "all",
+        "policy": "replace"
+      }
+    ]
+  },
+  {
+    "id": "machine-party",
+    "instanceId": "machine-party",
+    "workflow": "coco-standalone",
+    "version": "1.0.6",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.120/Machine-Party.zip",
+        "sha256": "858a6e8a3dc36847d7a7e87b6fc2007818fac75b1714d10859645554b1cc48de",
+        "size": 508072089
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Machine Party.exe",
+        "sha256": "9acf6b8a57c82a46ae28c7840ae61edcfec0ca261b10cd818f55aa0e108fdeca",
+        "size": 96653824
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "ae23f76254fbcd88d36ff5d15f958708638cb63e6cebdc1d30247aa559c2340f",
+        "size": 13401600
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+        "size": 502272
+      },
+      {
+        "path": "steam_api64.dll",
+        "sha256": "9d6d2972c1571a2a058d79a8376e26a33d33813f29d93c3ca6e35adaddcd56de",
+        "size": 301928
+      },
+      {
+        "path": "Machine Party.pck",
+        "sha256": "2e92b410ba2ebb82748a033a8a348cf12e820f18292a1e9f0749c27c93dd9525",
+        "size": 635329556
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "content-warning",
+    "instanceId": "content-warning",
+    "workflow": "coco-standalone",
+    "version": "1.24.0",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.122/Content-Warning.zip",
+        "sha256": "ad9311cb14e3a41264d76339940687f6af9e74d78568653e70cbb3839206662d",
+        "size": 296934728
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Content Warning.exe",
+        "sha256": "761b8c7163c90bf3044928a4d6749efd69058938153b3474cba95a936115f45c",
+        "size": 672256
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "27a1c596c4b1de1e6672cb7e7fba2ba3d3124999493ff82a504beb6f6145e88f",
+        "size": 13820928
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "61d071e40fb1136da66bf12213062a47eccadd7556171b97381fbc937e978b0d",
+        "size": 502272
+      },
+      {
+        "path": "Custom.dll",
+        "sha256": "3ff601e0ad8c73ad433f158627fda8d58c52a983907f05ff0d83933230becf56",
+        "size": 2202624
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "2e781620a7fe6f238e46e6c1bd3c7b56ebbf99950e87d6e3ca93e5a18b6aad89",
+        "size": 33752496
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "scam-line",
+    "instanceId": "scam-line",
+    "workflow": "coco-standalone",
+    "version": "23042026",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.125/Scam-Line.zip",
+        "sha256": "1b00b63fde67542fe62305fee770b80bc5fe74397af80b7a042309e53abe692f",
+        "size": 137939801
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Scam Line.exe",
+        "sha256": "93320415e580924ca75ed82c7331c8d35069ce59fe32f327b2b08f42e28e27c6",
+        "size": 667648
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "cfd01ca6bce83d110365883be797ce22ab6ee436d8bc1cbfb4f91732a24b1e3d",
+        "size": 12387840
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "size": 506368
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "0391df1b36e6b9edd3e9a5e5f67a5a3d92fa34057a22c7f9a37d827d7594ef78",
+        "size": 35796904
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "lockdown-protocol",
+    "instanceId": "lockdown-protocol",
+    "workflow": "coco-standalone",
+    "version": "16122025",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.126/Lockdown-Protocol-Part1.zip",
+        "sha256": "4bf59171b2935497c38a70a935c0b5a0038532602b0861c6ab6c6bd8bee1b82b",
+        "size": 1527764174
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.126/Lockdown-Protocol-Part2.zip",
+        "sha256": "65c95b6d811305129815ea96ea922278be4ad36a2b2b1e113dc10d5aeee43d2f",
+        "size": 1121953333
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "LockdownProtocol.exe",
+        "sha256": "e5b5c3cf097801bec4418d930b75bb9bd4908c8a2947be36e611efad9bd51cb0",
+        "size": 183808
+      },
+      {
+        "path": "LockdownProtocol/Binaries/Win64/LockdownProtocol-Win64-Shipping.exe",
+        "sha256": "fde93fcd3c17a2fd64246e54f861fda9ca714e3ce39b4aa0f8748f120da9019e",
+        "size": 148563456
+      },
+      {
+        "path": "LockdownProtocol/Binaries/Win64/OnlineFix64.dll",
+        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+        "size": 11944448
+      },
+      {
+        "path": "LockdownProtocol/Binaries/Win64/winmm.dll",
+        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+        "size": 524288
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "cooking-simulator-2",
+    "instanceId": "cooking-simulator-2",
+    "workflow": "coco-standalone",
+    "version": "1.11.8838be4",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.130/Cooking-Simulator-2-Part1.zip",
+        "sha256": "4763384c2bf28622851ba32384792c3c4e1f53d4c173a42bb00e41d4ac838ea6",
+        "size": 457393922
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.130/Cooking-Simulator-2-Part2.zip",
+        "sha256": "929d2d894702f3a1e659e6d189a6cdc2891ec86ea06613bee9a427408d92a2e9",
+        "size": 1271680351
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.130/Cooking-Simulator-2-Part3.zip",
+        "sha256": "7e4d15922b7d55a2f3bb93409c5c48fc7d732c42bbd6d76e6a1a7af68ab88952",
+        "size": 1276785215
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.130/Cooking-Simulator-2-Part4.zip",
+        "sha256": "0b33464d9dfc74a5256c5a4b5db3d5aec2e9dabf0446abe52358f50200446a11",
+        "size": 805853359
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.130/Cooking-Simulator-2-Part5.zip",
+        "sha256": "c3db4c62bba60fdbff8441d1ef801890247c174836a54309fba92ebe2d5eed91",
+        "size": 785464901
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.130/Cooking-Simulator-2-Part6.zip",
+        "sha256": "2b7e4e93f39066212e6ff151c32cac72a06267e638f912f62557921b9c80ea99",
+        "size": 1272606504
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.130/Cooking-Simulator-2-Part7.zip",
+        "sha256": "85aeba92fb929fe93e1dc31cd4df9696aa71a704dd84cfb9f232228489ca5ee6",
+        "size": 1235954188
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.130/Cooking-Simulator-2-Part8.zip",
+        "sha256": "094380a1dfe15e32f0500b1bbc940c40eae713cfcf7a17391d525a0e44543fc9",
+        "size": 1311147074
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.130/Cooking-Simulator-2-Part9.zip",
+        "sha256": "34eb2beaa6735c5ad575c764f1efc5cb2acdda085e48b7c2d7d89bd96bb19b35",
+        "size": 499766687
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Cooking Simulator 2.exe",
+        "sha256": "6d691a57f945b18fa602680a2667ca8a4b3fa85332d299662cb542f9e4907fb8",
+        "size": 672256
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "27a1c596c4b1de1e6672cb7e7fba2ba3d3124999493ff82a504beb6f6145e88f",
+        "size": 13820928
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "size": 506368
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "76b70a79862387b45692d94cc78aa9845285a5ef68e62774367bfecb0f58d6e4",
+        "size": 33742760
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "repo",
+    "instanceId": "repo",
+    "workflow": "coco-standalone",
+    "version": "0.4.4.3",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.133/REPO.zip",
+        "sha256": "f8024de0b5af9a318377cd52a64b6e8bc619c76793f10d07be11abe02a8dcef6",
+        "size": 618899137
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "REPO.exe",
+        "sha256": "412f7cf79cf16888999e22905ca3bb11a6074857efdf8c754073a47ef872317c",
+        "size": 666624
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "9e6f4bf93bfc3da01c39b212dd8417aa10e619cdcd70f9a923454869ffbf6446",
+        "size": 31073200
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+        "size": 11944448
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "size": 506368
+      },
+      {
+        "path": "Custom.dll",
+        "sha256": "de7311a5a8b5b2716bde4e4202b14640afa441e9df83c5f49ea7c91f79be5d1d",
+        "size": 2203136
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "how-to-fish",
+    "instanceId": "how-to-fish",
+    "workflow": "coco-standalone",
+    "version": "1.0.10",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.140/How-To-Fish.zip",
+        "sha256": "5d45bf2a6baf9c3bcd4066c77a7b17063bcabeb6e3506d0d161d9415306cdf82",
+        "size": 406850772
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "How to Fish.exe",
+        "sha256": "4b7295f03280671ed0853db142a76c1752861e6d90a2465154809966a7728400",
+        "size": 901704
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "c85753eb31138449090594157977bb5d8003099fa18671cc3399da4df6df49cf",
+        "size": 36680104
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "fe45ada8cc8f25bc6809dc2de345fb4b7a6a194afd13cb38da9698b4ae84461a",
+        "size": 13401600
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "350b435820a94644fac0116b841f5bb2b9c6ff632e8079429e4df16a1983dab4",
+        "size": 502272
+      },
+      {
+        "path": "StubDRM64.dll",
+        "sha256": "c44ce43eafddf6981ddfb7060eb01d70b0a0b7498a5a114e9fd0a240e6a97e9e",
+        "size": 101888
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "twisted-party",
+    "instanceId": "twisted-party",
+    "workflow": "coco-standalone",
+    "version": "1.0.7",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.156/Twisted-Party.zip",
+        "sha256": "3cf277c541275f933e2485a898760c0eb2307f7a2cbd9a67092bb212a7405e96",
+        "size": 250258212
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Twisted Party.exe",
+        "sha256": "2b2c93695e2305ff197daad26f422fbca88b39f14a5d7307abc1a18ffba1d5ea",
+        "size": 667136
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "fe45ada8cc8f25bc6809dc2de345fb4b7a6a194afd13cb38da9698b4ae84461a",
+        "size": 13401600
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "350b435820a94644fac0116b841f5bb2b9c6ff632e8079429e4df16a1983dab4",
+        "size": 502272
+      },
+      {
+        "path": "SteamOverlay64.dll",
+        "sha256": "79fe22578b43b625831968f333cc90c66b4edc8cbf039c86f3debbe761ba8f79",
+        "size": 117248
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "09984dec142d37c269640d46c79e74b37f120cb2ccb2ee85c347729c4e59851c",
+        "size": 36595112
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "rhythm-doctor",
+    "instanceId": "rhythm-doctor",
+    "workflow": "coco-standalone",
+    "version": "0.10.1",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.157/Rhythm-Doctor.zip",
+        "sha256": "0db187688cdf2be63d7e4393bc02769819425bc451f7ad9234b0030bd7baaaee",
+        "size": 323722101
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Rhythm Doctor.exe",
+        "sha256": "d33a2e3a981ab64b40828058d90b6e6144d98490abc09b92e4acf4ae79fc2855",
+        "size": 640000
+      },
+      {
+        "path": "OnlineFix.dll",
+        "sha256": "befdaf7dff1e0c8efc8fc3a5aeec623efb9f2fc6e927aa987a9fab684f7c0b8a",
+        "size": 4270592
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "5aa2611379356f7d7e26fdab57c0bdd990f2cc7c43503400a988877b2914bc7d",
+        "size": 206960
+      },
+      {
+        "path": "SteamOverlay32.dll",
+        "sha256": "4be6ce2b26cea97546f1d13ef5179be93a0ee89f5aab39fffc51e34a82d5abd6",
+        "size": 82920
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "539980194f3a7c0058b02a9544d749e19376499e9397e15d86cdd8ecf8d15968",
+        "size": 19935232
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "move-or-die",
+    "instanceId": "move-or-die",
+    "workflow": "coco-standalone",
+    "version": "15.1.2",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.161/Move-Or-Die.zip",
+        "sha256": "725dbe2776a4ba7b5df1e2ea347d5c9e9bcc65577fe3f2b05c89fe664e51bb12",
+        "size": 527036229
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "MoveOrDie.exe",
+        "sha256": "e6d06e6f7276327cf4d61b25575bedcb8f106a02b73eb9f69167684f52215064",
+        "size": 396800
+      },
+      {
+        "path": "Love/win/love.exe",
+        "sha256": "7b3cf2ed431f6af3ad725892540f7877bee66717d72f8efeafbc9fa9eb607397",
+        "size": 66560
+      },
+      {
+        "path": "Love/win/OnlineFix.dll",
+        "sha256": "cbc5ea15da9c1ef1262f0980258e0649149a761c3caaa34a10c69e9bc8764976",
+        "size": 4278272
+      },
+      {
+        "path": "Love/win/steam_api.dll",
+        "sha256": "a54366280e6558795eafb10d39a6d51a50d33348574470179f39d172c5b44132",
+        "size": 187472
+      },
+      {
+        "path": "Love/win/liblove.dll",
+        "sha256": "95346bfb289c50e955f6d454098caa819e91a6bcda02141b76c032d2765f32b2",
+        "size": 5512704
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "worms-wmd",
+    "instanceId": "worms-wmd",
+    "workflow": "coco-standalone",
+    "version": "23062019",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.164/Worms-WMD.zip",
+        "sha256": "816607bbfde1b4aa81ec9170eb8d58d374ca6ac1c04376a25495e584fa286fda",
+        "size": 1786304375
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Worms W.M.D.exe",
+        "sha256": "e4a8ed35af26192f87a6b483024943d09dc63275de2d3fed89db75ba65b3fde6",
+        "size": 21042832
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "24fadc4fb5128aa01dcfa640eee7d846046d7630c35b51904480292926f524e6",
+        "size": 214504
+      },
+      {
+        "path": "steam_api.dll",
+        "sha256": "f9cb4b0944b4bff92212774d2f3a8b43b8578d02591bf16b155323a867b83d70",
+        "size": 5411824
+      },
+      {
+        "path": "steam_api_of.dll",
+        "sha256": "6756b377865f55e1c8c8a21526f87559741f204036ce33e5be594d3e13b53bce",
+        "size": 106408
+      },
+      {
+        "path": "StubDRM32.dll",
+        "sha256": "1ea7f3442c7066a48594270b5367e638d4b7895757429a0ea243f16c102683db",
+        "size": 85992
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "mimic-party",
+    "instanceId": "mimic-party",
+    "workflow": "coco-standalone",
+    "version": "0.1.60",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.165/Mimic-Party.zip",
+        "sha256": "4ddce23a338a130993dc7de4dbee558b98bb563dcc4b83544fe515d4fe8d7707",
+        "size": 174043639
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Mimic Party.exe",
+        "sha256": "811c3b04688acd0d44850c308d318b5bbf1de1c2d6396d829905e4d9b5df6ac0",
+        "size": 667648
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "fe45ada8cc8f25bc6809dc2de345fb4b7a6a194afd13cb38da9698b4ae84461a",
+        "size": 13401600
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "350b435820a94644fac0116b841f5bb2b9c6ff632e8079429e4df16a1983dab4",
+        "size": 502272
+      },
+      {
+        "path": "SteamOverlay64.dll",
+        "sha256": "f784b4b85b627c7ea541bd2a90c9fc6e9736a0731707c31265aa86fe684dc2df",
+        "size": 117248
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "156b1eecbaa08421a7d177972f594c9d161ef19663eccd85bbd909a600aabe24",
+        "size": 36569520
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "the-cabin",
+    "instanceId": "the-cabin",
+    "workflow": "coco-standalone",
+    "version": "1.0.0",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part1.zip",
+        "sha256": "8bb5252113ea16ef18fd7b72caa426cea9ad26ffa3499340247875b5ff9af75a",
+        "size": 983953524
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part2.zip",
+        "sha256": "3040001f1ca27a908b43b76018b6627ed6d2f3c009532ed2df29db01293fdee1",
+        "size": 1800000236
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part3.zip",
+        "sha256": "7d137a7cabf10f18fa91f1ec4ba6d50b4ceb5632453a1b3ceb3b2ea2a4f85e6c",
+        "size": 1800000236
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part4.zip",
+        "sha256": "41555001c3abb96c9ebb0a03d0abd309945f1d95734ad88e25ecc0b0d80fb951",
+        "size": 1800000236
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part5.zip",
+        "sha256": "3ae80d4b671428e609fd41f877ee7830cc763c5a91465dc4115dc9114fd90503",
+        "size": 1800000236
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part6.zip",
+        "sha256": "4932427e5006de262f6a32cdbbf0e61b3c02313ba665f683cccc70aeb25492e7",
+        "size": 1800000236
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-cabin-game-2026/The-Cabin-Part7.zip",
+        "sha256": "d1266dbe6a21bdc7914ea54cd4fbe4a9716932de7175496b0f2c976ad0f860b8",
+        "size": 1746243372
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "the_cabin_game.exe",
+        "sha256": "8f9f4e5d136f2dafb3b6ea5643ec62e1a2f57037b71934a10281a4ee05aa24ed",
+        "size": 233984
+      },
+      {
+        "path": "the_cabin_game/Binaries/Win64/the_cabin_game-Win64-Shipping.exe",
+        "sha256": "3e1f421164908ab209d4957849dcdcbfe2e59e8cbdec85af990a46f5cfe59ba5",
+        "size": 160926208
+      },
+      {
+        "path": "the_cabin_game/Binaries/Win64/OnlineFix64.dll",
+        "sha256": "fe45ada8cc8f25bc6809dc2de345fb4b7a6a194afd13cb38da9698b4ae84461a",
+        "size": 13401600
+      },
+      {
+        "path": "the_cabin_game/Binaries/Win64/winmm.dll",
+        "sha256": "350b435820a94644fac0116b841f5bb2b9c6ff632e8079429e4df16a1983dab4",
+        "size": 502272
+      },
+      {
+        "path": "the_cabin_game/Binaries/Win64/OnlineFix.ini",
+        "sha256": "97c32a1b5efc86ef282d37b790e72777acedc44fa8637bdd7ca5d9f686efee30",
+        "size": 464
+      },
+      {
+        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_api64.dll",
+        "sha256": "8657fe4d3389bfb18191342a6a3f5c69d3507a0c02088e3369af7ced02133379",
+        "size": 316608
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "ghost-janitors",
+    "instanceId": "ghost-janitors",
+    "workflow": "coco-standalone",
+    "version": "1.0.0",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part1.zip",
+        "sha256": "d1ad9ca880f4ef8c208d7e7773b89bf98074688fae1cfc64e3f9a78778fdd554",
+        "size": 846702421
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part2.zip",
+        "sha256": "4cff31b57d968c486e700470a7b88fa23b024ac7f8a1356392ecc93d09af56e3",
+        "size": 896092982
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part3.zip",
+        "sha256": "28a951c83ae7fd50a046afd2ee4a6b6ad77a3f983ec29a471754625247b58b1d",
+        "size": 818119948
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part4.zip",
+        "sha256": "5719f5187b1e2e7dedf9f32800a566356a1bdc6bd258d61568e370bf65f50013",
+        "size": 1142245829
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part5.zip",
+        "sha256": "38400cf640cf838cc712f9e2bf1fe02385e94b7ff91ab42d7a8207536448be4e",
+        "size": 760165721
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/ghost-janitors-2026/Ghost-Janitors-Part6.zip",
+        "sha256": "c9dc131bd1edc24349a250d03e8a659842658da9d95a99840c3d524b28d4b53a",
+        "size": 1021640396
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Ghost Janitors.exe",
+        "sha256": "de2f0e37181190143b528bccdcbf4d90296028e1919c5ab4bcaeaec86e1af710",
+        "size": 666624
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "3f7c56928446baa1688c1381ee5365d7141d98274762b919168046535d17cb89",
+        "size": 31042232
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "75f9bfddf4ab6ba940b1aafdad2de37627f7e061edb90969c5af1d6e5b1fb996",
+        "size": 12387840
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "1ef2c62bd00105afea1326f2df28bad16acb7ff712ea1f1cec4916164354bf57",
+        "size": 506368
+      },
+      {
+        "path": "OnlineFix.ini",
+        "sha256": "9302ccc3a8e978845c7a6bccaf4fdef5ec46e830981817076ec69e7ac7fcbba9",
+        "size": 464
+      },
+      {
+        "path": "Ghost Janitors_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "4df999c0c8cb12589f0864d52be5d4c775577aeb27fee28b49b188f9ba083eea",
+        "size": 295336
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "pilgrim",
+    "instanceId": "pilgrim",
+    "workflow": "coco-standalone",
+    "version": "0.1.2",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v0.5.181/Pilgrim.zip",
+        "sha256": "8310ea06735e86e833ed16492b0eebbbd12876bdd3f223b513672657f91d2327",
+        "size": 816116268
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "PILGRIM.exe",
+        "sha256": "def4fc7f3bd7286a840d2c5f79cc1470a886132cba6a8a2d5d3ff43b6880e323",
+        "size": 357376
+      },
+      {
+        "path": "PILGRIM/Binaries/Win64/PILGRIM-Win64-Shipping.exe",
+        "sha256": "750a0a829f342361d4aea2d8e9f5324081bd970bd0fece80870e77af3b2f7144",
+        "size": 126947840
+      },
+      {
+        "path": "PILGRIM/Binaries/Win64/OnlineFix64.dll",
+        "sha256": "478caefd87d32916f590a0f8df2009f3fd7b254fad25ace62b8fc7631fb0611b",
+        "size": 11979776
+      },
+      {
+        "path": "PILGRIM/Binaries/Win64/winmm.dll",
+        "sha256": "f3982fd60da4a2ce2c14f3f9d3256775db4888668a48422ed426109d192791a3",
+        "size": 524288
+      },
+      {
+        "path": "PILGRIM/Binaries/Win64/OnlineFix.ini",
+        "sha256": "442a985acfbcc3509d5c9b0c3d75f4bda24d6dd08b8e681686d7c87e2f7ce089",
+        "size": 566
+      },
+      {
+        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/steam_api64.dll",
+        "sha256": "01afed5fb22b04387bdafbf75f7370a6c309598ce49a177d7ea4d6a007d6ef1f",
+        "size": 311672
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "yapyap",
+    "instanceId": "yapyap",
+    "workflow": "coco-standalone",
+    "version": "1.0.3.606",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yapyap-2026/yapyap.zip",
+        "sha256": "86f7b397ba13340c79428d6a4bf2e73228e7ea238bc0e8252b8978eb3593968b",
+        "size": 1273589527
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Custom.dll",
+        "sha256": "6df57da8da5cdbbf4b75dd58ab9ffc48fcc43a980d0c3d88e63fd4f6562c0fae",
+        "size": 2202112
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "75f9bfddf4ab6ba940b1aafdad2de37627f7e061edb90969c5af1d6e5b1fb996",
+        "size": 12387840
+      },
+      {
+        "path": "UnityCrashHandler64.exe",
+        "sha256": "592e575eb3f1ed6c292961cd0a654eafd3e2f5a1c7f4558b1a3b83718aae34a3",
+        "size": 1531816
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "fa70c36c87fa200cdfd2c16407a279df6d951043ef4ed52a46d622652bec1bf3",
+        "size": 33724328
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "1ef2c62bd00105afea1326f2df28bad16acb7ff712ea1f1cec4916164354bf57",
+        "size": 506368
+      },
+      {
+        "path": "yapyap.exe",
+        "sha256": "5a6d8594703ae82b89e0574a374ec1603e0d0bcf850e4dead4622ffe68cc590d",
+        "size": 672256
+      },
+      {
+        "path": "yapyap_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "670d654aa3255c5061cf0236a1cdbb2f5076cbd5ae44f613b6f4921558e83e2d",
+        "size": 319584
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "crack",
+    "instanceId": "crack",
+    "workflow": "coco-standalone",
+    "version": "1.1.29",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/crack-2026/crack.zip",
+        "sha256": "403e935434806d4cfaff3c1d508c5cb6e500c499cab5f079aaf95f2caf2c4174",
+        "size": 943598331
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "CRACK.exe",
+        "sha256": "7d6ed64d71862348da16e0a3d173a36c8725ad1a9c80bbbe4a4499fe22319615",
+        "size": 667648
+      },
+      {
+        "path": "CRACK_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "1add7f151fa644870a735ae86e68d1f019f296130d8e7c0a7ed3ecc7482dccbc",
+        "size": 300392
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "fe45ada8cc8f25bc6809dc2de345fb4b7a6a194afd13cb38da9698b4ae84461a",
+        "size": 13401600
+      },
+      {
+        "path": "UnityCrashHandler64.exe",
+        "sha256": "e4b431aade01926a3088360ae2f2f7789f70ac5f8ea60f5d3bd14bc93119dfe6",
+        "size": 1609640
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "0391df1b36e6b9edd3e9a5e5f67a5a3d92fa34057a22c7f9a37d827d7594ef78",
+        "size": 35796904
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "350b435820a94644fac0116b841f5bb2b9c6ff632e8079429e4df16a1983dab4",
+        "size": 502272
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "heavenly-bodies",
+    "instanceId": "heavenly-bodies",
+    "workflow": "coco-standalone",
+    "version": "2023.08.08",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heavenly-bodies-2026/heavenly-bodies.zip",
+        "sha256": "99fb5aaef8e1819301cb0a5912d9e2cb144b78921b4b2339f90edee6c6f26071",
+        "size": 1348568057
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "GameAssembly.dll",
+        "sha256": "76b12ae88108b72260dd58158baec0205d1efdbfa94b5d354ac07c9886bf49b7",
+        "size": 40028672
+      },
+      {
+        "path": "Heavenly Bodies.exe",
+        "sha256": "ba4cd17b788d1e09d6daa6cab433a1dcda8c7a335851503f05ee792eff56ff42",
+        "size": 811736
+      },
+      {
+        "path": "Heavenly Bodies_Data/Plugins/x86/steam_api.dll",
+        "sha256": "19ad8f436cc80081f77272974b0b4de361f6c8ef46f09a9263fd764145dc9dfc",
+        "size": 260840
+      },
+      {
+        "path": "OnlineFix.dll",
+        "sha256": "914ba95ec68b5da8c674188273a89849396755d84587b03f57c661f4fe63b5c4",
+        "size": 7706624
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "15ba362217cad11dea10089553b5978193f6b687847d0e542ef3e1eb016ef7f7",
+        "size": 23184408
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "bf43e99c2b999e337a061b62436154c5342f1324b942d48c2f8b6716dc3b7d2b",
+        "size": 387072
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "party-animals",
+    "instanceId": "party-animals",
+    "workflow": "coco-standalone",
+    "version": "1.17.2.0",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part01.zip",
+        "sha256": "f977fc03556ada1725b471ef78a635943d0c8563e1b06616b8b2dcb7f440a651",
+        "size": 1375450423
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part02.zip",
+        "sha256": "0785be87ac0ff691d0282dd2ec18bdb4d0f00d1d49886fbe71c776cf0d7f9703",
+        "size": 1793130049
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part03.zip",
+        "sha256": "b59e89ffaf55c6e93b06e7c76bfcaaf0a4f2ba5e859dfbb198087041890143e3",
+        "size": 1793376382
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part04.zip",
+        "sha256": "e13152276b9d0f84bf74216c24fde6cc8f5dbf1a2dc7a91dbc79327ce34653fa",
+        "size": 1787094187
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part05.zip",
+        "sha256": "a423e8545f5a062ba18a85d70409a10f64cc1dfca91e592ac3796b3704dc2b9d",
+        "size": 1776219800
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part06.zip",
+        "sha256": "c8eb87054595db2a6cda5dbf885c05c51ae6ae69e45c82c37066ab8dc5da0c48",
+        "size": 1709217433
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/party-animals-1.17.2.0/party-animals-1.17.2.0-part07.zip",
+        "sha256": "8f2ebeaa35094cf2117193849c191163539698214c549517eaa0ab7b036423e3",
+        "size": 1771007138
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "PartyAnimals.exe",
+        "sha256": "765badea939408f6a642012cd2a169d347ef8f5f15c7851b50e36a40b6dadc53",
+        "size": 666624
+      },
+      {
+        "path": "version.dll",
+        "sha256": "2f2648b84507c813da18c1dac5965d84a8c96973f767c8dc12b54a8bb3eb1b0c",
+        "size": 3316736
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "15c7d26aaee4d0225bb40658f26a72f8251f5f049a8f304cd5159245247aafa3",
+        "size": 31006120
+      },
+      {
+        "path": "GameAssembly.dll",
+        "sha256": "22bcc68edaf5d29080dc2c9dbc6e3823fb3d87662c276c6dc8ea7dcd6d3f8f0b",
+        "size": 206329856
+      },
+      {
+        "path": "baselib.dll",
+        "sha256": "1e35be4c04d748071d98247c199eaa6ddfcbd297e3de96842c27576777a691fd",
+        "size": 419760
+      },
+      {
+        "path": "steam_appid.txt",
+        "sha256": "ddfe0e8d462af661f81db36589c39882dc0f2330785b5d80cd34f2f520ad618f",
+        "size": 3
+      },
+      {
+        "path": "UnityCrashHandler64.exe",
+        "sha256": "a76ba1f83d325fd246b652395ce46b1f311e77e60cf4e23e9b16d0f24d24e94e",
+        "size": 1185192
+      },
+      {
+        "path": "PartyAnimals_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "a44e5537939ae4eebc69000589aa9b2437a667813a1657cc779198bae9b815a9",
+        "size": 298856
+      },
+      {
+        "path": "PartyAnimals_Data/il2cpp_data/Metadata/global-metadata.dat",
+        "sha256": "c9de60d915a846633b59f32470467343d8687cdc6cb21c7a27fd6f2b6a7be62f",
+        "size": 46647632
+      },
+      {
+        "path": "PartyAnimals_Data/globalgamemanagers",
+        "sha256": "6c80d49464c92ce00aed061165d45d83e23caf58370d226de750d00dccabb0e8",
+        "size": 993316
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "golf-it",
+    "instanceId": "golf-it",
+    "workflow": "coco-standalone",
+    "version": "1.0.1.1953",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part01.zip",
+        "sha256": "d84deb775bcd86da4ec7d40372f1eccb89246f098dcb145b6f910aea15604723",
+        "size": 304753084
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part02.zip",
+        "sha256": "fb33835d317c4efdc2ed886a4b220a0930083fba4f4c9f99554d1bf2a3c0d61f",
+        "size": 532986181
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part03.zip",
+        "sha256": "4f261b6d3c850e320a719fa1c8dcf837a82b08b0023e3d5fca7d2aad337851b6",
+        "size": 497004622
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part04.zip",
+        "sha256": "65627d5faee7059175e4323aae62dce5887d9795da97219bc1f0bb32d1af9dfc",
+        "size": 634147499
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part05.zip",
+        "sha256": "df96380e60ca7aa61c58bb193975e2aff6a06fc2367404f2fc0dfddf60c0f770",
+        "size": 681079718
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part06.zip",
+        "sha256": "426853ceabe277b3d144f9a102756cc11ab4a5c970deb33200e32bc619e5818b",
+        "size": 293252710
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part07.zip",
+        "sha256": "23b9cd54e8d611493a30be5ca60fad7d4e9e3d1f9e038620dabd1956fbc6da56",
+        "size": 589681382
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part08.zip",
+        "sha256": "d9b005cdf9668d115d8bf6c6ff62b3d5a67cc8ffbc43d7fffb673856be92f887",
+        "size": 781701163
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part09.zip",
+        "sha256": "ea653dc1ded7d79dae91ab782077a67835e3a228cb04456b4e5cedcbb2b605e1",
+        "size": 779722564
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-it-1.0.1.1953/golf-it-1.0.1.1953-part10.zip",
+        "sha256": "cfc4fe8a851281d66a2e12ac739d1262b55445e55fd541f8e1c75f4cbfad7c13",
+        "size": 868267959
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/OnlineFix.ini",
+        "sha256": "196b0dd4d36b57b9a48be028171822a5f19815acbd6f30089e1705d6c2019659",
+        "size": 422
+      },
+      {
+        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/OnlineFix64.dll",
+        "sha256": "e9ff07d45aadfb25dc2a19514c4930b7d506a9de683be4febcba577b1b242dba",
+        "size": 4513280
+      },
+      {
+        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/steam_api64.dll",
+        "sha256": "e888d9f18301b02267c9d12d92d8f123eb7502892483bb44d9bf4e9bdb798d8f",
+        "size": 295336
+      },
+      {
+        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/steam_api64.of",
+        "sha256": "4df999c0c8cb12589f0864d52be5d4c775577aeb27fee28b49b188f9ba083eea",
+        "size": 295336
+      },
+      {
+        "path": "GolfIt.exe",
+        "sha256": "54b203698ae2f0794ce224aa3bf4868e5d4c153f168901db7beb579da07eb1e0",
+        "size": 17408
+      },
+      {
+        "path": "GolfIt/Binaries/Win64/GolfIt-Win64-Shipping.exe",
+        "sha256": "e307268cc915bdb398c33be270b864b1d892b4d3473b72c8ad9cbf4e0c98b2e4",
+        "size": 96778752
+      },
+      {
+        "path": "GolfIt/Content/Paks/GolfIt-WindowsNoEditor.utoc",
+        "sha256": "1fce9ff9174983925cead9b0c158b0ded08eda3ea3ccdc48b69ccf56b1084bb3",
+        "size": 5302944
+      },
+      {
+        "path": "GolfIt/Content/Paks/global.utoc",
+        "sha256": "c84f94e376ab740d8a4e36cea8a8205131d02f64febb1a87284449d5876b73ab",
+        "size": 573
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "buckshot-roulette",
+    "instanceId": "buckshot-roulette",
+    "workflow": "coco-standalone",
+    "version": "2.2.0.6",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/buckshot-roulette-2026/buckshot-roulette.zip",
+        "sha256": "27a62a3677fd52651bc00992980f7125b5a457dcfc01aa1ff4a64760fb53738d",
+        "size": 1006059895
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Buckshot-Roulette-AnkerGames/Buckshot Roulette.exe",
+        "sha256": "df2f8a31bd469438a1a29f831945ccea7b26963ab735f73b32936792207b1663",
+        "size": 796325472
+      },
+      {
+        "path": "Buckshot-Roulette-AnkerGames/OnlineFix.ini",
+        "sha256": "359cda771f21e69bdb0b511f40db8961f551556e42e7bff330e267bb29ec56bb",
+        "size": 431
+      },
+      {
+        "path": "Buckshot-Roulette-AnkerGames/OnlineFix64.dll",
+        "sha256": "e933ab1f3e3a5ab735148218a1e6a26dd74f93946ec25cacd70a6f5183aacab5",
+        "size": 13081088
+      },
+      {
+        "path": "Buckshot-Roulette-AnkerGames/steam_api64.dll",
+        "sha256": "3e9487c77b8f41eafca49ff55bbfa438b3e7ad6853c40ae64f70b2f060d4f1e0",
+        "size": 302592
+      },
+      {
+        "path": "Buckshot-Roulette-AnkerGames/steam_api64.of",
+        "sha256": "dcfaa13aa419a0641917205957dbe15aa472e7cf09a28cf8d3cf429598e67799",
+        "size": 301928
+      },
+      {
+        "path": "Buckshot-Roulette-AnkerGames/SteamOverlay64.dll",
+        "sha256": "f784b4b85b627c7ea541bd2a90c9fc6e9736a0731707c31265aa86fe684dc2df",
+        "size": 117248
+      }
+    ],
+    "extraFiles": []
+  }
+]

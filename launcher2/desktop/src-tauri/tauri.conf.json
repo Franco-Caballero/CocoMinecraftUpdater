@@ -1,0 +1,89 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Coco Launcher 2",
+  "version": "0.6.51",
+  "identifier": "cl.coco.launcher2.preview",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Coco Launcher 2",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 820,
+        "minHeight": 590,
+        "backgroundColor": "#e23df5",
+        "decorations": false,
+        "shadow": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' asset: http://asset.localhost; img-src 'self' asset: http://asset.localhost data: https://shared.akamai.steamstatic.com; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:*; media-src 'self' http://127.0.0.1:* blob: asset: http://asset.localhost https://cdn.akamai.steamstatic.com https://shared.akamai.steamstatic.com",
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$LOCALDATA/CocoMinecraftUpdater/preview-cache/*"
+        ]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": true,
+    "targets": [
+      "nsis"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "coco2pack"
+        ],
+        "name": "CocoLauncher2PortablePack",
+        "description": "Paquete portátil de Coco Launcher 2",
+        "mimeType": "application/x-coco2pack",
+        "role": "Viewer"
+      }
+    ],
+    "icon": [
+      "icons/icon.ico"
+    ],
+    "resources": [
+      "resources/ZeroTierOne.msi",
+      "resources/THIRD_PARTY_VLC.md",
+      "resources/VLC-COPYING.LIB.txt"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "embedBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "languages": [
+          "Spanish",
+          "English"
+        ],
+        "displayLanguageSelector": false,
+        "installMode": "currentUser",
+        "template": "windows/nsis/installer-safe.nsi",
+        "startMenuFolder": "Coco Launcher 2"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDA4QTBEQkNCMzM2NTQ2NDYKUldSR1JtVXp5OXVnQ0hLM1lmYzdGVlQ4RHdxL3ZoOFNqMGJncjRZTTZQMmJVYk5WcWI2RC9lRzUK",
+      "requireSignedVersion": true,
+      "endpoints": [
+        "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/coco2-channel/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

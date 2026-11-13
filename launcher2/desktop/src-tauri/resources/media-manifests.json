@@ -1,0 +1,134 @@
+[
+  {
+    "id": "heart-signal",
+    "name": "Heart Signal",
+    "type": "episodic-video",
+    "episodes": [
+      {
+        "id": "s05e01-p01",
+        "title": "Temporada 5 - Episodio 1 - Parte 1",
+        "fileName": "Heart Signal - S05E01 - Parte 1.mp4",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e01-parts-20260901/Heart.Signal.-.S05E01.-.Parte.1.mp4",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e01-parts-20260901/Heart.Signal.-.S05E01.-.Parte.1.mp4",
+        "size": 1837932680,
+        "sha256": "fd9f418b00b06a56159d7e07d90cb953c3c5f94c9f7ceb32b2a899acb88b21a4"
+      },
+      {
+        "id": "s05e01-p02",
+        "title": "Temporada 5 - Episodio 1 - Parte 2",
+        "fileName": "Heart Signal - S05E01 - Parte 2.mp4",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e01-parts-20260901/Heart.Signal.-.S05E01.-.Parte.2.mp4",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e01-parts-20260901/Heart.Signal.-.S05E01.-.Parte.2.mp4",
+        "size": 1829237387,
+        "sha256": "714412a27a5429373e278ed4c1180e229721cc3b4afe212e436aa45496abdc1a"
+      },
+      {
+        "id": "s05e02-p01",
+        "title": "Temporada 5 - Episodio 2 - Parte 1",
+        "fileName": "Heart Signal - S05E02 - Parte 1.mp4",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e02-parts-20260902/Heart.Signal.-.S05E02.Parte.1.mp4",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e02-parts-20260902/Heart.Signal.-.S05E02.Parte.1.mp4",
+        "size": 1905582124,
+        "sha256": "fae2f0a69cb7a19ca0ebb373c338f9a24c3be23a41c11e2b91b1c12688a0cf9a"
+      },
+      {
+        "id": "s05e02-p02",
+        "title": "Temporada 5 - Episodio 2 - Parte 2",
+        "fileName": "Heart Signal - S05E02 - Parte 2.mp4",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e02-parts-20260902/Heart.Signal.-.S05E02.Parte.2.mp4",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/heart-signal-s05e02-parts-20260902/Heart.Signal.-.S05E02.Parte.2.mp4",
+        "size": 1898887829,
+        "sha256": "d86985cace867d75e73e166814e86c96a8ced2a28ff719ed8e04bf3874a8620d"
+      }
+    ]
+  },
+  {
+    "id": "love-island-us",
+    "name": "Love Island USA",
+    "type": "episodic-video",
+    "episodes": [
+      {
+        "id": "s06e01",
+        "title": "Temporada 6 - Episodio 1",
+        "fileName": "Love.Island.US.S06E01.1080p.Spanish.Hardsub.mp4",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/Love.Island.US.S06E01.1080p.Spanish.Hardsub.mp4",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/Love.Island.US.S06E01.1080p.Spanish.Hardsub.mp4",
+        "size": 1804925953,
+        "sha256": "15245dd8e8f6a394757342b2ec3cfc532a9848f42886312ea755c07b13ff6967"
+      },
+      {
+        "id": "s06e02",
+        "title": "Temporada 6 - Episodio 2",
+        "fileName": "Love.Island.US.S06E02.720p.Spanish.Hardsub.mp4",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/Love.Island.US.S06E02.720p.Spanish.Hardsub.mp4",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/love-island-us-s06/Love.Island.US.S06E02.720p.Spanish.Hardsub.mp4",
+        "size": 1876473189,
+        "sha256": "ed4c9aa4eea153e658bdfa77b68b09aca6d72d79433d7a5d3bc8c33465fe09b7"
+      }
+    ]
+  },
+  {
+    "id": "the-drama-2026",
+    "name": "The Drama",
+    "type": "movie",
+    "episodes": [
+      {
+        "id": "the-drama-2026",
+        "title": "The Drama (2026)",
+        "fileName": "The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-drama-2026/The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/the-drama-2026/The.Drama.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+        "size": 2020248036,
+        "sha256": "7a391022d6b6a3a6e9d902c6e4b3b2fb5b89a5377b694b0da689053f18152b19"
+      }
+    ]
+  },
+  {
+    "id": "leviticus-2026",
+    "name": "Leviticus",
+    "type": "movie",
+    "episodes": [
+      {
+        "id": "leviticus-2026",
+        "title": "Leviticus (2026)",
+        "fileName": "Leviticus.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/leviticus-2026/Leviticus.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/leviticus-2026/Leviticus.2026.1080p.Spanish.Hardsub.AAC5.1.mp4",
+        "size": 1762094150,
+        "sha256": "5df7d024caa59313b8d55ec5dd13276f81413022090a5156d98844e378978c97"
+      }
+    ]
+  },
+  {
+    "id": "mickey-17-2025",
+    "name": "Mickey 17",
+    "type": "movie",
+    "episodes": [
+      {
+        "id": "mickey-17-2025",
+        "title": "Mickey 17 (2025)",
+        "fileName": "Mickey.17.2025.1080p.WEB-DL.Spanish.Hardsub.mp4",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mickey-17-2025/Mickey.17.2025.1080p.WEB-DL.Spanish.Hardsub.mp4",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mickey-17-2025/Mickey.17.2025.1080p.WEB-DL.Spanish.Hardsub.mp4",
+        "size": 1955022383,
+        "sha256": "aee69272e7b31577482903749779b72637da055c516acd14dd8697fc727f3f83"
+      }
+    ]
+  },
+  {
+    "id": "resident-evil-2026",
+    "name": "Resident Evil",
+    "type": "movie",
+    "episodes": [
+      {
+        "id": "resident-evil-2026",
+        "title": "Resident Evil (2026)",
+        "fileName": "Resident.Evil.2026.1080p.HEVC10.AAC5.1.mp4",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/resident-evil-2026/Resident.Evil.2026.1080p.HEVC10.AAC5.1.mp4",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/resident-evil-2026/Resident.Evil.2026.1080p.HEVC10.AAC5.1.mp4",
+        "size": 1682982853,
+        "sha256": "3b8591e2171698fe907b0b2c52f3e1d248ba73ddf088f8d0e7456d9b7c03687c"
+      }
+    ]
+  }
+]
