@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "mimesis",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mimesis-0.4.1/mimesis-0.4.1-part01.zip",
+    "sha256": "18f8d9c9b80dbe1c3ce22d8ec66dbb6165c49dafc494daeddc15954e7f542eeb",
+    "size": 838412170
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mimesis-0.4.1/mimesis-0.4.1-part01.zip",
+      "sha256": "18f8d9c9b80dbe1c3ce22d8ec66dbb6165c49dafc494daeddc15954e7f542eeb",
+      "size": 838412170
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mimesis-0.4.1/mimesis-0.4.1-part02.zip",
+      "sha256": "06c0b25422e10c23399dd4b7b21d4acf0fe2cd0beb3f040f97685df68d8fc26c",
+      "size": 785019553
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mimesis-0.4.1/mimesis-0.4.1-part03.zip",
+      "sha256": "2fe5e83299330f137f93ce9dca5b194c688ebf6079eb8897e4983f9db749e402",
+      "size": 265990241
+    }
+  ]
+}

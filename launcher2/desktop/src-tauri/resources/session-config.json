@@ -246,6 +246,12 @@
       "packVersion": "0.6.0.5",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "mimesis",
+      "packVersion": "0.4.1",
+      "host": "",
+      "port": 0
     }
   ]
 }

@@ -1702,5 +1702,55 @@
     "executable": "Grounded 2/Augusta/Binaries/Win64/Grounded2Steam-Win64-Shipping.exe",
     "launchArguments": [],
     "hostingMode": "p2p"
+  },
+  {
+    "id": "mimesis",
+    "instanceId": "mimesis",
+    "name": "MIMESIS",
+    "image": "/covers/mimesis.jpg.webp",
+    "description": "Terror y supervivencia cooperativo en línea para 4 jugadores: esquiva la lluvia contaminada, reúne chatarra y vuelve al tranvía mientras monstruos que imitan voz y gestos de tus aliados intentan engañarte. Co-op online integrado (mismo fix/versión).",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "MIMESIS/MIMESIS.exe",
+        "sha256": "d1e935dc8ef6ff841d447d74de14de1097c8b6151c135e544f3eac0ea3925c5b",
+        "size": 667648
+      },
+      {
+        "path": "MIMESIS/OnlineFix64.dll",
+        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+        "size": 11944448
+      },
+      {
+        "path": "MIMESIS/OnlineFix.ini",
+        "sha256": "64af2c0bc4cb5b9cb9c9d28ba1b674322024edc7082891b026e6e13d2602cb01",
+        "size": 442
+      },
+      {
+        "path": "MIMESIS/winmm.dll",
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "size": 506368
+      },
+      {
+        "path": "MIMESIS/dlllist.txt",
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "size": 35
+      },
+      {
+        "path": "MIMESIS/MIMESIS_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "1add7f151fa644870a735ae86e68d1f019f296130d8e7c0a7ed3ecc7482dccbc",
+        "size": 300392
+      },
+      {
+        "path": "MIMESIS/UnityPlayer.dll",
+        "sha256": "0391df1b36e6b9edd3e9a5e5f67a5a3d92fa34057a22c7f9a37d827d7594ef78",
+        "size": 35796904
+      }
+    ],
+    "executable": "MIMESIS/MIMESIS.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
   }
 ]

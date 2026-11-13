@@ -3831,6 +3831,98 @@
         "serverName": "Coco - Grounded 2"
       },
       "files": []
+    },
+    {
+      "id": "mimesis",
+      "name": "MIMESIS",
+      "ui": {
+        "imagePath": "assets/experiences/mimesis.jpg"
+      },
+      "description": "Terror y supervivencia cooperativo en línea para 4 jugadores: esquiva la lluvia contaminada, reúne chatarra y vuelve al tranvía mientras monstruos que imitan voz y gestos de tus aliados intentan engañarte. Co-op online integrado (mismo fix/versión).",
+      "instanceId": "mimesis",
+      "managementMode": "managed",
+      "runtime": {
+        "type": "standalone",
+        "executable": "MIMESIS/MIMESIS.exe",
+        "requiredFiles": [
+          {
+            "path": "MIMESIS/MIMESIS.exe",
+            "size": 667648,
+            "sha256": "d1e935dc8ef6ff841d447d74de14de1097c8b6151c135e544f3eac0ea3925c5b",
+            "archiveSha256": "18f8d9c9b80dbe1c3ce22d8ec66dbb6165c49dafc494daeddc15954e7f542eeb"
+          },
+          {
+            "path": "MIMESIS/OnlineFix64.dll",
+            "size": 11944448,
+            "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+            "archiveSha256": "18f8d9c9b80dbe1c3ce22d8ec66dbb6165c49dafc494daeddc15954e7f542eeb"
+          },
+          {
+            "path": "MIMESIS/OnlineFix.ini",
+            "size": 442,
+            "sha256": "64af2c0bc4cb5b9cb9c9d28ba1b674322024edc7082891b026e6e13d2602cb01",
+            "archiveSha256": "18f8d9c9b80dbe1c3ce22d8ec66dbb6165c49dafc494daeddc15954e7f542eeb"
+          },
+          {
+            "path": "MIMESIS/winmm.dll",
+            "size": 506368,
+            "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+            "archiveSha256": "18f8d9c9b80dbe1c3ce22d8ec66dbb6165c49dafc494daeddc15954e7f542eeb"
+          },
+          {
+            "path": "MIMESIS/dlllist.txt",
+            "size": 35,
+            "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+            "archiveSha256": "18f8d9c9b80dbe1c3ce22d8ec66dbb6165c49dafc494daeddc15954e7f542eeb"
+          },
+          {
+            "path": "MIMESIS/MIMESIS_Data/Plugins/x86_64/steam_api64.dll",
+            "size": 300392,
+            "sha256": "1add7f151fa644870a735ae86e68d1f019f296130d8e7c0a7ed3ecc7482dccbc",
+            "archiveSha256": "2fe5e83299330f137f93ce9dca5b194c688ebf6079eb8897e4983f9db749e402"
+          },
+          {
+            "path": "MIMESIS/UnityPlayer.dll",
+            "size": 35796904,
+            "sha256": "0391df1b36e6b9edd3e9a5e5f67a5a3d92fa34057a22c7f9a37d827d7594ef78",
+            "archiveSha256": "18f8d9c9b80dbe1c3ce22d8ec66dbb6165c49dafc494daeddc15954e7f542eeb"
+          }
+        ]
+      },
+      "pack": {
+        "packId": "standalone-mimesis",
+        "lockPath": "launcher/experiences/mimesis.lock.json",
+        "version": "0.4.1",
+        "sha256": "18f8d9c9b80dbe1c3ce22d8ec66dbb6165c49dafc494daeddc15954e7f542eeb",
+        "size": 1889421964,
+        "archives": [
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mimesis-0.4.1/mimesis-0.4.1-part01.zip",
+            "sha256": "18f8d9c9b80dbe1c3ce22d8ec66dbb6165c49dafc494daeddc15954e7f542eeb",
+            "size": 838412170
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mimesis-0.4.1/mimesis-0.4.1-part02.zip",
+            "sha256": "06c0b25422e10c23399dd4b7b21d4acf0fe2cd0beb3f040f97685df68d8fc26c",
+            "size": 785019553
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/mimesis-0.4.1/mimesis-0.4.1-part03.zip",
+            "sha256": "2fe5e83299330f137f93ce9dca5b194c688ebf6079eb8897e4983f9db749e402",
+            "size": 265990241
+          }
+        ]
+      },
+      "hosting": {
+        "mode": "p2p"
+      },
+      "launch": {
+        "workflow": "coco-standalone",
+        "arguments": [],
+        "autoJoin": false,
+        "serverName": "Coco - MIMESIS"
+      },
+      "files": []
     }
   ]
 }

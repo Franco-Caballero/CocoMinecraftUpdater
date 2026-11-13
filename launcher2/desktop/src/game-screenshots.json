@@ -389,5 +389,18 @@
     "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2661300/383d7337caa500f18610e76d492fa3427c294184/ss_383d7337caa500f18610e76d492fa3427c294184.1920x1080.jpg?t=1792539149",
     "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2661300/8e7639c3c32a6ed7f5052633c6045117ac3283cc/ss_8e7639c3c32a6ed7f5052633c6045117ac3283cc.1920x1080.jpg?t=1792539149",
     "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2661300/6f4c236dd7971bdd969fa22d6fe3352fe9d84285/ss_6f4c236dd7971bdd969fa22d6fe3352fe9d84285.1920x1080.jpg?t=1792539149"
+  ],
+  "items": [
+    {
+      "id": "mimesis",
+      "screenshots": [
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2827200/12db504cd7da1646d1cf020802a97153abd69e74/ss_12db504cd7da1646d1cf020802a97153abd69e74.1920x1080.jpg?t=1793079449",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2827200/d6c6890ed47c1916e0c6710b5e52b5bc6cf25039/ss_d6c6890ed47c1916e0c6710b5e52b5bc6cf25039.1920x1080.jpg?t=1793079449",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2827200/e3b5f477b6b7c70008f9bf6f089c98d267545dad/ss_e3b5f477b6b7c70008f9bf6f089c98d267545dad.1920x1080.jpg?t=1793079449",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2827200/78419049bea50a100707ae2d2e505132dcbd69cc/ss_78419049bea50a100707ae2d2e505132dcbd69cc.1920x1080.jpg?t=1793079449",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2827200/e06e5ad5f1dd09b9c5a0f1938d17f2080c4894e3/ss_e06e5ad5f1dd09b9c5a0f1938d17f2080c4894e3.1920x1080.jpg?t=1793079449",
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2827200/d3ec58706705b3382b3d02bfc7e825d72f945ece/ss_d3ec58706705b3382b3d02bfc7e825d72f945ece.1920x1080.jpg?t=1793079449"
+      ]
+    }
   ]
 }
