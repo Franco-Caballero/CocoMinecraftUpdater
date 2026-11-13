@@ -7,6 +7,7 @@ Tiempo real esperado: 15–25 min para 1–3 GB; la mayor parte es descarga, ree
 ## Reglas que ahorran más tiempo
 
 - **Nunca publiques un juego que no viste en su menú** (paso 7b). Revisa antes «Juegos que hay que evitar».
+- **Mira en «Game Features & Info» si el Online-Fix viene dentro o aparte** (paso 1b) antes de pedir enlaces: si viene aparte hay dos descargas, y cada enlace es de un solo uso.
 - **Todo lo pesado en `D:\CocoWork\<id>`**, con `TEMP`/`TMP` del proceso allí. Nunca dejes que el navegador guarde el ZIP (queda en C: con nombre UUID).
 - **El navegador solo sirve para obtener el enlace**; el archivo se baja con `curl` directo a D:.
 - **El enlace `download-file` es de un solo uso.** Ni `HEAD`, ni `curl -I`, ni una prueba previa: el primer acceso lo gasta y el siguiente devuelve la página «Ops matey no downloads here» (HTML de ~190 KB). Compruébalo **después** de bajar (tamaño y magic). Si lo gastaste, vuelve a pedir uno (paso 2).
@@ -20,7 +21,7 @@ Tiempo real esperado: 15–25 min para 1–3 GB; la mayor parte es descarga, ree
 ```powershell
 $d='D:\CocoWork\<id>'; New-Item -ItemType Directory -Force "$d\temp","$d\prepared","$d\assets" | Out-Null
 curl.exe -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://ankergames.net/game/<slug>" -o "$d\temp\page.html"
-Select-String -Path "$d\temp\page.html" -Pattern 'generateDownloadUrl\((\d+)\)','softwareVersion[^,]*','steam/apps/(\d+)' -AllMatches |
+Select-String -Path "$d\temp\page.html" -Pattern 'generateDownloadUrl\((\d+)\)','softwareVersion[^,]*','steam/apps/(\d+)','Build \d+','(Goldberg|RUNE|OFME)[^.<]*','Online.?Fix[^.<]*separately[^.<]*' -AllMatches |
   ForEach-Object { $_.Matches.Value } | Select-Object -Unique
 ```
 
@@ -29,6 +30,20 @@ Select-String -Path "$d\temp\page.html" -Pattern 'generateDownloadUrl\((\d+)\)',
 - **Versión** (debe ser numérica con puntos, el canal no acepta letras): `V 1.14.1k` → `1.14.1`; `Build 3911030` → `3911030`; sin versión → fecha del paquete `AAAA.MM.DD`. El `FileVersion` del `.exe` Unity/Unreal es el del motor: no sirve.
 
 Mientras tanto, pide portada, clip y capturas de Steam (guía maestra, «Tarjeta completa»).
+
+### 1b. ¿El Online-Fix viene dentro o aparte?
+
+La sección **«Game Features & Info»** de la ficha lo dice (el `Select-String` de arriba ya la extrae):
+
+| El texto dice | Qué trae el ZIP del juego | Qué hacer |
+|---|---|---|
+| «The **OFME** patch has been used» | El juego **con Online-Fix integrado** (Pummel Party, por ejemplo) | Solo el botón **Direct**. Sigue normal |
+| «The **Goldberg** / **RUNE** emulator has been used» + «**Online Fix** (patch) has been added **separately**» | El juego con un emulador de Steam, **sin** Online-Fix | Baja **también** el fix (botón **Online Fix** del mismo diálogo) y aplícalo (paso 3b) |
+| Emulador sin mención de Online Fix | Solo un emulador: no hay multijugador por internet | **Descártalo**: Coco necesita Online-Fix para jugar con amigos |
+
+El diálogo de descarga lo confirma: con fix aparte muestra dos botones, **Direct** y **Online Fix**, y además un bloque **FILE INTEGRITY** con MD5 y SHA-256 del juego. Sin fix aparte solo hay **Direct**.
+
+«Launch the game from Run Me!.bat» no se copia: Coco abre el `.exe` directamente. Lee el `.bat` (es texto) para saber **qué** `.exe` arranca y con qué argumentos, y no lo empaquetes.
 
 ## 2. Enlace de descarga (navegador, ~15 s)
 
@@ -49,7 +64,15 @@ Luego `preview_navigate` a ese `download_url`, `preview_wait_for` con el texto `
 [...document.querySelectorAll('a[href*="/download-file/"]')].map(a => a.href)[0]
 ```
 
-(No uses `a.download-button` como selector: hay varios y el primero no siempre es el enlace.) Cierra la pestaña con `t3_preview_close`.
+(No uses `a.download-button` como selector: hay varios y el primero no siempre es el enlace.)
+
+Si el juego trae fix aparte (1b), la página tiene **dos** enlaces `download-file`, y cada uno es de un solo uso. Lístalos con su texto y apunta los dos antes de bajar ninguno:
+
+```js
+[...document.querySelectorAll('a[href*="/download-file/"]')].map(a => [a.closest('div')?.innerText.trim().slice(0,40), a.href])
+```
+
+Si solo ves uno, haz clic en **Online Fix** con `preview_act` y lee el enlace nuevo (un clic en **Direct** gasta el del juego). Copia también el **SHA-256** de «FILE INTEGRITY» (`document.body.innerText.match(/[0-9a-f]{64}/)`) para comprobar la descarga. Cierra la pestaña con `t3_preview_close`.
 
 ## 3. Descargar e inspeccionar
 
@@ -62,6 +85,19 @@ $b=[IO.File]::ReadAllBytes("$d\game.zip")[0..3]; '{0:X2} {1:X2} {2:X2} {3:X2}' -
 - Usa siempre 7-Zip: hay ZIP con entradas Zstandard (.NET falla) y RAR disfrazados (Grocery Store Simulator).
 - Un HTML pequeño en vez del ZIP = enlace gastado: vuelve al paso 2.
 - ~32 MB/s: 1 GB en 30–40 s.
+- Si la página daba SHA-256: `(Get-FileHash "$d\game.zip").Hash` debe coincidir. Si no coincide, la descarga está corrupta: pide otro enlace.
+
+### 3b. Aplicar un Online-Fix que viene aparte
+
+```powershell
+curl.exe -L --fail -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -o "$d\fix.zip" "<download-file del Online Fix>"
+& 'C:\Program Files\7-Zip\7z.exe' l "$d\fix.zip"                  # mira la estructura ANTES de extraer
+& 'C:\Program Files\7-Zip\7z.exe' x -y -o"$d\fix" "$d\fix.zip"    # si pide clave, prueba online-fix.me
+```
+
+- Copia el contenido del fix **sobre la carpeta del juego, reemplazando** (lo mismo que «replace when asked»). Si el fix trae una carpeta raíz propia (`Fix Repair`, el nombre del juego…), copia lo de **dentro**, de modo que `OnlineFix64.dll`/`OnlineFix.dll` y `OnlineFix.ini` queden junto al `.exe` que los carga. Se hace sobre la copia `source`, nunca sobre la descarga.
+- El fix sustituye el `steam_api*.dll` del emulador (Goldberg/RUNE). Cuando termines, no deben quedar archivos del emulador sueltos: `steam_settings/`, `steam_emu.ini`, `ColdClientLoader.ini`, `rune.ini` o similares. Bórralos de la copia, o el emulador podría seguir activo en lugar del fix.
+- Clasifica después con la tabla de abajo y sigue igual que con un fix integrado. En el paso 7b comprueba sobre todo que el juego llega al menú **con el fix**: una mezcla de emulador y fix es la causa más probable de un juego que no abre.
 
 Busca en `source` (sin ejecutar nada): el `.exe` del juego, cada `OnlineFix.ini`, `OnlineFix64.dll`/`OnlineFix.dll`, y la basura del empaquetador. Clasifica el juego con esta tabla:
 
