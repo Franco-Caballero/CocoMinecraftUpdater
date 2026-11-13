@@ -58,11 +58,19 @@ El POST pasa por Cloudflare y **falla con `curl`**; hazlo dentro de la página. 
 })()
 ```
 
-Luego `preview_navigate` a ese `download_url`, `preview_wait_for` con el texto `Download Ready` (5–10 s, no hace falta Turnstile ni cuenta atrás), y lee el enlace final:
+Luego `preview_navigate` a ese `download_url` y `preview_wait_for` con el selector `a[href*="/download-file/"]` (no esperes el texto `Download Ready`: ya no aparece). Lee el enlace final **con el token de Cloudflare Turnstile**, como hace el botón de la página:
 
 ```js
-[...document.querySelectorAll('a[href*="/download-file/"]')].map(a => a.href)[0]
+(async () => {
+  for (let i = 0; i < 30 && !window.agTurnstile?.token(); i++) await new Promise(r => setTimeout(r, 400));
+  const a = document.querySelector('a[href*="/download-file/"]').href, t = window.agTurnstile?.token();
+  return t ? a + '?cf-turnstile-response=' + encodeURIComponent(t) : 'SIN TOKEN';
+})()
 ```
+
+- **Sin `?cf-turnstile-response=…` el `download-file` devuelve «Ops matey no downloads here»** (HTML de ~190 KB) aunque sea el primer uso. Parece un enlace gastado, pero no lo es (desde noviembre de 2026).
+- `SIN TOKEN`: Cloudflare pidió un desafío interactivo. Abre la pestaña visible (`preview_open` con `open: true`), pide al usuario que marque la casilla y repite el script.
+- El token y el enlace sirven **una vez**: genera uno nuevo para cada descarga (también para el Online Fix).
 
 (No uses `a.download-button` como selector: hay varios y el primero no siempre es el enlace.)
 
@@ -83,7 +91,7 @@ $b=[IO.File]::ReadAllBytes("$d\game.zip")[0..3]; '{0:X2} {1:X2} {2:X2} {3:X2}' -
 ```
 
 - Usa siempre 7-Zip: hay ZIP con entradas Zstandard (.NET falla) y RAR disfrazados (Grocery Store Simulator).
-- Un HTML pequeño en vez del ZIP = enlace gastado: vuelve al paso 2.
+- Un HTML pequeño en vez del ZIP = enlace sin token o gastado: vuelve al paso 2 y comprueba que la URL lleva `?cf-turnstile-response=`.
 - ~32 MB/s: 1 GB en 30–40 s.
 - Si la página daba SHA-256: `(Get-FileHash "$d\game.zip").Hash` debe coincidir. Si no coincide, la descarga está corrupta: pide otro enlace.
 
