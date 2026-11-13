@@ -141,5 +141,11 @@
                      "steamAppId":  3892270,
                      "trailerId":  257330041,
                      "bytes":  2352104
+                 },
+    "gang-beasts":  {
+                     "url":  "https://cdn.akamai.steamstatic.com/steam/apps/257075225/microtrailer.webm",
+                     "steamAppId":  285900,
+                     "trailerId":  257075225,
+                     "bytes":  2199673
                  }
 }

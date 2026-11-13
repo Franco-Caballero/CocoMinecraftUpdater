@@ -192,6 +192,12 @@
       "packVersion": "2026.11.12",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "gang-beasts",
+      "packVersion": "1.28",
+      "host": "",
+      "port": 0
     }
   ]
 }

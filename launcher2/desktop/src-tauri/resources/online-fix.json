@@ -119,6 +119,11 @@
    "realAppId": "3892270",
    "hash0": "8429b972e6049808992de41e43ed547e05aac606c32447863c6b2f32aef1d67ba98b03d3d45bfaebf4a1a4418c427b2b58c16d0aafe8465e2ea0896768729806",
    "hash1337": ""
+  },
+  "gang-beasts": {
+   "realAppId": "285900",
+   "hash0": "28e860b2e681fa3cdaf920d6c1e856a5681640ae491a1752d48ad641356debad287f93cef04eb5333ad9c0c124b058e9413989f7ae87a516eabd8ace35c4f4c8",
+   "hash1337": ""
   }
  },
  "apps": {
@@ -240,6 +245,11 @@
   "3892270": {
    "realAppId": "3892270",
    "hash0": "8429b972e6049808992de41e43ed547e05aac606c32447863c6b2f32aef1d67ba98b03d3d45bfaebf4a1a4418c427b2b58c16d0aafe8465e2ea0896768729806",
+   "hash1337": ""
+  },
+  "285900": {
+   "realAppId": "285900",
+   "hash0": "28e860b2e681fa3cdaf920d6c1e856a5681640ae491a1752d48ad641356debad287f93cef04eb5333ad9c0c124b058e9413989f7ae87a516eabd8ace35c4f4c8",
    "hash1337": ""
   }
  }

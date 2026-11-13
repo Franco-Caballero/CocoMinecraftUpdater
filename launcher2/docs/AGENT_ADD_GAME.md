@@ -20,7 +20,7 @@ Orden mínimo (detalles en cada sección):
 
 ### Receta probada: carpeta ya instalada (AnkerGames, Online-Fix) → amigos
 
-Así se agregó Gamble With Your Friends (2,2 GB, Unity, Online-Fix con `winmm.dll`) en ~20 minutos de trabajo real, sin Setup. Sustituye `<...>`; todo lo pesado va en `D:\CocoWork\<id>`.
+Así se agregó Gamble With Your Friends (2,2 GB, Unity, Online-Fix con `winmm.dll`) en ~20 minutos de trabajo real, sin Setup. Sustituye `<...>`; todo lo pesado va en `D:\CocoWork\<id>`. Notas específicas de AnkerGames, endpoints, descarga desatendida y datos por juego: [`ANKERGAMES.md`](ANKERGAMES.md).
 
 ```powershell
 # 0) Inspección sin ejecutar: carpeta del juego, .exe, OnlineFix.ini (RealAppId, 0=, 1337=), accesos .url/.bat/Read Me

@@ -2960,6 +2960,88 @@
     "serverName": "Coco - Gamble With Your Friends"
   },
   "files": []
+},
+        {
+  "id": "gang-beasts",
+  "name": "Gang Beasts",
+  "ui": {
+    "imagePath": "assets/experiences/gang-beasts.jpg"
+  },
+  "description": "Peleas absurdas entre personajes gelatinosos en escenarios peligrosos: el cl\u00e1sico party brawler de Boneloaf. Combates locales y en l\u00ednea para hasta 8 jugadores, con modos melee y g\u00e1ngsters, f\u00edsicas impredecibles y ca\u00eddas que dan risa.",
+  "instanceId": "gang-beasts",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "Gang Beasts/Gang Beasts.exe",
+    "requiredFiles": [
+      {
+        "path": "Gang Beasts/GameAssembly.dll",
+        "size": 51784704,
+        "sha256": "68af21d4dec45c8695a62eee0a189ee6e033a32332db3885fee57549eaea4057",
+        "archiveSha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45"
+      },
+      {
+        "path": "Gang Beasts/Gang Beasts.exe",
+        "size": 653824,
+        "sha256": "621740b8a66c1b2432354dfbe2963c88902bca33d871ec919ad56470aff55d19",
+        "archiveSha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45"
+      },
+      {
+        "path": "Gang Beasts/Gang Beasts_Data/Plugins/x86_64/steam_api64.dll",
+        "size": 298856,
+        "sha256": "a44e5537939ae4eebc69000589aa9b2437a667813a1657cc779198bae9b815a9",
+        "archiveSha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45"
+      },
+      {
+        "path": "Gang Beasts/OnlineFix.ini",
+        "size": 623,
+        "sha256": "e07c10f2d451a2da42b522c1ee9ed0d4c0c27f5366d61399d6e681e15ee4411c",
+        "archiveSha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45"
+      },
+      {
+        "path": "Gang Beasts/OnlineFix64.dll",
+        "size": 12087808,
+        "sha256": "76a8e2d4630a8e3a6914ab35f4ba4c105943c85bcd4ee327b43a976a78fdf8ee",
+        "archiveSha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45"
+      },
+      {
+        "path": "Gang Beasts/UnityPlayer.dll",
+        "size": 29444520,
+        "sha256": "7d23819de6dc4f753bcbb778424f188d1d1cb68c8e18a500a3e0a10838c2e6a5",
+        "archiveSha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45"
+      },
+      {
+        "path": "Gang Beasts/winmm.dll",
+        "size": 524288,
+        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+        "archiveSha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-gang-beasts",
+    "lockPath": "launcher/experiences/gang-beasts.lock.json",
+    "version": "1.28",
+    "sha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45",
+    "size": 1077893081,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gang-beasts-1.28/gang-beasts-1.28-part01.zip",
+        "sha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45",
+        "size": 1077893081
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Gang Beasts"
+  },
+  "files": []
 }
     ]
 }

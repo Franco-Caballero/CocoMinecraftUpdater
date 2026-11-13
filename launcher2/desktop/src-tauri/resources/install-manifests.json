@@ -1296,5 +1296,56 @@
       }
     ],
     "extraFiles": []
+  },
+  {
+    "id": "gang-beasts",
+    "instanceId": "gang-beasts",
+    "workflow": "coco-standalone",
+    "version": "1.28",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gang-beasts-1.28/gang-beasts-1.28-part01.zip",
+        "sha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45",
+        "size": 1077893081
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Gang Beasts/GameAssembly.dll",
+        "sha256": "68af21d4dec45c8695a62eee0a189ee6e033a32332db3885fee57549eaea4057",
+        "size": 51784704
+      },
+      {
+        "path": "Gang Beasts/Gang Beasts.exe",
+        "sha256": "621740b8a66c1b2432354dfbe2963c88902bca33d871ec919ad56470aff55d19",
+        "size": 653824
+      },
+      {
+        "path": "Gang Beasts/Gang Beasts_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "a44e5537939ae4eebc69000589aa9b2437a667813a1657cc779198bae9b815a9",
+        "size": 298856
+      },
+      {
+        "path": "Gang Beasts/OnlineFix.ini",
+        "sha256": "e07c10f2d451a2da42b522c1ee9ed0d4c0c27f5366d61399d6e681e15ee4411c",
+        "size": 623
+      },
+      {
+        "path": "Gang Beasts/OnlineFix64.dll",
+        "sha256": "76a8e2d4630a8e3a6914ab35f4ba4c105943c85bcd4ee327b43a976a78fdf8ee",
+        "size": 12087808
+      },
+      {
+        "path": "Gang Beasts/UnityPlayer.dll",
+        "sha256": "7d23819de6dc4f753bcbb778424f188d1d1cb68c8e18a500a3e0a10838c2e6a5",
+        "size": 29444520
+      },
+      {
+        "path": "Gang Beasts/winmm.dll",
+        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+        "size": 524288
+      }
+    ],
+    "extraFiles": []
   }
 ]

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "gang-beasts",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gang-beasts-1.28/gang-beasts-1.28-part01.zip",
+    "sha256": "50482c9ac3ebfc757c5f7bfc01fff1cc039e61a4a29a03d36629428ba6ac7b45",
+    "size": 1077893081
+  }
+}
