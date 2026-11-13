@@ -234,6 +234,12 @@
       "packVersion": "3.0.0",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "schedule-i",
+      "packVersion": "0.4.7f12",
+      "host": "",
+      "port": 0
     }
   ]
 }

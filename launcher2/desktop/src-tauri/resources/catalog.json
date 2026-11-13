@@ -1587,5 +1587,50 @@
     "executable": "Glass Carriers/CarryTheGlass/Binaries/Win64/CarryTheGlassSteam-Win64-Shipping.exe",
     "launchArguments": [],
     "hostingMode": "p2p"
+  },
+  {
+    "id": "schedule-i",
+    "instanceId": "schedule-i",
+    "name": "Schedule I",
+    "image": "/covers/schedule-i.jpg.webp",
+    "description": "Simulador de gestión criminal en mundo abierto en Hyland Point: produce, automatiza y distribuye para construir tu imperio mientras enfrentas ley y cárteles. Co-op online integrado (mismo fix/versión).",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "GameAssembly.dll",
+        "sha256": "61829050e56ca180d67be592e4bfe61ec97d2e9573f720d90a54e318a7e4381d",
+        "size": 66477568
+      },
+      {
+        "path": "OnlineFix64.dll",
+        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+        "size": 11944448
+      },
+      {
+        "path": "Schedule I.exe",
+        "sha256": "ec99366083ae5a4068d0c8091d80f857b65c57fb6ef603ab952d835469246ecf",
+        "size": 666624
+      },
+      {
+        "path": "Schedule I_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "1add7f151fa644870a735ae86e68d1f019f296130d8e7c0a7ed3ecc7482dccbc",
+        "size": 300392
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "43fb0aea1b80c74963dae88ec7fc1c3c1993d893ce94d12972000fcc9b653ad1",
+        "size": 31006120
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+        "size": 524288
+      }
+    ],
+    "executable": "Schedule I.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
   }
 ]

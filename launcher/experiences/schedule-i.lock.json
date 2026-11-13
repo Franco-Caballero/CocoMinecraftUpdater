@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "schedule-i",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/schedule-i-0.4.7f12/schedule-i-0.4.7f12-part01.zip",
+    "sha256": "687c06300f28ad0f7c2e0b7e838ea73f0c5a3804d8d15bf2bb776caa884a7b03",
+    "size": 372296368
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/schedule-i-0.4.7f12/schedule-i-0.4.7f12-part01.zip",
+      "sha256": "687c06300f28ad0f7c2e0b7e838ea73f0c5a3804d8d15bf2bb776caa884a7b03",
+      "size": 372296368
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/schedule-i-0.4.7f12/schedule-i-0.4.7f12-part02.zip",
+      "sha256": "e8d7ac03aa4850277aecf8bf50d102627679f340fcf2e10e403ac7a9a4262636",
+      "size": 539760612
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/schedule-i-0.4.7f12/schedule-i-0.4.7f12-part03.zip",
+      "sha256": "80bfc52178f886cb117d7e95d372a88fcee3aa43662da97e90a19c5f485160bc",
+      "size": 379487318
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/schedule-i-0.4.7f12/schedule-i-0.4.7f12-part04.zip",
+      "sha256": "3d51a0a648473aa6d200e1d9e598828a0d7935ea799630a488ed580381ea2e5d",
+      "size": 667495487
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/schedule-i-0.4.7f12/schedule-i-0.4.7f12-part05.zip",
+      "sha256": "47301487017ae866db3f851b00a08e62985ff22feb13aa21c4f8ee3ad0fbf8a1",
+      "size": 599482785
+    }
+  ]
+}
