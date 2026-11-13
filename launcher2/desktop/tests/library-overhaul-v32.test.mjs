@@ -70,7 +70,10 @@ test('the panel always says one true thing, most important first',async()=>{
   const {deriveLauncherStatus:status}=await load('src/launcher-status.ts');
   assert.equal(status(idle).label,'Listo para jugar');
   assert.equal(status({...idle,catalogLoaded:false}).label,'Abriendo biblioteca');
-  assert.equal(status({...idle,catalog:'syncing'}).label,'Buscando novedades');
+  const syncing=status({...idle,catalog:'syncing'});
+  assert.equal(syncing.label,'Listo para jugar','a background catalog check never flashes in the panel');
+  assert.equal(syncing.detail,'');assert.equal(syncing.tone,'ready');
+  assert.equal(status(idle).detail,'','no «al día» line after a check');
   assert.equal(status({...idle,uninstalling:'PEAK'}).label,'Desinstalando PEAK');
   assert.equal(status({...idle,startingSteam:true,launching:'PEAK'}).label,'Abriendo Steam');
   assert.equal(status({...idle,authorizing:true,operation:{kind:'install',name:'PEAK',description:'',percent:1,rate:''}}).label,'Autorización de Windows','the only thing waiting on the player comes first');

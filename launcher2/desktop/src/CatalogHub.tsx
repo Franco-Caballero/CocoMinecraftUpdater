@@ -175,7 +175,7 @@ export default function CatalogHub({onChanged,onImported,compact=false,incomingP
           return;
         }
       }
-      setMessage(result.status==='offline'?'Sin conexión. Tu biblioteca está disponible.':result.status==='unchanged'?'Tu biblioteca está al día.':result.message||'Catálogo comprobado. Tus juegos anteriores siguen disponibles.');
+      setMessage(result.status==='offline'?'Sin conexión. Tu biblioteca está disponible.':result.status==='unchanged'?'':result.message||'Catálogo comprobado. Tus juegos anteriores siguen disponibles.');
     }catch(e){
       setError(`No se pudo sincronizar. Se conserva el catálogo anterior. ${String(e)}`);
     }finally{syncPendingRef.current=false;setChecking(false);}

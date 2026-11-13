@@ -63,9 +63,7 @@ export function deriveLauncherStatus(input:StatusInput):LauncherStatus{
     return {tone:'ready',label:'Juego nuevo',detail:input.arrival,percent:null};
   if(!input.catalogLoaded)
     return {tone:'busy',label:'Abriendo biblioteca',detail:'Un momento',percent:null};
-  if(input.catalog==='syncing')
-    return {tone:'busy',label:'Buscando novedades',detail:'Puedes seguir usando Coco',percent:null};
+  // Background catalog checks stay silent: the panel only changes when something actually arrives.
   return {tone:'ready',label:'Listo para jugar',
-    detail:input.processUncertain?'No pude revisar los juegos abiertos':
-      input.catalog==='local'?'':'Tu biblioteca está al día',percent:null};
+    detail:input.processUncertain?'No pude revisar los juegos abiertos':'',percent:null};
 }
