@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "stick-fight-the-game",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/stick-fight-the-game-3911030/stick-fight-the-game-3911030-part01.zip",
+    "sha256": "7cfbf28e7309d5e25a7c361801b866b2fa81156bc42ea6266c9de19717991169",
+    "size": 129229822
+  }
+}

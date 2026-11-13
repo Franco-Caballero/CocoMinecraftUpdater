@@ -3049,7 +3049,7 @@
   "ui": {
     "imagePath": "assets/experiences/pummel-party.jpg"
   },
-  "description": "Party game de minijuegos competitivos para 1 a 8 jugadores locales u online. Incluye tablero, minijuegos y creacion de contenido.",
+  "description": "Party game de tablero y minijuegos competitivos para hasta 8 jugadores, en local u online. Incluye un editor para crear tus propios contenidos.",
   "instanceId": "pummel-party",
   "managementMode": "managed",
   "runtime": {
@@ -3130,7 +3130,7 @@
   "ui": {
     "imagePath": "assets/experiences/grocery-store-simulator.jpg"
   },
-  "description": "Simulador de supermercado en primera persona: repone productos, atiende clientes, gestiona cajas y amplia tu tienda solo o en cooperativo.",
+  "description": "Simulador de supermercado en primera persona: repone productos, atiende clientes, gestiona las cajas y amplía tu tienda, solo o en cooperativo.",
   "instanceId": "grocery-store-simulator",
   "managementMode": "managed",
   "runtime": {
@@ -3226,7 +3226,7 @@
   "ui": {
     "imagePath": "assets/experiences/paint-the-town-red.jpg"
   },
-  "description": "Beat em up en primera persona: pelea en bares, prisiones, arenas y escenarios surrealistas con armas y objetos del entorno, solo o con amigos.",
+  "description": "Beat 'em up en primera persona: pelea en bares, prisiones, arenas y escenarios surrealistas con armas y objetos del entorno, solo o con amigos.",
   "instanceId": "paint-the-town-red",
   "managementMode": "managed",
   "runtime": {
@@ -3304,6 +3304,76 @@
     "arguments": [],
     "autoJoin": false,
     "serverName": "Coco - Paint the Town Red"
+  },
+  "files": []
+},
+        {
+  "id": "stick-fight-the-game",
+  "name": "Stick Fight: The Game",
+  "ui": {
+    "imagePath": "assets/experiences/stick-fight-the-game.jpg"
+  },
+  "description": "Peleas de monigotes con físicas: combates rápidos y caóticos en mapas que cambian y se destruyen, para hasta 4 jugadores en local u online.",
+  "instanceId": "stick-fight-the-game",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "StickFightTheGame/StickFight.exe",
+    "requiredFiles": [
+      {
+        "path": "StickFightTheGame/StickFight.exe",
+        "size": 18186240,
+        "sha256": "ed261078838617677f3ae5245ff27ea1b15e593898b63e88831dbffe7a1c5170",
+        "archiveSha256": "7cfbf28e7309d5e25a7c361801b866b2fa81156bc42ea6266c9de19717991169"
+      },
+      {
+        "path": "StickFightTheGame/StickFight_Data/Plugins/OnlineFix.ini",
+        "size": 726,
+        "sha256": "f05b27236986736e46a6017d846de1431a1ba26798494d505fcc7a97854fa0cf",
+        "archiveSha256": "7cfbf28e7309d5e25a7c361801b866b2fa81156bc42ea6266c9de19717991169"
+      },
+      {
+        "path": "StickFightTheGame/StickFight_Data/Plugins/steam_api.dll",
+        "size": 5379560,
+        "sha256": "b18031981e2d0ae0d8ce9e3ef619231ebcedc14164238d666f89535b9e3b6633",
+        "archiveSha256": "7cfbf28e7309d5e25a7c361801b866b2fa81156bc42ea6266c9de19717991169"
+      },
+      {
+        "path": "StickFightTheGame/StickFight_Data/Plugins/steam_api_of.dll",
+        "size": 221984,
+        "sha256": "fe302b9cf000b5b56b8f48df9a6737fc43b1c225db91306e92c779cae0d2908d",
+        "archiveSha256": "7cfbf28e7309d5e25a7c361801b866b2fa81156bc42ea6266c9de19717991169"
+      },
+      {
+        "path": "StickFightTheGame/winmm.dll",
+        "size": 214504,
+        "sha256": "24fadc4fb5128aa01dcfa640eee7d846046d7630c35b51904480292926f524e6",
+        "archiveSha256": "7cfbf28e7309d5e25a7c361801b866b2fa81156bc42ea6266c9de19717991169"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-stick-fight-the-game",
+    "lockPath": "launcher/experiences/stick-fight-the-game.lock.json",
+    "version": "3911030",
+    "sha256": "7cfbf28e7309d5e25a7c361801b866b2fa81156bc42ea6266c9de19717991169",
+    "size": 129229822,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/stick-fight-the-game-3911030/stick-fight-the-game-3911030-part01.zip",
+        "sha256": "7cfbf28e7309d5e25a7c361801b866b2fa81156bc42ea6266c9de19717991169",
+        "size": 129229822
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Stick Fight: The Game"
   },
   "files": []
 }

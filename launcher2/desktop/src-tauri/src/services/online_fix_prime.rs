@@ -154,7 +154,9 @@ pub(crate) fn first_run(root:&Path,game_exe:&Path,launch_arguments:&[String])->b
             if previous.0!=now{*previous=(now,Instant::now());return false;}
             previous.1.elapsed()>=SETTLED_FOR
         };
-        let outcome=prime(&exe,&dir,args,&written,PRIME_LIMIT);
+        // A Unity game loading its fix from <game>_Data runs from its own folder, as it does when played.
+        let run_root=if exe==game_exe&&crate::services::game_prepare::inside_unity_data(&dir,game_exe){game_exe.parent().unwrap_or(&dir)}else{&dir};
+        let outcome=prime(&exe,run_root,args,&written,PRIME_LIMIT);
         crate::services::diagnostics::log("online-fix",&format!("primera vez en este PC con {}: {outcome:?}",exe.display()));
         conclusive&=outcome.conclusive();
     }
