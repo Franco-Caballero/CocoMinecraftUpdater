@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "grounded-2",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part01.zip",
+    "sha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782",
+    "size": 877469380
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part01.zip",
+      "sha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782",
+      "size": 877469380
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part02.zip",
+      "sha256": "4b80f1fb0844d4f3206b11ce1fa06271b91ec2fc86e6d8ad442df9e12b41b60f",
+      "size": 1726709425
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part03.zip",
+      "sha256": "90e22cf9ac3d834f31f907c15022302c944eb049c3ed3409b8ffd25c1dbf1457",
+      "size": 1792543470
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part04.zip",
+      "sha256": "563cb6c3f034958695736e2a63836d040b88ec5779919fe76083d88e9dc0483d",
+      "size": 555182705
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part05.zip",
+      "sha256": "919adbb475653bc27b06afdf5b09357b34e60b8a5a40b741f768b54bd616dfbe",
+      "size": 1750561770
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part06.zip",
+      "sha256": "b7cccc7f4ec5b7d03da7cfe53990a5cfa9e13e748fa990d91cc613356b679339",
+      "size": 1791996386
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part07.zip",
+      "sha256": "32accd0a81fcf561e6cb2e4e54c7581bb13a7737fad61acf0b89cc55a2fbc29a",
+      "size": 1791859570
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part08.zip",
+      "sha256": "169f1d9c358b58289a2e1dbc3015a520a376d615f37d52736a25a802156927f5",
+      "size": 1788540695
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part09.zip",
+      "sha256": "cf9f0737c829bcb569802a63066de244e6152c98645115907dd90d65796ae7f9",
+      "size": 1793787077
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part10.zip",
+      "sha256": "81ccdda04e0dc0bf5a60dd212ee5faceef980dccd444414b1085f794fc46ff70",
+      "size": 1792404381
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part11.zip",
+      "sha256": "f09130b20ddacbc567810e85ef949c7cf112cbe36b929c5acde81b0ae8a5507e",
+      "size": 1791592191
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part12.zip",
+      "sha256": "4583c0cffb894217d1d549c3c24190b674197628472547af68aa77d5671b7eb6",
+      "size": 1780198155
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part13.zip",
+      "sha256": "6e48d9d2a371bdff86d809546256d461c73eb1dad7f62585a40eac0c5f0adb13",
+      "size": 1140064801
+    }
+  ]
+}

@@ -1637,5 +1637,70 @@
     "executable": "Schedule I.exe",
     "launchArguments": [],
     "hostingMode": "p2p"
+  },
+  {
+    "id": "grounded-2",
+    "instanceId": "grounded-2",
+    "name": "Grounded 2",
+    "image": "/covers/grounded-2.jpg.webp",
+    "description": "Secuela del juego de supervivencia en un mundo miniaturizado: explora un parque desbordado de insectos, fabrica equipo, construye bases y monta bichacos en solitario o en cooperativo en linea.",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "Grounded 2/Artbook/GameAssembly.dll",
+        "sha256": "2ee52358763e51f351ac3f4109ca2776b467212915f3721c96e529d3dab3d8b1",
+        "size": 55935568
+      },
+      {
+        "path": "Grounded 2/Artbook/UnityPlayer.dll",
+        "sha256": "5da2e6c1050924f370b8143256a1705ac3758bb78eb07013a268058edeb6709a",
+        "size": 34334120
+      },
+      {
+        "path": "Grounded 2/Augusta/Binaries/Win64/Custom.dll",
+        "sha256": "a478fa23319558dbaba520a00edda00b671a6e44bd11d292a89da7c41c8e6e63",
+        "size": 13954560
+      },
+      {
+        "path": "Grounded 2/Augusta/Binaries/Win64/Grounded2Steam-Win64-Shipping.exe",
+        "sha256": "e1b042191a995aea4c027a2c52aec73db53314620555094c1bb872aa3a62d029",
+        "size": 182851104
+      },
+      {
+        "path": "Grounded 2/Augusta/Binaries/Win64/OnlineFix.ini",
+        "sha256": "cb225392fbb5cd1bf2efd7880403ee64f88dfb036a250f64882d2dc85ab6fa9a",
+        "size": 616
+      },
+      {
+        "path": "Grounded 2/Augusta/Binaries/Win64/OnlineFix64.dll",
+        "sha256": "ae23f76254fbcd88d36ff5d15f958708638cb63e6cebdc1d30247aa559c2340f",
+        "size": 13401600
+      },
+      {
+        "path": "Grounded 2/Augusta/Binaries/Win64/StubDRM64.dll",
+        "sha256": "c44ce43eafddf6981ddfb7060eb01d70b0a0b7498a5a114e9fd0a240e6a97e9e",
+        "size": 101888
+      },
+      {
+        "path": "Grounded 2/Augusta/Binaries/Win64/dlllist.txt",
+        "sha256": "ef9062d4bd235532a3b6d536e601da844d29d70d39c01f7d6be6320369998d00",
+        "size": 42
+      },
+      {
+        "path": "Grounded 2/Augusta/Binaries/Win64/winmm.dll",
+        "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+        "size": 502272
+      },
+      {
+        "path": "Grounded 2/Engine/Binaries/ThirdParty/Steamworks/Steamv161/Win64/steam_api64.dll",
+        "sha256": "670d654aa3255c5061cf0236a1cdbb2f5076cbd5ae44f613b6f4921558e83e2d",
+        "size": 319584
+      }
+    ],
+    "executable": "Grounded 2/Augusta/Binaries/Win64/Grounded2Steam-Win64-Shipping.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
   }
 ]

@@ -3671,6 +3671,166 @@
         "serverName": "Coco - Schedule I"
       },
       "files": []
+    },
+    {
+      "id": "grounded-2",
+      "name": "Grounded 2",
+      "ui": {
+        "imagePath": "assets/experiences/grounded-2.jpg"
+      },
+      "description": "Secuela del juego de supervivencia en un mundo miniaturizado: explora un parque desbordado de insectos, fabrica equipo, construye bases y monta bichacos en solitario o en cooperativo en linea.",
+      "instanceId": "grounded-2",
+      "managementMode": "managed",
+      "runtime": {
+        "type": "standalone",
+        "executable": "Grounded 2/Augusta/Binaries/Win64/Grounded2Steam-Win64-Shipping.exe",
+        "requiredFiles": [
+          {
+            "path": "Grounded 2/Artbook/GameAssembly.dll",
+            "size": 55935568,
+            "sha256": "2ee52358763e51f351ac3f4109ca2776b467212915f3721c96e529d3dab3d8b1",
+            "archiveSha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782"
+          },
+          {
+            "path": "Grounded 2/Artbook/UnityPlayer.dll",
+            "size": 34334120,
+            "sha256": "5da2e6c1050924f370b8143256a1705ac3758bb78eb07013a268058edeb6709a",
+            "archiveSha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782"
+          },
+          {
+            "path": "Grounded 2/Augusta/Binaries/Win64/Custom.dll",
+            "size": 13954560,
+            "sha256": "a478fa23319558dbaba520a00edda00b671a6e44bd11d292a89da7c41c8e6e63",
+            "archiveSha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782"
+          },
+          {
+            "path": "Grounded 2/Augusta/Binaries/Win64/Grounded2Steam-Win64-Shipping.exe",
+            "size": 182851104,
+            "sha256": "e1b042191a995aea4c027a2c52aec73db53314620555094c1bb872aa3a62d029",
+            "archiveSha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782"
+          },
+          {
+            "path": "Grounded 2/Augusta/Binaries/Win64/OnlineFix.ini",
+            "size": 616,
+            "sha256": "cb225392fbb5cd1bf2efd7880403ee64f88dfb036a250f64882d2dc85ab6fa9a",
+            "archiveSha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782"
+          },
+          {
+            "path": "Grounded 2/Augusta/Binaries/Win64/OnlineFix64.dll",
+            "size": 13401600,
+            "sha256": "ae23f76254fbcd88d36ff5d15f958708638cb63e6cebdc1d30247aa559c2340f",
+            "archiveSha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782"
+          },
+          {
+            "path": "Grounded 2/Augusta/Binaries/Win64/StubDRM64.dll",
+            "size": 101888,
+            "sha256": "c44ce43eafddf6981ddfb7060eb01d70b0a0b7498a5a114e9fd0a240e6a97e9e",
+            "archiveSha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782"
+          },
+          {
+            "path": "Grounded 2/Augusta/Binaries/Win64/dlllist.txt",
+            "size": 42,
+            "sha256": "ef9062d4bd235532a3b6d536e601da844d29d70d39c01f7d6be6320369998d00",
+            "archiveSha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782"
+          },
+          {
+            "path": "Grounded 2/Augusta/Binaries/Win64/winmm.dll",
+            "size": 502272,
+            "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+            "archiveSha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782"
+          },
+          {
+            "path": "Grounded 2/Engine/Binaries/ThirdParty/Steamworks/Steamv161/Win64/steam_api64.dll",
+            "size": 319584,
+            "sha256": "670d654aa3255c5061cf0236a1cdbb2f5076cbd5ae44f613b6f4921558e83e2d",
+            "archiveSha256": "6e48d9d2a371bdff86d809546256d461c73eb1dad7f62585a40eac0c5f0adb13"
+          }
+        ]
+      },
+      "pack": {
+        "packId": "standalone-grounded-2",
+        "lockPath": "launcher/experiences/grounded-2.lock.json",
+        "version": "0.6.0.5",
+        "sha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782",
+        "size": 20372910006,
+        "archives": [
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part01.zip",
+            "sha256": "46d6d913751b373baece2ebeb9a73560dfbff995918bbd33b6f1529a8a6d7782",
+            "size": 877469380
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part02.zip",
+            "sha256": "4b80f1fb0844d4f3206b11ce1fa06271b91ec2fc86e6d8ad442df9e12b41b60f",
+            "size": 1726709425
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part03.zip",
+            "sha256": "90e22cf9ac3d834f31f907c15022302c944eb049c3ed3409b8ffd25c1dbf1457",
+            "size": 1792543470
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part04.zip",
+            "sha256": "563cb6c3f034958695736e2a63836d040b88ec5779919fe76083d88e9dc0483d",
+            "size": 555182705
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part05.zip",
+            "sha256": "919adbb475653bc27b06afdf5b09357b34e60b8a5a40b741f768b54bd616dfbe",
+            "size": 1750561770
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part06.zip",
+            "sha256": "b7cccc7f4ec5b7d03da7cfe53990a5cfa9e13e748fa990d91cc613356b679339",
+            "size": 1791996386
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part07.zip",
+            "sha256": "32accd0a81fcf561e6cb2e4e54c7581bb13a7737fad61acf0b89cc55a2fbc29a",
+            "size": 1791859570
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part08.zip",
+            "sha256": "169f1d9c358b58289a2e1dbc3015a520a376d615f37d52736a25a802156927f5",
+            "size": 1788540695
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part09.zip",
+            "sha256": "cf9f0737c829bcb569802a63066de244e6152c98645115907dd90d65796ae7f9",
+            "size": 1793787077
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part10.zip",
+            "sha256": "81ccdda04e0dc0bf5a60dd212ee5faceef980dccd444414b1085f794fc46ff70",
+            "size": 1792404381
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part11.zip",
+            "sha256": "f09130b20ddacbc567810e85ef949c7cf112cbe36b929c5acde81b0ae8a5507e",
+            "size": 1791592191
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part12.zip",
+            "sha256": "4583c0cffb894217d1d549c3c24190b674197628472547af68aa77d5671b7eb6",
+            "size": 1780198155
+          },
+          {
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grounded-2-0.6.0.5/grounded-2-0.6.0.5-part13.zip",
+            "sha256": "6e48d9d2a371bdff86d809546256d461c73eb1dad7f62585a40eac0c5f0adb13",
+            "size": 1140064801
+          }
+        ]
+      },
+      "hosting": {
+        "mode": "p2p"
+      },
+      "launch": {
+        "workflow": "coco-standalone",
+        "arguments": [],
+        "autoJoin": false,
+        "serverName": "Coco - Grounded 2"
+      },
+      "files": []
     }
   ]
 }
