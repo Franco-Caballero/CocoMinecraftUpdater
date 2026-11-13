@@ -124,6 +124,10 @@ En la **copia** `source` (nunca en la fuente del anfitrión):
 
 - Excluye **cada** archivo promocional, también los de subcarpetas (en Grocery se coló un `Read Me.txt` dentro de la carpeta del juego). Lista rápida: `Get-ChildItem $d\source -Recurse -File -Include *.url,*.bat,'Read Me.txt',Log.txt,output_log.txt`.
 - **Nunca excluyas `dlllist.txt`.** No es basura: es la lista de DLL que carga el `winmm.dll` de Online-Fix (p. ej. `OnlineFix64.dll`, `StubDRM64.dll`). Sin él, el juego muestra «Failed to open dlllist.txt for reading. Error code: 2» y no carga el fix (pasó con Crab Champions). Si existe, inclúyelo y añádelo a `--require`.
+  - El `winmm.dll` lo busca **en la carpeta del `.exe` que lo carga**, no en el directorio de trabajo. No cambies el ejecutable ni toques el código del launcher por este error: casi siempre falta el archivo.
+  - Si un juego ya publicado salió sin él: sube una parte extra diminuta (`<id>-<versión>-partNN.zip`) con solo `dlllist.txt` en su ruta y añade una cuarta cifra a la versión (`1.2.4` → `1.2.4.1`). Añade también la parte a `archives` y el archivo a `requiredFiles`, y publica el canal. Así no se vuelven a subir los GB (lo hicimos con Pummel, Grocery y Paint).
+  - **Hasta publicar el canal, Coco sigue instalando la versión vieja.** Probar el arreglo desde Coco antes de publicar repite el error y hace pensar que no funciona. Pruébalo sobre una copia extraída de todas las partes y, después de publicar, con una instalación real desde Coco.
+  - En esa copia manual, une primero los archivos partidos (`archivo.part1`, `.part2`… → `archivo`; Coco lo hace al instalar). Si no, un Unreal muestra «Missing game files … Content/», que no es un fallo del juego.
 
 ```powershell
 $env:TEMP="$d\temp"; $env:TMP=$env:TEMP
