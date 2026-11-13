@@ -3482,7 +3482,7 @@
       "ui": {
         "imagePath": "assets/experiences/carry-the-glass.jpg"
       },
-      "description": "Juego cooperativo de fisica donde dos jugadores deben transportar un fragil panel de vidrio a traves de niveles llenos de obstaculos, coordinandose con precision para no romperlo. Multijugador con RUNE/Steam fix incluido (online via Steam emulado).",
+      "description": "Juego cooperativo de fisica donde dos jugadores deben transportar un fragil panel de vidrio a traves de niveles con obstaculos. Fix UCOnline2/RUNE aplicado (Steam/EOS/PlayFab emulado); para jugar en linea usen la red Coco.",
       "instanceId": "carry-the-glass",
       "managementMode": "managed",
       "runtime": {
@@ -3493,69 +3493,75 @@
             "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_api64.dll",
             "size": 522096,
             "sha256": "b55a7883a67e45cfe66fca401a0d8979858e261bf7ef512271fe9e4c33eafcb7",
-            "archiveSha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a"
+            "archiveSha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f"
           },
           {
             "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/CarryTheGlassSteam-Win64-Shipping.exe",
             "size": 139935232,
             "sha256": "08d6c1d849e5444cb54b20fce09100d0e65c083de737382f0a660047e685588c",
-            "archiveSha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a"
+            "archiveSha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f"
           },
           {
             "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/plugins/EOS_custom.dll",
             "size": 174592,
             "sha256": "4d3041cb7a57720f997adc8ddc6400e6414de51d48be6498e9439790f83b25ef",
-            "archiveSha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a"
+            "archiveSha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f"
           },
           {
             "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/plugins/playfab_universal.dll",
             "size": 196096,
             "sha256": "172c0de8086fb040536b09f4ebdd5bf5e3f43ccf43b14f8ffbb03a93bd419997",
-            "archiveSha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a"
+            "archiveSha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f"
           },
           {
             "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/union-crax.ini",
             "size": 510,
             "sha256": "d6343b2144b70b26c60245d7577daae9f6da303d194946368e75e522130ab0a4",
-            "archiveSha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a"
+            "archiveSha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f"
           },
           {
             "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/winmm.dll",
             "size": 181248,
             "sha256": "bf9f10dc46a0ad958b8c337727a8e53ac0bfbd2dbec49b7c5de3634f69a1b3ee",
-            "archiveSha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a"
+            "archiveSha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f"
+          },
+          {
+            "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_api64.dll",
+            "size": 522096,
+            "sha256": "b55a7883a67e45cfe66fca401a0d8979858e261bf7ef512271fe9e4c33eafcb7",
+            "archiveSha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f"
           },
           {
             "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv164/Win64/steam_api.dll",
             "size": 924824,
             "sha256": "f21bd0a0b2fd38580c72a89b1bc6cf417544a63edad31addc919f31211e207e3",
-            "archiveSha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a"
+            "archiveSha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f"
           },
           {
             "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv164/Win64/steam_api64.dll",
             "size": 1068696,
             "sha256": "5413f30f7871145351dc2bec908174dbc6e740e9b7e99290982b498c58a12728",
-            "archiveSha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a"
+            "archiveSha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f"
           },
           {
             "path": "steam_api64.dll",
             "size": 522096,
             "sha256": "b55a7883a67e45cfe66fca401a0d8979858e261bf7ef512271fe9e4c33eafcb7",
-            "archiveSha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a"
+            "archiveSha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f"
           }
         ]
       },
       "pack": {
         "packId": "standalone-carry-the-glass",
         "lockPath": "launcher/experiences/carry-the-glass.lock.json",
-        "version": "3.0.0",
-        "sha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a",
-        "size": 968246173,
+        "version": "3.0.1",
+        "sha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f",
+        "size": 968490798,
         "archives": [
           {
-            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/carry-the-glass-3.0.0/carry-the-glass-3.0.0-part01.zip",
-            "sha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a",
-            "size": 968246173
+            "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/carry-the-glass-3.0.1/carry-the-glass-3.0.1-part01.zip",
+            "sha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f",
+            "size": 968490798
           }
         ]
       },

@@ -1637,12 +1637,12 @@
     "id": "carry-the-glass",
     "instanceId": "carry-the-glass",
     "workflow": "coco-standalone",
-    "version": "3.0.0",
+    "version": "3.0.1",
     "archives": [
       {
-        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/carry-the-glass-3.0.0/carry-the-glass-3.0.0-part01.zip",
-        "sha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a",
-        "size": 968246173
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/carry-the-glass-3.0.1/carry-the-glass-3.0.1-part01.zip",
+        "sha256": "1e0c4784b4f484992cdaa129c6374444aef1687fd04db34b482a0661c35a726f",
+        "size": 968490798
       }
     ],
     "requiredFiles": [
@@ -1675,6 +1675,11 @@
         "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/winmm.dll",
         "sha256": "bf9f10dc46a0ad958b8c337727a8e53ac0bfbd2dbec49b7c5de3634f69a1b3ee",
         "size": 181248
+      },
+      {
+        "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_api64.dll",
+        "sha256": "b55a7883a67e45cfe66fca401a0d8979858e261bf7ef512271fe9e4c33eafcb7",
+        "size": 522096
       },
       {
         "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv164/Win64/steam_api.dll",

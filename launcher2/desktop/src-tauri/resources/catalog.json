@@ -1533,7 +1533,7 @@
     "instanceId": "carry-the-glass",
     "name": "Carry The Glass",
     "image": "/covers/carry-the-glass.jpg.webp",
-    "description": "Juego cooperativo de fisica donde dos jugadores deben transportar un fragil panel de vidrio a traves de niveles llenos de obstaculos, coordinandose con precision para no romperlo. Multijugador con RUNE/Steam fix incluido (online via Steam emulado).",
+    "description": "Juego cooperativo de fisica donde dos jugadores deben transportar un fragil panel de vidrio a traves de niveles con obstaculos. Fix UCOnline2/RUNE aplicado (Steam/EOS/PlayFab emulado); para jugar en linea usen la red Coco.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -1567,6 +1567,11 @@
         "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/winmm.dll",
         "sha256": "bf9f10dc46a0ad958b8c337727a8e53ac0bfbd2dbec49b7c5de3634f69a1b3ee",
         "size": 181248
+      },
+      {
+        "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_api64.dll",
+        "sha256": "b55a7883a67e45cfe66fca401a0d8979858e261bf7ef512271fe9e4c33eafcb7",
+        "size": 522096
       },
       {
         "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv164/Win64/steam_api.dll",
