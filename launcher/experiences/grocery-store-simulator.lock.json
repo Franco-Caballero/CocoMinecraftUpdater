@@ -33,6 +33,11 @@
       "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part05.zip",
       "sha256": "3f4654b5b935cbf0f4a22aa1cb0e86d7087bcf9ac82bd8fe6100b801deb3512e",
       "size": 962229371
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/grocery-store-simulator-1.2.4/grocery-store-simulator-1.2.4-part06.zip",
+      "sha256": "30bc168931a201719a94da3c0fe3e6c5f9df1bf110303b5715198f316d8362d7",
+      "size": 241
     }
   ]
 }

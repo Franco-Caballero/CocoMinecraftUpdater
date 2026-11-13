@@ -18,6 +18,11 @@
       "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/pummel-party-1.14.1/pummel-party-1.14.1-part02.zip",
       "sha256": "2edd98b31f1db947d36654b437ede800f125b0f2fa494583270ff24372338714",
       "size": 483085231
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/pummel-party-1.14.1/pummel-party-1.14.1-part03.zip",
+      "sha256": "38abea44d668d311fde6b6c75a6a8596849a6d519b63e6c7c865ad92b54ed71a",
+      "size": 179
     }
   ]
 }

@@ -1332,6 +1332,11 @@
         "path": "Pummel Party/winmm.dll",
         "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
         "size": 524288
+      },
+      {
+        "path": "Pummel Party/dlllist.txt",
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "size": 35
       }
     ],
     "executable": "Pummel Party/PummelParty.exe",
@@ -1377,6 +1382,11 @@
         "path": "Grocery Store Simulator/Simulatorita/Binaries/Win64/winmm.dll",
         "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
         "size": 524288
+      },
+      {
+        "path": "Grocery Store Simulator/Simulatorita/Binaries/Win64/dlllist.txt",
+        "sha256": "fc0befb4aae4b7f0eeb1c398fccea03cc795590e09db6628974520091fcfc516",
+        "size": 15
       }
     ],
     "executable": "Grocery Store Simulator/Simulatorita.exe",
@@ -1427,6 +1437,11 @@
         "path": "Paint the Town Red/winmm.dll",
         "sha256": "54a6ece54641ee6e437caa351e493ddf4435f3e23e3d4ab4655c35f57b94fc59",
         "size": 263280
+      },
+      {
+        "path": "Paint the Town Red/dlllist.txt",
+        "sha256": "0f081ce53989c584ed9aed97003e3626ff946837b0020b7f61ab9443d0b4fc1a",
+        "size": 50
       }
     ],
     "executable": "Paint the Town Red/PaintTheTownRed.exe",

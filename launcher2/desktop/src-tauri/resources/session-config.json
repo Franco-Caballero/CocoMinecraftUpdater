@@ -201,19 +201,19 @@
     },
     {
       "id": "pummel-party",
-      "packVersion": "1.14.1",
+      "packVersion": "1.14.1.1",
       "host": "",
       "port": 0
     },
     {
       "id": "grocery-store-simulator",
-      "packVersion": "1.2.4",
+      "packVersion": "1.2.4.1",
       "host": "",
       "port": 0
     },
     {
       "id": "paint-the-town-red",
-      "packVersion": "1.3.4",
+      "packVersion": "1.3.4.1",
       "host": "",
       "port": 0
     }
