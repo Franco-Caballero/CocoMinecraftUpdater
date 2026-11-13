@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "bopl-battle",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/bopl-battle-2.5.1/bopl-battle-2.5.1-part01.zip",
+    "sha256": "ceae061b8afe0f3b5ad49c37eec9fcb6b61bf34b8b6697be2843b9f03d3bade0",
+    "size": 158799305
+  }
+}

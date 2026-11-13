@@ -1550,5 +1550,148 @@
       }
     ],
     "extraFiles": []
+  },
+  {
+    "id": "crab-champions",
+    "instanceId": "crab-champions",
+    "workflow": "coco-standalone",
+    "version": "2466",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/crab-champions-2466/crab-champions-2466-part01.zip",
+        "sha256": "c44bd931b710c1fcd502310c141a4ede481035fa1d637841bfcb38ebd77cf125",
+        "size": 1525259882
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/CrabChampions-Win64-Shipping.exe",
+        "sha256": "eacafb5187af13eb38a9ef1a42e426c166e05990f14a2f2020509b5236eef324",
+        "size": 72291400
+      },
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/OnlineFix.ini",
+        "sha256": "d92aa0543a90b786e3df69d9a9a04404f0f1c2278713a57be10ea96ca47fd297",
+        "size": 414
+      },
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/OnlineFix64.dll",
+        "sha256": "0faf4a397cbc7828a29313447684d2300794d48bdb9b21cf539e5f1320f43436",
+        "size": 10993664
+      },
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/dlllist.txt",
+        "sha256": "64eccecdadc11f3ff70d407997cd6075f6920d4fa38da9b068f2f428c5f24fe3",
+        "size": 30
+      },
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/winmm.dll",
+        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+        "size": 524288
+      },
+      {
+        "path": "Crab Champions/Engine/Binaries/ThirdParty/Steamworks/Steamv151/Win64/steam_api64.dll",
+        "sha256": "ca1fa9a7609ab10b7926400559cf073e5888423cc156af72c6027d72a89eea73",
+        "size": 265504
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "bopl-battle",
+    "instanceId": "bopl-battle",
+    "workflow": "coco-standalone",
+    "version": "2.5.1",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/bopl-battle-2.5.1/bopl-battle-2.5.1-part01.zip",
+        "sha256": "ceae061b8afe0f3b5ad49c37eec9fcb6b61bf34b8b6697be2843b9f03d3bade0",
+        "size": 158799305
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "BoplBattle.exe",
+        "sha256": "eeb9a8057d1c5c9f28cdcb8b390e6aafc2b30473c8b141021c059d1f051dc340",
+        "size": 666624
+      },
+      {
+        "path": "BoplBattle_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "473f5a312b56519f347741b63f3dea590946b96ea40ef3803d5f452c39af2f1e",
+        "size": 262944
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "c127164c473de7cdf4203e14c5e755cc7430fe2df41ec6f1b1ac45e8a7aa421b",
+        "size": 31090872
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "8c6649fb8f73ee2af7eb6b32b134e44ed5c506cc6d843b250efb515615d3548a",
+        "size": 22016
+      }
+    ],
+    "extraFiles": []
+  },
+  {
+    "id": "carry-the-glass",
+    "instanceId": "carry-the-glass",
+    "workflow": "coco-standalone",
+    "version": "3.0.0",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/carry-the-glass-3.0.0/carry-the-glass-3.0.0-part01.zip",
+        "sha256": "b80d3cf39315318e10dc5f0e25ee0b89f0cb6594bcc88e631cde6c584f14261a",
+        "size": 968246173
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_api64.dll",
+        "sha256": "b55a7883a67e45cfe66fca401a0d8979858e261bf7ef512271fe9e4c33eafcb7",
+        "size": 522096
+      },
+      {
+        "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/CarryTheGlassSteam-Win64-Shipping.exe",
+        "sha256": "08d6c1d849e5444cb54b20fce09100d0e65c083de737382f0a660047e685588c",
+        "size": 139935232
+      },
+      {
+        "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/plugins/EOS_custom.dll",
+        "sha256": "4d3041cb7a57720f997adc8ddc6400e6414de51d48be6498e9439790f83b25ef",
+        "size": 174592
+      },
+      {
+        "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/plugins/playfab_universal.dll",
+        "sha256": "172c0de8086fb040536b09f4ebdd5bf5e3f43ccf43b14f8ffbb03a93bd419997",
+        "size": 196096
+      },
+      {
+        "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/union-crax.ini",
+        "sha256": "d6343b2144b70b26c60245d7577daae9f6da303d194946368e75e522130ab0a4",
+        "size": 510
+      },
+      {
+        "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/winmm.dll",
+        "sha256": "bf9f10dc46a0ad958b8c337727a8e53ac0bfbd2dbec49b7c5de3634f69a1b3ee",
+        "size": 181248
+      },
+      {
+        "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv164/Win64/steam_api.dll",
+        "sha256": "f21bd0a0b2fd38580c72a89b1bc6cf417544a63edad31addc919f31211e207e3",
+        "size": 924824
+      },
+      {
+        "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv164/Win64/steam_api64.dll",
+        "sha256": "5413f30f7871145351dc2bec908174dbc6e740e9b7e99290982b498c58a12728",
+        "size": 1068696
+      },
+      {
+        "path": "steam_api64.dll",
+        "sha256": "b55a7883a67e45cfe66fca401a0d8979858e261bf7ef512271fe9e4c33eafcb7",
+        "size": 522096
+      }
+    ],
+    "extraFiles": []
   }
 ]

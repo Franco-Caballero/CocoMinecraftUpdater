@@ -102,7 +102,7 @@
     "instanceId": "big-walk",
     "name": "Big Walk",
     "image": "/covers/big-walk.png.webp",
-    "description": "Juego cooperativo de aventura y puzles en equipo. Únanse usando el Join Code del Host.",
+    "description": "Juego cooperativo de aventura y puzles en equipo. Ãšnanse usando el Join Code del Host.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -439,7 +439,7 @@
     "instanceId": "heart-signal",
     "name": "Heart Signal",
     "image": "/covers/heart-signal-s05.jpg.webp",
-    "description": "Un grupo de jóvenes comparte casa mientras intenta descubrir quién siente algo por quién. Gestos cotidianos, citas y mensajes anónimos alimentan un juego de intuiciones románticas.",
+    "description": "Un grupo de jÃ³venes comparte casa mientras intenta descubrir quiÃ©n siente algo por quiÃ©n. Gestos cotidianos, citas y mensajes anÃ³nimos alimentan un juego de intuiciones romÃ¡nticas.",
     "workflow": "coco-media",
     "minecraftVersion": "",
     "loader": "",
@@ -453,7 +453,7 @@
     "instanceId": "love-island-us",
     "name": "Love Island USA",
     "image": "/covers/love-island.jpg.webp",
-    "description": "Un grupo de solteros convive en una villa donde las citas, las nuevas parejas y las votaciones ponen a prueba cada romance. Solo las conexiones más fuertes llegan al final.",
+    "description": "Un grupo de solteros convive en una villa donde las citas, las nuevas parejas y las votaciones ponen a prueba cada romance. Solo las conexiones mÃ¡s fuertes llegan al final.",
     "workflow": "coco-media",
     "minecraftVersion": "",
     "loader": "",
@@ -467,7 +467,7 @@
     "instanceId": "the-drama",
     "name": "The Drama",
     "image": "/covers/the-drama.jpg.webp",
-    "description": "A pocos días de su boda, una pareja enamorada ve tambalear su relación cuando una revelación inesperada transforma los preparativos en una crisis llena de tensión y humor incómodo.",
+    "description": "A pocos dÃ­as de su boda, una pareja enamorada ve tambalear su relaciÃ³n cuando una revelaciÃ³n inesperada transforma los preparativos en una crisis llena de tensiÃ³n y humor incÃ³modo.",
     "workflow": "coco-media",
     "minecraftVersion": "",
     "loader": "",
@@ -481,7 +481,7 @@
     "instanceId": "leviticus",
     "name": "Leviticus",
     "image": "/covers/leviticus.jpg.webp",
-    "description": "Dos adolescentes enamorados intentan escapar de una entidad violenta que adopta la apariencia de la persona que más desean: el uno al otro. Terror sobrenatural sobre el deseo y la represión.",
+    "description": "Dos adolescentes enamorados intentan escapar de una entidad violenta que adopta la apariencia de la persona que mÃ¡s desean: el uno al otro. Terror sobrenatural sobre el deseo y la represiÃ³n.",
     "workflow": "coco-media",
     "minecraftVersion": "",
     "loader": "",
@@ -495,7 +495,7 @@
     "instanceId": "mickey-17",
     "name": "Mickey 17",
     "image": "/covers/mickey-17.jpg.webp",
-    "description": "Película de ciencia ficción (2025) dirigida por Bong Joon-ho y protagonizada por Robert Pattinson. Mickey 17 es un empleado prescindible enviado a colonizar un mundo helado; cuando una versión muere, un clon toma su lugar con sus recuerdos intactos.",
+    "description": "PelÃ­cula de ciencia ficciÃ³n (2025) dirigida por Bong Joon-ho y protagonizada por Robert Pattinson. Mickey 17 es un empleado prescindible enviado a colonizar un mundo helado; cuando una versiÃ³n muere, un clon toma su lugar con sus recuerdos intactos.",
     "workflow": "coco-media",
     "minecraftVersion": "",
     "loader": "",
@@ -589,7 +589,7 @@
     "instanceId": "rhythm-doctor",
     "name": "Rhythm Doctor",
     "image": "/covers/rhythm-doctor.jpg.webp",
-    "description": "Juego de ritmo donde curas pacientes al compás de los latidos de su corazón.",
+    "description": "Juego de ritmo donde curas pacientes al compÃ¡s de los latidos de su corazÃ³n.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -629,7 +629,7 @@
     "instanceId": "move-or-die",
     "name": "Move or Die",
     "image": "/covers/move-or-die.jpg.webp",
-    "description": "Juego de fiesta frenético para 4 jugadores donde las reglas cambian cada 20 segundos y tu salud baja constantemente si te quedas quieto.",
+    "description": "Juego de fiesta frenÃ©tico para 4 jugadores donde las reglas cambian cada 20 segundos y tu salud baja constantemente si te quedas quieto.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -709,7 +709,7 @@
     "instanceId": "mimic-party",
     "name": "Mimic Party",
     "image": "/covers/mimic-party.jpg.webp",
-    "description": "Juego multijugador online por voz de 1 a 5 jugadores donde todos imitan sonidos simultáneamente, evaluando tono y ritmo en una divertida competencia party.",
+    "description": "Juego multijugador online por voz de 1 a 5 jugadores donde todos imitan sonidos simultÃ¡neamente, evaluando tono y ritmo en una divertida competencia party.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -839,7 +839,7 @@
     "instanceId": "pilgrim",
     "name": "PILGRIM",
     "image": "/covers/pilgrim.jpg.webp",
-    "description": "Pilgrim es una aventura de terror medieval cooperativa de 1 a 4 jugadores. ¿Podrán tú y tus amigos llegar al final de The Road?",
+    "description": "Pilgrim es una aventura de terror medieval cooperativa de 1 a 4 jugadores. Â¿PodrÃ¡n tÃº y tus amigos llegar al final de The Road?",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -884,7 +884,7 @@
     "instanceId": "yapyap",
     "name": "YAPYAP",
     "image": "/covers/yapyap-official.jpg.webp",
-    "description": "Terror cooperativo para hasta 6 jugadores: infiltren torres mágicas, lancen hechizos con la voz y causen el caos mientras evitan monstruos.",
+    "description": "Terror cooperativo para hasta 6 jugadores: infiltren torres mÃ¡gicas, lancen hechizos con la voz y causen el caos mientras evitan monstruos.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -934,7 +934,7 @@
     "instanceId": "crack",
     "name": "CRACK",
     "image": "/covers/crack.jpg.webp",
-    "description": "Aventura incremental cooperativa para hasta 4 jugadores: descubran qué esconde un misterioso huevo gigante en un laboratorio.",
+    "description": "Aventura incremental cooperativa para hasta 4 jugadores: descubran quÃ© esconde un misterioso huevo gigante en un laboratorio.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -1024,7 +1024,7 @@
     "instanceId": "party-animals",
     "name": "Party Animals",
     "image": "/covers/party-animals.jpg.webp",
-    "description": "Peleas de fiesta con animales y físicas disparatadas: empuja, lanza y derriba a tus amigos en partidas locales u online.",
+    "description": "Peleas de fiesta con animales y fÃ­sicas disparatadas: empuja, lanza y derriba a tus amigos en partidas locales u online.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -1089,7 +1089,7 @@
     "instanceId": "golf-it",
     "name": "Golf It!",
     "image": "/covers/golf-it.jpg.webp",
-    "description": "Minigolf multijugador con físicas: supera pistas llenas de obstáculos y compite con tus amigos, con editor de circuitos y mapas de la comunidad.",
+    "description": "Minigolf multijugador con fÃ­sicas: supera pistas llenas de obstÃ¡culos y compite con tus amigos, con editor de circuitos y mapas de la comunidad.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -1144,7 +1144,7 @@
     "instanceId": "resident-evil-2026",
     "name": "Resident Evil",
     "image": "/covers/resident-evil-2026.jpg.webp",
-    "description": "Un mensajero médico queda atrapado en una noche de caos y criaturas aterradoras. Cada entrega se convierte en una carrera por sobrevivir en esta historia de terror del universo Resident Evil.",
+    "description": "Un mensajero mÃ©dico queda atrapado en una noche de caos y criaturas aterradoras. Cada entrega se convierte en una carrera por sobrevivir en esta historia de terror del universo Resident Evil.",
     "workflow": "coco-media",
     "minecraftVersion": "",
     "loader": "",
@@ -1203,7 +1203,7 @@
     "instanceId": "gamble-with-your-friends",
     "name": "Gamble With Your Friends",
     "image": "/covers/gamble-with-your-friends.jpg.webp",
-    "description": "Explorador de casinos cooperativo para hasta 6 jugadores: tus amigos y tú comparten una cuenta bancaria y una deuda descomunal. Apuesten, compren objetos sospechosos y tomen malas decisiones para llegar a la cuota diaria en 5 minutos… o sufran las consecuencias.",
+    "description": "Explorador de casinos cooperativo para hasta 6 jugadores: tus amigos y tÃº comparten una cuenta bancaria y una deuda descomunal. Apuesten, compren objetos sospechosos y tomen malas decisiones para llegar a la cuota diaria en 5 minutosâ€¦ o sufran las consecuencias.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -1248,7 +1248,7 @@
     "instanceId": "gang-beasts",
     "name": "Gang Beasts",
     "image": "/covers/gang-beasts.jpg.webp",
-    "description": "Peleas absurdas entre personajes gelatinosos en escenarios peligrosos: el clásico party brawler de Boneloaf. Combates locales y en línea para hasta 8 jugadores, con modos melee y gángsters, físicas impredecibles y caídas que dan risa.",
+    "description": "Peleas absurdas entre personajes gelatinosos en escenarios peligrosos: el clÃ¡sico party brawler de Boneloaf. Combates locales y en lÃ­nea para hasta 8 jugadores, con modos melee y gÃ¡ngsters, fÃ­sicas impredecibles y caÃ­das que dan risa.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -1348,7 +1348,7 @@
     "instanceId": "grocery-store-simulator",
     "name": "Grocery Store Simulator",
     "image": "/covers/grocery-store-simulator.jpg.webp",
-    "description": "Simulador de supermercado en primera persona: repone productos, atiende clientes, gestiona las cajas y amplía tu tienda, solo o en cooperativo.",
+    "description": "Simulador de supermercado en primera persona: repone productos, atiende clientes, gestiona las cajas y amplÃ­a tu tienda, solo o en cooperativo.",
     "workflow": "coco-standalone",
     "minecraftVersion": "",
     "loader": "",
@@ -1445,6 +1445,146 @@
       }
     ],
     "executable": "Paint the Town Red/PaintTheTownRed.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
+  },
+  {
+    "id": "crab-champions",
+    "instanceId": "crab-champions",
+    "name": "Crab Champions",
+    "image": "/covers/crab-champions.jpg.webp",
+    "description": "Crab Champions es un shooter roguelike frenetico. Viaja solo o con amigos por islas exoticas derrotando hordas de enemigos, recolectando botin y creando builds que rompen el juego.",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/CrabChampions-Win64-Shipping.exe",
+        "sha256": "eacafb5187af13eb38a9ef1a42e426c166e05990f14a2f2020509b5236eef324",
+        "size": 72291400
+      },
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/OnlineFix.ini",
+        "sha256": "d92aa0543a90b786e3df69d9a9a04404f0f1c2278713a57be10ea96ca47fd297",
+        "size": 414
+      },
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/OnlineFix64.dll",
+        "sha256": "0faf4a397cbc7828a29313447684d2300794d48bdb9b21cf539e5f1320f43436",
+        "size": 10993664
+      },
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/dlllist.txt",
+        "sha256": "64eccecdadc11f3ff70d407997cd6075f6920d4fa38da9b068f2f428c5f24fe3",
+        "size": 30
+      },
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/winmm.dll",
+        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+        "size": 524288
+      },
+      {
+        "path": "Crab Champions/Engine/Binaries/ThirdParty/Steamworks/Steamv151/Win64/steam_api64.dll",
+        "sha256": "ca1fa9a7609ab10b7926400559cf073e5888423cc156af72c6027d72a89eea73",
+        "size": 265504
+      }
+    ],
+    "executable": "Crab Champions/CrabChampions/Binaries/Win64/CrabChampions-Win64-Shipping.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
+  },
+  {
+    "id": "bopl-battle",
+    "instanceId": "bopl-battle",
+    "name": "Bopl Battle",
+    "image": "/covers/bopl-battle.jpg.webp",
+    "description": "Bopl Battle es un juego de peleas de plataformas por rondas para hasta 4 jugadores, con habilidades absurdas que se combinan para crear caos total. Uno de los lanzamientos indie mÃ¡s virales de 2023.",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "BoplBattle.exe",
+        "sha256": "eeb9a8057d1c5c9f28cdcb8b390e6aafc2b30473c8b141021c059d1f051dc340",
+        "size": 666624
+      },
+      {
+        "path": "BoplBattle_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "473f5a312b56519f347741b63f3dea590946b96ea40ef3803d5f452c39af2f1e",
+        "size": 262944
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "c127164c473de7cdf4203e14c5e755cc7430fe2df41ec6f1b1ac45e8a7aa421b",
+        "size": 31090872
+      },
+      {
+        "path": "winmm.dll",
+        "sha256": "8c6649fb8f73ee2af7eb6b32b134e44ed5c506cc6d843b250efb515615d3548a",
+        "size": 22016
+      }
+    ],
+    "executable": "BoplBattle.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
+  },
+  {
+    "id": "carry-the-glass",
+    "instanceId": "carry-the-glass",
+    "name": "Carry The Glass",
+    "image": "/covers/carry-the-glass.jpg.webp",
+    "description": "Juego cooperativo de fisica donde dos jugadores deben transportar un fragil panel de vidrio a traves de niveles llenos de obstaculos, coordinandose con precision para no romperlo. Multijugador con RUNE/Steam fix incluido (online via Steam emulado).",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_api64.dll",
+        "sha256": "b55a7883a67e45cfe66fca401a0d8979858e261bf7ef512271fe9e4c33eafcb7",
+        "size": 522096
+      },
+      {
+        "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/CarryTheGlassSteam-Win64-Shipping.exe",
+        "sha256": "08d6c1d849e5444cb54b20fce09100d0e65c083de737382f0a660047e685588c",
+        "size": 139935232
+      },
+      {
+        "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/plugins/EOS_custom.dll",
+        "sha256": "4d3041cb7a57720f997adc8ddc6400e6414de51d48be6498e9439790f83b25ef",
+        "size": 174592
+      },
+      {
+        "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/plugins/playfab_universal.dll",
+        "sha256": "172c0de8086fb040536b09f4ebdd5bf5e3f43ccf43b14f8ffbb03a93bd419997",
+        "size": 196096
+      },
+      {
+        "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/union-crax.ini",
+        "sha256": "d6343b2144b70b26c60245d7577daae9f6da303d194946368e75e522130ab0a4",
+        "size": 510
+      },
+      {
+        "path": "Glass Carriers/CarryTheGlass/Binaries/Win64/winmm.dll",
+        "sha256": "bf9f10dc46a0ad958b8c337727a8e53ac0bfbd2dbec49b7c5de3634f69a1b3ee",
+        "size": 181248
+      },
+      {
+        "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv164/Win64/steam_api.dll",
+        "sha256": "f21bd0a0b2fd38580c72a89b1bc6cf417544a63edad31addc919f31211e207e3",
+        "size": 924824
+      },
+      {
+        "path": "Glass Carriers/Engine/Binaries/ThirdParty/Steamworks/Steamv164/Win64/steam_api64.dll",
+        "sha256": "5413f30f7871145351dc2bec908174dbc6e740e9b7e99290982b498c58a12728",
+        "size": 1068696
+      },
+      {
+        "path": "steam_api64.dll",
+        "sha256": "b55a7883a67e45cfe66fca401a0d8979858e261bf7ef512271fe9e4c33eafcb7",
+        "size": 522096
+      }
+    ],
+    "executable": "Glass Carriers/CarryTheGlass/Binaries/Win64/CarryTheGlassSteam-Win64-Shipping.exe",
     "launchArguments": [],
     "hostingMode": "p2p"
   }

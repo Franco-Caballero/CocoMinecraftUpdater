@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "crab-champions",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/crab-champions-2466/crab-champions-2466-part01.zip",
+    "sha256": "c44bd931b710c1fcd502310c141a4ede481035fa1d637841bfcb38ebd77cf125",
+    "size": 1525259882
+  }
+}

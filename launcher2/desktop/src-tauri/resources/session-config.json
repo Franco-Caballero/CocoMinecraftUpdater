@@ -216,6 +216,24 @@
       "packVersion": "1.3.4.1",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "crab-champions",
+      "packVersion": "2466",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "bopl-battle",
+      "packVersion": "2.5.1",
+      "host": "",
+      "port": 0
+    },
+    {
+      "id": "carry-the-glass",
+      "packVersion": "3.0.0",
+      "host": "",
+      "port": 0
     }
   ]
 }
