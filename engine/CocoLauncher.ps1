@@ -7277,6 +7277,11 @@ function Set-CocoLauncherUiLayout {
             $script:CocoHostForceButton.Size=New-Object Drawing.Size((&$metric 170),(&$metric 28))
             $script:CocoHostForceButton.Location=New-Object Drawing.Point((&$metric 564),(&$metric 2))
         }
+        if($script:CocoRemoteAccessButton-and-not$script:CocoRemoteAccessButton.IsDisposed){
+            $script:CocoRemoteAccessButton.Size=New-Object Drawing.Size((&$metric 156),(&$metric 28))
+            $sshLeft=if($script:CocoHostForceButton-and-not$script:CocoHostForceButton.IsDisposed){400}else{578}
+            $script:CocoRemoteAccessButton.Location=New-Object Drawing.Point((&$metric $sshLeft),(&$metric 2))
+        }
         if($script:CocoIdentityButton-and-not$script:CocoIdentityButton.IsDisposed){
             $script:CocoIdentityButton.Size=New-Object Drawing.Size((&$metric 74),(&$metric 28));$script:CocoIdentityButton.Location=New-Object Drawing.Point((&$metric 742),(&$metric 2))
         }
@@ -7441,6 +7446,57 @@ function Invoke-CocoLauncherIdentityButton($IdentityCard,$IdentityText){
     }catch{
         try{Write-CocoLog "No se pudo abrir el popup de identidad: $($_.Exception.Message)"}catch{}
     }
+}
+
+function Test-CocoRemoteAccessAvailableHere {
+    $helper=Join-Path $script:CocoEngineRoot 'CocoRemoteAccess.ps1'
+    $publicKey=Join-Path $script:CocoEngineRoot 'CocoRemoteAccessHost.pub'
+    if(-not(Test-Path -LiteralPath $helper -PathType Leaf)-or
+       -not(Test-Path -LiteralPath $publicKey -PathType Leaf)){return $false}
+    try{
+        $probe=Start-Process -FilePath 'powershell.exe' -Wait -PassThru -WindowStyle Hidden -ArgumentList @(
+            '-NoProfile','-ExecutionPolicy','Bypass','-File',
+            (ConvertTo-CocoWindowsProcessArgument $helper),
+            '-CheckTarget'
+        )
+        return [bool]($probe-and$probe.ExitCode-eq0)
+    }catch{return $false}
+}
+
+function Show-CocoRemoteAccessSetup {
+    # La habilitacion requiere accion local y UAC; el origen de la clave es
+    # siempre el archivo publico incluido en el engine firmado/verificado.
+    if(-not(Test-CocoRemoteAccessAvailableHere)){
+        throw 'Configuracion SSH solo disponible para nazorepulgadora.'
+    }
+    $helper=Join-Path $script:CocoEngineRoot 'CocoRemoteAccess.ps1'
+
+    $message='Vas a instalar el servidor SSH y autorizar la clave publica de tu host Coco, ya incluida en esta version.'+
+        [Environment]::NewLine+[Environment]::NewLine+
+        'El acceso estara limitado por firewall a la IP ZeroTier 10.77.37.1.'+
+        [Environment]::NewLine+'Windows solicitara permisos de administrador y una confirmacion final.'+
+        [Environment]::NewLine+'SSH seguira activo despues de cerrar Coco Launcher.'+
+        [Environment]::NewLine+[Environment]::NewLine+'Quieres continuar?'
+    $answer=[Windows.Forms.MessageBox]::Show(
+        $script:CocoForm,$message,'Activar acceso remoto SSH',
+        [Windows.Forms.MessageBoxButtons]::YesNo,
+        [Windows.Forms.MessageBoxIcon]::Warning
+    )
+    if($answer-ne[Windows.Forms.DialogResult]::Yes){return}
+
+    $arguments=@(
+        '-NoProfile','-ExecutionPolicy','Bypass','-File',
+        (ConvertTo-CocoWindowsProcessArgument $helper)
+    )
+    $installed=Start-Process -FilePath 'powershell.exe' -Verb RunAs -PassThru -Wait -ArgumentList $arguments
+    if(-not$installed-or$installed.ExitCode-ne0){
+        throw 'El instalador SSH no finalizo correctamente. Comprueba la consola de configuracion.'
+    }
+    [void]([Windows.Forms.MessageBox]::Show(
+        $script:CocoForm,'El servicio SSH paso las pruebas locales. Aun debes comprobar la autenticacion real desde el host usando ZeroTier y tu clave privada.',
+        'Configuracion SSH',[Windows.Forms.MessageBoxButtons]::OK,
+        [Windows.Forms.MessageBoxIcon]::Information
+    ))
 }
 
 function Start-CocoLauncherExperience($Catalog,$Experience,$Identity,[string]$Role,$Paths,[string]$LegacyMinecraftRoot,[switch]$DisableAutoJoin){
@@ -7612,6 +7668,7 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     $script:CocoLauncherMinimizeButton=$null
     $script:CocoLauncherCloseButton=$null
     $script:CocoIdentityButton=$null
+    $script:CocoRemoteAccessButton=$null
     $script:CocoIdentityOpenAction=$null
     Show-CocoWindow
     $script:CocoForm.Text='Coco Launcher';$script:CocoBrand.Text='COCO LAUNCHER  |  EXPERIENCIAS DISPONIBLES'
@@ -7825,6 +7882,31 @@ function Start-CocoLauncherUi($Manifest,[string]$LegacyMinecraftRoot,[string]$La
     $close.Add_Paint({param($sender,$eventArgs)$pen=New-Object Drawing.Pen([Drawing.Color]::FromArgb(218,210,229),1.5);$eventArgs.Graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias;$inset=11;$eventArgs.Graphics.DrawLine($pen,$inset,$inset,$sender.ClientSize.Width-$inset,$sender.ClientSize.Height-$inset);$eventArgs.Graphics.DrawLine($pen,$sender.ClientSize.Width-$inset,$inset,$inset,$sender.ClientSize.Height-$inset);$pen.Dispose()}.GetNewClosure())
     $launcherCloseCommand=[System.Management.Automation.ScriptBlock](@(Get-Command Request-CocoLauncherClose -CommandType Function -ErrorAction Stop|Select-Object -First 1)[0].ScriptBlock)
     $close.Add_Click({&$launcherCloseCommand}.GetNewClosure());$script:CocoLauncherCloseButton=$close;$script:CocoPanel.Controls.Add($close)
+    # Configuracion administrativa opcional, siempre activada mediante clic.
+    # La UI de pruebas no instala ni ofrece servicios del sistema.
+    if(-not$paths.IsTest-and(Test-CocoRemoteAccessAvailableHere)){
+        $sshButton=New-Object Windows.Forms.Button
+        $sshButton.Name='CocoRemoteAccessButton'
+        $sshButton.Text='CONFIGURAR SSH'
+        $sshButton.AccessibleName='Configurar acceso SSH remoto'
+        $sshButton.AccessibleDescription='Habilitar SSH solo en nazorepulgadora con la clave publica del host Coco, confirmacion y permisos de Windows.'
+        $sshButton.TabStop=$false
+        Set-CocoFlatButtonStyle $sshButton ([Drawing.Color]::FromArgb(35,22,48)) ([Drawing.Color]::FromArgb(200,180,215))
+        $sshButton.Font=New-Object Drawing.Font('Segoe UI Semibold',(Get-CocoLauncherUiFontSize 7.5 6))
+        Set-CocoFittedButtonText $sshButton ([string]$sshButton.Text) 'Segoe UI Semibold' (Get-CocoLauncherUiFontSize 7.5 6) 6
+        $sshButton.Add_Click({
+            try{Show-CocoRemoteAccessSetup}
+            catch{
+                Write-CocoLog "No se pudo completar configuracion SSH: $($_.Exception.Message)"
+                [void]([Windows.Forms.MessageBox]::Show(
+                    $script:CocoForm,[string]$_.Exception.Message,'Configuracion SSH',
+                    [Windows.Forms.MessageBoxButtons]::OK,[Windows.Forms.MessageBoxIcon]::Warning
+                ))
+            }
+        }.GetNewClosure())
+        $script:CocoRemoteAccessButton=$sshButton
+        $script:CocoPanel.Controls.Add($sshButton)
+    }
     if($role-eq'host'){
         $hostPrefs=Read-CocoHostPreferences
         $script:CocoHostForceJoin=if($hostPrefs.PSObject.Properties.Name-contains'forceJoin'){[bool]$hostPrefs.forceJoin}else{$true}

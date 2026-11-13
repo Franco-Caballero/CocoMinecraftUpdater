@@ -17,6 +17,28 @@ La biblioteca de experiencias usa un único viewport con el desplazamiento verti
 
 Las tarjetas usan el rectángulo canónico 16:9 horizontal (actualización 2026-09-06: el catálogo completo de 21 experiencias utiliza carátulas horizontales panorámicas en formato ~16:9, eliminando bandas laterales vacías). La portada se renderiza contenida completa (`Set-CocoPictureBoxContainImage`): toca el primer borde sin recortar, sin escapar ni deformar.
 
+## Preparacion voluntaria de SSH para administrar equipos propios
+
+Unicamente en el nodo ZeroTier `5a84d2bb9e` de la red Coco,
+el launcher muestra el boton `CONFIGURAR SSH`, sea cual sea el rol
+de juego. En los demas equipos no aparece. El engine incluye solo la clave
+**publica** `CocoRemoteAccessHost.pub`, generada para este host,
+y la selecciona automaticamente al pulsar el boton.
+La activacion requiere confirmacion expresa y elevacion de Windows.
+El helper `CocoRemoteAccess.ps1` comprueba el mismo nodo antes de
+instalar OpenSSH Server, agrega la clave al registro de administradores,
+restringe su regla de firewall a `10.77.37.1` y deja `sshd` con inicio
+automatico. Se necesita acceso al equipo la primera vez;
+abrir Coco Launcher por si solo **no activa** acceso remoto.
+
+La clave privada queda en el equipo desde el que se administrara el PC.
+La clave publica se incluye en el engine para ese nodo y se autoriza
+unicamente tras aprobacion local; no se distribuyen claves privadas.
+Despues de esa activacion, SSH/SFTP funciona aun con Coco Launcher
+cerrado. Ver `OPERACION.md` para conexiones y revocacion.
+La revisión integral de riesgos y criterios pendientes está en
+[`CocoRemoteAccessAudit-2026-10-18.md`](CocoRemoteAccessAudit-2026-10-18.md).
+
 ## Identidad
 
 Coco Launcher usa exclusivamente una **identidad local/offline estable**. No ofrece login Microsoft ni copia sesiones, tokens o contraseñas.

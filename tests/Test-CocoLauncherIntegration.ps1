@@ -145,7 +145,7 @@ try{
     $packaged=Read-CocoLauncherCatalog (Join-Path $expanded 'launcher\catalog.json')
     $packagedOriginal=@($packaged.experiences|Where-Object id -eq 'coco-original'|Select-Object -First 1)[0]
     if($packagedOriginal.pack.version-ne'9.8.7'){throw 'El engine no vinculo catalogo y version publicada.'}
-    foreach($required in 'CocoLauncher.ps1','CocoSessionService.ps1','launcher\experiences\into-the-backrooms.lock.json','assets\skins\smolbird.png'){
+    foreach($required in 'CocoLauncher.ps1','CocoSessionService.ps1','CocoRemoteAccess.ps1','CocoRemoteAccessHost.pub','launcher\experiences\into-the-backrooms.lock.json','assets\skins\smolbird.png'){
         if(-not(Test-Path -LiteralPath (Join-Path $expanded $required) -PathType Leaf)){throw "Falta en engine: $required"}
     }
     $embeddedSkin=Join-Path $expanded 'assets\skins\smolbird.png'

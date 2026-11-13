@@ -90,6 +90,40 @@ El Publisher:
 
 ## ZeroTier
 
+### Acceso remoto SSH opcional
+
+En el nodo personal `5a84d2bb9e`, abre Coco Launcher y pulsa
+`CONFIGURAR SSH`: Coco selecciona automaticamente la clave publica
+`CocoRemoteAccessHost.pub` incluida en su engine. Confirma la operacion
+y acepta UAC. La consola de instalacion pide escribir `ACTIVAR` antes
+de modificar Windows. En otros equipos el boton no aparece y el helper
+comprueba la misma identidad ZeroTier antes de instalar nada.
+Solo habilita su regla de entrada para `10.77.37.1`.
+Se configura una cuenta administradora de Windows: la clave se guarda en
+`%PROGRAMDATA%\ssh\administrators_authorized_keys`.
+
+Desde el host, despues de verificar la huella SSH mostrada por el equipo
+remoto, conecta mediante `ssh -i <clave_privada> <usuario_admin>@<ip_zerotier>`.
+Para navegar carpetas y copiar archivos manualmente utiliza WinSCP/SFTP.
+El servicio `sshd` sobrevive al cierre del launcher y se inicia con Windows.
+El instalador verifica el estado de OpenSSH, la ACL, la regla propia de
+firewall, el servicio y su listener; **no confirma autenticacion real**
+hasta realizar una prueba externa desde el host. Sus resultados y errores
+se registran en `%PROGRAMDATA%\CocoMinecraftUpdater\logs\ssh-setup.log`.
+Una instalacion de caracteristicas de Windows puede exigir reiniciar o
+fallar por politicas del equipo/Windows Update. El instalador no cambia
+reglas de firewall ajenas a `OpenSSH-Server-In-TCP`; deben auditarse
+otros permisos existentes.
+Para revocar el acceso, elimina la clave agregada de
+`administrators_authorized_keys`; si ya no se necesita SSH, detiene y
+deshabilita `sshd` desde Windows.
+
+No existe activacion SSH automatica al abrir Coco, ni distribucion publica
+de claves. La primera habilitacion requiere acceso al equipo y aprobacion
+local de administrador.
+Ver auditoría `docs/CocoRemoteAccessAudit-2026-10-18.md` para escenarios
+de fallo, condiciones de seguridad y checklist de certificación remota.
+
 - Ruta normal: ZeroTier `10.77.37.1:25565`, red `58997fc5f3c0c001`.
 - **Autoaceptación limitada al launcher**: el host acepta nodos pendientes únicamente mientras su proceso Coco Launcher está abierto. El autorizador se liga al PID del launcher, consulta en vivo y se detiene cuando ese proceso termina; no instala tareas programadas ni sigue aceptando miembros con el launcher cerrado. Después de autorizar, republica la configuración de red para entregar IP de inmediato. El firewall sigue limitando la exposición a TCP/UDP 25565 y TCP 25564 desde `10.77.37.0/24`.
 - MCWiFiPnP moderno debe producir exactamente `OnlineMode=false`, `EnableUUIDFixer=true`, `UseUPnP=false` y puerto 25565. Los nombres kebab-case son inválidos.
