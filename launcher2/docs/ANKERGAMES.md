@@ -103,8 +103,8 @@ Busca en `source` (sin ejecutar nada): el `.exe` del juego, cada `OnlineFix.ini`
 
 | Dónde está Online-Fix | Ejemplo | `--executable` | `--require` | Primer arranque invisible |
 |---|---|---|---|---|
-| `OnlineFix64.dll` junto al `.exe` (Unity 64 bits) | Pummel, Paint, Gang Beasts | `<Juego>/<Juego>.exe` | exe, `OnlineFix64.dll`, `winmm.dll`, `OnlineFix.ini`, `UnityPlayer.dll`, `steam_api64.dll` (+ `GameAssembly.dll` si es IL2CPP) | Sí |
-| Unreal: `Binaries/Win64` junto a `-Shipping.exe` | Grocery Store Simulator | el `.exe` de la raíz | ese exe, el `-Shipping.exe` y los del fix | Sí (Coco arranca el `-Shipping.exe`) |
+| `OnlineFix64.dll` junto al `.exe` (Unity 64 bits) | Pummel, Paint, Gang Beasts | `<Juego>/<Juego>.exe` | exe, `OnlineFix64.dll`, `winmm.dll`, `dlllist.txt` si existe, `OnlineFix.ini`, `UnityPlayer.dll`, `steam_api64.dll` (+ `GameAssembly.dll` si es IL2CPP) | Sí |
+| Unreal: `Binaries/Win64` junto a `-Shipping.exe` | Grocery Store Simulator | el `.exe` de la raíz | ese exe, el `-Shipping.exe` y los del fix (con `dlllist.txt` si existe) | Sí (Coco arranca el `-Shipping.exe`) |
 | Dentro de `steam_api.dll` en `<Juego>_Data/Plugins` (Unity 32 bits, sin `OnlineFix*.dll`) | Stick Fight (retirado) | — | — | **No soportado: descártalo** (ver «Juegos que hay que evitar») |
 | Otro | — | — | — | Compruébalo en el paso 7 antes de publicar |
 
@@ -122,7 +122,8 @@ En la **copia** `source` (nunca en la fuente del anfitrión):
   [regex]::Match($t,'(?m)^0=([0-9a-f]{128})').Groups[1].Value   # hash0 para online-fix.json
   ```
 
-- Excluye **cada** archivo promocional, también los de subcarpetas (en Grocery se coló un `Read Me.txt` dentro de la carpeta del juego). Lista rápida: `Get-ChildItem $d\source -Recurse -File -Include *.url,*.bat,'Read Me.txt',dlllist.txt,Log.txt,output_log.txt`.
+- Excluye **cada** archivo promocional, también los de subcarpetas (en Grocery se coló un `Read Me.txt` dentro de la carpeta del juego). Lista rápida: `Get-ChildItem $d\source -Recurse -File -Include *.url,*.bat,'Read Me.txt',Log.txt,output_log.txt`.
+- **Nunca excluyas `dlllist.txt`.** No es basura: es la lista de DLL que carga el `winmm.dll` de Online-Fix (p. ej. `OnlineFix64.dll`, `StubDRM64.dll`). Sin él, el juego muestra «Failed to open dlllist.txt for reading. Error code: 2» y no carga el fix (pasó con Crab Champions). Si existe, inclúyelo y añádelo a `--require`.
 
 ```powershell
 $env:TEMP="$d\temp"; $env:TMP=$env:TEMP

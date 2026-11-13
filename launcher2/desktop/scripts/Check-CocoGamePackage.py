@@ -12,7 +12,8 @@ import sys
 import zipfile
 
 PROMO_SUFFIXES = (".url", ".bat", ".cmd", ".lnk")
-PROMO_NAMES = {"read me.txt", "readme.txt", "dlllist.txt", "log.txt", "output_log.txt", "player.log"}
+PROMO_NAMES = {"read me.txt", "readme.txt", "log.txt", "output_log.txt", "player.log"}
+# dlllist.txt is NOT junk: Online-Fix's winmm.dll reads it to know which DLLs to load.
 LOADERS = {"onlinefix64.dll", "onlinefix.dll"}
 
 
@@ -21,7 +22,7 @@ def main(folder: pathlib.Path) -> int:
     if not archives:
         print(f"No ZIP in {folder}")
         return 1
-    problems, loaders, inis = [], set(), {}
+    problems, loaders, inis, proxies, lists = [], set(), {}, set(), set()
     for archive in archives:
         with zipfile.ZipFile(archive) as package:
             for name in package.namelist():
@@ -38,6 +39,10 @@ def main(folder: pathlib.Path) -> int:
                 folder_of = posixpath.dirname(name)
                 if base in LOADERS:
                     loaders.add(folder_of)
+                if base == "winmm.dll":
+                    proxies.add(folder_of)
+                if base == "dlllist.txt":
+                    lists.add(folder_of)
                 if base == "onlinefix.ini":
                     text = package.read(name).decode("utf-8", "replace")
                     inis[folder_of] = text
@@ -45,6 +50,8 @@ def main(folder: pathlib.Path) -> int:
                         problems.append(f"packer's 1337 still in {name}: remove that line before packing")
                     if "realappid" not in text.lower():
                         problems.append(f"no RealAppId in {name}")
+    for folder_name in sorted(proxies & loaders - lists):
+        problems.append(f"winmm.dll and the fix in {folder_name or '(root)'} but no dlllist.txt: the game will fail with 'Failed to open dlllist.txt' unless this fix does not use one; restore it from the download")
     fix_folders = sorted(loaders) if loaders else sorted(inis)
     for fix in fix_folders:
         print(f"fix folder: {fix or '(root)'}")
