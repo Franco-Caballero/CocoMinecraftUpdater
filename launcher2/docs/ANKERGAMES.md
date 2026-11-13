@@ -39,7 +39,7 @@ La sección **«Game Features & Info»** de la ficha lo dice (el `Select-String`
 |---|---|---|
 | «The **OFME** patch has been used» | El juego **con Online-Fix integrado** (Pummel Party, por ejemplo) | Solo el botón **Direct**. Sigue normal |
 | «The **Goldberg** / **RUNE** emulator has been used» + «**Online Fix** (patch) has been added **separately**» | El juego con un emulador de Steam, **sin** Online-Fix | Baja **también** el fix (botón **Online Fix** del mismo diálogo) y aplícalo (paso 3b) |
-| Emulador sin mención de Online Fix | Solo un emulador: no hay multijugador por internet | **Descártalo**: Coco necesita Online-Fix para jugar con amigos |
+| Emulador sin mención de Online Fix | Un emulador (Goldberg, RUNE…) o un fix propio | **Inténtalo** (sección «Otras formas de multijugador»). Descártalo solo si no llega al menú o no hay forma de jugar con otro |
 
 El diálogo de descarga lo confirma: con fix aparte muestra dos botones, **Direct** y **Online Fix**, y además un bloque **FILE INTEGRITY** con MD5 y SHA-256 del juego. Sin fix aparte solo hay **Direct**.
 
@@ -106,7 +106,17 @@ Busca en `source` (sin ejecutar nada): el `.exe` del juego, cada `OnlineFix.ini`
 | `OnlineFix64.dll` junto al `.exe` (Unity 64 bits) | Pummel, Paint, Gang Beasts | `<Juego>/<Juego>.exe` | exe, `OnlineFix64.dll`, `winmm.dll`, `dlllist.txt` si existe, `OnlineFix.ini`, `UnityPlayer.dll`, `steam_api64.dll` (+ `GameAssembly.dll` si es IL2CPP) | Sí |
 | Unreal: `Binaries/Win64` junto a `-Shipping.exe` | Grocery Store Simulator | el `.exe` de la raíz | ese exe, el `-Shipping.exe` y los del fix (con `dlllist.txt` si existe) | Sí (Coco arranca el `-Shipping.exe`) |
 | Dentro de `steam_api.dll` en `<Juego>_Data/Plugins` (Unity 32 bits, sin `OnlineFix*.dll`) | Stick Fight (retirado) | — | — | **No soportado: descártalo** (ver «Juegos que hay que evitar») |
-| Otro | — | — | — | Compruébalo en el paso 7 antes de publicar |
+| Otro (RUNE, Goldberg, fix con EOS/PlayFab, `union-crax`…) | Carry The Glass | el `.exe` que arranca el juego | ese exe y los DLL/INI del fix o emulador | No hace falta: sigue «Otras formas de multijugador» |
+
+### Otras formas de multijugador (sin el Online-Fix estándar)
+
+Un fix distinto **no es motivo para descartar el juego**. Coco no exige Online-Fix: si no encuentra `OnlineFix64.dll`/`OnlineFix.dll`, no prepara nada y simplemente abre el `.exe`. Las funciones exclusivas de Online-Fix (hash en `OnlineFix.ini`, popups suprimidos, `online-fix.json`) no se usan, y no pasa nada.
+
+1. **Identifica qué trae:** `steam_api64.dll` con `steam_settings/` (Goldberg), `rune.ini` o `steam_emu.ini` (RUNE/CODEX), carpetas o DLL de EOS, PlayFab o un fix propio (`union-crax`…). Lee los `.ini`/`.txt` de la carpeta (no los `.bat`) para saber cómo se conecta: Steam (Spacewar 480), EOS/PlayFab por internet o LAN/IP directa.
+2. **Empaquétalo tal cual.** No borres los archivos del emulador ni del fix: aquí son el multijugador. No añadas el juego a `online-fix.json`. El nombre de jugador lo pone el `.ini` del emulador; no inventes cuentas ni credenciales.
+3. **Prueba en 7b** que llega al menú y, si puedes, que se crea una partida o sala (menú de multijugador, lobby, «host»). Si necesita Steam abierto, ábrelo y anótalo.
+4. **Anota en la descripción del juego cómo se juega con amigos** si no es automático (p. ej. «conecta por IP con la red Coco» o «invita por código de sala»).
+5. Descártalo solo si no llega al menú, exige una cuenta real de terceros que no tenemos o el multijugador está claramente cortado (el menú online no hace nada). Ante la duda, publícalo igualmente: se puede retirar después (guía maestra, «Retirar un juego»).
 
 ## 4. Limpiar la copia y empaquetar
 
@@ -204,7 +214,7 @@ Aprobado solo si: aparece una **ventana con título**, la memoria sube a cientos
 
 ## Juegos que hay que evitar
 
-Descarta el paquete (no lo publiques ni lo «arregles» en Coco) si ves cualquiera de estas señales. Todas aparecieron en Stick Fight: The Game (AnkerGames, build 3911030), retirado en Coco 0.6.56:
+Descarta el paquete (no lo publiques ni lo «arregles» en Coco) si ves **varias** de estas señales **y además** el juego no llega al menú. Un fix o emulador distinto de Online-Fix **no** es una de ellas (ver «Otras formas de multijugador»). Todas aparecieron en Stick Fight: The Game (AnkerGames, build 3911030), retirado en Coco 0.6.56:
 
 - **Sin `OnlineFix64.dll`/`OnlineFix.dll`**, con el fix metido dentro de `steam_api.dll` en `<Juego>_Data/Plugins` (Unity antiguo de 32 bits). Ningún juego que funciona en Coco usa esa forma.
 - **Ningún `UnityPlayer.dll`** junto a un juego Unity: el `.exe` de 18 MB lleva el motor dentro (Unity 5 o anterior). En ese caso, mira el `.exe` con más cuidado.
