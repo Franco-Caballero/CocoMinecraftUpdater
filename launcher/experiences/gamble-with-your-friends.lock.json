@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "gamble-with-your-friends",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gamble-with-your-friends-2026.11.12/gamble-with-your-friends-2026.11.12-part01.zip",
+    "sha256": "6d8168572823e70cd192442252badd6ce3e40790dfd7424af06516bea9d5a5c3",
+    "size": 733836195
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gamble-with-your-friends-2026.11.12/gamble-with-your-friends-2026.11.12-part01.zip",
+      "sha256": "6d8168572823e70cd192442252badd6ce3e40790dfd7424af06516bea9d5a5c3",
+      "size": 733836195
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gamble-with-your-friends-2026.11.12/gamble-with-your-friends-2026.11.12-part02.zip",
+      "sha256": "b3c32b779e80b3796545d8be1148a4da2a5c6ec33485e2ea617fe085dc040d22",
+      "size": 229743382
+    }
+  ]
+}

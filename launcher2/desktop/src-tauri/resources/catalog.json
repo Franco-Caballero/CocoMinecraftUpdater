@@ -1197,5 +1197,50 @@
     "executable": "Buckshot-Roulette-AnkerGames/Buckshot Roulette.exe",
     "launchArguments": [],
     "hostingMode": "p2p"
+  },
+  {
+    "id": "gamble-with-your-friends",
+    "instanceId": "gamble-with-your-friends",
+    "name": "Gamble With Your Friends",
+    "image": "/covers/gamble-with-your-friends.jpg.webp",
+    "description": "Explorador de casinos cooperativo para hasta 6 jugadores: tus amigos y tú comparten una cuenta bancaria y una deuda descomunal. Apuesten, compren objetos sospechosos y tomen malas decisiones para llegar a la cuota diaria en 5 minutos… o sufran las consecuencias.",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "Gamble With Your Friends/Gamble With Your Friends.exe",
+        "sha256": "d587602bef7b8c717034a300b11adb17dca31525c008e97dcadc4c779834e9a3",
+        "size": 667648
+      },
+      {
+        "path": "Gamble With Your Friends/Gamble With Your Friends_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "e082bf5c9f881c822b1540a76b74f9d15e18019a73ebd206a559595badcb7f65",
+        "size": 319584
+      },
+      {
+        "path": "Gamble With Your Friends/OnlineFix.ini",
+        "sha256": "6c1873927c2a455298ef8d36222d4ecd35ced3185f77d60157213df78fc5db35",
+        "size": 472
+      },
+      {
+        "path": "Gamble With Your Friends/OnlineFix64.dll",
+        "sha256": "27a1c596c4b1de1e6672cb7e7fba2ba3d3124999493ff82a504beb6f6145e88f",
+        "size": 13820928
+      },
+      {
+        "path": "Gamble With Your Friends/UnityPlayer.dll",
+        "sha256": "40c63c999bf6169400bb84b33e22943b158132d7af7d19ee185e7ca549534f62",
+        "size": 35780016
+      },
+      {
+        "path": "Gamble With Your Friends/winmm.dll",
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "size": 506368
+      }
+    ],
+    "executable": "Gamble With Your Friends/Gamble With Your Friends.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
   }
 ]

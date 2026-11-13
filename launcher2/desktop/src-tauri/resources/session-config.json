@@ -186,6 +186,12 @@
       "packVersion": "2.2.0.6",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "gamble-with-your-friends",
+      "packVersion": "2026.11.12",
+      "host": "",
+      "port": 0
     }
   ]
 }

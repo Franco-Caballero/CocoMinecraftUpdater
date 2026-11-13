@@ -2879,6 +2879,87 @@
     "files":  [
 
               ]
+},
+        {
+  "id": "gamble-with-your-friends",
+  "name": "Gamble With Your Friends",
+  "ui": {
+    "imagePath": "assets/experiences/gamble-with-your-friends.jpg"
+  },
+  "description": "Explorador de casinos cooperativo para hasta 6 jugadores: tus amigos y t\u00fa comparten una cuenta bancaria y una deuda descomunal. Apuesten, compren objetos sospechosos y tomen malas decisiones para llegar a la cuota diaria en 5 minutos\u2026 o sufran las consecuencias.",
+  "instanceId": "gamble-with-your-friends",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "Gamble With Your Friends/Gamble With Your Friends.exe",
+    "requiredFiles": [
+      {
+        "path": "Gamble With Your Friends/Gamble With Your Friends.exe",
+        "size": 667648,
+        "sha256": "d587602bef7b8c717034a300b11adb17dca31525c008e97dcadc4c779834e9a3",
+        "archiveSha256": "6d8168572823e70cd192442252badd6ce3e40790dfd7424af06516bea9d5a5c3"
+      },
+      {
+        "path": "Gamble With Your Friends/Gamble With Your Friends_Data/Plugins/x86_64/steam_api64.dll",
+        "size": 319584,
+        "sha256": "e082bf5c9f881c822b1540a76b74f9d15e18019a73ebd206a559595badcb7f65",
+        "archiveSha256": "b3c32b779e80b3796545d8be1148a4da2a5c6ec33485e2ea617fe085dc040d22"
+      },
+      {
+        "path": "Gamble With Your Friends/OnlineFix.ini",
+        "size": 472,
+        "sha256": "6c1873927c2a455298ef8d36222d4ecd35ced3185f77d60157213df78fc5db35",
+        "archiveSha256": "6d8168572823e70cd192442252badd6ce3e40790dfd7424af06516bea9d5a5c3"
+      },
+      {
+        "path": "Gamble With Your Friends/OnlineFix64.dll",
+        "size": 13820928,
+        "sha256": "27a1c596c4b1de1e6672cb7e7fba2ba3d3124999493ff82a504beb6f6145e88f",
+        "archiveSha256": "6d8168572823e70cd192442252badd6ce3e40790dfd7424af06516bea9d5a5c3"
+      },
+      {
+        "path": "Gamble With Your Friends/UnityPlayer.dll",
+        "size": 35780016,
+        "sha256": "40c63c999bf6169400bb84b33e22943b158132d7af7d19ee185e7ca549534f62",
+        "archiveSha256": "6d8168572823e70cd192442252badd6ce3e40790dfd7424af06516bea9d5a5c3"
+      },
+      {
+        "path": "Gamble With Your Friends/winmm.dll",
+        "size": 506368,
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "archiveSha256": "6d8168572823e70cd192442252badd6ce3e40790dfd7424af06516bea9d5a5c3"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-gamble-with-your-friends",
+    "lockPath": "launcher/experiences/gamble-with-your-friends.lock.json",
+    "version": "2026.11.12",
+    "sha256": "6d8168572823e70cd192442252badd6ce3e40790dfd7424af06516bea9d5a5c3",
+    "size": 963579577,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gamble-with-your-friends-2026.11.12/gamble-with-your-friends-2026.11.12-part01.zip",
+        "sha256": "6d8168572823e70cd192442252badd6ce3e40790dfd7424af06516bea9d5a5c3",
+        "size": 733836195
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gamble-with-your-friends-2026.11.12/gamble-with-your-friends-2026.11.12-part02.zip",
+        "sha256": "b3c32b779e80b3796545d8be1148a4da2a5c6ec33485e2ea617fe085dc040d22",
+        "size": 229743382
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Gamble With Your Friends"
+  },
+  "files": []
 }
     ]
 }

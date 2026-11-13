@@ -135,5 +135,11 @@
  "steamAppId": 2835570,
  "trailerId": 257082005,
  "bytes": 1946137
- }
+ },
+    "gamble-with-your-friends":  {
+                     "url":  "https://video.akamai.steamstatic.com/store_trailers/3892270/1129085817/e951d396ae84f1a6e12776390667ff615005e231/1777656599/microtrailer.webm",
+                     "steamAppId":  3892270,
+                     "trailerId":  257330041,
+                     "bytes":  2352104
+                 }
 }

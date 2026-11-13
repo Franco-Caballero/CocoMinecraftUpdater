@@ -1245,5 +1245,56 @@
       }
     ],
     "extraFiles": []
+  },
+  {
+    "id": "gamble-with-your-friends",
+    "instanceId": "gamble-with-your-friends",
+    "workflow": "coco-standalone",
+    "version": "2026.11.12",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gamble-with-your-friends-2026.11.12/gamble-with-your-friends-2026.11.12-part01.zip",
+        "sha256": "6d8168572823e70cd192442252badd6ce3e40790dfd7424af06516bea9d5a5c3",
+        "size": 733836195
+      },
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/gamble-with-your-friends-2026.11.12/gamble-with-your-friends-2026.11.12-part02.zip",
+        "sha256": "b3c32b779e80b3796545d8be1148a4da2a5c6ec33485e2ea617fe085dc040d22",
+        "size": 229743382
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Gamble With Your Friends/Gamble With Your Friends.exe",
+        "sha256": "d587602bef7b8c717034a300b11adb17dca31525c008e97dcadc4c779834e9a3",
+        "size": 667648
+      },
+      {
+        "path": "Gamble With Your Friends/Gamble With Your Friends_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "e082bf5c9f881c822b1540a76b74f9d15e18019a73ebd206a559595badcb7f65",
+        "size": 319584
+      },
+      {
+        "path": "Gamble With Your Friends/OnlineFix.ini",
+        "sha256": "6c1873927c2a455298ef8d36222d4ecd35ced3185f77d60157213df78fc5db35",
+        "size": 472
+      },
+      {
+        "path": "Gamble With Your Friends/OnlineFix64.dll",
+        "sha256": "27a1c596c4b1de1e6672cb7e7fba2ba3d3124999493ff82a504beb6f6145e88f",
+        "size": 13820928
+      },
+      {
+        "path": "Gamble With Your Friends/UnityPlayer.dll",
+        "sha256": "40c63c999bf6169400bb84b33e22943b158132d7af7d19ee185e7ca549534f62",
+        "size": 35780016
+      },
+      {
+        "path": "Gamble With Your Friends/winmm.dll",
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "size": 506368
+      }
+    ],
+    "extraFiles": []
   }
 ]
