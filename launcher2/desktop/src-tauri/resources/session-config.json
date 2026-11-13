@@ -216,12 +216,6 @@
       "packVersion": "1.3.4",
       "host": "",
       "port": 0
-    },
-    {
-      "id": "stick-fight-the-game",
-      "packVersion": "3911030",
-      "host": "",
-      "port": 0
     }
   ]
 }

@@ -174,19 +174,12 @@ pub(crate) fn first_run_exe(dir:&Path,game_exe:&Path)->Option<PathBuf>{
     // No program beside the fix: only the game itself can load it, and only when it is the leaf process.
     // Unreal may keep the fix under Engine/Binaries/ThirdParty: a catalog-selected Shipping build is the leaf,
     // a root bootstrapper is not (it cannot fork inside the one-process job).
-    // Unity may keep it inside its own data folder (Stick Fight: <game>_Data/Plugins, built into steam_api.dll).
     let usable=game_exe.is_file()&&fs::symlink_metadata(game_exe).is_ok_and(|meta|!crate::services::uninstall::is_link(&meta));
-    (exes.is_empty()&&usable&&(is_shipping(game_exe)||inside_unity_data(dir,game_exe))).then(||game_exe.to_path_buf())
+    (exes.is_empty()&&usable&&is_shipping(game_exe)).then(||game_exe.to_path_buf())
 }
 
 fn is_shipping(exe:&Path)->bool{
     exe.file_name().is_some_and(|name|name.to_string_lossy().to_ascii_lowercase().ends_with("-shipping.exe"))
-}
-
-/// The folder lies inside the «<game>_Data» folder Unity keeps beside the game.
-pub(crate) fn inside_unity_data(dir:&Path,game_exe:&Path)->bool{
-    let (Some(parent),Some(stem))=(game_exe.parent(),game_exe.file_stem()) else {return false};
-    dir.starts_with(parent.join(format!("{}_Data",stem.to_string_lossy())))
 }
 
 /// The ini of each folder where the fix runs, existing or not yet: a fix that finds none writes one.
@@ -737,15 +730,6 @@ mod tests{
         // The root bootstrapper exists but still cannot be the leaf of an Unreal build.
         put(&external.0.join("Game.exe"),b"x");
         assert_eq!(first_run_exe(&steam,&external.0.join("Game.exe")),None,"an existing bootstrapper is still not the leaf");
-        // A Unity fix built into steam_api.dll inside the data folder (Stick Fight): the game loads it.
-        let plugins=Root::new();
-        let data=plugins.0.join("StickFightTheGame/StickFight_Data/Plugins");
-        let stick=plugins.0.join("StickFightTheGame/StickFight.exe");
-        put(&stick,b"x");put(&plugins.0.join("StickFightTheGame/winmm.dll"),b"x");
-        for file in ["OnlineFix.ini","steam_api.dll","steam_api_of.dll"]{put(&data.join(file),b"x");}
-        assert_eq!(fix_dirs(&plugins.0),vec![data.clone()]);
-        assert_eq!(first_run_exe(&data,&stick),Some(stick.clone()));
-        assert!(!inside_unity_data(&plugins.0.join("Other_Data"),&stick));
     }
 
     #[test]

@@ -1,7 +1,7 @@
 {
   "name": "coco-launcher-2",
   "private": true,
-  "version": "0.6.55",
+  "version": "0.6.56",
   "type": "module",
   "scripts": {
     "sync": "node scripts/sync-catalog.mjs",

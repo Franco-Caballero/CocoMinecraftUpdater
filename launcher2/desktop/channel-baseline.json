@@ -1,6 +1,6 @@
 {
     "note":  "Games and versions shipped inside the last published Coco 2 Setup. Publish-Coco2Release.ps1 rewrites it; Publish-Coco2Catalog.mjs sends everything newer through the signed channel.",
-    "setupVersion":  "0.6.55",
+    "setupVersion":  "0.6.56",
     "games":  {
                   "big-walk":  "1.0.0",
                   "buckshot-roulette":  "2.2.0.6",
@@ -27,7 +27,6 @@
                   "rhythm-doctor":  "0.10.1",
                   "scam-line":  "23042026",
                   "shift-at-midnight":  "1.0.3",
-                  "stick-fight-the-game":  "3911030",
                   "the-cabin":  "1.0.0",
                   "twisted-party":  "1.0.7",
                   "worms-wmd":  "23062019",

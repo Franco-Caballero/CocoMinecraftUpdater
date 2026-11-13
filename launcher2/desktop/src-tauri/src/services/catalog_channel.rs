@@ -470,7 +470,15 @@ fn embedded_versions()->&'static HashMap<String,String>{
         manifests.into_iter().filter_map(|m|Some((m["id"].as_str()?.to_string(),m["version"].as_str()?.to_string()))).collect()
     })
 }
+/// Games the host withdrew. A launcher may still hold them in its signed channel cache, and the
+/// channel can only add or update, so this build hides them and never accepts them again.
+fn withdrawn(id:&str)->bool{
+    static IDS:OnceLock<HashSet<String>>=OnceLock::new();
+    IDS.get_or_init(||serde_json::from_str::<Vec<String>>(include_str!("../../resources/withdrawn-games.json"))
+        .unwrap_or_default().into_iter().collect()).contains(id)
+}
 fn supersedes_embedded(record:&Accepted)->bool{
+    if withdrawn(&record.entry.id) {return false;}
     match embedded_versions().get(&record.entry.id) {
         Some(shipped)=>strictly_newer(&record.version,shipped).unwrap_or(false),
         None=>!embedded_id(&record.entry.id).unwrap_or(true),
@@ -1874,6 +1882,12 @@ pub(crate) mod test_api {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_withdrawn_game_never_comes_back_from_the_channel_cache(){
+        assert!(super::withdrawn("stick-fight-the-game"));
+        assert!(!super::withdrawn("gang-beasts"));
+    }
+
     use super::*;
     use ring::signature::{Ed25519KeyPair,KeyPair};
     use std::sync::atomic::{AtomicU64,Ordering};

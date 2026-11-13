@@ -6,6 +6,7 @@ Tiempo real esperado: 15–25 min para 1–3 GB; la mayor parte es descarga, ree
 
 ## Reglas que ahorran más tiempo
 
+- **Nunca publiques un juego que no viste en su menú** (paso 7b). Revisa antes «Juegos que hay que evitar».
 - **Todo lo pesado en `D:\CocoWork\<id>`**, con `TEMP`/`TMP` del proceso allí. Nunca dejes que el navegador guarde el ZIP (queda en C: con nombre UUID).
 - **El navegador solo sirve para obtener el enlace**; el archivo se baja con `curl` directo a D:.
 - **El enlace `download-file` es de un solo uso.** Ni `HEAD`, ni `curl -I`, ni una prueba previa: el primer acceso lo gasta y el siguiente devuelve la página «Ops matey no downloads here» (HTML de ~190 KB). Compruébalo **después** de bajar (tamaño y magic). Si lo gastaste, vuelve a pedir uno (paso 2).
@@ -68,7 +69,7 @@ Busca en `source` (sin ejecutar nada): el `.exe` del juego, cada `OnlineFix.ini`
 |---|---|---|---|---|
 | `OnlineFix64.dll` junto al `.exe` (Unity 64 bits) | Pummel, Paint, Gang Beasts | `<Juego>/<Juego>.exe` | exe, `OnlineFix64.dll`, `winmm.dll`, `OnlineFix.ini`, `UnityPlayer.dll`, `steam_api64.dll` (+ `GameAssembly.dll` si es IL2CPP) | Sí |
 | Unreal: `Binaries/Win64` junto a `-Shipping.exe` | Grocery Store Simulator | el `.exe` de la raíz | ese exe, el `-Shipping.exe` y los del fix | Sí (Coco arranca el `-Shipping.exe`) |
-| Dentro de `steam_api.dll` en `<Juego>_Data/Plugins` (Unity 32 bits, sin `OnlineFix*.dll`) | Stick Fight | `<Juego>/<Juego>.exe` | exe, `winmm.dll`, `Plugins/OnlineFix.ini`, `Plugins/steam_api.dll`, `Plugins/steam_api_of.dll` | Sí desde Coco **0.6.55** |
+| Dentro de `steam_api.dll` en `<Juego>_Data/Plugins` (Unity 32 bits, sin `OnlineFix*.dll`) | Stick Fight (retirado) | — | — | **No soportado: descártalo** (ver «Juegos que hay que evitar») |
 | Otro | — | — | — | Compruébalo en el paso 7 antes de publicar |
 
 ## 4. Limpiar la copia y empaquetar
@@ -125,6 +126,8 @@ python -I launcher2/desktop/scripts/New-CocoMultipartCandidate.py --inventory "$
 
 ## 7. Instalar y primer arranque (obligatorio antes de publicar)
 
+Este paso tiene dos partes y **las dos son obligatorias**: el primer arranque invisible (abajo) y **abrir el juego de verdad hasta su menú** (7b). Las verificaciones de ZIP, hashes, tamaños y el primer arranque invisible **no prueban que el juego funcione**. Stick Fight las pasó todas, se publicó sin que nadie lo abriera y no arrancaba.
+
 ```powershell
 New-Item -ItemType Directory -Force "$d\cache" | Out-Null
 (Get-Content "$d\archives\inventory.json" -Raw | ConvertFrom-Json).archives | ForEach-Object {
@@ -144,6 +147,29 @@ Si sale `-> None` («sin ejecutable junto al fix»), Coco no sabe qué programa 
 - La solución es una regla nueva en `game_prepare.rs::first_run_exe`, con su prueba en `a_first_run_starts_the_program_that_loads_the_fix_in_every_layout`.
   - Hazla **específica** a la distribución. Nunca devuelvas «el exe del juego» en general: un lanzador que abre otro proceso fallaría dentro del arranque que solo admite uno.
   - Después: Rust en verde, prueba real con `-> Some(...)`, y un Setup nuevo.
+
+### 7b. Abrir el juego de verdad (obligatorio)
+
+Sobre `$d\install-test`, fuera de Coco, para separar un paquete roto de un fallo del launcher:
+
+```powershell
+$exe="$d\install-test\<exe relativo>"; $p=Start-Process $exe -WorkingDirectory (Split-Path $exe) -PassThru
+$t0=Get-Date; while(((Get-Date)-$t0).TotalSeconds -lt 90 -and !$p.HasExited){ Start-Sleep 5; $p.Refresh()
+  "{0,3}s  ws={1} MB  ventana='{2}'" -f [int]((Get-Date)-$t0).TotalSeconds,[int]($p.WorkingSet64/1MB),$p.MainWindowTitle }
+Get-ChildItem "$env:USERPROFILE\AppData\LocalLow" -Recurse -Filter Player.log -EA 0 | ? LastWriteTime -gt $t0 | % FullName
+```
+
+Aprobado solo si: aparece una **ventana con título**, la memoria sube a cientos de MB, en Unity se escribe un `Player.log` nuevo y **ves el menú principal** (pide al anfitrión que lo mire o haz una captura). Cierra el juego y repite una vez desde Coco (`npm run tauri dev` o el Coco instalado) para confirmar que Coco lo abre igual. Si el juego no llega al menú en 90 s, **no se publica**: mata el proceso (`Stop-Process -Id $p.Id -Force`) y descarta el juego o busca otra distribución. Un juego colgado bloquea además abrir cualquier otro juego en Coco.
+
+## Juegos que hay que evitar
+
+Descarta el paquete (no lo publiques ni lo «arregles» en Coco) si ves cualquiera de estas señales. Todas aparecieron en Stick Fight: The Game (AnkerGames, build 3911030), retirado en Coco 0.6.56:
+
+- **Sin `OnlineFix64.dll`/`OnlineFix.dll`**, con el fix metido dentro de `steam_api.dll` en `<Juego>_Data/Plugins` (Unity antiguo de 32 bits). Ningún juego que funciona en Coco usa esa forma.
+- **Ningún `UnityPlayer.dll`** junto a un juego Unity: el `.exe` de 18 MB lleva el motor dentro (Unity 5 o anterior). En ese caso, mira el `.exe` con más cuidado.
+- **Secciones raras en el `.exe`** (`.trace`, `.data1`, `.rodata` en un juego de Windows): señal de un ejecutable modificado o empaquetado. Compruébalo con `[Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($exe),0,1024)` y busca los nombres que empiezan por punto.
+- Primer arranque invisible con **`hash_written: false, survived: true`**: el proceso no murió, pero el fix nunca escribió su hash. Eso **no** es un éxito; casi siempre significa que el juego no llegó a cargar nada.
+- En 7b: proceso vivo con **menos de ~50 MB, sin ventana, sin `Player.log`** y gastando un núcleo entero. En Stick Fight solo tenía cargados `ntdll` y `wow64`: se colgaba antes de cargar ninguna DLL, también fuera de Coco y con Steam abierto. No se averiguó la causa exacta, y no vale la pena: busca otro juego.
 
 ## 8. Publicar, guardar y limpiar
 
@@ -168,7 +194,6 @@ Después:
 | Pummel Party | `/game/pummel-party` | 166 | 880940 | 1.14.1 | 1.592.306.707 B (2 partes) | `pummel-party-1.14.1` | Unity 64 | Setup 0.6.55 |
 | Grocery Store Simulator | `/game/grocery-store-simulator` | 92 | 2961880 | 1.2.4 | 6.623.041.166 B (5 partes, RAR de origen, `--split-large`) | `grocery-store-simulator-1.2.4` | Unreal, `Binaries/Win64` | Setup 0.6.55 (lleva un `Read Me.txt` inofensivo) |
 | Paint the Town Red | `/game/paint-the-town-red` | 716 | 337320 | 1.3.4 | 2.527.207.121 B (2 partes) | `paint-the-town-red-1.3.4` | Unity 64 IL2CPP (conserva `1=`) | Setup 0.6.55 |
-| Stick Fight: The Game | `/game/stick-fight-the-game` | 3174 | 674940 | 3911030 | 129.229.822 B | `stick-fight-the-game-3911030` | Unity 32, fix en `StickFight_Data/Plugins/steam_api.dll` | Setup 0.6.55 |
 
 Gamble With Your Friends no vino de AnkerGames por enlace: era una carpeta ya descargada (receta de la guía maestra).
 
@@ -186,7 +211,8 @@ Gamble With Your Friends no vino de AnkerGames por enlace: era una carpeta ya de
 
 ## Errores que ya costaron tiempo
 
-- `curl -sIL` al `download-file` antes de bajar: gasta el enlace (Stick Fight).
+- `curl -sIL` al `download-file` antes de bajar: gasta el enlace.
+- **Publicar sin ver el juego abierto.** Stick Fight pasó todas las verificaciones y se publicó, pero `StickFight.exe` quedaba colgado al 100 % de un núcleo, con 9 MB y sin ventana, también abierto a mano fuera de Coco; además bloqueaba abrir cualquier otro juego. `PrimeOutcome { hash_written: false, survived: true }` **no** es un éxito: solo dice que el proceso no murió. Antes de publicar, abre el `.exe` instalado a mano y espera a ver el menú (y en Unity, que aparezca `Player.log`). Si no llega al menú, descarta el juego.
 - Publicación «cortada» a los 2 min por el timeout del agente cuando GitHub ya la tenía: revisa el head antes de repetir.
 - Cambio de Rust sin Setup ni commit: los amigos no lo reciben.
 - Una regla de primer arranque demasiado general: habría hecho fallar los juegos Unreal con lanzador.
