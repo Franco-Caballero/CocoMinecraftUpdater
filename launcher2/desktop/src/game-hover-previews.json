@@ -165,5 +165,29 @@
                      "steamAppId":  337320,
                      "trailerId":  256845079,
                      "bytes":  1088835
+                 },
+    "crab-champions":  {
+                     "url":  "https://video.akamai.steamstatic.com/store_trailers/774801/1061754631/b13acbbd0434ba5b68320dc3df2bdfc3ed0b4260/1793385021/microtrailer.webm",
+                     "steamAppId":  774801,
+                     "trailerId":  1415926,
+                     "bytes":  2474513
+                 },
+    "bopl-battle":  {
+                     "url":  "https://video.akamai.steamstatic.com/store_trailers/1686940/548973/8ee43bea7e2d9e4624486739a5d1307fdb29f515/1750725712/microtrailer.webm",
+                     "steamAppId":  1686940,
+                     "trailerId":  548973,
+                     "bytes":  1729486
+                 },
+    "carry-the-glass":  {
+                     "url":  "https://video.akamai.steamstatic.com/store_trailers/3263320/1917654076/4762a5a347d6e3050c26cdd710e668767cb4deac/1754432758/microtrailer.webm",
+                     "steamAppId":  3263320,
+                     "trailerId":  949191,
+                     "bytes":  2258628
+                 },
+    "schedule-i":  {
+                     "url":  "https://video.akamai.steamstatic.com/store_trailers/3164500/797469/e64eb5d7441b686ec1dd8c40137c747b207dd8d0/1748812376/microtrailer.webm",
+                     "steamAppId":  3164500,
+                     "trailerId":  797469,
+                     "bytes":  1768227
                  }
 }
