@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "sledding-game",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/sledding-game-26054124/sledding-game-26054124-part01.zip",
+    "sha256": "cbbb74df48cb15dc678069dd3de08a46838061bd944fbe4d01cdd304e0ae828c",
+    "size": 460104290
+  }
+}

@@ -169,6 +169,11 @@
       "realAppId": "341800",
       "hash0": "2a2cc11fbab5d2213fe16e2ab830aebd4faa20c4f5972697a3c399b65702c21d29662e52a4f85076ab636ef822799f3e7a987220e9d00dddfcfcda28aa3feda4",
       "hash1337": ""
+    },
+    "sledding-game": {
+      "realAppId": "3438850",
+      "hash0": "ba9e54a14fd3997bf28410a4d4578aefa2515bdc33954f586cbecca00aa3c9582f0d81a63243e7e98efa571dc8926bf8e79a57f974d5e7e6cc629589909aa17f",
+      "hash1337": ""
     }
   },
   "apps": {
@@ -340,6 +345,11 @@
     "341800": {
       "realAppId": "341800",
       "hash0": "2a2cc11fbab5d2213fe16e2ab830aebd4faa20c4f5972697a3c399b65702c21d29662e52a4f85076ab636ef822799f3e7a987220e9d00dddfcfcda28aa3feda4",
+      "hash1337": ""
+    },
+    "3438850": {
+      "realAppId": "3438850",
+      "hash0": "ba9e54a14fd3997bf28410a4d4578aefa2515bdc33954f586cbecca00aa3c9582f0d81a63243e7e98efa571dc8926bf8e79a57f974d5e7e6cc629589909aa17f",
       "hash1337": ""
     }
   },

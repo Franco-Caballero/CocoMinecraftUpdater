@@ -1967,5 +1967,60 @@
     "executable": "Keep Talking and Nobody Explodes/ktane.exe",
     "launchArguments": [],
     "hostingMode": "p2p"
+  },
+  {
+    "id": "sledding-game",
+    "instanceId": "sledding-game",
+    "name": "Sledding Game",
+    "image": "/covers/sledding-game.jpg.webp",
+    "description": "Juego multijugador para pasar el rato en la nieve con chat de voz por proximidad: bajen en trineo, hagan trucos, construyan rampas y choquen entre ustedes con física de muñeco de trapo.",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "Sledding Game/GameAssembly.dll",
+        "sha256": "193ac2cb8be9eb6945838de589535d5b3e63f3693f6d03ee180ae081ffadaf5c",
+        "size": 113922048
+      },
+      {
+        "path": "Sledding Game/OnlineFix.ini",
+        "sha256": "693662e7897d509c57704fc51993548cc0810d55c5e55067d1393c790664d016",
+        "size": 564
+      },
+      {
+        "path": "Sledding Game/OnlineFix64.dll",
+        "sha256": "27a1c596c4b1de1e6672cb7e7fba2ba3d3124999493ff82a504beb6f6145e88f",
+        "size": 13820928
+      },
+      {
+        "path": "Sledding Game/Sledding Game.exe",
+        "sha256": "e7a059f710c53c02331c4c831a2c193178cfd947c04c0592ca02807e080db66c",
+        "size": 667648
+      },
+      {
+        "path": "Sledding Game/Sledding Game_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "e082bf5c9f881c822b1540a76b74f9d15e18019a73ebd206a559595badcb7f65",
+        "size": 319584
+      },
+      {
+        "path": "Sledding Game/UnityPlayer.dll",
+        "sha256": "5078f65f0a41ceba1f0a844b087dd3a4fd4c40965d95d6612f8742f1bab632a3",
+        "size": 36195240
+      },
+      {
+        "path": "Sledding Game/dlllist.txt",
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "size": 35
+      },
+      {
+        "path": "Sledding Game/winmm.dll",
+        "sha256": "61d071e40fb1136da66bf12213062a47eccadd7556171b97381fbc937e978b0d",
+        "size": 502272
+      }
+    ],
+    "executable": "Sledding Game/Sledding Game.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
   }
 ]

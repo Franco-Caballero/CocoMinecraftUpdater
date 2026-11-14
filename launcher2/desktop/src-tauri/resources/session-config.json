@@ -276,6 +276,12 @@
       "packVersion": "1.9.31",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "sledding-game",
+      "packVersion": "26054124",
+      "host": "",
+      "port": 0
     }
   ]
 }

@@ -225,5 +225,11 @@
     "steamAppId": 341800,
     "trailerId": 248222,
     "bytes": 1997363
+  },
+  "sledding-game": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/3438850/1197640324/aae3d995f3916d208f247ac53c60d059961ed1d6/1775755494/microtrailer.webm",
+    "steamAppId": 3438850,
+    "trailerId": 1154675,
+    "bytes": 1742099
   }
 }
