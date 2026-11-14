@@ -159,6 +159,11 @@
       "realAppId": "5085740",
       "hash0": "48c36d70b002b6e87e91761ea5d799042ac746865f6b3691c69c8a5cc6ce8cbe1f465656c677db276fc1610c3870228ec42b63103b2d0676dd5ef814c834beaa",
       "hash1337": ""
+    },
+    "anime-shop-simulator": {
+      "realAppId": "3393280",
+      "hash0": "a5b6a11a07ee234f41af3e7d73a1b887e9a311f048181fdf8b6ea947ca4e1d739627edea12862e4e8462bb9d0dee4258a39719dc0e686ea970c12794665036c4",
+      "hash1337": ""
     }
   },
   "apps": {
@@ -320,6 +325,11 @@
     "5085740": {
       "realAppId": "5085740",
       "hash0": "48c36d70b002b6e87e91761ea5d799042ac746865f6b3691c69c8a5cc6ce8cbe1f465656c677db276fc1610c3870228ec42b63103b2d0676dd5ef814c834beaa",
+      "hash1337": ""
+    },
+    "3393280": {
+      "realAppId": "3393280",
+      "hash0": "a5b6a11a07ee234f41af3e7d73a1b887e9a311f048181fdf8b6ea947ca4e1d739627edea12862e4e8462bb9d0dee4258a39719dc0e686ea970c12794665036c4",
       "hash1337": ""
     }
   },

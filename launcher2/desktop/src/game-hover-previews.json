@@ -213,5 +213,11 @@
     "steamAppId": 5085740,
     "trailerId": 1312993,
     "bytes": 1957507
+  },
+  "anime-shop-simulator": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/3393280/1835183356/45326eefeb10de6536ea49c5a57d2e9ce581862c/1788886959/microtrailer.webm",
+    "steamAppId": 3393280,
+    "trailerId": 802347,
+    "bytes": 1564097
   }
 }

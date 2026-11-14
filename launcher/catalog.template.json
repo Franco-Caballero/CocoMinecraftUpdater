@@ -4168,6 +4168,99 @@
     "serverName": "Coco - Needle In A Haystack"
   },
   "files": []
+},
+        {
+  "id": "anime-shop-simulator",
+  "name": "Anime Shop Simulator",
+  "ui": {
+    "imagePath": "assets/experiences/anime-shop-simulator.jpg"
+  },
+  "description": "Simulador de tienda de anime en primera persona: llena los estantes de manga, figuras y cartas coleccionables, atiende a los clientes y ampl\u00eda el local, solo o en cooperativo en l\u00ednea para 4 jugadores.",
+  "instanceId": "anime-shop-simulator",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "Anime Shop Simulator/Anime Shop Simulator.exe",
+    "requiredFiles": [
+      {
+        "path": "Anime Shop Simulator/Anime Shop Simulator.exe",
+        "size": 666624,
+        "sha256": "143dd3c6a93a45819a98e3cca8fd1535b461cdf860c927d955ca54815faf5d7b",
+        "archiveSha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77"
+      },
+      {
+        "path": "Anime Shop Simulator/Anime Shop Simulator_Data/Plugins/x86_64/steam_api64.dll",
+        "size": 319584,
+        "sha256": "670d654aa3255c5061cf0236a1cdbb2f5076cbd5ae44f613b6f4921558e83e2d",
+        "archiveSha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77"
+      },
+      {
+        "path": "Anime Shop Simulator/GameAssembly.dll",
+        "size": 149880832,
+        "sha256": "4a8ca82989b2313f21185026aca3b951471138291fb8a5a4de3277448a58d8b5",
+        "archiveSha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77"
+      },
+      {
+        "path": "Anime Shop Simulator/OnlineFix.ini",
+        "size": 706,
+        "sha256": "462f76c49169bc5f4e300e64fbe4232c5e90b76b9f09fd95b04b654a1cfd5f8d",
+        "archiveSha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77"
+      },
+      {
+        "path": "Anime Shop Simulator/OnlineFix64.dll",
+        "size": 13401600,
+        "sha256": "ae23f76254fbcd88d36ff5d15f958708638cb63e6cebdc1d30247aa559c2340f",
+        "archiveSha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77"
+      },
+      {
+        "path": "Anime Shop Simulator/UnityPlayer.dll",
+        "size": 31006120,
+        "sha256": "15c7d26aaee4d0225bb40658f26a72f8251f5f049a8f304cd5159245247aafa3",
+        "archiveSha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77"
+      },
+      {
+        "path": "Anime Shop Simulator/dlllist.txt",
+        "size": 35,
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "archiveSha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77"
+      },
+      {
+        "path": "Anime Shop Simulator/winmm.dll",
+        "size": 502272,
+        "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+        "archiveSha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-anime-shop-simulator",
+    "lockPath": "launcher/experiences/anime-shop-simulator.lock.json",
+    "version": "1.1.1",
+    "sha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77",
+    "size": 1225023009,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/anime-shop-simulator-1.1.1/anime-shop-simulator-1.1.1-part01.zip",
+        "sha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77",
+        "size": 676798691
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/anime-shop-simulator-1.1.1/anime-shop-simulator-1.1.1-part02.zip",
+        "sha256": "5531a961a5b29b44a2b6be7c424da034494715ef02a8495f5fe1a374a473377a",
+        "size": 548224318
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Anime Shop Simulator"
+  },
+  "files": []
 }
   ]
 }

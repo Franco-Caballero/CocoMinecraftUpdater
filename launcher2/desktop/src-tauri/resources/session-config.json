@@ -264,6 +264,12 @@
       "packVersion": "1.2.7",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "anime-shop-simulator",
+      "packVersion": "1.1.1",
+      "host": "",
+      "port": 0
     }
   ]
 }

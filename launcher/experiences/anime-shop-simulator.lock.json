@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "anime-shop-simulator",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/anime-shop-simulator-1.1.1/anime-shop-simulator-1.1.1-part01.zip",
+    "sha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77",
+    "size": 676798691
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/anime-shop-simulator-1.1.1/anime-shop-simulator-1.1.1-part01.zip",
+      "sha256": "e938a2f650fc2640f7140eeb3886d62283205e60c05a8fc33fae632e3726ca77",
+      "size": 676798691
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/anime-shop-simulator-1.1.1/anime-shop-simulator-1.1.1-part02.zip",
+      "sha256": "5531a961a5b29b44a2b6be7c424da034494715ef02a8495f5fe1a374a473377a",
+      "size": 548224318
+    }
+  ]
+}
