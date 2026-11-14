@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "labyrinthine",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part01.zip",
+    "sha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00",
+    "size": 699442489
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part01.zip",
+      "sha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00",
+      "size": 699442489
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part02.zip",
+      "sha256": "be483c487494156ef198ceea748a970b4168e5461ba2806137bfd93749e00999",
+      "size": 1086051017
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part03.zip",
+      "sha256": "58da5ce719dcee63cd3b3c6433d4fff8487180b4cb41978ae76cff05c32634d6",
+      "size": 522416620
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part04.zip",
+      "sha256": "01dfab06a29cb988bcc9a1db3585b5105b1384ff08af7e0f07dc30db03b1d70b",
+      "size": 694131608
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part05.zip",
+      "sha256": "d0bd9f38418968e88fbdd9c2899ca5896eac5c3cac87e4cbb58cb726d85cd8aa",
+      "size": 921607419
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part06.zip",
+      "sha256": "53779c68d69d6b6505870af079bb9412ba1336b37f6ba21279a9c957185fca86",
+      "size": 1003579068
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part07.zip",
+      "sha256": "9f8fb4d2065dcdd0a6493842c5cc765c60b72a7edfba955ca63d5173fcd6a4e0",
+      "size": 627604614
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part08.zip",
+      "sha256": "0702e42c991b0c5123b98d7dc2f871afea63941f1ad890b30bebb2f41fc71978",
+      "size": 833703466
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part09.zip",
+      "sha256": "f80beb521008aac5e70db37857ea3d5ebbebb1478191317637e52e8fc48dcbf8",
+      "size": 275151272
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part10.zip",
+      "sha256": "316ef684d5dcc541b3becccb69a0d3d4f24262c76733a1d4e9d749e90de2bb49",
+      "size": 931557481
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part11.zip",
+      "sha256": "b9a5966b56ea7885e668d463ec72c7265893bfa96ab20af3bb3f8e602d721390",
+      "size": 1020630377
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part12.zip",
+      "sha256": "c21f4123b10fcc56bec5d7f4a1fc59b8d4028bbccdc796b8a8846d081382e1c0",
+      "size": 677078311
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part13.zip",
+      "sha256": "48e9a9cd39bb15e5629ef4ca6ab4d3d0988e21dcee09119b28866f1fbdab3efe",
+      "size": 837589248
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part14.zip",
+      "sha256": "142298e213ce4a694c0ba668d455ed20aa37916001d45a68f4f171a13f4a30c3",
+      "size": 594848198
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part15.zip",
+      "sha256": "2ecb871ecc22cc25c085750313a70fb862f151a92e42b8c1ff00a4018d8c3853",
+      "size": 1112650974
+    }
+  ]
+}

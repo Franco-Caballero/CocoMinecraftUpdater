@@ -3923,6 +3923,164 @@
         "serverName": "Coco - MIMESIS"
       },
       "files": []
-    }
+    },
+        {
+  "id": "labyrinthine",
+  "name": "Labyrinthine",
+  "ui": {
+    "imagePath": "assets/experiences/labyrinthine.jpg"
+  },
+  "description": "Terror cooperativo en l\u00ednea para 1 a 8 jugadores: resuelvan acertijos, re\u00fanan objetos y huyan de las criaturas de un laberinto, en el modo historia o en mapas generados al azar.",
+  "instanceId": "labyrinthine",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "Labyrinthine/Labyrinthine.exe",
+    "requiredFiles": [
+      {
+        "path": "Labyrinthine/GameAssembly.dll",
+        "size": 67396608,
+        "sha256": "ff1b61ddfd6ebbc2bbd3348abb706f5b64e8cb101f1dbc9442ca07a39e4269b5",
+        "archiveSha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00"
+      },
+      {
+        "path": "Labyrinthine/Labyrinthine.exe",
+        "size": 666624,
+        "sha256": "04bb21904546c4d95f551c5574f76490c010a54614a6f797e550d1b139c6c009",
+        "archiveSha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00"
+      },
+      {
+        "path": "Labyrinthine/Labyrinthine_Data/Plugins/x86_64/steam_api64.dll",
+        "size": 300392,
+        "sha256": "1add7f151fa644870a735ae86e68d1f019f296130d8e7c0a7ed3ecc7482dccbc",
+        "archiveSha256": "142298e213ce4a694c0ba668d455ed20aa37916001d45a68f4f171a13f4a30c3"
+      },
+      {
+        "path": "Labyrinthine/OnlineFix.ini",
+        "size": 564,
+        "sha256": "eb7183ed8ab44abde148300107eef7331e577ec533eae698ec470e0293e15241",
+        "archiveSha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00"
+      },
+      {
+        "path": "Labyrinthine/OnlineFix64.dll",
+        "size": 11944448,
+        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+        "archiveSha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00"
+      },
+      {
+        "path": "Labyrinthine/UnityPlayer.dll",
+        "size": 31006120,
+        "sha256": "15c7d26aaee4d0225bb40658f26a72f8251f5f049a8f304cd5159245247aafa3",
+        "archiveSha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00"
+      },
+      {
+        "path": "Labyrinthine/dlllist.txt",
+        "size": 35,
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "archiveSha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00"
+      },
+      {
+        "path": "Labyrinthine/winmm.dll",
+        "size": 506368,
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "archiveSha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-labyrinthine",
+    "lockPath": "launcher/experiences/labyrinthine.lock.json",
+    "version": "26227185",
+    "sha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00",
+    "size": 11838042162,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part01.zip",
+        "sha256": "b5e4c075b9f13d56b52c8b15dddba06cbbca3e1678edc2ae881493a484ce1e00",
+        "size": 699442489
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part02.zip",
+        "sha256": "be483c487494156ef198ceea748a970b4168e5461ba2806137bfd93749e00999",
+        "size": 1086051017
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part03.zip",
+        "sha256": "58da5ce719dcee63cd3b3c6433d4fff8487180b4cb41978ae76cff05c32634d6",
+        "size": 522416620
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part04.zip",
+        "sha256": "01dfab06a29cb988bcc9a1db3585b5105b1384ff08af7e0f07dc30db03b1d70b",
+        "size": 694131608
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part05.zip",
+        "sha256": "d0bd9f38418968e88fbdd9c2899ca5896eac5c3cac87e4cbb58cb726d85cd8aa",
+        "size": 921607419
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part06.zip",
+        "sha256": "53779c68d69d6b6505870af079bb9412ba1336b37f6ba21279a9c957185fca86",
+        "size": 1003579068
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part07.zip",
+        "sha256": "9f8fb4d2065dcdd0a6493842c5cc765c60b72a7edfba955ca63d5173fcd6a4e0",
+        "size": 627604614
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part08.zip",
+        "sha256": "0702e42c991b0c5123b98d7dc2f871afea63941f1ad890b30bebb2f41fc71978",
+        "size": 833703466
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part09.zip",
+        "sha256": "f80beb521008aac5e70db37857ea3d5ebbebb1478191317637e52e8fc48dcbf8",
+        "size": 275151272
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part10.zip",
+        "sha256": "316ef684d5dcc541b3becccb69a0d3d4f24262c76733a1d4e9d749e90de2bb49",
+        "size": 931557481
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part11.zip",
+        "sha256": "b9a5966b56ea7885e668d463ec72c7265893bfa96ab20af3bb3f8e602d721390",
+        "size": 1020630377
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part12.zip",
+        "sha256": "c21f4123b10fcc56bec5d7f4a1fc59b8d4028bbccdc796b8a8846d081382e1c0",
+        "size": 677078311
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part13.zip",
+        "sha256": "48e9a9cd39bb15e5629ef4ca6ab4d3d0988e21dcee09119b28866f1fbdab3efe",
+        "size": 837589248
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part14.zip",
+        "sha256": "142298e213ce4a694c0ba668d455ed20aa37916001d45a68f4f171a13f4a30c3",
+        "size": 594848198
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/labyrinthine-build26227185/labyrinthine-build26227185-part15.zip",
+        "sha256": "2ecb871ecc22cc25c085750313a70fb862f151a92e42b8c1ff00a4018d8c3853",
+        "size": 1112650974
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Labyrinthine"
+  },
+  "files": []
+}
   ]
 }

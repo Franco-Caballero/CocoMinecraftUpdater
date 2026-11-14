@@ -201,5 +201,11 @@
     "steamAppId": 2827200,
     "trailerId": 1403834,
     "bytes": 1960242
+  },
+  "labyrinthine": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/1302240/595934/624ab583aed8ecceae316f70cf41eb520acfebf8/1750671562/microtrailer.webm",
+    "steamAppId": 1302240,
+    "trailerId": 595934,
+    "bytes": 1166138
   }
 }

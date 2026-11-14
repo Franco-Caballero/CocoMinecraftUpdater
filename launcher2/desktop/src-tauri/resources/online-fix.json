@@ -149,6 +149,11 @@
       "realAppId": "2661300",
       "hash0": "35ff804d04be9b27660d97078c70b6f450aafc68b3a363412c0eb221c42e7938fca023308dfad18db12cf53752e85899c95be6a1644dcaf714e7bf0566d156a7",
       "hash1337": ""
+    },
+    "labyrinthine": {
+      "realAppId": "1302240",
+      "hash0": "bf46131e40ff03b612073adbb8fd8067523034c85cec8d0a8daa3e7270262898a649a25572741fa37652c026dfe67333c62944c22155a7ff324052d51f051a1e",
+      "hash1337": ""
     }
   },
   "apps": {
@@ -300,6 +305,11 @@
     "2661300": {
       "realAppId": "2661300",
       "hash0": "35ff804d04be9b27660d97078c70b6f450aafc68b3a363412c0eb221c42e7938fca023308dfad18db12cf53752e85899c95be6a1644dcaf714e7bf0566d156a7",
+      "hash1337": ""
+    },
+    "1302240": {
+      "realAppId": "1302240",
+      "hash0": "bf46131e40ff03b612073adbb8fd8067523034c85cec8d0a8daa3e7270262898a649a25572741fa37652c026dfe67333c62944c22155a7ff324052d51f051a1e",
       "hash1337": ""
     }
   },
