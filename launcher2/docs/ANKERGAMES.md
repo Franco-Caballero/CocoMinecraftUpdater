@@ -93,6 +93,18 @@ $b=[IO.File]::ReadAllBytes("$d\game.zip")[0..3]; '{0:X2} {1:X2} {2:X2} {3:X2}' -
 - Usa siempre 7-Zip: hay ZIP con entradas Zstandard (.NET falla) y RAR disfrazados (Grocery Store Simulator).
 - Un HTML pequeño en vez del ZIP = enlace sin token o gastado: vuelve al paso 2 y comprueba que la URL lleva `?cf-turnstile-response=`.
 - ~32 MB/s: 1 GB en 30–40 s.
+- **Si va lento** (algunos servidores limitan cada conexión a ~150 KB/s: 5 GB serían horas), descarga por rangos en paralelo. `download-file` redirige a un enlace `tunnelN.dlproxy.uk` que **sí** se puede reutilizar y acepta `Range`:
+
+  ```bash
+  U=$(curl -s -o /dev/null -A "Mozilla/5.0" -w '%{redirect_url}' "<download-file con token>")   # gasta el token, guarda U
+  SIZE=$(curl -sI -A Mozilla/5.0 "$U" | tr -d '\r' | awk 'tolower($1)=="content-length:"{print $2}')
+  N=128; CH=$(( (SIZE+N-1)/N )); mkdir parts
+  for i in $(seq 0 $((N-1))); do S=$((i*CH)); E=$((S+CH-1)); [ $E -ge $SIZE ] && E=$((SIZE-1))
+    curl -s -A Mozilla/5.0 -r $S-$E -o parts/$i "$U" & done; wait
+  for i in $(seq 0 $((N-1))); do cat parts/$i; done > game.zip; rm -r parts   # luego compara tamaño y SHA-256
+  ```
+
+  Con 128 conexiones baja a ~50 MB/s. Lánzalo como tarea en segundo plano de la herramienta, no con `nohup … &`: al cerrar la shell, la descarga muere.
 - Si la página daba SHA-256: `(Get-FileHash "$d\game.zip").Hash` debe coincidir. Si no coincide, la descarga está corrupta: pide otro enlace.
 
 ### 3b. Aplicar un Online-Fix que viene aparte
