@@ -219,5 +219,11 @@
     "steamAppId": 3393280,
     "trailerId": 802347,
     "bytes": 1564097
+  },
+  "keep-talking-and-nobody-explodes": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/341800/248222/4b91a997c6531281ecd4d80634eef03bcf560e22/1750512513/microtrailer.webm",
+    "steamAppId": 341800,
+    "trailerId": 248222,
+    "bytes": 1997363
   }
 }

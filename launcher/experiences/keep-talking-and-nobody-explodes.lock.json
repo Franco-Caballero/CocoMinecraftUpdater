@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "keep-talking-and-nobody-explodes",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/keep-talking-and-nobody-explodes-1.9.31/keep-talking-and-nobody-explodes-1.9.31-part01.zip",
+    "sha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5",
+    "size": 299992422
+  }
+}

@@ -4261,6 +4261,94 @@
     "serverName": "Coco - Anime Shop Simulator"
   },
   "files": []
+},
+        {
+  "id": "keep-talking-and-nobody-explodes",
+  "name": "Keep Talking and Nobody Explodes",
+  "ui": {
+    "imagePath": "assets/experiences/keep-talking-and-nobody-explodes.jpg"
+  },
+  "description": "Desactiva bombas con tus amigos: uno ve la bomba y los dem\u00e1s leen el manual de desactivaci\u00f3n. Solo hablando y con calma evitar\u00e1n que explote; los acertijos cambian en cada partida.",
+  "instanceId": "keep-talking-and-nobody-explodes",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "Keep Talking and Nobody Explodes/ktane.exe",
+    "requiredFiles": [
+      {
+        "path": "Keep Talking and Nobody Explodes/OnlineFix.ini",
+        "size": 718,
+        "sha256": "04825559c50640afc4c98001c49c723b87ee85a57c1dc7bf60347f520feb6453",
+        "archiveSha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5"
+      },
+      {
+        "path": "Keep Talking and Nobody Explodes/OnlineFix64.dll",
+        "size": 4507648,
+        "sha256": "27eb85e42e1c67706133f8fb3d12f9d782fff25d49ce3738de1b13fc25bdae3a",
+        "archiveSha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5"
+      },
+      {
+        "path": "Keep Talking and Nobody Explodes/UnityPlayer.dll",
+        "size": 22355376,
+        "sha256": "104384669d29043b4fb949fb2b04ac92032f630ebd2ebbd7056335c95e121c21",
+        "archiveSha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5"
+      },
+      {
+        "path": "Keep Talking and Nobody Explodes/dlllist.txt",
+        "size": 35,
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "archiveSha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5"
+      },
+      {
+        "path": "Keep Talking and Nobody Explodes/ktane.exe",
+        "size": 650752,
+        "sha256": "094ca8ab7509ebac057a03fb7649b12ac18dc2ebde2410a88953f94164ca5197",
+        "archiveSha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5"
+      },
+      {
+        "path": "Keep Talking and Nobody Explodes/ktane_Data/Plugins/steam_api.dll",
+        "size": 237856,
+        "sha256": "e5a6c93e20de33a2bb75c3c84aae4319159a000086aa2ccb2e857cf247cb9016",
+        "archiveSha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5"
+      },
+      {
+        "path": "Keep Talking and Nobody Explodes/ktane_Data/Plugins/steam_api64.dll",
+        "size": 262944,
+        "sha256": "473f5a312b56519f347741b63f3dea590946b96ea40ef3803d5f452c39af2f1e",
+        "archiveSha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5"
+      },
+      {
+        "path": "Keep Talking and Nobody Explodes/winmm.dll",
+        "size": 263280,
+        "sha256": "54a6ece54641ee6e437caa351e493ddf4435f3e23e3d4ab4655c35f57b94fc59",
+        "archiveSha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-keep-talking-and-nobody-explodes",
+    "lockPath": "launcher/experiences/keep-talking-and-nobody-explodes.lock.json",
+    "version": "1.9.31",
+    "sha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5",
+    "size": 299992422,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/keep-talking-and-nobody-explodes-1.9.31/keep-talking-and-nobody-explodes-1.9.31-part01.zip",
+        "sha256": "a398690a39b2c1e3dab482c1efbdc490fced10a2b80c839e909babd69ec7e4a5",
+        "size": 299992422
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Keep Talking and Nobody Explodes"
+  },
+  "files": []
 }
   ]
 }

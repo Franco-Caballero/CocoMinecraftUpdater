@@ -164,6 +164,11 @@
       "realAppId": "3393280",
       "hash0": "a5b6a11a07ee234f41af3e7d73a1b887e9a311f048181fdf8b6ea947ca4e1d739627edea12862e4e8462bb9d0dee4258a39719dc0e686ea970c12794665036c4",
       "hash1337": ""
+    },
+    "keep-talking-and-nobody-explodes": {
+      "realAppId": "341800",
+      "hash0": "2a2cc11fbab5d2213fe16e2ab830aebd4faa20c4f5972697a3c399b65702c21d29662e52a4f85076ab636ef822799f3e7a987220e9d00dddfcfcda28aa3feda4",
+      "hash1337": ""
     }
   },
   "apps": {
@@ -330,6 +335,11 @@
     "3393280": {
       "realAppId": "3393280",
       "hash0": "a5b6a11a07ee234f41af3e7d73a1b887e9a311f048181fdf8b6ea947ca4e1d739627edea12862e4e8462bb9d0dee4258a39719dc0e686ea970c12794665036c4",
+      "hash1337": ""
+    },
+    "341800": {
+      "realAppId": "341800",
+      "hash0": "2a2cc11fbab5d2213fe16e2ab830aebd4faa20c4f5972697a3c399b65702c21d29662e52a4f85076ab636ef822799f3e7a987220e9d00dddfcfcda28aa3feda4",
       "hash1337": ""
     }
   },
