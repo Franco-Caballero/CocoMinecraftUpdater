@@ -196,10 +196,10 @@
     "trailerId": 984153079,
     "bytes": 1782138
   },
-  "items": [
-    {
-      "id": "mimesis",
-      "microtrailer": "https://video.akamai.steamstatic.com/store_trailers/2827200/1017648318/7c46c5e427b2915da728a95208b4ada8a4130867/1792891662/microtrailer.webm"
-    }
-  ]
+  "mimesis": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/2827200/1017648318/7c46c5e427b2915da728a95208b4ada8a4130867/1792891662/microtrailer.webm",
+    "steamAppId": 2827200,
+    "trailerId": 1403834,
+    "bytes": 1960242
+  }
 }

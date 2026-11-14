@@ -182,6 +182,10 @@ python -I launcher2/desktop/scripts/New-CocoMultipartCandidate.py --inventory "$
 - `launcher2/desktop/src-tauri/resources/online-fix.json`: añade `games.<id>` y `apps.<RealAppId>` con `realAppId`, `hash0` y `hash1337: ""`, **como texto** (copia el bloque del último juego y pégalo antes del cierre de cada objeto); `JSON.stringify` reordena `apps`.
 - `launcher2/desktop/src/game-hover-previews.json`: igual, como texto (`url`, `steamAppId`, `trailerId`, `bytes`).
 - Desde `launcher2/desktop`: `node scripts/sync-steam-screenshots.mjs; node scripts/sync-catalog.mjs`.
+- **La tarjeta no está completa sin clip y capturas.** Sin ellos el juego aparece en Coco, pero sin vídeo al pasar el mouse ni carrusel en la ficha. Es fácil saltárselo, y ya pasó con varios juegos. Antes de publicar, comprueba en `--dry-run` que tu juego aparece en la lista **`extras`** del resultado y que no sale el «AVISO: falta la tarjeta completa».
+  - `game-hover-previews.json` es un objeto `{"<id>": {"url", "steamAppId", "trailerId", "bytes"}}`, igual que los juegos vecinos. Cualquier otra forma (una lista `items`, `microtrailer` en vez de `url`) se ignora sin error.
+  - `game-screenshots.json`: `"<id>": ["https://shared.akamai.steamstatic.com/...jpg", ...]`. `sync-steam-screenshots.mjs` las saca de Steam para cada juego que tenga clip, así que primero el clip y después el script. Si las copias a mano, quita el `?t=<número>` del final.
+- **`online-fix.json`: `realAppId` va entre comillas** (`"realAppId": "2661300"`), en `games` y en `apps`. Un número sin comillas hacía que el launcher rechazara el canal entero («Invalid signed channel JSON») y ningún juego nuevo llegaba a nadie. `Publish-Coco2Catalog.mjs` ya se niega a publicarlo.
 
 ## 7. Instalar y primer arranque (obligatorio antes de publicar)
 
@@ -241,6 +245,13 @@ node scripts/Publish-Coco2Catalog.mjs                # 2–3 min; timeout ≥ 10
 Después:
 
 - **Comprobar la publicación:** `coco2-catalog-head.json` sube de secuencia.
+- **Comprobar que el launcher la acepta** (una secuencia nueva no basta). Con Coco abierto, unos 3 minutos después mira `%LOCALAPPDATA%\CocoLauncher2\logs\coco.log`: no debe aparecer `sync_catalog_channel` con error.
+  - `Conflicting catalog entry at identical version`: cambiaste algo (aunque sea la descripción) de un juego ya publicado sin subir su versión. Súbela con una cifra más (`1.2.4.1` → `1.2.4.2`) y publica de nuevo.
+  - `Invalid signed channel JSON`: un dato con el tipo equivocado, como el `realAppId` numérico del paso 6.
+  - Cualquiera de los dos bloquea **todos** los juegos nuevos para todos, no solo el tuyo.
+- **Release nunca Latest:** `gh api repos/Franco-Caballero/CocoMinecraftUpdater/releases/latest -q .tag_name` debe seguir diciendo `v0.5.186` (Coco 1 se actualiza desde Latest). Si tu release quedó como Latest: `gh release edit <tag> --prerelease --latest=false` y `gh release edit v0.5.186 --latest`.
+- **Todas las partes subidas** antes de publicar: en `gh release view <tag> --json assets` deben estar todas, `uploaded` y con el tamaño del inventario. Una subida cortada deja el release a medias sin avisar.
+- **Acentos:** edita `catalog.template.json` y los JSON con Python (`encoding='utf-8'`), cambiando solo tu bloque; nunca los reescribas enteros desde PowerShell. Antes del commit, `git diff --stat` debe tocar pocas líneas y el archivo no debe contener `Ã` ni `â€` (una vez se corrompieron así 19 descripciones).
 - **Guardar en git:** commit en `main` de tu alta y nada más. Los archivos van con `git add` explícito: catálogo, lock, portada, recursos, previews, capturas y docs.
 - **Limpiar:** `Remove-Item -Recurse -Force D:\CocoWork\<id>`. Mata antes cualquier `UnityCrashHandler`/juego que siga abierto.
 

@@ -87,7 +87,10 @@ export function extrasFor(id,previews,screenshots,onlineFix){
     extra.preview={url:preview.url};
     for(const key of ['steamAppId','trailerId','bytes'])if(Number.isSafeInteger(preview[key])&&preview[key]>0)extra.preview[key]=preview[key];
   }
-  const shots=(screenshots[id]||[]).filter(shot=>steamUrl(shot,SHOT_HOSTS,['.jpg','.jpeg','.png','.webp'])).slice(0,16);
+  // Steam appends a cache-buster (?t=…) that the client refuses; the image is the same without it.
+  const listed=(screenshots[id]||[]).map(shot=>typeof shot==='string'?shot.replace(/\?t=\d+$/,''):shot);
+  const shots=listed.filter(shot=>steamUrl(shot,SHOT_HOSTS,['.jpg','.jpeg','.png','.webp'])).slice(0,16);
+  if(listed.length&&!shots.length)throw new Error(`game-screenshots.json: none of the screenshots of ${id} is a plain https://${SHOT_HOSTS[0]} image URL`);
   if(shots.length)extra.screenshots=shots;
   const fix=onlineFix.games?.[id];
   // The client parses realAppId as a JSON string; a number there makes it reject the whole channel.
@@ -215,7 +218,7 @@ export async function main(argv=process.argv.slice(2)){
   const config=JSON.parse(await readFile(resolve(desktopRoot,'src-tauri/tauri.conf.json'),'utf8'));
 
   const candidates=channelCandidates(template.experiences||[],baseline);
-  const entries=[],extras={},blocked=[];
+  const entries=[],extras={},blocked=[],noMedia=[];
   for(const source of candidates){
     const experience=toExperience(source);
     const manifest=toInstallManifest(source);
@@ -225,7 +228,10 @@ export async function main(argv=process.argv.slice(2)){
       entry:{...experience,image:await coverDataUrl(source.ui.imagePath)},manifest});
     const extra=extrasFor(source.id,previews,screenshots,onlineFix);
     if(Object.keys(extra).length)extras[source.id]=extra;
+    const missing=[!extra.preview&&'clip (src/game-hover-previews.json)',!extra.screenshots&&'capturas (src/game-screenshots.json)'].filter(Boolean);
+    if(missing.length)noMedia.push(`${source.id}: falta ${missing.join(' y ')}`);
   }
+  if(noMedia.length)console.warn(`AVISO: falta la tarjeta completa (paso «Tarjeta completa» de AGENT_ADD_GAME.md):\n  ${noMedia.join('\n  ')}`);
   if(blocked.length)throw new Error(`Estos juegos no pueden ir por el canal y necesitan un Setup nuevo:\n  ${blocked.join('\n  ')}`);
   if(entries.length>100)throw new Error('El canal admite hasta 100 juegos: publica un Setup nuevo para incorporarlos de fábrica.');
   for(const entry of entries)for(const archive of entry.manifest.archives)await archiveServed(archive);
