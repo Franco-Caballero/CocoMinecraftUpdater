@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "needle-in-a-haystack",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/needle-in-a-haystack-1.2.7/needle-in-a-haystack-1.2.7-part01.zip",
+    "sha256": "3648e27efc01855472b3dc3d33cb4e3a6a178b7ceea4fa295364988926e5678d",
+    "size": 701030370
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/needle-in-a-haystack-1.2.7/needle-in-a-haystack-1.2.7-part01.zip",
+      "sha256": "3648e27efc01855472b3dc3d33cb4e3a6a178b7ceea4fa295364988926e5678d",
+      "size": 701030370
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/needle-in-a-haystack-1.2.7/needle-in-a-haystack-1.2.7-part02.zip",
+      "sha256": "f0296a531116c543b5c1430bea73e301e26a0f5771304d370bf7117c11e5c505",
+      "size": 102240122
+    }
+  ]
+}

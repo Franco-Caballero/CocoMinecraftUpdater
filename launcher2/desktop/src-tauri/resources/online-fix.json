@@ -154,6 +154,11 @@
       "realAppId": "1302240",
       "hash0": "bf46131e40ff03b612073adbb8fd8067523034c85cec8d0a8daa3e7270262898a649a25572741fa37652c026dfe67333c62944c22155a7ff324052d51f051a1e",
       "hash1337": ""
+    },
+    "needle-in-a-haystack": {
+      "realAppId": "5085740",
+      "hash0": "48c36d70b002b6e87e91761ea5d799042ac746865f6b3691c69c8a5cc6ce8cbe1f465656c677db276fc1610c3870228ec42b63103b2d0676dd5ef814c834beaa",
+      "hash1337": ""
     }
   },
   "apps": {
@@ -310,6 +315,11 @@
     "1302240": {
       "realAppId": "1302240",
       "hash0": "bf46131e40ff03b612073adbb8fd8067523034c85cec8d0a8daa3e7270262898a649a25572741fa37652c026dfe67333c62944c22155a7ff324052d51f051a1e",
+      "hash1337": ""
+    },
+    "5085740": {
+      "realAppId": "5085740",
+      "hash0": "48c36d70b002b6e87e91761ea5d799042ac746865f6b3691c69c8a5cc6ce8cbe1f465656c677db276fc1610c3870228ec42b63103b2d0676dd5ef814c834beaa",
       "hash1337": ""
     }
   },

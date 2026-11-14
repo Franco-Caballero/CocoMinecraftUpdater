@@ -4081,6 +4081,93 @@
     "serverName": "Coco - Labyrinthine"
   },
   "files": []
+},
+        {
+  "id": "needle-in-a-haystack",
+  "name": "Needle In A Haystack",
+  "ui": {
+    "imagePath": "assets/experiences/needle-in-a-haystack.jpg"
+  },
+  "description": "Cooperativo en l\u00ednea ca\u00f3tico: busquen la aguja en un pajar gigante, ganen dinero, compren equipo absurdo y colecciones agujas de todo tipo con tus amigos.",
+  "instanceId": "needle-in-a-haystack",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "Needle In A Haystack/NeedleInAHaystack.exe",
+    "requiredFiles": [
+      {
+        "path": "Needle In A Haystack/NeedleInAHaystack.exe",
+        "size": 667136,
+        "sha256": "3960e76ac8c17c1ce14c46c4c08746f20e1fb8d84fb8cc1ae34ef600120dc962",
+        "archiveSha256": "3648e27efc01855472b3dc3d33cb4e3a6a178b7ceea4fa295364988926e5678d"
+      },
+      {
+        "path": "Needle In A Haystack/NeedleInAHaystack_Data/Plugins/x86_64/steam_api64.dll",
+        "size": 319584,
+        "sha256": "e082bf5c9f881c822b1540a76b74f9d15e18019a73ebd206a559595badcb7f65",
+        "archiveSha256": "f0296a531116c543b5c1430bea73e301e26a0f5771304d370bf7117c11e5c505"
+      },
+      {
+        "path": "Needle In A Haystack/OnlineFix.ini",
+        "size": 472,
+        "sha256": "4f8062a8b065dab2c1399b40d60ee5375a70dc8673ce396b9cae4b5957ee5f30",
+        "archiveSha256": "3648e27efc01855472b3dc3d33cb4e3a6a178b7ceea4fa295364988926e5678d"
+      },
+      {
+        "path": "Needle In A Haystack/OnlineFix64.dll",
+        "size": 13401600,
+        "sha256": "ae23f76254fbcd88d36ff5d15f958708638cb63e6cebdc1d30247aa559c2340f",
+        "archiveSha256": "3648e27efc01855472b3dc3d33cb4e3a6a178b7ceea4fa295364988926e5678d"
+      },
+      {
+        "path": "Needle In A Haystack/UnityPlayer.dll",
+        "size": 36734888,
+        "sha256": "35f489b6a7753d536ce2e7b1bd1f729afb8b4e70b43caaa01af03d1c20f64d6c",
+        "archiveSha256": "3648e27efc01855472b3dc3d33cb4e3a6a178b7ceea4fa295364988926e5678d"
+      },
+      {
+        "path": "Needle In A Haystack/dlllist.txt",
+        "size": 35,
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "archiveSha256": "3648e27efc01855472b3dc3d33cb4e3a6a178b7ceea4fa295364988926e5678d"
+      },
+      {
+        "path": "Needle In A Haystack/winmm.dll",
+        "size": 502272,
+        "sha256": "063a8d5e57cd760a8eafb3573146cc97e18180412a5a0efc23614e23dc1a2568",
+        "archiveSha256": "3648e27efc01855472b3dc3d33cb4e3a6a178b7ceea4fa295364988926e5678d"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-needle-in-a-haystack",
+    "lockPath": "launcher/experiences/needle-in-a-haystack.lock.json",
+    "version": "1.2.7",
+    "sha256": "3648e27efc01855472b3dc3d33cb4e3a6a178b7ceea4fa295364988926e5678d",
+    "size": 803270492,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/needle-in-a-haystack-1.2.7/needle-in-a-haystack-1.2.7-part01.zip",
+        "sha256": "3648e27efc01855472b3dc3d33cb4e3a6a178b7ceea4fa295364988926e5678d",
+        "size": 701030370
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/needle-in-a-haystack-1.2.7/needle-in-a-haystack-1.2.7-part02.zip",
+        "sha256": "f0296a531116c543b5c1430bea73e301e26a0f5771304d370bf7117c11e5c505",
+        "size": 102240122
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Needle In A Haystack"
+  },
+  "files": []
 }
   ]
 }

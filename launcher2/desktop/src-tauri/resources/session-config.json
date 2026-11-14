@@ -258,6 +258,12 @@
       "packVersion": "26227185",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "needle-in-a-haystack",
+      "packVersion": "1.2.7",
+      "host": "",
+      "port": 0
     }
   ]
 }

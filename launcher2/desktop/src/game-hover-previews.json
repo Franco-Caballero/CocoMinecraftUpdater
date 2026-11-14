@@ -207,5 +207,11 @@
     "steamAppId": 1302240,
     "trailerId": 595934,
     "bytes": 1166138
+  },
+  "needle-in-a-haystack": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/5085740/1098175869/444369ad585ba5fbe92ccc02859ce1e10fb8472b/1791230639/microtrailer.webm",
+    "steamAppId": 5085740,
+    "trailerId": 1312993,
+    "bytes": 1957507
   }
 }
