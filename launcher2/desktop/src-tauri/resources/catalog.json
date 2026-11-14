@@ -2022,5 +2022,60 @@
     "executable": "Sledding Game/Sledding Game.exe",
     "launchArguments": [],
     "hostingMode": "p2p"
+  },
+  {
+    "id": "golf-with-your-friends",
+    "instanceId": "golf-with-your-friends",
+    "name": "Golf With Your Friends",
+    "image": "/covers/golf-with-your-friends.jpg.webp",
+    "description": "Minigolf caótico para hasta 12 jugadores en línea: golf clásico, aros o hockey, con objetos para congelar, pegar o convertir en cubo la bola de tus amigos. También puedes crear y compartir tus propios campos.",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "Golf With Your Friends/GameAssembly.dll",
+        "sha256": "6a5bfa0d839576cb535093636e63787c39115c218b4957f204c78b7bb7db909d",
+        "size": 51953152
+      },
+      {
+        "path": "Golf With Your Friends/Golf With Your Friends.exe",
+        "sha256": "02fd08dd777c2159eed10a388db50d35b096172281c77a88647fce578234ff41",
+        "size": 653824
+      },
+      {
+        "path": "Golf With Your Friends/Golf With Your Friends_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "a44e5537939ae4eebc69000589aa9b2437a667813a1657cc779198bae9b815a9",
+        "size": 298856
+      },
+      {
+        "path": "Golf With Your Friends/OnlineFix.ini",
+        "sha256": "2868b924ca272630705a34c90d04ab5045bcd4c24d47a65fa39da95a6adee507",
+        "size": 1537
+      },
+      {
+        "path": "Golf With Your Friends/OnlineFix64.dll",
+        "sha256": "14232bd5332d950291bc419d3dba5d8794079adfe108a3fd0688af8a01ca5e6b",
+        "size": 11979776
+      },
+      {
+        "path": "Golf With Your Friends/UnityPlayer.dll",
+        "sha256": "d50d08c21dfacb58a32421ebac2ecb190681fe1b6ec83e925e1b35776226e972",
+        "size": 29374888
+      },
+      {
+        "path": "Golf With Your Friends/dlllist.txt",
+        "sha256": "a86ab829c15bc4371f01fac3c349e8d3e6e69c2c83232e4d03653c9153252306",
+        "size": 65
+      },
+      {
+        "path": "Golf With Your Friends/winmm.dll",
+        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+        "size": 524288
+      }
+    ],
+    "executable": "Golf With Your Friends/Golf With Your Friends.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
   }
 ]

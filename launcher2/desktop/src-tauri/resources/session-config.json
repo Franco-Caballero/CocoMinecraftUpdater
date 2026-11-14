@@ -282,6 +282,12 @@
       "packVersion": "26054124",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "golf-with-your-friends",
+      "packVersion": "330",
+      "host": "",
+      "port": 0
     }
   ]
 }

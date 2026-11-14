@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "golf-with-your-friends",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-with-your-friends-330/golf-with-your-friends-330-part01.zip",
+    "sha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57",
+    "size": 1498210060
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-with-your-friends-330/golf-with-your-friends-330-part01.zip",
+      "sha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57",
+      "size": 1498210060
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-with-your-friends-330/golf-with-your-friends-330-part02.zip",
+      "sha256": "235c21a1c52101d3d6ac575fb3187064dac84c1eb0516582e90c3f23edf9f69b",
+      "size": 1585956450
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-with-your-friends-330/golf-with-your-friends-330-part03.zip",
+      "sha256": "ccdb91d3bb55375134c84206806c786cfc9a570b65ea5effbaa1ecc236c09825",
+      "size": 1443702638
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-with-your-friends-330/golf-with-your-friends-330-part04.zip",
+      "sha256": "7d222b735fa751533ae47ff7cedf23985d9bd0f3a15b78e6b923da29d006fb60",
+      "size": 700489960
+    }
+  ]
+}

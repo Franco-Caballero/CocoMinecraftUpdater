@@ -231,5 +231,11 @@
     "steamAppId": 3438850,
     "trailerId": 1154675,
     "bytes": 1742099
+  },
+  "golf-with-your-friends": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/431240/750934/c844e4324a3ad8f7a5c7d0a26ac9e4dee828c0ef/1750530208/microtrailer.webm",
+    "steamAppId": 431240,
+    "trailerId": 750934,
+    "bytes": 2291666
   }
 }

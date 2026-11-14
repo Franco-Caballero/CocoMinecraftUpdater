@@ -4437,6 +4437,109 @@
     "serverName": "Coco - Sledding Game"
   },
   "files": []
+},
+        {
+  "id": "golf-with-your-friends",
+  "name": "Golf With Your Friends",
+  "ui": {
+    "imagePath": "assets/experiences/golf-with-your-friends.jpg"
+  },
+  "description": "Minigolf ca\u00f3tico para hasta 12 jugadores en l\u00ednea: golf cl\u00e1sico, aros o hockey, con objetos para congelar, pegar o convertir en cubo la bola de tus amigos. Tambi\u00e9n puedes crear y compartir tus propios campos.",
+  "instanceId": "golf-with-your-friends",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "Golf With Your Friends/Golf With Your Friends.exe",
+    "requiredFiles": [
+      {
+        "path": "Golf With Your Friends/GameAssembly.dll",
+        "size": 51953152,
+        "sha256": "6a5bfa0d839576cb535093636e63787c39115c218b4957f204c78b7bb7db909d",
+        "archiveSha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57"
+      },
+      {
+        "path": "Golf With Your Friends/Golf With Your Friends.exe",
+        "size": 653824,
+        "sha256": "02fd08dd777c2159eed10a388db50d35b096172281c77a88647fce578234ff41",
+        "archiveSha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57"
+      },
+      {
+        "path": "Golf With Your Friends/Golf With Your Friends_Data/Plugins/x86_64/steam_api64.dll",
+        "size": 298856,
+        "sha256": "a44e5537939ae4eebc69000589aa9b2437a667813a1657cc779198bae9b815a9",
+        "archiveSha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57"
+      },
+      {
+        "path": "Golf With Your Friends/OnlineFix.ini",
+        "size": 1537,
+        "sha256": "2868b924ca272630705a34c90d04ab5045bcd4c24d47a65fa39da95a6adee507",
+        "archiveSha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57"
+      },
+      {
+        "path": "Golf With Your Friends/OnlineFix64.dll",
+        "size": 11979776,
+        "sha256": "14232bd5332d950291bc419d3dba5d8794079adfe108a3fd0688af8a01ca5e6b",
+        "archiveSha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57"
+      },
+      {
+        "path": "Golf With Your Friends/UnityPlayer.dll",
+        "size": 29374888,
+        "sha256": "d50d08c21dfacb58a32421ebac2ecb190681fe1b6ec83e925e1b35776226e972",
+        "archiveSha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57"
+      },
+      {
+        "path": "Golf With Your Friends/dlllist.txt",
+        "size": 65,
+        "sha256": "a86ab829c15bc4371f01fac3c349e8d3e6e69c2c83232e4d03653c9153252306",
+        "archiveSha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57"
+      },
+      {
+        "path": "Golf With Your Friends/winmm.dll",
+        "size": 524288,
+        "sha256": "ba37009eef6c041bc6d0a271c13679fb9e14a005bd7e038cee596cd4064cf8b3",
+        "archiveSha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-golf-with-your-friends",
+    "lockPath": "launcher/experiences/golf-with-your-friends.lock.json",
+    "version": "330",
+    "sha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57",
+    "size": 5228359108,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-with-your-friends-330/golf-with-your-friends-330-part01.zip",
+        "sha256": "5419dcc65c63e1e0b99b956fb20b957075a38612f17b2203b2684bb3c89efb57",
+        "size": 1498210060
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-with-your-friends-330/golf-with-your-friends-330-part02.zip",
+        "sha256": "235c21a1c52101d3d6ac575fb3187064dac84c1eb0516582e90c3f23edf9f69b",
+        "size": 1585956450
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-with-your-friends-330/golf-with-your-friends-330-part03.zip",
+        "sha256": "ccdb91d3bb55375134c84206806c786cfc9a570b65ea5effbaa1ecc236c09825",
+        "size": 1443702638
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/golf-with-your-friends-330/golf-with-your-friends-330-part04.zip",
+        "sha256": "7d222b735fa751533ae47ff7cedf23985d9bd0f3a15b78e6b923da29d006fb60",
+        "size": 700489960
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Golf With Your Friends"
+  },
+  "files": []
 }
   ]
 }
