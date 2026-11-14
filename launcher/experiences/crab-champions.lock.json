@@ -7,5 +7,17 @@
     "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/crab-champions-2466/crab-champions-2466-part01.zip",
     "sha256": "c44bd931b710c1fcd502310c141a4ede481035fa1d637841bfcb38ebd77cf125",
     "size": 1525259882
-  }
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/crab-champions-2466/crab-champions-2466-part01.zip",
+      "sha256": "c44bd931b710c1fcd502310c141a4ede481035fa1d637841bfcb38ebd77cf125",
+      "size": 1525259882
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/crab-champions-2466/crab-champions-2466-part02.zip",
+      "sha256": "e265c889b1d1980163f7e0e49ab80b3e79047955abdb26a37c1f45f273ffe0be",
+      "size": 5607290
+    }
+  ]
 }

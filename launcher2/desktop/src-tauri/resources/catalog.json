@@ -1487,6 +1487,16 @@
         "path": "Crab Champions/Engine/Binaries/ThirdParty/Steamworks/Steamv151/Win64/steam_api64.dll",
         "sha256": "ca1fa9a7609ab10b7926400559cf073e5888423cc156af72c6027d72a89eea73",
         "size": 265504
+      },
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/dwmapi.dll",
+        "sha256": "ce596412befa68c30b7f88f65beb77d9bdad55e9b96a276a5a9cf690c63f24bb",
+        "size": 58368
+      },
+      {
+        "path": "Crab Champions/CrabChampions/Binaries/Win64/UE4SS.dll",
+        "sha256": "8ac18fbffc1ef96b0662d4a2d537b3f224c26d65caaba7989a9404c566102b26",
+        "size": 16263680
       }
     ],
     "executable": "Crab Champions/CrabChampions/Binaries/Win64/CrabChampions-Win64-Shipping.exe",
