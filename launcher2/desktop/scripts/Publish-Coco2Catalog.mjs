@@ -90,6 +90,8 @@ export function extrasFor(id,previews,screenshots,onlineFix){
   const shots=(screenshots[id]||[]).filter(shot=>steamUrl(shot,SHOT_HOSTS,['.jpg','.jpeg','.png','.webp'])).slice(0,16);
   if(shots.length)extra.screenshots=shots;
   const fix=onlineFix.games?.[id];
+  // The client parses realAppId as a JSON string; a number there makes it reject the whole channel.
+  if(fix&&typeof fix.realAppId!=='string')throw new Error(`online-fix.json: realAppId of ${id} must be a string ("${fix.realAppId}")`);
   if(fix&&/^\d{1,12}$/.test(fix.realAppId)&&/^[0-9a-f]{128}$/i.test(fix.hash0)&&(!fix.hash1337||/^[0-9a-f]{128}$/i.test(fix.hash1337)))
     extra.onlineFix={realAppId:fix.realAppId,hash0:fix.hash0,hash1337:fix.hash1337||''};
   return extra;
