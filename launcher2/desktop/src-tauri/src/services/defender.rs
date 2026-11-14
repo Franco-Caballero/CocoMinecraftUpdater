@@ -15,7 +15,7 @@ const AUTHORIZATION_EVENT:&str="coco2://windows-authorization";
 const DECLINED_RETRY_SECONDS:u64=6*60*60;
 const UNAVAILABLE_RETRY_SECONDS:u64=7*24*60*60;
 /// Folders next to a game hold its installation stage, a move in progress and kept saves.
-const WORK_FOLDER_PATTERNS:&[&str]=&[".coco2-stage-*",".coco-moving-*",".coco-moved-*",".coco-uninstalling-*",".coco-kept-saves"];
+const WORK_FOLDER_PATTERNS:&[&str]=&[".coco2-stage-*",".coco-moving-*",".coco-moved-*",".coco-uninstalling-*",".coco-kept-saves",".coco-downloads"];
 
 #[derive(Debug,Default,Serialize,Deserialize)]
 #[serde(rename_all="camelCase",default)]

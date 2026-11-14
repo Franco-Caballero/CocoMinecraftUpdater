@@ -791,7 +791,7 @@ pub async fn plan_standalone_upgrade(id:String)->Result<UpgradePlan,String>{
     let m=read_manifest(&id)?;
     let (app_data,local_data)=roots()?;
     let target=instance_path(&m,&app_data,&local_data)?;
-    let cache=local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs");
+    let cache=download_cache(&local_data,&target);
     tauri::async_runtime::spawn_blocking(move||upgrade_plan(&m,&target,&cache))
         .await.map_err(|e|format!("No se pudo revisar actualización: {e}"))
 }
@@ -859,7 +859,7 @@ fn read_install_plan(id: &str) -> Result<InstallPlan, String> {
     let target = instance_path(&m, &app_data, &local_data)?;
     let mut initial=plan(&m,&target);
     if target.exists() {
-        let cache=local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs");
+        let cache=download_cache(&local_data,&target);
         let upgrade=upgrade_plan(&m,&target,&cache);
         if upgrade.status=="upgrade-ready" {
             initial.status="upgrade-available";
@@ -2224,7 +2224,7 @@ pub async fn upgrade_standalone(id:String,app:AppHandle,state:State<'_,InstallSt
     let manifest=read_manifest(&id)?;
     let (app_data,local_data)=roots()?;
     let target=instance_path(&manifest,&app_data,&local_data)?;
-    let cache=local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs");
+    let cache=download_cache(&local_data,&target);
     let active=Arc::clone(&state.active);
     let token=Arc::new(AtomicBool::new(false));
     {
@@ -2292,7 +2292,7 @@ pub async fn prepare_standalone_repair(id: String, app: AppHandle, state: State<
         if !jobs.is_empty() { return Err("Ya existe otra instalación o preparación en ejecución".into()); }
         jobs.insert(id.clone(), Arc::clone(&token));
     }
-    let cache = local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs");
+    let cache=download_cache(&local_data,&target);
     tauri::async_runtime::spawn_blocking(move || {
         let _guard = ActiveGuard { id: m.id.clone(), active };
         let result = prepare_repair(&m, &target, &cache, &token, |phase, file, done, total| {
@@ -2344,7 +2344,7 @@ pub async fn commit_standalone_repair(id:String,app:AppHandle,state:State<'_,Ins
         if !jobs.is_empty(){return Err("Existe otra instalación o reparación en ejecución".into());}
         jobs.insert(id.clone(),Arc::clone(&token));
     }
-    let cache=local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs");
+    let cache=download_cache(&local_data,&target);
     tauri::async_runtime::spawn_blocking(move||{
         let _guard=ActiveGuard{id:manifest.id.clone(),active};
         guard_game_processes(&app)?;
@@ -2428,7 +2428,7 @@ pub async fn install_standalone(id: String, app: AppHandle, state: State<'_, Ins
         if !jobs.is_empty() { return Err("Ya existe otra instalación standalone en ejecución".into()); }
         jobs.insert(id.clone(), Arc::clone(&token));
     }
-    let cache = local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs");
+    let cache=download_cache(&local_data,&target);
     tauri::async_runtime::spawn_blocking(move || {
         let _guard = ActiveGuard { id: m.id.clone(), active };
         // Before any byte arrives: Defender removes Online-Fix files as they unpack.
@@ -2482,9 +2482,32 @@ pub(crate) fn assert_can_remove(target:&Path,id:&str,instance_id:&str)->Result<(
 /// needed until it is unpacked; a repair downloads again. Run when Coco opens and when it closes,
 /// with no install running, so nothing the player is not using stays on disk.
 pub(crate) fn sweep_download_cache(local_data:&Path){
-    let cache=local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs");
-    if is_link(&cache).unwrap_or(true){return;}
-    let Ok(entries)=fs::read_dir(&cache) else {return};
+    sweep_cache_folder(&local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs"));
+    // Games on another drive download beside their folder (see download_cache).
+    if let Ok(locations)=crate::services::inventory::custom_locations(local_data){
+        for root in locations.values().filter_map(serde_json::Value::as_str){
+            if let Some(parent)=Path::new(root).parent(){sweep_cache_folder(&parent.join(DOWNLOADS_DIR));}
+        }
+    }
+}
+
+/// Folder beside the games of another drive where their ZIPs are downloaded.
+pub(crate) const DOWNLOADS_DIR:&str=".coco-downloads";
+
+/// Where a game's ZIPs are downloaded: Coco's own folder when the game is on the same drive,
+/// otherwise a work folder next to the game, so a full C: never blocks a game installed on D:.
+pub(crate) fn download_cache(local_data:&Path,target:&Path)->PathBuf{
+    let default=local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs");
+    let drive=|path:&Path|path.components().next().map(|part|part.as_os_str().to_string_lossy().to_lowercase());
+    match target.parent(){
+        Some(parent) if drive(target).is_some()&&drive(target)!=drive(local_data)=>parent.join(DOWNLOADS_DIR),
+        _=>default,
+    }
+}
+
+fn sweep_cache_folder(cache:&Path){
+    if is_link(cache).unwrap_or(true){return;}
+    let Ok(entries)=fs::read_dir(cache) else {return};
     for entry in entries.flatten(){
         let Ok(meta)=fs::symlink_metadata(entry.path()) else {continue};
         if is_link(&entry.path()).unwrap_or(true){continue;}
@@ -2516,8 +2539,11 @@ pub(crate) fn discard_pending_downloads(state:&InstallState){
 
 /// Downloads kept only for this game; without this the disk would barely free up.
 pub(crate) fn remove_cached_archives(id:&str){
-    let (Ok(manifest),Ok((_,local_data)))=(read_manifest(id),roots()) else {return};
-    let cache=local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs");
+    let (Ok(manifest),Ok((app_data,local_data)))=(read_manifest(id),roots()) else {return};
+    let cache=match instance_path(&manifest,&app_data,&local_data){
+        Ok(target)=>download_cache(&local_data,&target),
+        Err(_)=>local_data.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs"),
+    };
     for sha in manifest.archives.iter().map(|part|&part.sha256).chain(manifest.extra_files.iter().map(|part|&part.sha256)){
         let _=fs::remove_file(cache.join(format!("{}.zip",sha.to_ascii_lowercase())));
     }
@@ -2591,6 +2617,15 @@ mod tests {
         assert!(!cache.join("download-ephemeral").exists());
         assert!(foreign.exists()&&cache.join("keep-me").exists());
         let _=fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn a_game_on_another_drive_downloads_on_that_drive(){
+        let local=Path::new(r"C:\Users\p\AppData\Local");
+        assert_eq!(download_cache(local,Path::new(r"D:\Juegos\gang-beasts")),Path::new(r"D:\Juegos\.coco-downloads"));
+        assert_eq!(download_cache(local,Path::new(r"C:\Users\p\AppData\Roaming\CocoLauncher2\games\gang-beasts")),
+            local.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs"));
+        assert_eq!(download_cache(local,Path::new(r"c:\Games\x")),local.join("CocoMinecraftUpdater").join("downloads").join("standalone-packs"));
     }
 
     #[test]

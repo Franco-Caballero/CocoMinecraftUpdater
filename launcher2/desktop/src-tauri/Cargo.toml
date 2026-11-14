@@ -1,6 +1,6 @@
 [package]
 name = "coco-launcher-2"
-version = "0.6.56"
+version = "0.6.57"
 description = "Coco Launcher 2 shell"
 edition = "2021"
 rust-version = "1.77.2"
