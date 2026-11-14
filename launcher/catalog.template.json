@@ -4540,6 +4540,98 @@
     "serverName": "Coco - Golf With Your Friends"
   },
   "files": []
+},
+        {
+  "id": "risk-of-rain-2",
+  "name": "Risk of Rain 2",
+  "ui": {
+    "imagePath": "assets/experiences/risk-of-rain-2.jpg"
+  },
+  "description": "Roguelike de acci\u00f3n en tercera persona: hasta 4 jugadores escapan de un planeta alien\u00edgena, juntan objetos que se combinan y aguantan oleadas cada vez m\u00e1s duras.",
+  "instanceId": "risk-of-rain-2",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "Risk of Rain 2/Risk of Rain 2.exe",
+    "requiredFiles": [
+      {
+        "path": "Risk of Rain 2/OnlineFix.ini",
+        "size": 722,
+        "sha256": "7fa76e94b2eecb6bffb1040ff7061ac9916fbc83cd5a6cd6aa7330c97f875ced",
+        "archiveSha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d"
+      },
+      {
+        "path": "Risk of Rain 2/OnlineFix64.dll",
+        "size": 11944448,
+        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+        "archiveSha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d"
+      },
+      {
+        "path": "Risk of Rain 2/Risk of Rain 2.exe",
+        "size": 653824,
+        "sha256": "0c34bfeefa1cbe8b38bdb99637ef1225835bf3b3b47a3996d76138662b8ab5e1",
+        "archiveSha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d"
+      },
+      {
+        "path": "Risk of Rain 2/UnityPlayer.dll",
+        "size": 29438200,
+        "sha256": "fae6c04f23916263879196211ed241aee5f1f1b53ba4566bb99d4df8526cc105",
+        "archiveSha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d"
+      },
+      {
+        "path": "Risk of Rain 2/dlllist.txt",
+        "size": 35,
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "archiveSha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d"
+      },
+      {
+        "path": "Risk of Rain 2/steam_api64.dll",
+        "size": 250656,
+        "sha256": "b8246e1a629b945fe526b24c3e4f002c4f6eb86aa1b5ed9744399f22a0d2ca9f",
+        "archiveSha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d"
+      },
+      {
+        "path": "Risk of Rain 2/winmm.dll",
+        "size": 506368,
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "archiveSha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-risk-of-rain-2",
+    "lockPath": "launcher/experiences/risk-of-rain-2.lock.json",
+    "version": "1.5.0.1224",
+    "sha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d",
+    "size": 3591131607,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/risk-of-rain-2-1.5.0.1224/risk-of-rain-2-1.5.0.1224-part01.zip",
+        "sha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d",
+        "size": 1459100220
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/risk-of-rain-2-1.5.0.1224/risk-of-rain-2-1.5.0.1224-part02.zip",
+        "sha256": "b941b423f3697e5743e9dcae24abc9b98193e9073ce475dd86644ae07daa8833",
+        "size": 1584303725
+      },
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/risk-of-rain-2-1.5.0.1224/risk-of-rain-2-1.5.0.1224-part03.zip",
+        "sha256": "0b2bce812fd71ec8ef629dd107c2b9afd0c508367cc1b7eea42160e226789c36",
+        "size": 547727662
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Risk of Rain 2"
+  },
+  "files": []
 }
   ]
 }

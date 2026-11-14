@@ -189,6 +189,11 @@
       "realAppId": "431240",
       "hash0": "9a64a682c5ba8a0c44720d2988fb0d904c8f370a24028197555e0274b9a17a04d7b1e4d7c13d06ca00d53017dcd29f0739620ac3e2a34aabd9442f0262a4a1ba",
       "hash1337": ""
+    },
+    "risk-of-rain-2": {
+      "realAppId": "632360",
+      "hash0": "20deff75773ea8655879e8a5e5c234055e6db0b8b1eb47ebca13dcbc7a27f7484b3a7728c19cdf8e87e0ad8399364b355292d92f7c9df478260cfd51e0e2e073",
+      "hash1337": ""
     }
   },
   "apps": {
@@ -380,6 +385,11 @@
     "431240": {
       "realAppId": "431240",
       "hash0": "9a64a682c5ba8a0c44720d2988fb0d904c8f370a24028197555e0274b9a17a04d7b1e4d7c13d06ca00d53017dcd29f0739620ac3e2a34aabd9442f0262a4a1ba",
+      "hash1337": ""
+    },
+    "632360": {
+      "realAppId": "632360",
+      "hash0": "20deff75773ea8655879e8a5e5c234055e6db0b8b1eb47ebca13dcbc7a27f7484b3a7728c19cdf8e87e0ad8399364b355292d92f7c9df478260cfd51e0e2e073",
       "hash1337": ""
     }
   },

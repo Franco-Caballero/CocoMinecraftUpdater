@@ -2077,5 +2077,55 @@
     "executable": "Golf With Your Friends/Golf With Your Friends.exe",
     "launchArguments": [],
     "hostingMode": "p2p"
+  },
+  {
+    "id": "risk-of-rain-2",
+    "instanceId": "risk-of-rain-2",
+    "name": "Risk of Rain 2",
+    "image": "/covers/risk-of-rain-2.jpg.webp",
+    "description": "Roguelike de acción en tercera persona: hasta 4 jugadores escapan de un planeta alienígena, juntan objetos que se combinan y aguantan oleadas cada vez más duras.",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "Risk of Rain 2/OnlineFix.ini",
+        "sha256": "7fa76e94b2eecb6bffb1040ff7061ac9916fbc83cd5a6cd6aa7330c97f875ced",
+        "size": 722
+      },
+      {
+        "path": "Risk of Rain 2/OnlineFix64.dll",
+        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+        "size": 11944448
+      },
+      {
+        "path": "Risk of Rain 2/Risk of Rain 2.exe",
+        "sha256": "0c34bfeefa1cbe8b38bdb99637ef1225835bf3b3b47a3996d76138662b8ab5e1",
+        "size": 653824
+      },
+      {
+        "path": "Risk of Rain 2/UnityPlayer.dll",
+        "sha256": "fae6c04f23916263879196211ed241aee5f1f1b53ba4566bb99d4df8526cc105",
+        "size": 29438200
+      },
+      {
+        "path": "Risk of Rain 2/dlllist.txt",
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "size": 35
+      },
+      {
+        "path": "Risk of Rain 2/steam_api64.dll",
+        "sha256": "b8246e1a629b945fe526b24c3e4f002c4f6eb86aa1b5ed9744399f22a0d2ca9f",
+        "size": 250656
+      },
+      {
+        "path": "Risk of Rain 2/winmm.dll",
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "size": 506368
+      }
+    ],
+    "executable": "Risk of Rain 2/Risk of Rain 2.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
   }
 ]

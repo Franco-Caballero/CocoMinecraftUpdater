@@ -288,6 +288,12 @@
       "packVersion": "330",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "risk-of-rain-2",
+      "packVersion": "1.5.0.1224",
+      "host": "",
+      "port": 0
     }
   ]
 }

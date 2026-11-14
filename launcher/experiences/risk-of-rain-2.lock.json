@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "risk-of-rain-2",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/risk-of-rain-2-1.5.0.1224/risk-of-rain-2-1.5.0.1224-part01.zip",
+    "sha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d",
+    "size": 1459100220
+  },
+  "archives": [
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/risk-of-rain-2-1.5.0.1224/risk-of-rain-2-1.5.0.1224-part01.zip",
+      "sha256": "3f23e84d7261f40cdbb1105e38d78a9f12502efcfbd2059d22df7de6ca62ca8d",
+      "size": 1459100220
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/risk-of-rain-2-1.5.0.1224/risk-of-rain-2-1.5.0.1224-part02.zip",
+      "sha256": "b941b423f3697e5743e9dcae24abc9b98193e9073ce475dd86644ae07daa8833",
+      "size": 1584303725
+    },
+    {
+      "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/risk-of-rain-2-1.5.0.1224/risk-of-rain-2-1.5.0.1224-part03.zip",
+      "sha256": "0b2bce812fd71ec8ef629dd107c2b9afd0c508367cc1b7eea42160e226789c36",
+      "size": 547727662
+    }
+  ]
+}

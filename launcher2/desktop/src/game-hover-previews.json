@@ -237,5 +237,11 @@
     "steamAppId": 431240,
     "trailerId": 750934,
     "bytes": 2291666
+  },
+  "risk-of-rain-2": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/632360/83804956/1baf9dbc3089c707258f7084315f4467e7fb3040/1750564385/microtrailer.webm",
+    "steamAppId": 632360,
+    "trailerId": 907413,
+    "bytes": 2094748
   }
 }
