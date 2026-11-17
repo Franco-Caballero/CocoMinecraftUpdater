@@ -1,5 +1,7 @@
 # Coco Launcher 2 — nuevo motor Rust
 
+**Coco 2 0.6.60:** publicado en `coco2-channel` y verificado (Latest sigue en `v0.5.186`). Portadas nuevas de Other Mommy y Resident Evil: backdrops oficiales de TMDB sin texto, recortados a 2:1 con `scripts/Make-CocoCover.py`; procedimiento en `docs/AGENT_ADD_GAME.md` («Portadas»). Setup 60.180.774 bytes, SHA-256 `2dc717d4cc915e041b0d9fe3a11ebfaef74a3ef3e44643a97acd300837eb3083`.
+
 **Coco 2 0.6.59:** publicado en `coco2-channel` y verificado (Latest sigue en `v0.5.186`). Películas partidas por bytes en varios assets que el proxy sirve como un solo archivo (abre la parte siguiente unos 16 MB antes del corte); pista de subtítulos por película. Agrega Other Mommy (2026) en 4K, 3 partes, subtítulos en español; cortes en 28:30 y 58:23 medidos sin saltos de imagen. Setup 60.169.689 bytes, SHA-256 `8ec30f98b91f77cd194f50e6426bcbd11bfbf89d9432d966e45a87f5ee218478`. Rust 312 PASS, JS 568 PASS.
 
 **Coco 2 0.6.58:** publicado en `coco2-channel` y verificado (Latest sigue en `v0.5.186`). Reproductor rápido: decodificación por GPU, fotogramas I420 dibujados con WebGL y vuelta automática al modo compatible (software) si falla; Mickey 17 ya no espera un análisis previo; fondo negro; saltos agrupados y reutilización de la dirección firmada; registro `[ui:player]` en coco.log. Corrige un pánico al revisar accesos directos. Setup 60.095.125 bytes, SHA-256 `17787e26d285e708e80b1dc4d4e0339c4cdc0e10583de2174ea2964c44135d00`. Rust 310 PASS, JS 567 PASS.
