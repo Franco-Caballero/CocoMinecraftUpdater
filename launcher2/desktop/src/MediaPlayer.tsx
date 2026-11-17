@@ -4,7 +4,8 @@ import {isTauri} from '@tauri-apps/api/core';
 import {getCurrentWindow} from '@tauri-apps/api/window';
 import {nextPlaybackRate,resumeMediaPosition,seekRelative,shouldHandlePlaybackKey,stepVolume} from './media-playback-controls';
 import {formatClock,saveProgress} from './media-progress';
-import {useNativePlayback} from './native-playback';
+import {useNativePlayback,type PlaybackEvent} from './native-playback';
+import {logEvent} from './diagnostics';
 
 type Props={title:string;url:string;mimeType:string;onClose:()=>void;onReopen?:()=>Promise<boolean>;
   /** The show or «Película»: the line above the title. */
@@ -22,9 +23,18 @@ const CLOSE_MS=230;
 const UP_NEXT_SECONDS=8;
 const SAVE_EVERY_MS=4000;
 const VOLUME_KEY='coco2.player-volume.v1';
+/** A PC where the fast mode failed keeps the compatible one for a few days, then tries again
+ * (a driver update may have fixed it). */
+const COMPATIBLE_KEY='coco2.player-compatible.v1';
+const COMPATIBLE_MS=3*24*60*60*1000;
+const prefersCompatible=()=>{
+  try{const since=Number(localStorage.getItem(COMPATIBLE_KEY));return since>0&&Date.now()-since<COMPATIBLE_MS;}
+  catch{return false;}
+};
 
 /** Coco's controls work with the bundled native decoder on Windows and an
- * HTML video in browser previews. Native media never enters WebView2's decoder. */
+ * HTML video in browser previews. Native media never enters WebView2's decoder.
+ * It starts in the fast mode (GPU) and reopens in the compatible one if that fails here. */
 export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt,progress,next}:Props){
   const videoRef=useRef<HTMLVideoElement>(null);
   const canvasRef=useRef<HTMLCanvasElement>(null);
@@ -63,7 +73,23 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
   const [ended,setEnded]=useState(false);
   const [help,setHelp]=useState(false);
   const [closing,setClosing]=useState(false);
-  useNativePlayback(native,url,videoRef,canvasRef);
+  const [compatible,setCompatible]=useState(prefersCompatible);
+  const [problem,setProblem]=useState('');
+  const fellBack=useRef(false);
+  const playbackEvent=(kind:PlaybackEvent,detail:string)=>{
+    if(kind==='fallback'){
+      logEvent('player',`el modo rápido no funcionó (${detail}); se abre en modo compatible`);
+      // Mid-film (the graphics card stopped answering): come back to the same place.
+      if(lastPosition.current>=1&&pendingStart.current===null)pendingStart.current=lastPosition.current;
+      fellBack.current=true;setCompatible(true);
+    }else if(kind==='first-frame'){
+      logEvent('player',`primera imagen de «${title}» en ${detail}`);
+      // Only a compatible mode that really shows the film is remembered: a dead connection fails both.
+      if(fellBack.current){try{localStorage.setItem(COMPATIBLE_KEY,String(Date.now()));}catch{/* asked again next time */}}
+    }else if(kind==='problem'){setProblem(detail);logEvent('player',`no se pudo reproducir «${title}»: ${detail}`);}
+    else logEvent('player',detail);
+  };
+  useNativePlayback(native,url,videoRef,canvasRef,{safe:compatible,onEvent:playbackEvent});
   const videoEvent=(event:SyntheticEvent<HTMLVideoElement>,next:State)=>{
     // A revoked Range token may dispatch a late waiting/error/playing event
     // after a new key={url} video has mounted. Such events belong only to the
@@ -82,7 +108,7 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
     retryBusy.current=false;
     setRetrying(false);
     const epoch=++playEpoch.current;
-    setState('loading');
+    setState('loading');setProblem('');
     dialogRef.current?.focus();
     // Activation can be lost while the Tauri bridge prepares a fresh Range
     // token. A big play button takes over if autoplay is blocked.
@@ -101,7 +127,7 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
         video.load();
       });
     };
-  },[url]);
+  },[url,compatible]);
 
   // The viewer's volume carries over between films; timers and fullscreen never outlive the player.
   useEffect(()=>{
@@ -301,7 +327,7 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
     role="dialog" aria-modal="true" aria-label={`Reproduciendo ${title}`} ref={dialogRef} tabIndex={-1} onKeyDown={handleKey}
     onPointerMove={wake} onPointerDown={wake} onContextMenu={event=>event.preventDefault()}>
     <div className="coco-player-frame">
-      {native&&<canvas ref={canvasRef} className="coco-native-canvas" aria-label={title}
+      {native&&<canvas ref={canvasRef} key={compatible?'compatible':'fast'} className="coco-native-canvas" aria-label={title}
         onClick={togglePlay} onDoubleClick={()=>void setScreen(!fullscreen)}/>}
       <video ref={videoRef} key={url} src={native?undefined:url} title={title} playsInline preload="metadata" crossOrigin="anonymous"
         controlsList="nodownload noremoteplayback" disablePictureInPicture disableRemotePlayback
@@ -374,6 +400,7 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
       {state==='error'&&<div className="coco-player-error" role="alert">
         <AlertCircle size={26}/><strong>No se pudo reproducir</strong>
         <span>Comprueba la conexión. Si el acceso caducó, Coco abre uno nuevo y sigue donde ibas.</span>
+        {problem&&<small>{problem.slice(0,160)}</small>}
         <button onClick={()=>void retry()} disabled={retrying} aria-busy={retrying}><RefreshCw size={15}/>{retrying?'Restableciendo…':'Reintentar'}</button>
       </div>}
       {resumedFrom!==null&&<div className="coco-player-toast" role="status">

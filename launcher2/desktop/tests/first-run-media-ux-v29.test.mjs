@@ -90,7 +90,7 @@ function mountPlayer({onReopen=async()=>false}={}){
   const react={
     useState(initial){
       const index=currentIndex++;
-      if(!(index in slots))slots[index]=initial;
+      if(!(index in slots))slots[index]=typeof initial==='function'?initial():initial;
       return [slots[index],newValue=>{
         slots[index]=typeof newValue==='function'?newValue(slots[index]):newValue;
       }];
@@ -117,7 +117,7 @@ function mountPlayer({onReopen=async()=>false}={}){
   function activate(video){
     slots[hooks.indexOf('videoRef')].current=video;
     slots[hooks.indexOf('dialogRef')].current={focus(){}};
-    const next=effects.find(e=>Array.isArray(e.deps)&&e.deps.length===1);
+    const next=effects.find(e=>Array.isArray(e.deps)&&e.deps.length>0);
     assert.ok(next,'actual media player URL effect');
     cleanup=next.effect()||(()=>{});
   }

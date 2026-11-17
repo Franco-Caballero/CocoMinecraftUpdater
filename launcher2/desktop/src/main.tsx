@@ -297,6 +297,8 @@ function App(){
   const [spotlightId,setSpotlightId]=useState<string|null>(null);
   const openDetails=(entry:Experience)=>{
     prioritizePreview(entry.id);
+    // A film's page is open: load the video engine now, so play starts at once.
+    if(entry.workflow==='coco-media'&&isTauri())void invoke('prewarm_native_player').catch(()=>{});
     if(Object.hasOwn(gameScreenshots,entry.id))warmScreenshots(gameScreenshots[entry.id],true);
     if(!selected)detailFocusReturn.current=document.activeElement instanceof HTMLElement?document.activeElement:null;
     stageArt.current?.classList.remove('is-lit');

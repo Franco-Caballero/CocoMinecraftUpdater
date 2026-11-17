@@ -103,6 +103,7 @@ pub fn run() {
             services::media::prepare_local_media_stream,
             services::media::close_media_stream,
             services::native_player::open_native_player,
+            services::native_player::prewarm_native_player,
             services::native_player::native_player_status,
             services::native_player::control_native_player,
             services::native_player::close_native_player,

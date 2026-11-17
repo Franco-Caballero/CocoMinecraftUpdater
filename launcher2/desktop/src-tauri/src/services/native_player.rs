@@ -1,5 +1,7 @@
-//! Own software decoder; RGBA frames shared with WebView2's canvas compositor.
+//! Own decoder; frames shared with WebView2's canvas compositor.
 //! No child video HWND: controls, subtitles and hover UI share one DOM layer.
+//! Fast mode: GPU decoding when the PC has it, I420 planes, colour and scaling in WebGL.
+//! Compatible mode: software decoding and RGBA for a 2D canvas, the fallback when fast fails.
 use serde::Serialize;
 use std::sync::{Arc,Mutex};
 const MAX_WIDTH:usize=1920;
@@ -14,6 +16,8 @@ pub struct Snapshot {
     position:f64,duration:f64,paused:bool,volume:f64,muted:bool,rate:f64,
     buffering:bool,ended:bool,loaded:bool,has_video:bool,cache_seconds:f64,
     codec:String,error:Option<String>,inputs:Vec<String>,
+    /// Frames handed to the canvas so far: the viewer's real frame rate, for the log.
+    frames:u32,fast:bool,
 }
 fn valid_request(id:&str)->bool{id.len()==36&&id.bytes().all(|c|c.is_ascii_hexdigit()||c==b'-')}
 fn valid_value(action:&str,value:Option<f64>)->Result<f64,String>{
@@ -72,8 +76,7 @@ mod win {
         release:unsafe extern "C" fn(P),
         media:unsafe extern "C" fn(P,*const c_char)->P,
         media_release:unsafe extern "C" fn(P),
-        parse:unsafe extern "C" fn(P,i32,i32)->i32,
-        parsed:unsafe extern "C" fn(P)->i32,
+        media_option:unsafe extern "C" fn(P,*const c_char),
         tracks:unsafe extern "C" fn(P,*mut *mut *mut MediaTrack)->u32,
         tracks_release:unsafe extern "C" fn(*mut *mut MediaTrack,u32),
         player:unsafe extern "C" fn(P)->P,
@@ -138,7 +141,7 @@ mod win {
                 _core:core,_dll:dll,
                 new:symbol(dll,b"libvlc_new\0")?,release:symbol(dll,b"libvlc_release\0")?,
                 media:symbol(dll,b"libvlc_media_new_location\0")?,media_release:symbol(dll,b"libvlc_media_release\0")?,
-                parse:symbol(dll,b"libvlc_media_parse_with_options\0")?,parsed:symbol(dll,b"libvlc_media_get_parsed_status\0")?,tracks:symbol(dll,b"libvlc_media_tracks_get\0")?,tracks_release:symbol(dll,b"libvlc_media_tracks_release\0")?,
+                media_option:symbol(dll,b"libvlc_media_add_option\0")?,tracks:symbol(dll,b"libvlc_media_tracks_get\0")?,tracks_release:symbol(dll,b"libvlc_media_tracks_release\0")?,
                 player:symbol(dll,b"libvlc_media_player_new_from_media\0")?,player_release:symbol(dll,b"libvlc_media_player_release\0")?,
                 play:symbol(dll,b"libvlc_media_player_play\0")?,pause:symbol(dll,b"libvlc_media_player_set_pause\0")?,stop:symbol(dll,b"libvlc_media_player_stop\0")?,
                 time:symbol(dll,b"libvlc_media_player_get_time\0")?,length:symbol(dll,b"libvlc_media_player_get_length\0")?,set_time:symbol(dll,b"libvlc_media_player_set_time\0")?,
@@ -147,6 +150,46 @@ mod win {
                 callbacks:symbol(dll,b"libvlc_video_set_callbacks\0")?,format:symbol(dll,b"libvlc_video_set_format_callbacks\0")?,
             }))}
         }).clone()
+    }
+
+    fn vlc_log()->Option<PathBuf>{std::env::var_os("LOCALAPPDATA").map(|local|Path::new(&local).join("CocoLauncher2").join("logs").join("player.log"))}
+    /// The decoder's own errors, for coco.log when a film does not open.
+    fn vlc_log_tail()->String{
+        let Some(text)=vlc_log().and_then(|path|std::fs::read(path).ok())else{return String::new()};
+        let text=String::from_utf8_lossy(&text[text.len().saturating_sub(4096)..]).into_owned();
+        let lines:Vec<&str>=text.lines().filter(|line|!line.trim().is_empty()&&!line.contains("Cancellation")).collect();
+        lines[lines.len().saturating_sub(6)..].join(" | ")
+    }
+    /// One decoder instance per session: scanning its plugins is the slow part of
+    /// opening a film, so it happens once (and ahead of time, see `prewarm`).
+    fn instance(api:&Api)->Result<usize,String>{
+        static INSTANCE:OnceLock<Result<usize,String>>=OnceLock::new();
+        INSTANCE.get_or_init(||{
+            let base=["--ignore-config","--no-osd","--no-video-title-show","--no-sub-autodetect-file","--no-stats","--no-media-library","--no-plugins-cache","--network-caching=1000"];
+            let mut logging=Vec::new();
+            if let Some(path)=vlc_log(){
+                if let Some(parent)=path.parent(){let _=std::fs::create_dir_all(parent);}
+                // The decoder appends; start each session clean so the file stays small.
+                let _=std::fs::remove_file(&path);
+                if let Some(text)=path.to_str(){logging=vec!["--file-logging".to_owned(),format!("--logfile={text}"),"--log-verbose=0".to_owned()];}
+            }
+            let start=|extra:&[String]|{
+                let options:Vec<CString>=base.iter().map(|s|(*s).to_owned()).chain(extra.iter().cloned()).filter_map(|s|CString::new(s).ok()).collect();
+                let args:Vec<_>=options.iter().map(|s|s.as_ptr()).collect();
+                unsafe{(api.new)(args.len() as i32,args.as_ptr())}
+            };
+            let mut instance=start(&logging);
+            // A log the decoder cannot write must not keep films from playing.
+            if instance.is_null()&&!logging.is_empty(){instance=start(&[]);}
+            if instance.is_null(){Err("Cannot initialize bundled decoder".into())}else{Ok(instance as usize)}
+        }).clone()
+    }
+    /// Loads and checks the decoder before the viewer presses play.
+    pub fn prewarm(app:&tauri::AppHandle)->Result<(),String>{
+        let started=std::time::Instant::now();
+        let api=api(&runtime(app)?)?;instance(&api)?;
+        if started.elapsed()>Duration::from_millis(50){crate::services::diagnostics::log("player",&format!("motor de vídeo listo en {} ms",started.elapsed().as_millis()));}
+        Ok(())
     }
 
     struct UiBuffer(ICoreWebView2SharedBuffer);
@@ -182,7 +225,7 @@ mod win {
                 let mut pointer=std::ptr::null_mut();buffer.Buffer(&mut pointer).map_err(|_|"Cannot map video frames")?;
                 if pointer.is_null(){return Err("Empty shared video mapping".into());}
                 std::ptr::write_bytes(pointer,0,SHARED_BYTES);
-                let info=serde_json::json!({"kind":"coco-video-rgba-v1","id":id,"requestId":request,"headerBytes":HEADER,"slotBytes":SLOT_BYTES,"byteLength":SHARED_BYTES}).to_string();
+                let info=serde_json::json!({"kind":"coco-video-frame-v2","id":id,"requestId":request,"headerBytes":HEADER,"slotBytes":SLOT_BYTES,"byteLength":SHARED_BYTES}).to_string();
                 let info:Vec<u16>=info.encode_utf16().chain(Some(0)).collect();
                 core.PostSharedBufferToScript(&buffer,COREWEBVIEW2_SHARED_BUFFER_ACCESS_READ_ONLY,PCWSTR(info.as_ptr())).map_err(|_|"Cannot share video frames")?;
                 Ok(Arc::new(Memory{pointer:pointer as usize,owner:Mutex::new(Some(UiBuffer(buffer))),window:Some(owner),#[cfg(test)]_heap:None}))
@@ -190,54 +233,14 @@ mod win {
         }).map_err(|_|"Video view closed")?;
         rx.recv_timeout(Duration::from_secs(5)).map_err(|_|"Video view did not respond".to_owned())?
     }
-    struct Picture {bytes:Box<[u8]>,width:usize,height:usize,stride:usize}
-    struct Context {memory:Arc<Memory>,picture:Mutex<Picture>,visible_width:usize,visible_height:usize}
-    unsafe extern "C" fn format(opaque:*mut P,chroma:*mut c_char,width:*mut u32,height:*mut u32,pitches:*mut u32,lines:*mut u32)->u32{
-        if opaque.is_null()||unsafe{(*opaque).is_null()}{return 0;}
-        let context=unsafe{&*(*opaque as *const Context)};
-        // The callback initially receives coded/aligned sizes (e.g. 832 for
-        // an 804-line movie). Use visible track dimensions, not decoder padding.
-        let (w,h)=(context.visible_width,context.visible_height);if w==0||h==0{return 0;}
-        let scale=(MAX_WIDTH as f64/w as f64).min(MAX_HEIGHT as f64/h as f64).min(1.0);
-        let w=((w as f64*scale).floor() as usize).max(1);let h=((h as f64*scale).floor() as usize).max(1);
-        let stride=(w*4+31)&!31;if stride*h>SLOT_BYTES{return 0;}
-        let Ok(mut pic)=context.picture.lock()else{return 0};
-        pic.width=w;pic.height=h;pic.stride=stride;
-        let seq=context.memory.word(0).load(Ordering::Relaxed);context.memory.word(0).store(seq|1,Ordering::Release);
-        unsafe{std::ptr::copy_nonoverlapping(b"RV32".as_ptr(),chroma as *mut u8,4);*width=w as u32;*height=h as u32;*pitches=stride as u32;*lines=h as u32;}
-        1
+    struct Picture {bytes:Box<[u8]>,width:usize,height:usize,stride:usize,chroma_stride:usize}
+    impl Picture{
+        /// I420: full-size luma, then two half-size chroma planes. RGBA: one plane.
+        fn used(&self,yuv:bool)->usize{if yuv{self.stride*self.height+2*self.chroma_stride*(self.height/2)}else{self.stride*self.height}}
     }
-    unsafe extern "C" fn cleanup(_opaque:P){}
-    unsafe extern "C" fn lock(opaque:P,planes:*mut P)->P{
-        let context=unsafe{&*(opaque as *const Context)};
-        let Ok(mut pic)=context.picture.lock()else{return std::ptr::null_mut()};
-        unsafe{*planes=pic.bytes.as_mut_ptr() as P;}opaque
-    }
-    unsafe extern "C" fn unlock(_opaque:P,_picture:P,_planes:*const P){}
-    unsafe extern "C" fn display(opaque:P,_picture:P){
-        let context=unsafe{&*(opaque as *const Context)};let Ok(pic)=context.picture.lock()else{return};
-        if pic.width==0||pic.height==0{return;}
-        let m=&context.memory;let seq=m.word(0).load(Ordering::Relaxed)|1;m.word(0).store(seq,Ordering::Release);
-        let slot=(m.word(1).load(Ordering::Relaxed)^1)&1;
-        let destination=unsafe{std::slice::from_raw_parts_mut((m.pointer as *mut u8).add(HEADER+slot as usize*SLOT_BYTES),pic.stride*pic.height)};
-        // VLC's portable RV32 output is BGRX on Windows; canvas needs RGBA.
-        copy_bgrx_to_rgba(&pic.bytes[..pic.stride*pic.height],destination);
-        m.word(1).store(slot,Ordering::Relaxed);m.word(2).store(pic.width as u32,Ordering::Relaxed);m.word(3).store(pic.height as u32,Ordering::Relaxed);m.word(4).store(pic.stride as u32,Ordering::Relaxed);
-        m.word(0).store(seq.wrapping_add(1),Ordering::Release);
-    }
-    struct Player {id:String,label:String,api:Arc<Api>,instance:usize,player:usize,context:Box<Context>}
-    impl Drop for Player{fn drop(&mut self){unsafe{(self.api.stop)(self.player as P);(self.api.player_release)(self.player as P);(self.api.release)(self.instance as P);}}}
-    fn create(api:Arc<Api>,memory:Arc<Memory>,url:&str,id:String,label:String)->Result<Player,String>{
-        let options=["--ignore-config","--no-osd","--no-video-title-show","--no-sub-autodetect-file","--no-stats","--no-media-library","--no-plugins-cache","--avcodec-hw=none","--network-caching=1200"];
-        let options:Vec<CString>=options.iter().map(|s|CString::new(*s).unwrap()).collect();let args:Vec<_>=options.iter().map(|s|s.as_ptr()).collect();
-        let instance=unsafe{(api.new)(args.len() as i32,args.as_ptr())};if instance.is_null(){return Err("Cannot initialize bundled decoder".into());}
-        let source=CString::new(url).map_err(|_|"Invalid movie URL")?;
-        let media=unsafe{(api.media)(instance,source.as_ptr())};if media.is_null(){unsafe{(api.release)(instance);}return Err("Cannot open movie".into());}
-        let parsed=unsafe{(api.parse)(media,1,5000)};
-        if parsed==0{
-            let started=std::time::Instant::now();
-            while unsafe{(api.parsed)(media)}==0&&started.elapsed()<Duration::from_secs(6){std::thread::sleep(Duration::from_millis(20));}
-        }
+    struct Context {memory:Arc<Memory>,picture:Mutex<Picture>,api:Arc<Api>,media:usize,yuv:bool}
+    /// Visible size of the video track (not the decoder's padded size), with its pixel shape applied.
+    fn visible_size(api:&Api,media:P)->Option<(usize,usize)>{
         let mut tracks=std::ptr::null_mut();let count=unsafe{(api.tracks)(media,&mut tracks)};
         let mut dimensions=None;
         if count>0&&!tracks.is_null(){
@@ -253,28 +256,96 @@ mod win {
             }
             unsafe{(api.tracks_release)(tracks,count);}
         }
-        let Some((visible_width,visible_height))=dimensions else{unsafe{(api.media_release)(media);(api.release)(instance);}return Err("No se pudieron leer las dimensiones del vídeo.".into());};
-        let player=unsafe{(api.player)(media)};unsafe{(api.media_release)(media);}
-        if player.is_null(){unsafe{(api.release)(instance);}return Err("Cannot create decoder".into());}
-        let context=Box::new(Context{memory,picture:Mutex::new(Picture{bytes:vec![0u8;SLOT_BYTES].into_boxed_slice(),width:0,height:0,stride:0}),visible_width,visible_height});
+        dimensions
+    }
+    unsafe extern "C" fn format(opaque:*mut P,chroma:*mut c_char,width:*mut u32,height:*mut u32,pitches:*mut u32,lines:*mut u32)->u32{
+        if opaque.is_null()||unsafe{(*opaque).is_null()}{return 0;}
+        let context=unsafe{&*(*opaque as *const Context)};
+        // The callback receives coded/aligned sizes (e.g. 832 for an 804-line
+        // movie). The track, known once playback starts, has the visible ones;
+        // the coded size is only the fallback, so a film always opens.
+        let coded=(unsafe{*width} as usize,unsafe{*height} as usize);
+        let (w,h)=visible_size(&context.api,context.media as P).unwrap_or(coded);if w==0||h==0{return 0;}
+        let scale=(MAX_WIDTH as f64/w as f64).min(MAX_HEIGHT as f64/h as f64).min(1.0);
+        let mut w=((w as f64*scale).floor() as usize).max(2);let mut h=((h as f64*scale).floor() as usize).max(2);
+        let Ok(mut pic)=context.picture.lock()else{return 0};
+        if context.yuv{
+            // Half-size chroma planes need even sizes; at most one pixel is dropped.
+            w&=!1;h&=!1;
+            let (stride,chroma_stride)=((w+31)&!31,(w/2+31)&!31);
+            if stride*h+2*chroma_stride*(h/2)>SLOT_BYTES{return 0;}
+            pic.width=w;pic.height=h;pic.stride=stride;pic.chroma_stride=chroma_stride;
+            unsafe{
+                std::ptr::copy_nonoverlapping(b"I420".as_ptr(),chroma as *mut u8,4);*width=w as u32;*height=h as u32;
+                *pitches=stride as u32;*pitches.add(1)=chroma_stride as u32;*pitches.add(2)=chroma_stride as u32;
+                *lines=h as u32;*lines.add(1)=(h/2) as u32;*lines.add(2)=(h/2) as u32;
+            }
+        }else{
+            let stride=(w*4+31)&!31;if stride*h>SLOT_BYTES{return 0;}
+            pic.width=w;pic.height=h;pic.stride=stride;pic.chroma_stride=0;
+            unsafe{std::ptr::copy_nonoverlapping(b"RV32".as_ptr(),chroma as *mut u8,4);*width=w as u32;*height=h as u32;*pitches=stride as u32;*lines=h as u32;}
+        }
+        let seq=context.memory.word(0).load(Ordering::Relaxed);context.memory.word(0).store(seq|1,Ordering::Release);
+        1
+    }
+    unsafe extern "C" fn cleanup(_opaque:P){}
+    unsafe extern "C" fn lock(opaque:P,planes:*mut P)->P{
+        let context=unsafe{&*(opaque as *const Context)};
+        let Ok(mut pic)=context.picture.lock()else{return std::ptr::null_mut()};
+        let (luma,chroma)=(pic.stride*pic.height,pic.chroma_stride*(pic.height/2));let base=pic.bytes.as_mut_ptr();
+        unsafe{
+            *planes=base as P;
+            if context.yuv{*planes.add(1)=base.add(luma) as P;*planes.add(2)=base.add(luma+chroma) as P;}
+        }
+        opaque
+    }
+    unsafe extern "C" fn unlock(_opaque:P,_picture:P,_planes:*const P){}
+    unsafe extern "C" fn display(opaque:P,_picture:P){
+        let context=unsafe{&*(opaque as *const Context)};let Ok(pic)=context.picture.lock()else{return};
+        if pic.width==0||pic.height==0{return;}
+        let used=pic.used(context.yuv);
+        let m=&context.memory;let seq=m.word(0).load(Ordering::Relaxed)|1;m.word(0).store(seq,Ordering::Release);
+        let slot=(m.word(1).load(Ordering::Relaxed)^1)&1;
+        let destination=unsafe{std::slice::from_raw_parts_mut((m.pointer as *mut u8).add(HEADER+slot as usize*SLOT_BYTES),used)};
+        if context.yuv{destination.copy_from_slice(&pic.bytes[..used]);}
+        // VLC's portable RV32 output is BGRX on Windows; canvas needs RGBA.
+        else{copy_bgrx_to_rgba(&pic.bytes[..used],destination);}
+        m.word(1).store(slot,Ordering::Relaxed);m.word(2).store(pic.width as u32,Ordering::Relaxed);m.word(3).store(pic.height as u32,Ordering::Relaxed);m.word(4).store(pic.stride as u32,Ordering::Relaxed);
+        m.word(5).store(u32::from(context.yuv),Ordering::Relaxed);m.word(6).store(pic.chroma_stride as u32,Ordering::Relaxed);
+        m.word(7).store(m.word(7).load(Ordering::Relaxed).wrapping_add(1),Ordering::Relaxed);
+        m.word(0).store(seq.wrapping_add(1),Ordering::Release);
+    }
+    struct Player {id:String,label:String,api:Arc<Api>,media:usize,player:usize,context:Box<Context>,fast:bool,reported:std::sync::atomic::AtomicBool}
+    impl Drop for Player{fn drop(&mut self){unsafe{(self.api.stop)(self.player as P);(self.api.player_release)(self.player as P);(self.api.media_release)(self.media as P);}}}
+    fn create(api:Arc<Api>,memory:Arc<Memory>,url:&str,id:String,label:String,fast:bool)->Result<Player,String>{
+        let instance=instance(&api)? as P;
+        let source=CString::new(url).map_err(|_|"Invalid movie URL")?;
+        let media=unsafe{(api.media)(instance,source.as_ptr())};if media.is_null(){return Err("Cannot open movie".into());}
+        // The frame callbacks switch GPU decoding off for the player; the film's own
+        // option turns it back on. Without a usable GPU the decoder falls back to software.
+        let decoding=CString::new(if fast{":avcodec-hw=any"}else{":avcodec-hw=none"}).unwrap();
+        unsafe{(api.media_option)(media,decoding.as_ptr());}
+        let player=unsafe{(api.player)(media)};
+        if player.is_null(){unsafe{(api.media_release)(media);}return Err("Cannot create decoder".into());}
+        let context=Box::new(Context{memory,picture:Mutex::new(Picture{bytes:vec![0u8;SLOT_BYTES].into_boxed_slice(),width:0,height:0,stride:0,chroma_stride:0}),api:Arc::clone(&api),media:media as usize,yuv:fast});
         let opaque=&*context as *const Context as P;
         unsafe{(api.callbacks)(player,Some(lock),Some(unlock),Some(display),opaque);(api.format)(player,Some(format),Some(cleanup));}
-        Ok(Player{id,label,api,instance:instance as usize,player:player as usize,context})
+        Ok(Player{id,label,api,media:media as usize,player:player as usize,context,fast,reported:std::sync::atomic::AtomicBool::new(false)})
     }
     static PLAYER:OnceLock<Mutex<Option<Player>>>=OnceLock::new();static RESERVATION:OnceLock<Mutex<Option<String>>>=OnceLock::new();
     fn slot()->&'static Mutex<Option<Player>>{PLAYER.get_or_init(||Mutex::new(None))}
     fn reservation()->&'static Mutex<Option<String>>{RESERVATION.get_or_init(||Mutex::new(None))}
-    pub fn open(app:tauri::AppHandle,window:tauri::WebviewWindow,url:String,request:String)->Result<String,String>{
+    pub fn open(app:tauri::AppHandle,window:tauri::WebviewWindow,url:String,request:String,fast:bool)->Result<String,String>{
         if !valid_request(&request)||!super::super::media::active_stream(&url){return Err("Unrecognized prepared movie".into());}
         let mut random=[0u8;16];ring::rand::SecureRandom::fill(&ring::rand::SystemRandom::new(),&mut random).map_err(|_|"Cannot create video session")?;
         let id=random.iter().map(|b|format!("{b:02x}")).collect::<String>();
         {let mut r=reservation().lock().map_err(|_|"Player unavailable")?;if r.is_some(){return Err("A video is already active".into());}*r=Some(id.clone());}
-        let result=(||{let api=api(&runtime(&app)?)?;let memory=shared_memory(&window,&id,&request)?;create(api,memory,&url,id.clone(),window.label().into())})();
+        let result=(||{let api=api(&runtime(&app)?)?;let memory=shared_memory(&window,&id,&request)?;create(api,memory,&url,id.clone(),window.label().into(),fast)})();
         let mut r=reservation().lock().map_err(|_|"Player unavailable")?;
         match result{
             Ok(player)if r.as_ref()==Some(&id)=>{*slot().lock().map_err(|_|"Player unavailable")?=Some(player);Ok(id)},
             Ok(_)=>Err("Video view was closed".into()),
-            Err(error)=>{if r.as_ref()==Some(&id){*r=None;}Err(error)}
+            Err(error)=>{if r.as_ref()==Some(&id){*r=None;}crate::services::diagnostics::log("player",&format!("no se pudo abrir el vídeo: {error}"));Err(error)}
         }
     }
     pub fn control(window:&tauri::WebviewWindow,id:&str,action:&str,value:Option<f64>)->Result<(),String>{
@@ -289,9 +360,11 @@ mod win {
     }
     fn snapshot(p:&Player)->Snapshot{unsafe{
         let state=(p.api.state)(p.player as P);let frame=p.context.memory.word(0).load(Ordering::Acquire);let video=frame>0&&frame%2==0;
+        if state==7&&!p.reported.swap(true,Ordering::AcqRel){crate::services::diagnostics::log("player",&format!("el decodificador falló ({}): {}",if p.fast{"rápido"}else{"compatible"},vlc_log_tail()));}
         Snapshot{position:((p.api.time)(p.player as P).max(0) as f64)/1000.0,duration:((p.api.length)(p.player as P).max(0) as f64)/1000.0,
             paused:state==4,volume:(p.api.volume)(p.player as P).clamp(0,100) as f64/100.0,muted:(p.api.mute)(p.player as P)>0,rate:(p.api.rate)(p.player as P) as f64,
-            buffering:matches!(state,1|2),ended:state==6,loaded:video,has_video:video,cache_seconds:0.0,codec:"VLC / FFmpeg".into(),error:if state==7{Some("No se pudo abrir o decodificar el vídeo.".into())}else{None},inputs:Vec::new()}
+            buffering:matches!(state,1|2),ended:state==6,loaded:video,has_video:video,cache_seconds:0.0,codec:"VLC / FFmpeg".into(),error:if state==7{Some("No se pudo abrir o decodificar el vídeo.".into())}else{None},inputs:Vec::new(),
+            frames:p.context.memory.word(7).load(Ordering::Relaxed),fast:p.fast}
     }}
     pub fn status(window:&tauri::WebviewWindow,id:&str)->Result<Snapshot,String>{
         let guard=slot().lock().map_err(|_|"Player unavailable")?;let p=guard.as_ref().filter(|p|p.id==id&&p.label==window.label()).ok_or("Expired movie session")?;Ok(snapshot(p))
@@ -308,43 +381,62 @@ mod win {
     fn real_vlc_hevc_frames_and_controls(){
         let directory=PathBuf::from(std::env::var("COCO_PLAYER_RUNTIME").unwrap());let source=std::env::var("COCO_PLAYER_SMOKE_SOURCE").unwrap();
         let source=if source.starts_with("http"){source}else{reqwest::Url::from_file_path(&source).unwrap().to_string()};
-        let mut heap=vec![0u32;SHARED_BYTES/4];let pointer=heap.as_mut_ptr() as usize;
-        let memory=Arc::new(Memory{pointer,owner:Mutex::new(None),window:None,_heap:Some(heap)});
-        let player=create(api(&directory).unwrap(),Arc::clone(&memory),&source,"test".into(),"test".into()).unwrap();
-        unsafe{(player.api.set_mute)(player.player as P,1);assert_eq!((player.api.play)(player.player as P),0);}
-        let started=std::time::Instant::now();
-        loop{let state=snapshot(&player);assert!(state.error.is_none(),"{:?}",state.error);if state.has_video&&state.position>1.0{break;}assert!(started.elapsed()<Duration::from_secs(30));std::thread::sleep(Duration::from_millis(30));}
-        let target=(snapshot(&player).duration*0.5).min(324.0);let old_frame=memory.word(0).load(Ordering::Acquire);
-        unsafe{(player.api.set_time)(player.player as P,(target*1000.0) as i64);(player.api.set_volume)(player.player as P,25);assert_eq!((player.api.set_rate)(player.player as P,1.25),0);}
-        let started=std::time::Instant::now();
-        loop {
+        for fast in [false,true]{
+            let mut heap=vec![0u32;SHARED_BYTES/4];let pointer=heap.as_mut_ptr() as usize;
+            let memory=Arc::new(Memory{pointer,owner:Mutex::new(None),window:None,_heap:Some(heap)});
+            let opened=std::time::Instant::now();
+            let player=create(api(&directory).unwrap(),Arc::clone(&memory),&source,"test".into(),"test".into(),fast).unwrap();
+            unsafe{(player.api.set_mute)(player.player as P,1);assert_eq!((player.api.play)(player.player as P),0);}
+            let started=std::time::Instant::now();let mut first=None;
+            loop{
+                let state=snapshot(&player);assert!(state.error.is_none(),"{:?}",state.error);
+                if state.has_video&&first.is_none(){first=Some(opened.elapsed());}
+                if state.has_video&&state.position>1.0{break;}assert!(started.elapsed()<Duration::from_secs(30));std::thread::sleep(Duration::from_millis(30));
+            }
+            let target=(snapshot(&player).duration*0.5).min(324.0);let old_frame=memory.word(0).load(Ordering::Acquire);
+            unsafe{(player.api.set_time)(player.player as P,(target*1000.0) as i64);(player.api.set_volume)(player.player as P,25);assert_eq!((player.api.set_rate)(player.player as P,1.25),0);}
+            let started=std::time::Instant::now();
+            loop {
+                let state=snapshot(&player);
+                let sequence=memory.word(0).load(Ordering::Acquire);
+                if state.position>=target+1.0&&state.has_video&&sequence>old_frame+2{break;}
+                assert!(started.elapsed()<Duration::from_secs(20));std::thread::sleep(Duration::from_millis(20));
+            }
+            unsafe{(player.api.pause)(player.player as P,1);}
+            std::thread::sleep(Duration::from_millis(100));
             let pic=player.context.picture.lock().unwrap();
-            let state=snapshot(&player);
-            let sequence=memory.word(0).load(Ordering::Acquire);
-            if state.position>=target+1.0&&state.has_video&&sequence>old_frame+2{drop(pic);break;}
-            drop(pic);assert!(started.elapsed()<Duration::from_secs(20));std::thread::sleep(Duration::from_millis(20));
+            let state=snapshot(&player);assert!(state.paused);assert!(unsafe{(player.api.audio_track)(player.player as P)}>=0);
+            assert!(state.has_video);assert!((state.volume-0.25).abs()<0.02);assert!(state.frames>2);
+            let slot=memory.word(1).load(Ordering::Acquire) as usize;
+            let bytes=unsafe{std::slice::from_raw_parts((memory.pointer as *const u8).add(HEADER+slot*SLOT_BYTES),pic.used(fast))};
+            assert_eq!(memory.word(5).load(Ordering::Acquire),u32::from(fast));
+            if fast{
+                assert_eq!(pic.width%2+pic.height%2,0);assert!(memory.word(6).load(Ordering::Acquire) as usize>=pic.width/2);
+                assert!(bytes[..pic.stride*pic.height].iter().any(|luma|*luma>60),"decoded frame is black");
+            }else{
+                assert!(bytes.chunks_exact(4).any(|p|p[0]>40||p[1]>40||p[2]>40),"decoded frame is black");
+                assert!(bytes.chunks_exact(4).filter(|p|p[3]==255).count()>pic.width*pic.height/2,"RGBA alpha invalid");
+            }
+            if let Ok(path)=std::env::var("COCO_PLAYER_SMOKE_FRAME"){
+                let path=format!("{path}.{}",if fast{"i420"}else{"rgba"});
+                std::fs::write(&path,bytes).unwrap();std::fs::write(format!("{path}.json"),serde_json::json!({"width":pic.width,"height":pic.height,"stride":pic.stride,"chromaStride":pic.chroma_stride}).to_string()).unwrap();
+            }
+            println!("Own decoder ({}), first frame {:?}, {}x{}, audio track, seek, pause, volume and rate PASS: {}",if fast{"fast: GPU/I420"}else{"compatible: software/RGBA"},first,pic.width,pic.height,serde_json::to_string(&state).unwrap());
+            drop(pic);drop(player);
         }
-        unsafe{(player.api.pause)(player.player as P,1);}
-        std::thread::sleep(Duration::from_millis(100));
-        let pic=player.context.picture.lock().unwrap();
-        let state=snapshot(&player);assert!(state.paused);assert!(unsafe{(player.api.audio_track)(player.player as P)}>=0);
-        assert!(state.has_video);assert!((state.volume-0.25).abs()<0.02);
-        let slot=memory.word(1).load(Ordering::Acquire) as usize;
-        let bytes=unsafe{std::slice::from_raw_parts((memory.pointer as *const u8).add(HEADER+slot*SLOT_BYTES),pic.stride*pic.height)};
-        assert!(bytes.chunks_exact(4).any(|p|p[0]>40||p[1]>40||p[2]>40),"decoded frame is black");
-        assert!(bytes.chunks_exact(4).filter(|p|p[3]==255).count()>pic.width*pic.height/2,"RGBA alpha invalid");
-        if let Ok(path)=std::env::var("COCO_PLAYER_SMOKE_FRAME"){
-            std::fs::write(&path,bytes).unwrap();std::fs::write(format!("{path}.json"),serde_json::json!({"width":pic.width,"height":pic.height,"stride":pic.stride}).to_string()).unwrap();
-        }
-        println!("Own HEVC decoder, RGBA frames, audio track, seek, pause, volume and rate PASS: {}",serde_json::to_string(&state).unwrap());
-        drop(pic);drop(player);
     }
 }
 
 #[tauri::command]
-pub async fn open_native_player(app:tauri::AppHandle,window:tauri::WebviewWindow,url:String,request_id:String)->Result<String,String>{
-    #[cfg(windows)]{tauri::async_runtime::spawn_blocking(move||win::open(app,window,url,request_id)).await.map_err(|_|"Decoder start interrupted".to_owned())?}
-    #[cfg(not(windows))]{let _=(app,window,url,request_id);Err("Native playback requires Windows".into())}
+pub async fn open_native_player(app:tauri::AppHandle,window:tauri::WebviewWindow,url:String,request_id:String,fast:Option<bool>)->Result<String,String>{
+    #[cfg(windows)]{tauri::async_runtime::spawn_blocking(move||win::open(app,window,url,request_id,fast.unwrap_or(false))).await.map_err(|_|"Decoder start interrupted".to_owned())?}
+    #[cfg(not(windows))]{let _=(app,window,url,request_id,fast);Err("Native playback requires Windows".into())}
+}
+/// Called when a film's page opens: by the time the viewer presses play the decoder is loaded.
+#[tauri::command]
+pub async fn prewarm_native_player(app:tauri::AppHandle)->Result<(),String>{
+    #[cfg(windows)]{tauri::async_runtime::spawn_blocking(move||win::prewarm(&app)).await.map_err(|_|"Decoder start interrupted".to_owned())?}
+    #[cfg(not(windows))]{let _=app;Ok(())}
 }
 #[tauri::command]
 pub async fn native_player_status(window:tauri::WebviewWindow,id:String)->Result<Snapshot,String>{

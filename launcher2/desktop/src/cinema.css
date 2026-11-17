@@ -1,6 +1,6 @@
 /* ---- Coco Cinema: the player fills the window, its chrome floats over the film and steps aside
    while it plays. Entrance and exit are the same motion, played forwards and backwards. ---- */
-.coco-player-shell{position:fixed;z-index:65;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 120%,color-mix(in srgb,var(--hot) 16%,#050408),#050408 62%);color:var(--cream);outline:none;animation:coco-cinema-in .42s var(--snap) both}
+.coco-player-shell{position:fixed;z-index:65;inset:0;overflow:hidden;background:#000;color:var(--cream);outline:none;animation:coco-cinema-in .42s var(--snap) both}
 .coco-player-shell.is-closing{animation:coco-cinema-out .23s ease-in both;pointer-events:none}
 .coco-player-shell.is-idle{cursor:none}
 @keyframes coco-cinema-in{from{opacity:0}}
@@ -99,7 +99,8 @@
 .coco-player-error svg{color:var(--hot)}
 .coco-player-error strong{font:800 24px/1 var(--display);text-transform:uppercase}
 .coco-player-error span{font-size:12.5px;line-height:1.5;color:var(--dim)}
-.coco-player-loading{position:fixed;z-index:70;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;background:#050408;color:var(--dim);font:400 10px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.coco-player-error small{max-width:100%;font:400 10px/1.4 var(--mono);color:var(--faint);overflow-wrap:anywhere}
+.coco-player-loading{position:fixed;z-index:70;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;background:#000;color:var(--dim);font:400 10px var(--mono);letter-spacing:.14em;text-transform:uppercase}
 @media(max-width:720px){.coco-player-top{padding:14px 14px 50px}.coco-player-controls{padding:60px 14px 14px}.coco-player-volume input,.coco-player-bar .coco-player-next span,.coco-player-bar .coco-player-rate{display:none}:is(.coco-player-toast,.coco-player-upnext,.coco-player-help){left:14px;right:14px;width:auto;bottom:112px}}
 
 

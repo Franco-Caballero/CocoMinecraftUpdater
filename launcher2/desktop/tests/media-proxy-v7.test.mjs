@@ -23,7 +23,7 @@ test('Tauri media commands and private upstream allowlist retain their contracts
     assert.match(entry,new RegExp(`services::media::${command}`));
     assert.match(source,new RegExp(`pub (?:async )?fn ${command}\\(`));
   }
-  assert.match(source,/const MAX_CONNECTIONS_PER_PROXY: usize = 4;/);
+  assert.match(source,/const MAX_CONNECTIONS_PER_PROXY: usize = 16;/);
   assert.match(source,/SocketAddrV4::new\(Ipv4Addr::LOCALHOST, 0\)/);
   assert.match(source,/if url\.scheme\(\) != "https" \|\| url\.port_or_known_default\(\) != Some\(443\)/);
   assert.match(source,/"\/Franco-Caballero\/CocoMinecraftUpdater\/releases\/download\/"/);

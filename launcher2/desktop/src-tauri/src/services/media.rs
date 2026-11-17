@@ -15,7 +15,12 @@ use std::time::{Duration, Instant};
 const SERVER_LIFETIME: Duration = Duration::from_secs(6 * 60 * 60);
 const SERVER_IDLE_TIMEOUT: Duration = Duration::from_secs(20 * 60);
 const MAX_PROXIES: usize = 8;
-const MAX_CONNECTIONS_PER_PROXY: usize = 4;
+// Every seek is a new connection, and the one before it lingers until its next
+// write fails. Four made a held arrow key answer 429 and stop the film.
+const MAX_CONNECTIONS_PER_PROXY: usize = 16;
+// The origin answers each request with a redirect to a short-lived signed address.
+// Remembering it for a while saves one TLS handshake and one round trip per seek.
+const REDIRECT_TTL: Duration = Duration::from_secs(120);
 const MAX_REQUEST_BYTES: usize = 16 * 1024;
 const UPSTREAM_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const UPSTREAM_REQUEST_TIMEOUT: Duration = Duration::from_secs(3 * 60 * 60);
@@ -483,6 +488,7 @@ struct ProxySpec {
     // own absolute offset. A stalled large GET must not serialize seeks.
     local_file: Option<File>,
     cancelled: Arc<AtomicBool>,
+    resolved: Mutex<Option<(reqwest::Url, Instant)>>,
 }
 
 fn local_bounds(range:Option<&str>, total:u64)->Option<(u16,u64,u64,Option<String>)>{
@@ -591,18 +597,31 @@ fn serve_connection(mut stream: TcpStream, spec: &ProxySpec, client: &reqwest::b
         return;
     }
     let mut retried_transport = false;
+    let mut shortcut = spec.resolved.lock().ok().and_then(|known| known.clone())
+        .filter(|(url, since)| since.elapsed() < REDIRECT_TTL && upstream_allowed(url, spec.local_fixture))
+        .map(|(url, _)| url);
     let response = loop {
         if spec.cancelled.load(Ordering::Acquire) {return;}
+        let target = shortcut.clone().unwrap_or_else(|| spec.url.clone());
         let mut upstream = match request.method.as_str() {
-            "HEAD" => client.head(spec.url.clone()),
-            _ => client.get(spec.url.clone()),
+            "HEAD" => client.head(target),
+            _ => client.get(target),
         };
         upstream = upstream.header(reqwest::header::ACCEPT_ENCODING, "identity");
         if let Some(range) = &request.range {
             upstream = upstream.header(reqwest::header::RANGE, range);
         }
         match upstream.send() {
+            // The signed address expired or was refused: ask the origin again.
+            Ok(response) if shortcut.is_some() && !matches!(response.status().as_u16(), 200 | 206 | 416) => {
+                shortcut = None;
+                if let Ok(mut known) = spec.resolved.lock() {*known = None;}
+            }
             Ok(response) => break response,
+            Err(_) if shortcut.is_some() => {
+                shortcut = None;
+                if let Ok(mut known) = spec.resolved.lock() {*known = None;}
+            }
             Err(error) if !retried_transport && transient_media_transport(&error) => {
                 retried_transport = true;
             }
@@ -686,6 +705,10 @@ fn serve_connection(mut stream: TcpStream, spec: &ProxySpec, client: &reqwest::b
         let _ = send_headers(&mut stream, 502, "text/plain", 0, None, false);
         return;
     }
+    // Every check passed: later requests may go straight to this signed address.
+    if shortcut.is_none() && response.url() != &spec.url {
+        if let Ok(mut known) = spec.resolved.lock() {*known = Some((response.url().clone(), Instant::now()));}
+    }
     if spec.cancelled.load(Ordering::Acquire)
         || send_headers(&mut stream, code, spec.mime, length, content_range.as_deref(), false).is_err() {
         return;
@@ -737,7 +760,7 @@ fn start_proxy_internal(
     let prepared_url = format!("http://127.0.0.1:{port}{path}");
     let spec = Arc::new(ProxySpec {
         url,mime,path,expected_bytes,local_fixture,
-        local_file,cancelled:Arc::clone(&cancelled),
+        local_file,cancelled:Arc::clone(&cancelled),resolved:Mutex::new(None),
     });
     let client = Arc::new(make_client(local_fixture)?);
     {
@@ -1094,6 +1117,60 @@ mod tests {
         }
         assert!(request.ends_with(b"\r\n\r\n"));
         String::from_utf8(request).unwrap()
+    }
+
+    #[test]
+    fn seeks_reuse_the_signed_redirect_and_ask_again_when_it_expires() {
+        // The origin redirects every request to a signed address. Seeks within
+        // its lifetime go straight there; once it is refused, the origin is asked again.
+        let origin=TcpListener::bind("127.0.0.1:0").unwrap();
+        origin.set_nonblocking(true).unwrap();
+        let port=origin.local_addr().unwrap().port();
+        let upstream_url=format!("http://127.0.0.1:{port}/film");
+        let stop=Arc::new(AtomicBool::new(false));
+        let exit=Arc::clone(&stop);
+        let log=Arc::new(Mutex::new(Vec::<String>::new()));
+        let seen=Arc::clone(&log);
+        let upstream=thread::spawn(move||{
+            let mut signed_served=0;
+            while !exit.load(Ordering::Acquire) {
+                match origin.accept() {
+                    Ok((mut socket,_))=>{
+                        socket.set_nonblocking(false).unwrap();
+                        let request=upstream_test_request(&socket);
+                        let path=request.split(' ').nth(1).unwrap().to_owned();
+                        seen.lock().unwrap().push(path.clone());
+                        if path=="/film" {
+                            socket.write_all(format!("HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{port}/signed\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").as_bytes()).unwrap();
+                        } else if signed_served<2 {
+                            signed_served+=1;
+                            let range=request.lines().find_map(|line|line.strip_prefix("range: bytes=").or_else(||line.strip_prefix("Range: bytes="))).unwrap().to_owned();
+                            let (a,b)=range.split_once('-').unwrap();let (a,b)=(a.parse::<usize>().unwrap(),b.parse::<usize>().unwrap());
+                            let body=&b"abcdefghijkl"[a..=b];
+                            socket.write_all(format!("HTTP/1.1 206 Partial Content\r\nContent-Range: bytes {a}-{b}/12\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",body.len()).as_bytes()).unwrap();
+                            socket.write_all(body).unwrap();
+                        } else {
+                            // The signature expired: refused once, then valid again.
+                            signed_served=0;
+                            socket.write_all(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").unwrap();
+                        }
+                    },
+                    Err(error) if error.kind()==std::io::ErrorKind::WouldBlock=>thread::sleep(Duration::from_millis(5)),
+                    Err(error)=>panic!("synthetic origin accept failed: {error}"),
+                }
+            }
+        });
+        let (url,_)=start_proxy_internal(reqwest::Url::parse(&upstream_url).unwrap(),
+            "video/mp4","mp4",12,true,Duration::from_secs(7),None).unwrap();
+        let (code,_,body)=fetch(&url,"GET",Some("bytes=0-3"));
+        assert_eq!((code,body.as_slice()),(206,&b"abcd"[..]));
+        let (code,_,body)=fetch(&url,"GET",Some("bytes=4-7"));
+        assert_eq!((code,body.as_slice()),(206,&b"efgh"[..]));
+        let (code,_,body)=fetch(&url,"GET",Some("bytes=8-11"));
+        assert_eq!((code,body.as_slice()),(206,&b"ijkl"[..]),"an expired signed address is resolved again");
+        assert!(release_proxy(&url));
+        stop.store(true,Ordering::Release);upstream.join().unwrap();
+        assert_eq!(*log.lock().unwrap(),["/film","/signed","/signed","/signed","/film","/signed"]);
     }
 
     #[test]

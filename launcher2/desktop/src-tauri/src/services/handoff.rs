@@ -75,7 +75,10 @@ fn exe_names(text:&str)->Vec<String>{
     let mut from=0;
     while let Some(at)=lower[from..].find(".exe"){
         let end=from+at+4;
-        let start=lower[..from+at].rfind(|c:char|c=='\\'||c=='/'||c=='"'||c=='\0'||c.is_control()).map_or(0,|at|at+1);
+        // The separator may be a multi-byte control character (U+009C in a .lnk read as UTF-8).
+        let start=lower[..from+at].char_indices().rev()
+            .find(|&(_,c)|c=='\\'||c=='/'||c=='"'||c=='\0'||c.is_control())
+            .map_or(0,|(at,c)|at+c.len_utf8());
         names.push(text[start..end].to_string());
         from=end;
     }
@@ -196,6 +199,14 @@ pub fn retire_launcher1_shortcuts_in_background(){
 #[cfg(test)]
 mod tests{
     use super::*;
+
+    #[test]
+    fn shortcut_bytes_with_multibyte_control_characters_do_not_panic(){
+        // A real .lnk read as UTF-8: U+009C (two bytes) sits right before an .exe name.
+        let mut bytes=b"L\x00\x00\x00junk".to_vec();bytes.extend("\u{9c}CocoUpdater.exe\u{9c}steam.exe".as_bytes());
+        assert_eq!(exe_names(&String::from_utf8_lossy(&bytes)),["CocoUpdater.exe","steam.exe"]);
+        assert!(points_to_launcher1(&bytes));
+    }
 
     #[test]
     fn coco1_is_recognised_under_every_name_friends_saved_it_with(){
