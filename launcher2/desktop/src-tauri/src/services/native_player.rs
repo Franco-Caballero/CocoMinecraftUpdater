@@ -73,7 +73,8 @@ mod win {
     struct Api {
         _core:isize,_dll:isize,
         new:unsafe extern "C" fn(i32,*const *const c_char)->P,
-        release:unsafe extern "C" fn(P),
+        /// Unused: the decoder instance lives for the whole session.
+        _release:unsafe extern "C" fn(P),
         media:unsafe extern "C" fn(P,*const c_char)->P,
         media_release:unsafe extern "C" fn(P),
         media_option:unsafe extern "C" fn(P,*const c_char),
@@ -139,7 +140,7 @@ mod win {
             let core=load("libvlccore.dll")?;let dll=load("libvlc.dll")?;
             unsafe{Ok(Arc::new(Api{
                 _core:core,_dll:dll,
-                new:symbol(dll,b"libvlc_new\0")?,release:symbol(dll,b"libvlc_release\0")?,
+                new:symbol(dll,b"libvlc_new\0")?,_release:symbol(dll,b"libvlc_release\0")?,
                 media:symbol(dll,b"libvlc_media_new_location\0")?,media_release:symbol(dll,b"libvlc_media_release\0")?,
                 media_option:symbol(dll,b"libvlc_media_add_option\0")?,tracks:symbol(dll,b"libvlc_media_tracks_get\0")?,tracks_release:symbol(dll,b"libvlc_media_tracks_release\0")?,
                 player:symbol(dll,b"libvlc_media_player_new_from_media\0")?,player_release:symbol(dll,b"libvlc_media_player_release\0")?,
@@ -317,14 +318,19 @@ mod win {
     }
     struct Player {id:String,label:String,api:Arc<Api>,media:usize,player:usize,context:Box<Context>,fast:bool,reported:std::sync::atomic::AtomicBool}
     impl Drop for Player{fn drop(&mut self){unsafe{(self.api.stop)(self.player as P);(self.api.player_release)(self.player as P);(self.api.media_release)(self.media as P);}}}
-    fn create(api:Arc<Api>,memory:Arc<Memory>,url:&str,id:String,label:String,fast:bool)->Result<Player,String>{
+    fn create(api:Arc<Api>,memory:Arc<Memory>,url:&str,id:String,label:String,fast:bool,hints:super::super::media::PlaybackHints)->Result<Player,String>{
         let instance=instance(&api)? as P;
         let source=CString::new(url).map_err(|_|"Invalid movie URL")?;
         let media=unsafe{(api.media)(instance,source.as_ptr())};if media.is_null(){return Err("Cannot open movie".into());}
         // The frame callbacks switch GPU decoding off for the player; the film's own
         // option turns it back on. Without a usable GPU the decoder falls back to software.
-        let decoding=CString::new(if fast{":avcodec-hw=any"}else{":avcodec-hw=none"}).unwrap();
-        unsafe{(api.media_option)(media,decoding.as_ptr());}
+        // Subtitles are drawn by the engine into each frame, which it cannot do over GPU frames.
+        let mut options=vec![(if fast&&!hints.software_decode{":avcodec-hw=any"}else{":avcodec-hw=none"}).to_owned()];
+        if let Some(track)=hints.subtitle_track{options.push(format!(":sub-track={track}"));}
+        for option in options{
+            let option=CString::new(option).map_err(|_|"Invalid decoder option")?;
+            unsafe{(api.media_option)(media,option.as_ptr());}
+        }
         let player=unsafe{(api.player)(media)};
         if player.is_null(){unsafe{(api.media_release)(media);}return Err("Cannot create decoder".into());}
         let context=Box::new(Context{memory,picture:Mutex::new(Picture{bytes:vec![0u8;SLOT_BYTES].into_boxed_slice(),width:0,height:0,stride:0,chroma_stride:0}),api:Arc::clone(&api),media:media as usize,yuv:fast});
@@ -336,11 +342,12 @@ mod win {
     fn slot()->&'static Mutex<Option<Player>>{PLAYER.get_or_init(||Mutex::new(None))}
     fn reservation()->&'static Mutex<Option<String>>{RESERVATION.get_or_init(||Mutex::new(None))}
     pub fn open(app:tauri::AppHandle,window:tauri::WebviewWindow,url:String,request:String,fast:bool)->Result<String,String>{
-        if !valid_request(&request)||!super::super::media::active_stream(&url){return Err("Unrecognized prepared movie".into());}
+        if !valid_request(&request){return Err("Unrecognized prepared movie".into());}
+        let Some(hints)=super::super::media::stream_hints(&url)else{return Err("Unrecognized prepared movie".into());};
         let mut random=[0u8;16];ring::rand::SecureRandom::fill(&ring::rand::SystemRandom::new(),&mut random).map_err(|_|"Cannot create video session")?;
         let id=random.iter().map(|b|format!("{b:02x}")).collect::<String>();
         {let mut r=reservation().lock().map_err(|_|"Player unavailable")?;if r.is_some(){return Err("A video is already active".into());}*r=Some(id.clone());}
-        let result=(||{let api=api(&runtime(&app)?)?;let memory=shared_memory(&window,&id,&request)?;create(api,memory,&url,id.clone(),window.label().into(),fast)})();
+        let result=(||{let api=api(&runtime(&app)?)?;let memory=shared_memory(&window,&id,&request)?;create(api,memory,&url,id.clone(),window.label().into(),fast,hints)})();
         let mut r=reservation().lock().map_err(|_|"Player unavailable")?;
         match result{
             Ok(player)if r.as_ref()==Some(&id)=>{*slot().lock().map_err(|_|"Player unavailable")?=Some(player);Ok(id)},
@@ -385,7 +392,8 @@ mod win {
             let mut heap=vec![0u32;SHARED_BYTES/4];let pointer=heap.as_mut_ptr() as usize;
             let memory=Arc::new(Memory{pointer,owner:Mutex::new(None),window:None,_heap:Some(heap)});
             let opened=std::time::Instant::now();
-            let player=create(api(&directory).unwrap(),Arc::clone(&memory),&source,"test".into(),"test".into(),fast).unwrap();
+            let hints=crate::services::media::PlaybackHints{subtitle_track:std::env::var("COCO_PLAYER_SMOKE_SUBTITLE").ok().and_then(|track|track.parse().ok()),software_decode:false};
+            let player=create(api(&directory).unwrap(),Arc::clone(&memory),&source,"test".into(),"test".into(),fast,hints).unwrap();
             unsafe{(player.api.set_mute)(player.player as P,1);assert_eq!((player.api.play)(player.player as P),0);}
             let started=std::time::Instant::now();let mut first=None;
             loop{

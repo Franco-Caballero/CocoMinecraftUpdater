@@ -153,7 +153,23 @@ export function toMediaManifest(entry){
     const streamUrl=String(e.streamUrl||e.sourceUrl||'');
     const sourceUrl=String(e.sourceUrl||'');
     if(!streamUrl.startsWith('https://github.com/')||!sourceUrl.startsWith('https://github.com/')||!Number.isSafeInteger(e.size)||e.size<=0||!/^[a-fA-F0-9]{64}$/.test(String(e.sha256||'')))throw Error(`Invalid media source ${entry.id}/${e.id}`);
-    return {id:e.id,title:String(e.title),fileName:String(e.fileName),streamUrl,sourceUrl,size:e.size,sha256:String(e.sha256).toLowerCase()};
+    const episode={id:e.id,title:String(e.title),fileName:String(e.fileName),streamUrl,sourceUrl,size:e.size,sha256:String(e.sha256).toLowerCase()};
+    // A film larger than one release asset is split by bytes; Coco plays the parts as one file.
+    if(e.parts!==undefined){
+      if(!Array.isArray(e.parts)||e.parts.length<2||e.parts.length>16)throw Error(`Invalid media parts ${entry.id}/${e.id}`);
+      const parts=e.parts.map(part=>{
+        if(!String(part.url).startsWith('https://github.com/')||!Number.isSafeInteger(part.size)||part.size<=0||!/^[a-fA-F0-9]{64}$/.test(String(part.sha256||'')))throw Error(`Invalid media part ${entry.id}/${e.id}`);
+        return {url:String(part.url),size:part.size,sha256:String(part.sha256).toLowerCase()};
+      });
+      if(parts.reduce((sum,part)=>sum+part.size,0)!==e.size||parts[0].url!==streamUrl)throw Error(`Media parts do not add up ${entry.id}/${e.id}`);
+      episode.parts=parts;
+    }
+    if(e.subtitleTrack!==undefined){
+      if(!Number.isInteger(e.subtitleTrack)||e.subtitleTrack<0||e.subtitleTrack>63)throw Error(`Invalid subtitle track ${entry.id}/${e.id}`);
+      episode.subtitleTrack=e.subtitleTrack;
+    }
+    if(e.softwareDecode!==undefined)episode.softwareDecode=e.softwareDecode===true;
+    return episode;
   })};
 }
 

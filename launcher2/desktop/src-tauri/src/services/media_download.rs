@@ -198,6 +198,10 @@ fn target_from(
     if !safe_file_name(&ep.file_name) || !safe_file_name(legacy_folder(id)) {
         return Err("Unsafe media destination name".into());
     }
+    // A film split by bytes only streams; its first asset alone is not the film.
+    if !ep.parts.is_empty() {
+        return Err("This film is only available to stream".into());
+    }
     if ep.sha256.len() != 64 || !ep.sha256.bytes().all(|c| c.is_ascii_hexdigit()) ||
         ep.size == 0 || ep.size > MAX_VIDEO {
         return Err("Media must have pinned SHA256 and size for local download".into());

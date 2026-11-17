@@ -130,5 +130,39 @@
         "sha256": "3b8591e2171698fe907b0b2c52f3e1d248ba73ddf088f8d0e7456d9b7c03687c"
       }
     ]
+  },
+  {
+    "id": "other-mommy-2026",
+    "name": "Other Mommy",
+    "type": "movie",
+    "episodes": [
+      {
+        "id": "other-mommy-2026",
+        "title": "Other Mommy (2026)",
+        "fileName": "Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv",
+        "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.001",
+        "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.001",
+        "size": 4457071746,
+        "sha256": "9ef91df38e968333aff9157aa29ac286ad26ca7bb9f7e1c28f772425c2d883f3",
+        "parts": [
+          {
+            "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.001",
+            "size": 1485690582,
+            "sha256": "6544e666db478b50547e0ef9e61e4eebb1d4bd4e85fd3ff07d58da98419cf40b"
+          },
+          {
+            "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.002",
+            "size": 1485690582,
+            "sha256": "4f388c6ccb50b2d8bb92e6dd1f251f6b6e45e3ecb7cce586169fc6bcbdf79359"
+          },
+          {
+            "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.003",
+            "size": 1485690582,
+            "sha256": "68361c36452f250c49e2f8fa5bbc68a2fd78a64a8ad6e3b61dab49aaaadbb403"
+          }
+        ],
+        "subtitleTrack": 1
+      }
+    ]
   }
 ]

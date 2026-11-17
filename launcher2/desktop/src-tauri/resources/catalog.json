@@ -1154,6 +1154,20 @@
     "hostingMode": ""
   },
   {
+    "id": "other-mommy-2026",
+    "instanceId": "other-mommy-2026",
+    "name": "Other Mommy",
+    "image": "/covers/other-mommy.jpg.webp",
+    "description": "Terror psicológico sobrenatural (2026) dirigido por Rob Savage y producido por James Wan, con Jessica Chastain. Bela, una niña de siete años que vive en una casa marcada por las peleas de sus padres, empieza a recibir visitas de una presencia que sale de su armario y dice ser su «otra mamá». En 4K, con subtítulos en español.",
+    "workflow": "coco-media",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [],
+    "executable": "",
+    "launchArguments": [],
+    "hostingMode": ""
+  },
+  {
     "id": "buckshot-roulette",
     "instanceId": "buckshot-roulette",
     "name": "Buckshot Roulette",

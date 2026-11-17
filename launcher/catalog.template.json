@@ -2801,6 +2801,87 @@
       "files": []
     },
     {
+      "id": "other-mommy-2026",
+      "name": "Other Mommy",
+      "ui": {
+        "badge": "Película",
+        "accentColor": "#C9A227",
+        "imagePath": "assets/experiences/other-mommy.jpg"
+      },
+      "description": "Terror psicológico sobrenatural (2026) dirigido por Rob Savage y producido por James Wan, con Jessica Chastain. Bela, una niña de siete años que vive en una casa marcada por las peleas de sus padres, empieza a recibir visitas de una presencia que sale de su armario y dice ser su «otra mamá». En 4K, con subtítulos en español.",
+      "instanceId": "other-mommy-2026",
+      "managementMode": "managed",
+      "runtime": {
+        "type": "media"
+      },
+      "content": {
+        "type": "movie",
+        "downloadFolderName": "other mommy",
+        "openAfterDownload": false,
+        "movie": {
+          "id": "other-mommy-2026",
+          "title": "Other Mommy (2026)",
+          "fileName": "Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv",
+          "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.001",
+          "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.001",
+          "size": 4457071746,
+          "sha256": "9ef91df38e968333aff9157aa29ac286ad26ca7bb9f7e1c28f772425c2d883f3",
+          "parts": [
+            {
+              "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.001",
+              "size": 1485690582,
+              "sha256": "6544e666db478b50547e0ef9e61e4eebb1d4bd4e85fd3ff07d58da98419cf40b"
+            },
+            {
+              "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.002",
+              "size": 1485690582,
+              "sha256": "4f388c6ccb50b2d8bb92e6dd1f251f6b6e45e3ecb7cce586169fc6bcbdf79359"
+            },
+            {
+              "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.003",
+              "size": 1485690582,
+              "sha256": "68361c36452f250c49e2f8fa5bbc68a2fd78a64a8ad6e3b61dab49aaaadbb403"
+            }
+          ],
+          "subtitleTrack": 1
+        },
+        "episodes": [
+          {
+            "id": "other-mommy-2026",
+            "title": "Other Mommy (2026)",
+            "fileName": "Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv",
+            "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.001",
+            "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.001",
+            "size": 4457071746,
+            "sha256": "9ef91df38e968333aff9157aa29ac286ad26ca7bb9f7e1c28f772425c2d883f3",
+            "parts": [
+              {
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.001",
+                "size": 1485690582,
+                "sha256": "6544e666db478b50547e0ef9e61e4eebb1d4bd4e85fd3ff07d58da98419cf40b"
+              },
+              {
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.002",
+                "size": 1485690582,
+                "sha256": "4f388c6ccb50b2d8bb92e6dd1f251f6b6e45e3ecb7cce586169fc6bcbdf79359"
+              },
+              {
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/other-mommy-2026/Other.Mommy.2026.2160p.WEB.x265.10bit.AAC5.1.mkv.003",
+                "size": 1485690582,
+                "sha256": "68361c36452f250c49e2f8fa5bbc68a2fd78a64a8ad6e3b61dab49aaaadbb403"
+              }
+            ],
+            "subtitleTrack": 1
+          }
+        ]
+      },
+      "launch": {
+        "workflow": "coco-media",
+        "serverName": "Other Mommy"
+      },
+      "files": []
+    },
+    {
       "id": "buckshot-roulette",
       "name": "Buckshot Roulette",
       "ui": {

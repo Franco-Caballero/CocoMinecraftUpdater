@@ -114,3 +114,18 @@ test('media is separate and private streams cannot leak into UI catalog',async()
   const bad={...media[0],content:{...media[0].content,episodes:[{...media[0].content.episodes[0],streamUrl:'http://evil.test/video.mp4'}]}};
   assert.throws(()=>toMediaManifest(bad),/Invalid media source/);
 });
+
+test('a film split by bytes keeps its parts and subtitle track, and parts must add up to the film',()=>{
+  const base='https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/film/';
+  const hash=n=>String(n).repeat(64);
+  const parts=[{url:base+'film.mkv.001',size:6,sha256:hash(1)},{url:base+'film.mkv.002',size:4,sha256:hash(2)}];
+  const episode={id:'film',title:'Film',fileName:'film.mkv',streamUrl:parts[0].url,sourceUrl:parts[0].url,size:10,sha256:hash(3),parts,subtitleTrack:1};
+  const entry={id:'film',name:'Film',launch:{workflow:'coco-media'},content:{type:'movie',episodes:[episode]}};
+  const manifest=toMediaManifest(entry).episodes[0];
+  assert.equal(manifest.parts.length,2);assert.equal(manifest.subtitleTrack,1);assert.equal(manifest.size,10);
+  const withEpisode=change=>({...entry,content:{type:'movie',episodes:[{...episode,...change}]}});
+  assert.throws(()=>toMediaManifest(withEpisode({size:11})),/do not add up/);
+  assert.throws(()=>toMediaManifest(withEpisode({parts:[parts[0]]})),/Invalid media parts/);
+  assert.throws(()=>toMediaManifest(withEpisode({parts:[{...parts[0],url:'https://evil.test/a'},parts[1]]})),/Invalid media part/);
+  assert.throws(()=>toMediaManifest(withEpisode({subtitleTrack:-1})),/Invalid subtitle track/);
+});

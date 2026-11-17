@@ -26,20 +26,30 @@ const UPSTREAM_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const UPSTREAM_REQUEST_TIMEOUT: Duration = Duration::from_secs(3 * 60 * 60);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(30);
 static ACTIVE_PROXIES: AtomicUsize = AtomicUsize::new(0);
-type ProxyRegistry = HashMap<u16, (String, Arc<AtomicBool>)>;
+type ProxyRegistry = HashMap<u16, (String, Arc<AtomicBool>, PlaybackHints)>;
+/// What the native player needs to know about a film before it opens it.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(super) struct PlaybackHints {
+    /// Index among the film's subtitle tracks to show (the Spanish one), if it has separate ones.
+    pub(super) subtitle_track: Option<u32>,
+    /// Decode on the processor: the engine cannot draw subtitles over GPU frames, and a 4K
+    /// frame copied back from the graphics card is slower than decoding it in software.
+    pub(super) software_decode: bool,
+}
 static PROXY_REGISTRY: OnceLock<Mutex<ProxyRegistry>> = OnceLock::new();
 
 fn registry() -> &'static Mutex<ProxyRegistry> {
     PROXY_REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-pub(super) fn active_stream(url:&str)->bool {
-    let Ok(parsed)=reqwest::Url::parse(url) else{return false};
+/// The hints of a live prepared stream; None when the URL is not one.
+pub(super) fn stream_hints(url:&str)->Option<PlaybackHints> {
+    let parsed=reqwest::Url::parse(url).ok()?;
     if parsed.scheme()!="http"||parsed.host_str()!=Some("127.0.0.1")||parsed.query().is_some()
-        ||parsed.fragment().is_some()||!parsed.username().is_empty()||parsed.password().is_some(){return false;}
-    let Some(port)=parsed.port() else{return false};
-    registry().lock().ok().and_then(|active|active.get(&port).map(|(path,flag)|
-        path==parsed.path()&&!flag.load(Ordering::Acquire))).unwrap_or(false)
+        ||parsed.fragment().is_some()||!parsed.username().is_empty()||parsed.password().is_some(){return None;}
+    let port=parsed.port()?;
+    registry().lock().ok().and_then(|active|active.get(&port).and_then(|(path,flag,hints)|
+        (path==parsed.path()&&!flag.load(Ordering::Acquire)).then_some(*hints)))
 }
 
 fn release_proxy(url: &str) -> bool {
@@ -48,7 +58,7 @@ fn release_proxy(url: &str) -> bool {
         || parsed.query().is_some() || parsed.fragment().is_some() {return false;}
     let Some(port)=parsed.port() else {return false};
     let Ok(mut active)=registry().lock() else {return false};
-    if let Some((path, token))=active.get(&port) {
+    if let Some((path, token, _))=active.get(&port) {
         if path==parsed.path() {
             // A successful close ends this stream's quota ownership now,
             // not when the polling worker eventually exits. The guard uses
@@ -89,6 +99,31 @@ pub(super) struct PrivateEpisode {
     pub(super) size: u64,
     #[serde(default)]
     pub(super) sha256: String,
+    /// A film larger than one release asset, split by bytes. `size`/`sha256` describe the whole.
+    #[serde(default)]
+    pub(super) parts: Vec<MediaPart>,
+    #[serde(default)]
+    pub(super) subtitle_track: Option<u32>,
+    #[serde(default)]
+    pub(super) software_decode: bool,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct MediaPart {
+    pub(super) url: String,
+    pub(super) size: u64,
+    pub(super) sha256: String,
+}
+
+const MAX_PARTS: usize = 16;
+/// Bytes left in a part when the next one starts opening: about 20 s of a 4K film.
+const PREFETCH_BYTES: u64 = 16 * 1024 * 1024;
+
+impl PrivateEpisode {
+    fn hints(&self) -> PlaybackHints {
+        PlaybackHints {subtitle_track: self.subtitle_track, software_decode: self.software_decode || self.subtitle_track.is_some()}
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -201,6 +236,20 @@ fn validate_manifest(raw: &[u8]) -> Result<Vec<PrivateMedia>, String> {
                 let source = reqwest::Url::parse(&episode.source_url)
                     .map_err(|_| "Invalid media download URL")?;
                 if !upstream_allowed(&source, false) { return Err("Untrusted media download URL".into()); }
+            }
+            if episode.subtitle_track.is_some_and(|track| track > 63) {
+                return Err(format!("Invalid subtitle track in {} / {}", entry.id, episode.id));
+            }
+            if !episode.parts.is_empty() {
+                let mut total = 0u64;
+                let valid = episode.parts.len() <= MAX_PARTS && episode.parts.iter().all(|part| {
+                    total = total.saturating_add(part.size);
+                    part.size > 0 && part.sha256.len() == 64 && part.sha256.bytes().all(|b| b.is_ascii_hexdigit())
+                        && reqwest::Url::parse(&part.url).is_ok_and(|url| upstream_allowed(&url, false))
+                });
+                if !valid || total != episode.size || episode.parts[0].url != episode.stream_url {
+                    return Err(format!("Invalid media parts in {} / {}", entry.id, episode.id));
+                }
             }
         }
     }
@@ -478,8 +527,18 @@ fn transient_media_transport(error: &(dyn std::error::Error + 'static)) -> bool 
     false
 }
 
+/// One release asset of a film, placed at `start` in the whole file.
+struct Segment {
+    url: reqwest::Url,
+    start: u64,
+    len: u64,
+    resolved: Mutex<Option<(reqwest::Url, Instant)>>,
+}
+
 struct ProxySpec {
     url: reqwest::Url,
+    /// More than one: the film is split by bytes and served as a single file.
+    segments: Vec<Segment>,
     mime: &'static str,
     path: String,
     expected_bytes: u64,
@@ -579,6 +638,10 @@ fn serve_connection(mut stream: TcpStream, spec: &ProxySpec, client: &reqwest::b
     }
     if let Some(file)=spec.local_file.as_ref(){
         serve_local(stream,&request,spec,file);
+        return;
+    }
+    if spec.segments.len() > 1 {
+        serve_parts(stream, &request, spec, client);
         return;
     }
     // A frontend cannot supply a different remote URL or an HTTP redirect destination.
@@ -729,6 +792,107 @@ fn serve_connection(mut stream: TcpStream, spec: &ProxySpec, client: &reqwest::b
     }
 }
 
+/// Asks one part for exactly `first..=last` of its bytes, through its signed address when known.
+/// Every check of the single-file path applies: identity encoding, an exact 206 and the part's size.
+fn fetch_part(spec:&ProxySpec,client:&reqwest::blocking::Client,segment:&Segment,first:u64,last:u64)
+    ->Option<reqwest::blocking::Response>{
+    let range=format!("bytes={first}-{last}");
+    let mut shortcut=segment.resolved.lock().ok().and_then(|known|known.clone())
+        .filter(|(url,since)|since.elapsed()<REDIRECT_TTL&&upstream_allowed(url,spec.local_fixture))
+        .map(|(url,_)|url);
+    let mut retried=false;
+    loop{
+        if spec.cancelled.load(Ordering::Acquire){return None;}
+        let target=shortcut.clone().unwrap_or_else(||segment.url.clone());
+        let sent=client.get(target).header(reqwest::header::ACCEPT_ENCODING,"identity")
+            .header(reqwest::header::RANGE,&range).send();
+        let response=match sent{
+            Ok(response)=>response,
+            Err(_) if shortcut.is_some()=>{shortcut=None;continue;}
+            Err(error) if !retried&&transient_media_transport(&error)=>{retried=true;continue;}
+            Err(_)=>return None,
+        };
+        let mut ranges=response.headers().get_all(reqwest::header::CONTENT_RANGE).iter();
+        let content_range=ranges.next().and_then(|value|value.to_str().ok()).map(str::to_owned);
+        let duplicated=ranges.next().is_some();
+        let encoded=response.headers().get_all(reqwest::header::CONTENT_ENCODING).iter()
+            .any(|encoding|!encoding.as_bytes().eq_ignore_ascii_case(b"identity"));
+        let length=response.headers().get(reqwest::header::CONTENT_LENGTH)
+            .and_then(|value|value.to_str().ok()).and_then(|value|value.parse::<u64>().ok());
+        let valid=response.status().as_u16()==206&&!duplicated&&!encoded&&upstream_allowed(response.url(),spec.local_fixture)
+            &&length==Some(last-first+1)
+            &&content_range.as_deref().is_some_and(|value|valid_partial_response(&range,value,last-first+1)
+                &&value.rsplit_once('/').and_then(|(_,total)|total.parse::<u64>().ok())==Some(segment.len));
+        if valid{
+            if shortcut.is_none()&&response.url()!=&segment.url{
+                if let Ok(mut known)=segment.resolved.lock(){*known=Some((response.url().clone(),Instant::now()));}
+            }
+            return Some(response);
+        }
+        // An expired signed address: ask the origin again, once.
+        if shortcut.take().is_some(){
+            if let Ok(mut known)=segment.resolved.lock(){*known=None;}
+            continue;
+        }
+        return None;
+    }
+}
+
+/// A film split by bytes is served as one file: a read that crosses into the next part
+/// continues in the same response, so the player never sees where one asset ends.
+fn serve_parts(mut stream:TcpStream,request:&Request,spec:&ProxySpec,client:&reqwest::blocking::Client){
+    if spec.segments.iter().any(|segment|!upstream_allowed(&segment.url,spec.local_fixture)){
+        let _=send_headers(&mut stream,502,"text/plain",0,None,false);return;
+    }
+    let selected=if request.method=="HEAD"{None}else{request.range.as_deref()};
+    let Some((code,first,last,content_range))=local_bounds(selected,spec.expected_bytes)else{
+        let _=send_headers(&mut stream,416,"text/plain",0,Some(&format!("bytes */{}",spec.expected_bytes)),false);
+        return;
+    };
+    let pieces:Vec<(&Segment,u64,u64)>=spec.segments.iter()
+        .filter(|segment|segment.start<=last&&segment.start+segment.len>first)
+        .map(|segment|(segment,first.max(segment.start)-segment.start,last.min(segment.start+segment.len-1)-segment.start))
+        .collect();
+    if request.method=="HEAD"{
+        let _=send_headers(&mut stream,code,spec.mime,last-first+1,content_range.as_deref(),false);return;
+    }
+    // Headers wait for the first part to answer, so a dead origin is a 502, not an empty video.
+    let Some((segment,a,b))=pieces.first().copied()else{return};
+    let Some(mut response)=fetch_part(spec,client,segment,a,b)else{
+        let _=send_headers(&mut stream,502,"text/plain",0,None,false);return;
+    };
+    if spec.cancelled.load(Ordering::Acquire)
+        ||send_headers(&mut stream,code,spec.mime,last-first+1,content_range.as_deref(),false).is_err(){return;}
+    let mut buffer=[0u8;64*1024];
+    // Near the end of a part the next one is already being opened (redirect, TLS, first
+    // byte), so the switch costs nothing the player could notice. Not earlier: an idle
+    // connection held for the half hour a part lasts would be closed by the origin.
+    thread::scope(|scope|{
+        let mut ahead:Option<thread::ScopedJoinHandle<Option<reqwest::blocking::Response>>>=None;
+        for (index,&(segment,a,b)) in pieces.iter().enumerate(){
+            if index>0{
+                let next=match ahead.take(){Some(handle)=>handle.join().ok().flatten(),None=>fetch_part(spec,client,segment,a,b)};
+                let Some(next)=next else{return};
+                response=next;
+            }
+            let mut remaining=b-a+1;
+            while remaining>0&&!spec.cancelled.load(Ordering::Acquire){
+                if ahead.is_none()&&remaining<=PREFETCH_BYTES{
+                    if let Some(&(next,x,y))=pieces.get(index+1){
+                        ahead=Some(scope.spawn(move||fetch_part(spec,client,next,x,y)));
+                    }
+                }
+                let requested=remaining.min(buffer.len() as u64) as usize;
+                let Ok(count)=response.read(&mut buffer[..requested])else{return};
+                if count==0||spec.cancelled.load(Ordering::Acquire){return;}
+                if stream.write_all(&buffer[..count]).is_err(){return;}
+                remaining-=count as u64;
+            }
+            if remaining>0{return;}
+        }
+    });
+}
+
 struct ProxyGuard(Arc<AtomicBool>);
 impl Drop for ProxyGuard {
     fn drop(&mut self) {
@@ -738,12 +902,28 @@ impl Drop for ProxyGuard {
     }
 }
 
+#[cfg(test)]
 fn start_proxy_internal(
     url:reqwest::Url, mime:&'static str, ext:&'static str,
     expected_bytes:u64, local_fixture:bool, ttl:Duration, local_file:Option<File>,
 ) -> Result<(String,u16),String> {
-    if !upstream_allowed(&url, local_fixture) {
+    start_proxy_with(url,Vec::new(),mime,ext,expected_bytes,local_fixture,ttl,local_file,PlaybackHints::default())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn start_proxy_with(
+    url:reqwest::Url, parts:Vec<(reqwest::Url,u64)>, mime:&'static str, ext:&'static str,
+    expected_bytes:u64, local_fixture:bool, ttl:Duration, local_file:Option<File>, hints:PlaybackHints,
+) -> Result<(String,u16),String> {
+    if !upstream_allowed(&url, local_fixture) || parts.iter().any(|(part,_)|!upstream_allowed(part,local_fixture)) {
         return Err("Media stream origin is not permitted".into());
+    }
+    if !parts.is_empty() && parts.iter().map(|(_,size)|*size).sum::<u64>()!=expected_bytes {
+        return Err("Media parts do not add up to the film".into());
+    }
+    let mut segments=Vec::new();let mut start=0;
+    for (part,len) in parts {
+        segments.push(Segment{url:part,start,len,resolved:Mutex::new(None)});start+=len;
     }
     if ACTIVE_PROXIES.fetch_add(1, Ordering::AcqRel) >= MAX_PROXIES {
         ACTIVE_PROXIES.fetch_sub(1, Ordering::AcqRel);
@@ -759,13 +939,13 @@ fn start_proxy_internal(
     let path = format!("/coco-media/{token}/video.{ext}");
     let prepared_url = format!("http://127.0.0.1:{port}{path}");
     let spec = Arc::new(ProxySpec {
-        url,mime,path,expected_bytes,local_fixture,
+        url,segments,mime,path,expected_bytes,local_fixture,
         local_file,cancelled:Arc::clone(&cancelled),resolved:Mutex::new(None),
     });
     let client = Arc::new(make_client(local_fixture)?);
     {
         let mut active=registry().lock().map_err(|_|"Media server registry unavailable")?;
-        active.insert(port,(spec.path.clone(),Arc::clone(&cancelled)));
+        active.insert(port,(spec.path.clone(),Arc::clone(&cancelled),hints));
     }
     let cancel_flag=Arc::clone(&cancelled);
     let spawn=thread::Builder::new().name("coco-media-loopback".into()).spawn(move || {
@@ -801,7 +981,7 @@ fn start_proxy_internal(
             }
         }
         if let Ok(mut active)=registry().lock() {
-            if active.get(&port).is_some_and(|(_,flag)|Arc::ptr_eq(flag,&cancel_flag)) {
+            if active.get(&port).is_some_and(|(_,flag,_)|Arc::ptr_eq(flag,&cancel_flag)) {
                 active.remove(&port);
             }
         }
@@ -824,11 +1004,15 @@ fn prepared_stream(
     let (mime, ext) = mime_type(&episode.file_name).ok_or("Unsupported media format")?;
     let upstream = reqwest::Url::parse(&episode.stream_url)
         .map_err(|_| "Invalid embedded media URL")?;
-    let local = if local_fixture {None}else{
+    // A split film is never downloaded: it always streams from its parts.
+    let local = if local_fixture || !episode.parts.is_empty() {None}else{
         crate::services::media_download::verified_for_episode(entry,episode)?
     };
-    let (url, _) = start_proxy_internal(
-        upstream,mime,ext,episode.size,local_fixture,ttl,local)?;
+    let parts = episode.parts.iter().map(|part| reqwest::Url::parse(&part.url)
+        .map(|url| (url, part.size)).map_err(|_| "Invalid embedded media URL".to_owned()))
+        .collect::<Result<Vec<_>,_>>()?;
+    let (url, _) = start_proxy_with(
+        upstream,parts,mime,ext,episode.size,local_fixture,ttl,local,episode.hints())?;
     Ok(PreparedMediaStream {
         id: id.to_owned(),
         episode_id: episode_id.to_owned(),
@@ -859,7 +1043,7 @@ pub async fn prepare_local_media_stream(
         let (mime,ext)=mime_type(&ep.file_name).ok_or("Unsupported local media format")?;
         let url=reqwest::Url::parse(&ep.stream_url)
             .map_err(|_|"Invalid private media URL")?;
-        let (url,_)=start_proxy_internal(url,mime,ext,ep.size,false,SERVER_LIFETIME,Some(verified))?;
+        let (url,_)=start_proxy_with(url,Vec::new(),mime,ext,ep.size,false,SERVER_LIFETIME,Some(verified),ep.hints())?;
         Ok(PreparedMediaStream {
             id,episode_id,url,mime_type:mime,expires_in_seconds:SERVER_LIFETIME.as_secs(),
         })
@@ -877,7 +1061,7 @@ mod tests {
             episodes: vec![PrivateEpisode {
                 id: "part-1".into(), title: "Part 1".into(),
                 file_name: "sample.mp4".into(), stream_url: url.into(), source_url:url.into(),
-                size: 12, sha256: String::new(),
+                size: 12, sha256: String::new(), parts: Vec::new(), subtitle_track: None, software_decode: false,
             }],
         }]
     }
@@ -1117,6 +1301,71 @@ mod tests {
         }
         assert!(request.ends_with(b"\r\n\r\n"));
         String::from_utf8(request).unwrap()
+    }
+
+    fn part_origin(parts:Vec<(&'static str,&'static [u8])>)->(u16,Arc<AtomicBool>,Arc<Mutex<Vec<String>>>,thread::JoinHandle<()>){
+        let origin=TcpListener::bind("127.0.0.1:0").unwrap();origin.set_nonblocking(true).unwrap();
+        let port=origin.local_addr().unwrap().port();
+        let stop=Arc::new(AtomicBool::new(false));let exit=Arc::clone(&stop);
+        let log=Arc::new(Mutex::new(Vec::new()));let seen=Arc::clone(&log);
+        let worker=thread::spawn(move||{
+            while !exit.load(Ordering::Acquire){
+                match origin.accept(){
+                    Ok((mut socket,_))=>{
+                        socket.set_nonblocking(false).unwrap();
+                        let request=upstream_test_request(&socket);
+                        let path=request.split(' ').nth(1).unwrap().to_owned();
+                        let range=request.lines().find_map(|line|line.to_ascii_lowercase().strip_prefix("range: bytes=").map(str::to_owned)).unwrap();
+                        seen.lock().unwrap().push(format!("{path} {range}"));
+                        let body=parts.iter().find(|(name,_)|path==format!("/{name}")).unwrap().1;
+                        let (a,b)=range.split_once('-').unwrap();let (a,b)=(a.parse::<usize>().unwrap(),b.parse::<usize>().unwrap());
+                        let _=socket.write_all(format!("HTTP/1.1 206 Partial Content\r\nContent-Range: bytes {a}-{b}/{}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",body.len(),b-a+1).as_bytes());
+                        let _=socket.write_all(&body[a..=b]);
+                    },
+                    Err(error) if error.kind()==std::io::ErrorKind::WouldBlock=>thread::sleep(Duration::from_millis(5)),
+                    Err(error)=>panic!("synthetic origin accept failed: {error}"),
+                }
+            }
+        });
+        (port,stop,log,worker)
+    }
+
+    #[test]
+    fn a_split_film_is_one_file_and_reads_cross_parts_in_one_response() {
+        let (port,stop,log,worker)=part_origin(vec![("p1",b"abcd"),("p2",b"efgh"),("p3",b"ij")]);
+        let part=|name:&str|(reqwest::Url::parse(&format!("http://127.0.0.1:{port}/{name}")).unwrap(),if name=="p3"{2}else{4});
+        let hints=PlaybackHints{subtitle_track:Some(1),software_decode:true};
+        let (url,_)=start_proxy_with(part("p1").0,vec![part("p1"),part("p2"),part("p3")],"video/x-matroska","mkv",10,true,
+            Duration::from_secs(7),None,hints).unwrap();
+        assert_eq!(stream_hints(&url),Some(hints));
+        let (code,headers,body)=fetch(&url,"GET",Some("bytes=2-8"));
+        assert_eq!((code,body.as_slice()),(206,&b"cdefghi"[..]));
+        assert!(headers.contains("Content-Range: bytes 2-8/10"),"{headers}");
+        let (code,headers,body)=fetch(&url,"GET",None);
+        assert_eq!((code,body.as_slice()),(200,&b"abcdefghij"[..]));assert!(headers.contains("Content-Length: 10"));
+        let (code,_,body)=fetch(&url,"GET",Some("bytes=-3"));
+        assert_eq!((code,body.as_slice()),(206,&b"hij"[..]));
+        let (code,headers,body)=fetch(&url,"HEAD",Some("bytes=0-1"));
+        assert!(code==200&&body.is_empty()&&headers.contains("Content-Length: 10"),"{headers}");
+        let (code,_,_)=fetch(&url,"GET",Some("bytes=10-"));
+        assert_eq!(code,416);
+        assert!(release_proxy(&url));assert_eq!(stream_hints(&url),None);
+        stop.store(true,Ordering::Release);worker.join().unwrap();
+        assert_eq!(*log.lock().unwrap(),["/p1 2-3","/p2 0-3","/p3 0-0","/p1 0-3","/p2 0-3","/p3 0-1","/p2 3-3","/p3 0-1"]);
+    }
+
+    #[test]
+    fn a_split_film_refuses_parts_that_do_not_add_up_or_a_wrong_part_size() {
+        let (port,stop,_log,worker)=part_origin(vec![("p1",b"abcd"),("p2",b"efg")]);
+        let url=|name:&str|reqwest::Url::parse(&format!("http://127.0.0.1:{port}/{name}")).unwrap();
+        assert!(start_proxy_with(url("p1"),vec![(url("p1"),4),(url("p2"),4)],"video/mp4","mp4",9,true,Duration::from_secs(3),None,PlaybackHints::default()).is_err());
+        // The second asset is one byte short of what the manifest pins: nothing past the first part is sent as video.
+        let (proxy,_)=start_proxy_with(url("p1"),vec![(url("p1"),4),(url("p2"),4)],"video/mp4","mp4",8,true,Duration::from_secs(5),None,PlaybackHints::default()).unwrap();
+        let (code,_,body)=fetch(&proxy,"GET",Some("bytes=5-6"));
+        assert!(code==502&&body.is_empty(),"{code}");
+        let (code,_,body)=fetch(&proxy,"GET",Some("bytes=2-6"));
+        assert_eq!((code,body.as_slice()),(206,&b"cd"[..]),"the response stops where the bad part starts");
+        assert!(release_proxy(&proxy));stop.store(true,Ordering::Release);worker.join().unwrap();
     }
 
     #[test]
