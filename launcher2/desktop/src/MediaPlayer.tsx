@@ -32,13 +32,20 @@ const prefersCompatible=()=>{
   catch{return false;}
 };
 
+/** The bundled decoder cannot start on this PC (blocked or damaged): for the rest of
+ * the session films play with WebView2's own decoder. Always H.264; HEVC only where
+ * Windows has HEVC support. Better than no film until the decoder is fixed. */
+let decoderUnavailable=false;
+const DECODER_CANNOT_START=/bundled decoder|decoder (manifest|path|file|hash|API)|Altered decoder|motor de v[ií]deo/i;
+
 /** Coco's controls work with the bundled native decoder on Windows and an
  * HTML video in browser previews. Native media never enters WebView2's decoder.
  * It starts in the fast mode (GPU) and reopens in the compatible one if that fails here. */
 export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt,progress,next}:Props){
   const videoRef=useRef<HTMLVideoElement>(null);
   const canvasRef=useRef<HTMLCanvasElement>(null);
-  const native=isTauri();
+  const [web,setWeb]=useState(()=>decoderUnavailable);
+  const native=isTauri()&&!web;
   const dialogRef=useRef<HTMLDivElement>(null);
   const scrubRef=useRef<HTMLDivElement>(null);
   const playEpoch=useRef(0);
@@ -86,6 +93,9 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
       logEvent('player',`primera imagen de «${title}» en ${detail}`);
       // Only a compatible mode that really shows the film is remembered: a dead connection fails both.
       if(fellBack.current){try{localStorage.setItem(COMPATIBLE_KEY,String(Date.now()));}catch{/* asked again next time */}}
+    }else if(kind==='problem'&&DECODER_CANNOT_START.test(detail)&&!web){
+      logEvent('player',`el motor de vídeo no arranca (${detail}); «${title}» se abre con el decodificador de Windows`);
+      decoderUnavailable=true;setProblem('');setWeb(true);
     }else if(kind==='problem'){setProblem(detail);logEvent('player',`no se pudo reproducir «${title}»: ${detail}`);}
     else logEvent('player',detail);
   };
@@ -95,6 +105,13 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
     // after a new key={url} video has mounted. Such events belong only to the
     // detached node, not to the fresh player state.
     if(event.currentTarget!==videoRef.current)return;
+    if(next==='error'&&web){
+      const error=event.currentTarget.error;
+      const detail=`decodificador de Windows: ${error?.message||`código ${error?.code??'?'}`}`;
+      logEvent('player',`no se pudo reproducir «${title}»: ${detail}`);
+      // Code 4: this Windows cannot decode the film (usually HEVC without its extension).
+      setProblem(error?.code===4?'Este PC no puede abrir esta película sin el motor de vídeo de Coco. Copia el diagnóstico en Ajustes y envíalo.':detail);
+    }
     setState(next);
   };
 
@@ -127,7 +144,7 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
         video.load();
       });
     };
-  },[url,compatible]);
+  },[url,compatible,web]);
 
   // The viewer's volume carries over between films; timers and fullscreen never outlive the player.
   useEffect(()=>{
