@@ -243,5 +243,11 @@
     "steamAppId": 632360,
     "trailerId": 907413,
     "bytes": 2094748
+  },
+  "lethal-company": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/1966720/593018/d94ebe61f51f602028df99031bafd2ae075b1132/1750743020/microtrailer.webm",
+    "steamAppId": 1966720,
+    "trailerId": 256961309,
+    "bytes": 985526
   }
 }

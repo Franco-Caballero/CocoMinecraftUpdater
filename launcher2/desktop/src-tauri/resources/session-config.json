@@ -294,6 +294,12 @@
       "packVersion": "1.5.0.1224",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "lethal-company",
+      "packVersion": "81",
+      "host": "",
+      "port": 0
     }
   ]
 }

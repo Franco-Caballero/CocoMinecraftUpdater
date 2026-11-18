@@ -2438,5 +2438,56 @@
       }
     ],
     "extraFiles": []
+  },
+  {
+    "id": "lethal-company",
+    "instanceId": "lethal-company",
+    "workflow": "coco-standalone",
+    "version": "81",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/lethal-company-81/lethal-company-81-part01.zip",
+        "sha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8",
+        "size": 731543135
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Lethal Company/Lethal Company.exe",
+        "sha256": "24f39cbf2060834e8b648833c0c31ed82506ea633a9e8e5609e01102c7d6e8f1",
+        "size": 666624
+      },
+      {
+        "path": "Lethal Company/Lethal Company_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "473f5a312b56519f347741b63f3dea590946b96ea40ef3803d5f452c39af2f1e",
+        "size": 262944
+      },
+      {
+        "path": "Lethal Company/OnlineFix.ini",
+        "sha256": "a35b45d0310395a27175521d5ed25243c2bd6133bacc06cfaa32ec2cec52c2bf",
+        "size": 472
+      },
+      {
+        "path": "Lethal Company/OnlineFix64.dll",
+        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+        "size": 11944448
+      },
+      {
+        "path": "Lethal Company/UnityPlayer.dll",
+        "sha256": "a8dcc8f6f4cbee3da56552a4adbe56724228a0efcc2fcd737b516933f0418081",
+        "size": 31100840
+      },
+      {
+        "path": "Lethal Company/dlllist.txt",
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "size": 35
+      },
+      {
+        "path": "Lethal Company/winmm.dll",
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "size": 506368
+      }
+    ],
+    "extraFiles": []
   }
 ]

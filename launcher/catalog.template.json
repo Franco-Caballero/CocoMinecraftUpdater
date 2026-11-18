@@ -4713,6 +4713,88 @@
     "serverName": "Coco - Risk of Rain 2"
   },
   "files": []
+},
+        {
+  "id": "lethal-company",
+  "name": "Lethal Company",
+  "ui": {
+    "imagePath": "assets/experiences/lethal-company.jpg"
+  },
+  "description": "Terror cooperativo de 1 a 4 jugadores: trabajas para la Compa\u00f1\u00eda recolectando chatarra en lunas abandonadas llenas de criaturas. Coord\u00ednate con tu equipo por radio y desde la terminal de la nave, junta el valor de la cuota y vuelve antes de que caiga la noche.",
+  "instanceId": "lethal-company",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "Lethal Company/Lethal Company.exe",
+    "requiredFiles": [
+      {
+        "path": "Lethal Company/Lethal Company.exe",
+        "size": 666624,
+        "sha256": "24f39cbf2060834e8b648833c0c31ed82506ea633a9e8e5609e01102c7d6e8f1",
+        "archiveSha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8"
+      },
+      {
+        "path": "Lethal Company/Lethal Company_Data/Plugins/x86_64/steam_api64.dll",
+        "size": 262944,
+        "sha256": "473f5a312b56519f347741b63f3dea590946b96ea40ef3803d5f452c39af2f1e",
+        "archiveSha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8"
+      },
+      {
+        "path": "Lethal Company/OnlineFix.ini",
+        "size": 472,
+        "sha256": "a35b45d0310395a27175521d5ed25243c2bd6133bacc06cfaa32ec2cec52c2bf",
+        "archiveSha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8"
+      },
+      {
+        "path": "Lethal Company/OnlineFix64.dll",
+        "size": 11944448,
+        "sha256": "54a65b4e133c6a4ff7107b4b9c868e10c3ba606bb42d8c687054b0a64fafa944",
+        "archiveSha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8"
+      },
+      {
+        "path": "Lethal Company/UnityPlayer.dll",
+        "size": 31100840,
+        "sha256": "a8dcc8f6f4cbee3da56552a4adbe56724228a0efcc2fcd737b516933f0418081",
+        "archiveSha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8"
+      },
+      {
+        "path": "Lethal Company/dlllist.txt",
+        "size": 35,
+        "sha256": "662dd415e2796635702c49586fb99ae62a3c6f595976d6923ec8a4e7c23fa8fe",
+        "archiveSha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8"
+      },
+      {
+        "path": "Lethal Company/winmm.dll",
+        "size": 506368,
+        "sha256": "cb8baaa2054a11628b96e474e1428a430c95321f8ac3b89764255cbd6628a9d6",
+        "archiveSha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-lethal-company",
+    "lockPath": "launcher/experiences/lethal-company.lock.json",
+    "version": "81",
+    "sha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8",
+    "size": 731543135,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/lethal-company-81/lethal-company-81-part01.zip",
+        "sha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8",
+        "size": 731543135
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Lethal Company"
+  },
+  "files": []
 }
   ]
 }

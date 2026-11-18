@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "lethal-company",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/lethal-company-81/lethal-company-81-part01.zip",
+    "sha256": "216af7d15c7dc89dbf2a2afeca78c7c47cd464ad035a61200e01c0e5f2c4ceb8",
+    "size": 731543135
+  }
+}

@@ -69,7 +69,8 @@ Luego `preview_navigate` a ese `download_url` y `preview_wait_for` con el select
 ```
 
 - **Sin `?cf-turnstile-response=…` el `download-file` devuelve «Ops matey no downloads here»** (HTML de ~190 KB) aunque sea el primer uso. Parece un enlace gastado, pero no lo es (desde noviembre de 2026).
-- `SIN TOKEN`: Cloudflare pidió un desafío interactivo. Abre la pestaña visible (`preview_open` con `open: true`), pide al usuario que marque la casilla y repite el script.
+- `SIN TOKEN`: casi siempre el token solo tarda (con Lethal Company tardó más de 30 s). **No pidas ayuda al usuario:** abre la pestaña visible (`preview_open` con `open: true`) y vuelve a leer el token con un `preview_evaluate` corto, sin bucle largo (la herramienta corta a los 15 s), unas cuantas veces. Solo si tras ~1 min sigue sin token y se ve una casilla de Cloudflare, pide al usuario que la marque.
+- `Publish-Coco2Catalog.mjs` terminó en `fetch failed`: puede que ya haya subido. Si `coco2-catalog-head.json` tiene la secuencia y SHA nuevos y el `s<N>.json` servido tiene ese SHA, está publicado; repetirlo falla con «asset already exists».
 - El token y el enlace sirven **una vez**: genera uno nuevo para cada descarga (también para el Online Fix).
 
 (No uses `a.download-button` como selector: hay varios y el primero no siempre es el enlace.)
@@ -277,6 +278,7 @@ Después:
 | Pummel Party | `/game/pummel-party` | 166 | 880940 | 1.14.1 | 1.592.306.707 B (2 partes) | `pummel-party-1.14.1` | Unity 64 | Setup 0.6.55 |
 | Grocery Store Simulator | `/game/grocery-store-simulator` | 92 | 2961880 | 1.2.4 | 6.623.041.166 B (5 partes, RAR de origen, `--split-large`) | `grocery-store-simulator-1.2.4` | Unreal, `Binaries/Win64` | Setup 0.6.55 (lleva un `Read Me.txt` inofensivo) |
 | Paint the Town Red | `/game/paint-the-town-red` | 716 | 337320 | 1.3.4 | 2.527.207.121 B (2 partes) | `paint-the-town-red-1.3.4` | Unity 64 IL2CPP (conserva `1=`) | Setup 0.6.55 |
+| Lethal Company | `/game/lethal-company` | 233 | 1966720 | 81 | 731.543.135 B | `lethal-company-81` | Unity 64 (`dlllist.txt`) | Canal s28 |
 
 Gamble With Your Friends no vino de AnkerGames por enlace: era una carpeta ya descargada (receta de la guía maestra).
 

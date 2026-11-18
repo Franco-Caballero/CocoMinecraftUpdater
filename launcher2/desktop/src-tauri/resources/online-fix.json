@@ -195,6 +195,12 @@
       "hash0": "20deff75773ea8655879e8a5e5c234055e6db0b8b1eb47ebca13dcbc7a27f7484b3a7728c19cdf8e87e0ad8399364b355292d92f7c9df478260cfd51e0e2e073",
       "hash1337": ""
     }
+,
+    "lethal-company": {
+      "realAppId": "1966720",
+      "hash0": "33efea37a5f9b5ca9e87e2c5999f2b6a6ae610552905dacaac0589fddc7cbe9cba145d9e8a56e0403540031a916715c628de0a215faeaada5f52bf811381b11e",
+      "hash1337": ""
+    }
   },
   "apps": {
     "3834090": {
@@ -390,6 +396,12 @@
     "632360": {
       "realAppId": "632360",
       "hash0": "20deff75773ea8655879e8a5e5c234055e6db0b8b1eb47ebca13dcbc7a27f7484b3a7728c19cdf8e87e0ad8399364b355292d92f7c9df478260cfd51e0e2e073",
+      "hash1337": ""
+    }
+,
+    "1966720": {
+      "realAppId": "1966720",
+      "hash0": "33efea37a5f9b5ca9e87e2c5999f2b6a6ae610552905dacaac0589fddc7cbe9cba145d9e8a56e0403540031a916715c628de0a215faeaada5f52bf811381b11e",
       "hash1337": ""
     }
   },
