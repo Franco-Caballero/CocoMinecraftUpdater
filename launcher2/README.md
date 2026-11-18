@@ -1,5 +1,7 @@
 # Coco Launcher 2 — nuevo motor Rust
 
+**Coco 2 0.6.62:** publicado en `coco2-channel` y verificado (Latest sigue en `v0.5.186`). Los mods de Lethal Company se bajan del prerelease `lethal-company-mods-v81` (los ZIP originales de Thunderstore, mismo SHA-256) con 12 conexiones en trozos de 32 MB: 1 GB en ~19 s en vez de ~10 min; Thunderstore queda de respaldo. La carpeta del perfil ya no depende de los saltos de línea del lock (las instalaciones de 0.6.61 la conservan). Setup 60.317.755 bytes, SHA-256 `cfb4a57b9f907c3fb9f2510cf80b77701e1a797983f709ba14f24288a37c3cd3`. Rust 315 PASS, JS 568 PASS.
+
 **Coco 2 0.6.61:** publicado y verificado en `coco2-channel` (Latest sigue en `v0.5.186`). Lethal Company v81 instala sus mods con el juego o los prepara automáticamente al pulsar Jugar si ya estaba instalado. Incluye el selector común de emotes y conserva Jug Band. Validación de instalación nueva, preparación de una copia existente y arranque hasta el menú aprobadas. Setup de 60.311.904 bytes, SHA-256 `9d6eb88a15567bc16a760f4a3e03774b6a598f27c40f4f3cd1e0850d7e3a994d`. [Perfil y pruebas de compatibilidad](docs/LethalCompanyV81Mods.md).
 
 **Coco 2 0.6.60:** publicado en `coco2-channel` y verificado (Latest sigue en `v0.5.186`). Portadas nuevas de Other Mommy y Resident Evil: backdrops oficiales de TMDB sin texto, recortados a 2:1 con `scripts/Make-CocoCover.py`; procedimiento en `docs/AGENT_ADD_GAME.md` («Portadas»). Setup 60.180.774 bytes, SHA-256 `2dc717d4cc915e041b0d9fe3a11ebfaef74a3ef3e44643a97acd300837eb3083`.
