@@ -17,6 +17,8 @@ const GAME: &str = "lethal-company";
 const LOCK: &str = include_str!("../../resources/lethal-company-mods.json");
 const PROXY: &str = "winhttp.dll";
 const PRELOADER: &str = "BepInEx/core/BepInEx.Preloader.dll";
+const MIRROR: &str =
+    "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/lethal-company-mods-v81/";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -90,6 +92,14 @@ fn profile() -> Result<&'static Profile, String> {
     }).as_ref().map_err(Clone::clone)
 }
 
+/// Coco 0.6.61 hashed the lock as it was on the build machine, with CRLF line
+/// ends, while Git stores it with LF. Hash the CRLF form whatever the checkout
+/// has, so installed profiles keep their folder (9ffcd019ec4982cdfff815d4).
+fn profile_identity() -> String {
+    let crlf = LOCK.replace("\r\n", "\n").replace('\n', "\r\n");
+    format!("{:x}", Sha256::digest(crlf.as_bytes()))
+}
+
 fn profile_for(id: &str, executable_hash: &str) -> Result<Option<&'static Profile>, String> {
     if id != GAME { return Ok(None); }
     let profile = profile()?;
@@ -141,6 +151,148 @@ fn copy_locked_file(
     Ok(())
 }
 
+const PIECE: u64 = 32 * 1024 * 1024;
+const CONNECTIONS: usize = 12;
+
+/// Download every archive missing from the cache at once, split into ranged
+/// pieces shared by CONNECTIONS workers. Each archive is written to a private
+/// file, checked against its size and SHA-256 and only then renamed to the
+/// content-addressed cache name that download_one() accepts. Failures are not
+/// fatal here: download_one() retries that archive with its resumable path.
+/// Returns how many archives it completed.
+fn parallel_fetch(
+    archives: &[ArchiveSpec], cache: &Path, client: &reqwest::blocking::Client,
+    token: &AtomicBool, progress: &mut impl FnMut(u64),
+) -> Result<usize, String> {
+    use std::io::{Read, Seek, SeekFrom, Write};
+    use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+    use std::sync::Mutex;
+    assert_no_links(cache)?;
+    fs::create_dir_all(cache).map_err(|error| error.to_string())?;
+    let mut ready = 0u64;
+    let mut todo = Vec::new();
+    for archive in archives {
+        let hash = archive.sha256.to_ascii_lowercase();
+        let path = cache.join(format!("{hash}.zip"));
+        if matches_digest(&path, archive.size, &hash, token)? {
+            ready += archive.size;
+        } else if fs::symlink_metadata(&path).is_err() {
+            todo.push(archive);
+        }
+    }
+    progress(ready);
+    if todo.is_empty() { return Ok(0); }
+    ensure_free_space(cache, todo.iter().map(|archive| archive.size).sum())?;
+    let work = cache.join(format!("mods-parallel-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&work);
+    fs::create_dir_all(&work).map_err(|error| error.to_string())?;
+    let mut pieces = Vec::new();
+    for (index, archive) in todo.iter().enumerate() {
+        let file = File::create(work.join(index.to_string())).map_err(|error| error.to_string())?;
+        file.set_len(archive.size).map_err(|error| error.to_string())?;
+        let mut start = 0;
+        while start < archive.size {
+            let len = PIECE.min(archive.size - start);
+            pieces.push((index, start, len));
+            start += len;
+        }
+    }
+    // Large archives first, so the slowest piece does not start last.
+    pieces.sort_by_key(|&(index, start, _)| (std::cmp::Reverse(todo[index].size), index, start));
+    let remaining: Vec<_> = todo.iter().map(|archive| AtomicUsize::new(
+        archive.size.div_ceil(PIECE) as usize)).collect();
+    let failed: Vec<_> = todo.iter().map(|_| std::sync::atomic::AtomicBool::new(false)).collect();
+    let next = AtomicUsize::new(0);
+    let fetched = AtomicU64::new(0);
+    let completed = AtomicUsize::new(0);
+    let fatal = Mutex::new(None::<String>);
+    let fetch_piece = |index: usize, start: u64, len: u64| -> Result<(), String> {
+        let archive = todo[index];
+        let end = start + len - 1;
+        let mut response = client.get(&archive.url)
+            .header(reqwest::header::RANGE, format!("bytes={start}-{end}"))
+            .header(reqwest::header::ACCEPT_ENCODING, "identity")
+            .send().map_err(|error| error.to_string())?;
+        let expected = format!("bytes {start}-{end}/{}", archive.size);
+        let range = response.headers().get(reqwest::header::CONTENT_RANGE)
+            .and_then(|value| value.to_str().ok()).unwrap_or("");
+        if response.status() != reqwest::StatusCode::PARTIAL_CONTENT || range != expected
+            || response.headers().contains_key(reqwest::header::CONTENT_ENCODING)
+        {
+            return Err(format!("Rango no admitido: {} {range}", response.status()));
+        }
+        let mut output = OpenOptions::new().write(true).open(work.join(index.to_string()))
+            .map_err(|error| error.to_string())?;
+        output.seek(SeekFrom::Start(start)).map_err(|error| error.to_string())?;
+        let mut buffer = vec![0u8; 256 * 1024];
+        let mut written = 0u64;
+        loop {
+            cancelled(token)?;
+            let count = response.read(&mut buffer).map_err(|error| error.to_string())?;
+            if count == 0 { break; }
+            if written + count as u64 > len { return Err("El servidor envió bytes de más".into()); }
+            output.write_all(&buffer[..count]).map_err(|error| error.to_string())?;
+            written += count as u64;
+        }
+        if written != len { return Err("Respuesta cortada".into()); }
+        Ok(())
+    };
+    let finish = |index: usize| -> Result<(), String> {
+        let archive = todo[index];
+        let hash = archive.sha256.to_ascii_lowercase();
+        let piece_file = work.join(index.to_string());
+        if !matches_digest(&piece_file, archive.size, &hash, token)? {
+            return Err("SHA-256 distinto".into());
+        }
+        let destination = cache.join(format!("{hash}.zip"));
+        if fs::symlink_metadata(&destination).is_ok() { return Ok(()); }
+        fs::rename(&piece_file, &destination).map_err(|error| error.to_string())
+    };
+    std::thread::scope(|scope| {
+        for _ in 0..CONNECTIONS {
+            scope.spawn(|| loop {
+                if token.load(Ordering::Relaxed) { return; }
+                let Some(&(index, start, len)) = pieces.get(next.fetch_add(1, Ordering::Relaxed))
+                else { return; };
+                if failed[index].load(Ordering::Relaxed) { continue; }
+                let mut result = Err(String::new());
+                for _ in 0..3 {
+                    result = fetch_piece(index, start, len);
+                    if result.is_ok() || token.load(Ordering::Relaxed) { break; }
+                }
+                if let Err(error) = result {
+                    failed[index].store(true, Ordering::Relaxed);
+                    let mut fatal = fatal.lock().unwrap_or_else(|poison| poison.into_inner());
+                    fatal.get_or_insert(format!("{}: {error}", todo[index].url));
+                    continue;
+                }
+                fetched.fetch_add(len, Ordering::Relaxed);
+                if remaining[index].fetch_sub(1, Ordering::AcqRel) == 1 {
+                    match finish(index) {
+                        Ok(()) => { completed.fetch_add(1, Ordering::Relaxed); }
+                        Err(_) => failed[index].store(true, Ordering::Relaxed),
+                    }
+                }
+            });
+        }
+        let mut last = u64::MAX;
+        while next.load(Ordering::Relaxed) < pieces.len() + CONNECTIONS
+            && !token.load(Ordering::Relaxed)
+        {
+            let done = ready + fetched.load(Ordering::Relaxed);
+            if done != last { progress(done); last = done; }
+            std::thread::sleep(Duration::from_millis(150));
+        }
+    });
+    let _ = fs::remove_dir_all(&work);
+    cancelled(token)?;
+    progress(ready + fetched.load(Ordering::Relaxed));
+    if let Some(error) = fatal.into_inner().unwrap_or_else(|poison| poison.into_inner()) {
+        eprintln!("[mods] descarga en paralelo incompleta, se reintenta: {error}");
+    }
+    Ok(completed.load(Ordering::Relaxed))
+}
+
 fn stage_profile(
     profile: &Profile, destination: &Path, cache: &Path, token: &AtomicBool,
     progress: &mut impl FnMut(&'static str, &str, u64, u64),
@@ -148,8 +300,24 @@ fn stage_profile(
     let client = reqwest::blocking::Client::builder().connect_timeout(Duration::from_secs(30))
         .timeout(HTTP_CHUNK_TIMEOUT).redirect(safe_archive_redirect())
         .build().map_err(|error| error.to_string())?;
+    // The lock records each original Thunderstore URL. The same bytes are on
+    // the host's GitHub prerelease, which is many times faster; SHA-256 and
+    // size are checked exactly as before, and Thunderstore stays the fallback.
+    let mirrored: Vec<_> = profile.active_packages().map(|package| ArchiveSpec {
+        url: format!("{MIRROR}{}.zip", package.name), ..package.archive.clone()
+    }).collect();
     let archives: Vec<_> = profile.active_packages().map(|package| package.archive.clone()).collect();
     let total = archives.iter().map(|archive| archive.size).sum();
+    // One Thunderstore connection often runs at ~1.5 MB/s, so fetch every
+    // package at once in ranged pieces. Whatever this misses (an error, a
+    // server that ignores Range) goes through download_one() below.
+    parallel_fetch(&mirrored, cache, &client, token, &mut |done| {
+        progress("mods-downloading", "", done, total);
+    })?;
+    // Anything the mirror did not deliver: Thunderstore, in parallel too.
+    parallel_fetch(&archives, cache, &client, token, &mut |done| {
+        progress("mods-downloading", "", done, total);
+    })?;
     let mut downloaded = 0;
     let mut paths = Vec::with_capacity(archives.len());
     for package in profile.active_packages() {
@@ -217,7 +385,7 @@ pub(in crate::services) fn prepare(
         Ok(false)
     };
     validate_proxy()?;
-    let identity = format!("{:x}", Sha256::digest(LOCK.as_bytes()));
+    let identity = profile_identity();
     // Keep Unity's paths short on Windows, including under custom game locations.
     let destination = root.join(".coco").join("managed-mods").join(&identity[..24]);
     assert_no_links(&destination)?;
@@ -284,6 +452,97 @@ mod tests {
                     super::super::version_parts(version).unwrap(), "Outdated dependency {name}");
             }
         }
+    }
+
+    #[test]
+    fn the_profile_folder_is_the_one_coco_0_6_61_installed_on_any_checkout() {
+        assert!(profile_identity().starts_with("9ffcd019ec4982cdfff815d4"));
+    }
+
+    /// Serves `files` by path with exact byte ranges. The first request for
+    /// "/flaky" is cut short, so the worker has to retry that piece.
+    fn range_server(files: Vec<(&'static str, Vec<u8>)>) -> String {
+        use std::io::{BufRead, BufReader, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let flaky = std::sync::Arc::new(AtomicBool::new(true));
+        std::thread::spawn(move || for stream in listener.incoming().flatten() {
+            let files = files.clone();
+            let flaky = flaky.clone();
+            std::thread::spawn(move || {
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                let path = line.split_whitespace().nth(1).unwrap_or("").to_string();
+                let mut range = None;
+                loop {
+                    let mut header = String::new();
+                    if reader.read_line(&mut header).unwrap_or(0) <= 2 { break; }
+                    if let Some(value) = header.to_ascii_lowercase().strip_prefix("range: bytes=") {
+                        let (a, b) = value.trim().split_once('-').unwrap();
+                        range = Some((a.parse::<usize>().unwrap(), b.parse::<usize>().unwrap()));
+                    }
+                }
+                let mut stream = stream;
+                let Some((_, body)) = files.iter().find(|(name, _)| *name == path) else {
+                    let _ = stream.write_all(b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n");
+                    return;
+                };
+                let (a, b) = range.unwrap();
+                let slice = &body[a..=b];
+                let head = format!("HTTP/1.1 206 Partial Content\r\nContent-Length: {}\r\nContent-Range: bytes {a}-{b}/{}\r\nConnection: close\r\n\r\n", slice.len(), body.len());
+                let _ = stream.write_all(head.as_bytes());
+                let cut = path == "/flaky" && flaky.swap(false, std::sync::atomic::Ordering::SeqCst);
+                let _ = stream.write_all(if cut { &slice[..slice.len() / 2] } else { slice });
+            });
+        });
+        format!("http://127.0.0.1:{port}")
+    }
+
+    #[test]
+    fn parallel_fetch_caches_only_archives_whose_bytes_match() {
+        let root = std::env::temp_dir().join(format!("coco-mods-parallel-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let big: Vec<u8> = (0..(PIECE as usize * 2 + 12_345)).map(|n| (n % 251) as u8).collect();
+        let small = b"small archive".to_vec();
+        let base = range_server(vec![("/flaky", big.clone()), ("/small", small.clone()),
+            ("/wrong", b"not what the lock says".to_vec())]);
+        let spec = |path: &str, bytes: &[u8]| ArchiveSpec {
+            url: format!("{base}{path}"), size: bytes.len() as u64,
+            sha256: format!("{:x}", Sha256::digest(bytes)),
+        };
+        let wrong = ArchiveSpec { sha256: "0".repeat(64), ..spec("/wrong", b"not what the lock says") };
+        let missing = spec("/missing", b"gone");
+        let archives = [spec("/flaky", &big), spec("/small", &small), wrong.clone(), missing];
+        let client = reqwest::blocking::Client::builder().build().unwrap();
+        let token = AtomicBool::new(false);
+        let mut last = 0;
+        let done = parallel_fetch(&archives, &root, &client, &token, &mut |bytes| last = bytes).unwrap();
+        assert_eq!(done, 2);
+        assert!(last >= (big.len() + small.len()) as u64);
+        assert_eq!(fs::read(root.join(format!("{}.zip", archives[0].sha256))).unwrap(), big);
+        assert_eq!(fs::read(root.join(format!("{}.zip", archives[1].sha256))).unwrap(), small);
+        assert!(!root.join(format!("{}.zip", wrong.sha256)).exists());
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 2, "no work files left behind");
+        // A second run finds both in the cache and downloads nothing.
+        assert_eq!(parallel_fetch(&archives[..2], &root, &client, &token, &mut |_| {}).unwrap(), 0);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    #[ignore = "downloads the real mirror (1 GB) from GitHub"]
+    fn the_github_mirror_serves_every_locked_archive() {
+        let profile = profile().unwrap();
+        let cache = PathBuf::from(std::env::var_os("COCO2_MODS_MIRROR_CACHE").unwrap());
+        let mirrored: Vec<_> = profile.active_packages().map(|package| ArchiveSpec {
+            url: format!("{MIRROR}{}.zip", package.name), ..package.archive.clone()
+        }).collect();
+        let client = reqwest::blocking::Client::builder().redirect(safe_archive_redirect())
+            .timeout(HTTP_CHUNK_TIMEOUT).build().unwrap();
+        let started = std::time::Instant::now();
+        let done = parallel_fetch(&mirrored, &cache, &client, &AtomicBool::new(false), &mut |_| {}).unwrap();
+        println!("{done} archives in {:.1}s", started.elapsed().as_secs_f64());
+        assert_eq!(done, mirrored.len());
     }
 
     #[test]
