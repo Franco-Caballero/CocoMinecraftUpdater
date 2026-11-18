@@ -34,4 +34,7 @@ export class NativeOperationGate {
       'install','prepare-repair','commit-repair','recover-repair','upgrade','recover-upgrade','move',
     ].includes(this.active.kind);
   }
+  acceptsLaunchProgress(experienceId:string){
+    return this.active?.kind==='launch'&&this.active.experienceId===experienceId;
+  }
 }

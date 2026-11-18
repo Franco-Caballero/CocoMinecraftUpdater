@@ -43,6 +43,9 @@ export class NativeProgressSampler {
 export function nativeProgressDescription(phase:string):string{
   switch(phase){
     case 'downloading':case 'repair-downloading':case 'upgrade-downloading':return 'Descargando archivos';
+    case 'mods-downloading':return 'Descargando mods de Lethal Company';
+    case 'mods-extracting':return 'Instalando mods de Lethal Company';
+    case 'mods-ready':return 'Mods verificados';
     case 'moving':return 'Copiando y comprobando archivos';
     case 'extracting':return 'Descomprimiendo juego';
     case 'repair-extracting':return 'Descomprimiendo reparación';

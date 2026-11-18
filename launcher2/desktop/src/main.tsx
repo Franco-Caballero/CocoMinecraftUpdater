@@ -967,7 +967,8 @@ function App(){
     let disposed=false;let stop:(()=>void)|undefined;
     void listen<InstallProgress>('coco2://standalone-install-progress',event=>{
       const update=event.payload;
-      if(!disposed&&nativeOperationGate.current.acceptsProgress(update.id)&&
+      if(!disposed&&(nativeOperationGate.current.acceptsProgress(update.id)||
+        (update.phase.startsWith('mods-')&&nativeOperationGate.current.acceptsLaunchProgress(update.id)))&&
         nativeProgressSampler.current.accept(update,performance.now())){
         const observedAt=performance.now();
         setInstallProgress(update);
@@ -1429,6 +1430,9 @@ function App(){
     if(busy||upgrading||upgradeRecovering||repairRecovering||updateRunning.current||appUpdate.stage==='downloading'||appUpdate.stage==='installing'||!isTauri())return;
     const ticket=nativeOperationGate.current.begin(entry.id,'launch');
     if(!ticket)return;
+    nativeProgressSampler.current.reset();
+    nativeTransferRateMeter.current.reset();
+    setInstallProgress(null);
     setBusy(true);setOperationMessage('');setRuntime({id:entry.id,state:'verifying',pid:null,exitCode:null});
     try {
       const started=await invoke<RuntimeEvent>('launch_standalone',{id:entry.id});
@@ -1904,6 +1908,8 @@ function App(){
     }:null,
     mediaDownload:mediaDownloadActive?{title:mediaDownloadActive.title,percent:mediaDownloadProgress?.percent??0,verifying:mediaDownloadProgress?.phase==='verifying'}:null,
     launching:runtime?.state==='verifying'?entryName(runtime.id):null,
+    launchMods:runtime?.state==='verifying'&&installProgress?.id===runtime.id&&installProgress.phase.startsWith('mods-')
+      ?{description:nativeProgressDescription(installProgress.phase),percent:installProgress.percent}:undefined,
     playing:[...new Set([...observedGameIds,...(runtime?.state==='running'?[runtime.id]:[])])].map(entryName),
     processUncertain:gameProcessUncertain,
     pendingRecovery:pendingOperations.length,

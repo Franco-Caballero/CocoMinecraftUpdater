@@ -4,6 +4,8 @@
 //! user-owned worlds, configs, mods and unrelated files remain outside its scope.
 #[path = "repair_transaction.rs"]
 mod repair_transaction;
+#[path = "managed_mods.rs"]
+pub(super) mod managed_mods;
 #[cfg(all(test,windows))]
 #[path = "native_lifecycle_e2e.rs"]
 mod native_lifecycle_e2e;
@@ -837,12 +839,14 @@ fn plan(m: &Manifest, target: &Path) -> InstallPlan {
         "unsupported-extras" => "La experiencia declara archivos adicionales que aún no instala el motor nativo",
         _ => "Instalación nueva lista para preparar y verificar",
     }.to_string();
+    let (mod_count, mod_bytes) = managed_mods::download_size(m);
     InstallPlan {
         id: m.id.clone(), status, message,
         instance_path: target.display().to_string(),
-        archive_count: m.archives.len() + m.extra_files.len(),
+        archive_count: m.archives.len() + m.extra_files.len() + mod_count,
         total_download_bytes: m.archives.iter().fold(0u64, |total, part| total.saturating_add(part.size))
-            .saturating_add(m.extra_files.iter().fold(0u64, |total, part| total.saturating_add(part.size))),
+            .saturating_add(m.extra_files.iter().fold(0u64, |total, part| total.saturating_add(part.size)))
+            .saturating_add(mod_bytes),
         required_file_count: m.required_files.len(),
     }
 }
@@ -2056,6 +2060,7 @@ fn install_new(m: &Manifest, target: &Path, cache: &Path, token: &AtomicBool,
     verify_staged_files(&stage.0, &m.required_files, token)?;
     let expanded_extras = immutable_extra_files(&stage.0, &extra_paths, token)?;
     write_install_receipt(&stage.0, m, &expanded_extras)?;
+    managed_mods::prepare_install(m, &stage.0, cache, token, &mut progress)?;
     cancelled(token)?;
     if target.exists() { return Ok(outcome("needs-repair", "La instancia apareció durante la preparación")); }
     assert_no_links(target)?;
@@ -2454,6 +2459,7 @@ pub async fn install_standalone(id: String, app: AppHandle, state: State<'_, Ins
                     crate::services::uninstall::restore_kept_saves(&target, &m.instance_id);
                     // Installed and verified: the ZIP would only double the game's space on disk.
                     remove_cached_archives(&m.id);
+                    managed_mods::clear_downloads(&m.id,&cache);
                 }
                 Ok(outcome)
             }

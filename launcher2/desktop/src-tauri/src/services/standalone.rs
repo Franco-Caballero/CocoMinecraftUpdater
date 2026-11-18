@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{atomic::AtomicBool, Arc, Mutex};
 use std::time::{Duration, Instant};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 #[derive(Default)]
 pub struct RuntimeState {
@@ -563,6 +563,22 @@ pub async fn launch_standalone(id:String,app:AppHandle,state:State<'_,RuntimeSta
         if outcome.status!="essential-files-verified" {
             return Err(format!("Archivos no verificados ({})",outcome.first_issue.unwrap_or(outcome.status.into())));
         }
+        let managed_preloader=if crate::services::install::managed_mods::applies(&id) {
+            let executable=resolve_executable(&verified_entry,&root)?;
+            let name=executable.file_name().and_then(|value|value.to_str()).ok_or("Ejecutable inválido")?;
+            if process_may_be_running(name){return Err("Cierra Lethal Company antes de volver a abrirlo desde Coco".into());}
+            let install_state=app.state::<crate::services::install::InstallState>();
+            let (_reservation,token)=crate::services::install::reserve_exclusive(&id,&install_state)?;
+            let hash=verified_entry.required_files.iter().find(|file|file.path==verified_entry.executable)
+                .map_or("",|file|file.sha256.as_str());
+            let cache=crate::services::install::download_cache(&local_data,&root);
+            let preloader=crate::services::install::managed_mods::prepare(
+                &id,hash,&root,&verified_entry.executable,&cache,&token,&mut |phase,file,done,total|
+                    crate::services::install::emit_progress(&app,&id,phase,file,done,total),
+            )?;
+            crate::services::install::managed_mods::clear_downloads(&id,&cache);
+            preloader
+        }else{None};
         crate::services::game_prepare::prepare_files(&verified_entry,&root);
         crate::services::game_prepare::wait_for_steam(process_is_running,|waiting|{let _=app.emit("coco2://steam-starting",waiting);})?;
         // The first time on this PC, the fix gets its popup out of the way where nobody sees it.
@@ -577,6 +593,11 @@ pub async fn launch_standalone(id:String,app:AppHandle,state:State<'_,RuntimeSta
         let hashes_before=crate::services::game_prepare::current_hashes(&verified_entry,&root);
         // Recheck after hashing and resolve executable strictly under the verified root.
         let mut command=game_command(&verified_entry,&root)?;
+        if let Some(preloader)=managed_preloader {
+            command.env_remove("DOORSTOP_DISABLE")
+                .args(["--doorstop-enabled","true","--doorstop-target-assembly"])
+                .arg(preloader);
+        }
         // Answers the fix's credits box the moment it shows, should this PC's hash not hold.
         crate::services::launch_guard::guard_credits_box(GUARD_CREDITS_FOR);
         // Started paused and let go only once inside its job: a browser it opens, however early,

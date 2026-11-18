@@ -5,3 +5,5 @@
 *.ico binary
 *.png binary
 *.jpg binary
+# Coco hashes the lock's exact bytes to identify the installed profile.
+desktop/src-tauri/resources/lethal-company-mods.json -text !eol whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -26,6 +26,7 @@ function makeScenario(launchResult,observation){
     setOperationMessage:value=>events.push(['message',value]),
     setRuntime:value=>{runtime=value;events.push(['runtime',value?.state]);},
     setProgress:value=>events.push(['progress',value]),
+    setInstallProgress:()=>{},
     setObservedGameIds:fn=>{observedIds=fn(observedIds);},
     setGameProcessUncertain:value=>{uncertain=value;},
   };
@@ -34,6 +35,8 @@ function makeScenario(launchResult,observation){
     preparingRepair:null,repairCommitting:null,repairRecovering:null,
     updateRunning:{current:false},appUpdate:{stage:'idle'},isTauri:()=>true,
     nativeOperationGate,...setters,
+    nativeProgressSampler:{current:{reset(){}}},
+    nativeTransferRateMeter:{current:{reset(){}}},
     invoke:async name=>{
       calls.push(name);
       if(name==='launch_standalone'){

@@ -10,6 +10,7 @@ export type StatusInput={
   operation:{kind:'install'|'upgrade'|'repair'|'recover'|'move';name:string;description:string;percent:number;rate:string;metrics?:string}|null;
   mediaDownload:{title:string;percent:number;verifying:boolean}|null;
   launching:string|null;
+  launchMods?:{description:string;percent:number};
   playing:string[];
   processUncertain:boolean;
   uninstalling:string|null;
@@ -48,7 +49,8 @@ export function deriveLauncherStatus(input:StatusInput):LauncherStatus{
   if(input.uninstalling)
     return {tone:'busy',label:`Desinstalando ${input.uninstalling}`,detail:'Liberando espacio',percent:null};
   if(input.launching)
-    return {tone:'busy',label:`Abriendo ${input.launching}`,detail:'Comprobando sus archivos',percent:null};
+    return {tone:'busy',label:`Abriendo ${input.launching}`,
+      detail:input.launchMods?.description||'Comprobando sus archivos',percent:input.launchMods?.percent??null};
   if(input.playing.length)
     return {tone:'playing',label:input.playing.length===1?`Jugando ${input.playing[0]}`:`${input.playing.length} juegos abiertos`,
       detail:'',percent:null};

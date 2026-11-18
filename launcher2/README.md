@@ -1,5 +1,7 @@
 # Coco Launcher 2 — nuevo motor Rust
 
+**Coco 2 0.6.61:** publicado y verificado en `coco2-channel` (Latest sigue en `v0.5.186`). Lethal Company v81 instala sus mods con el juego o los prepara automáticamente al pulsar Jugar si ya estaba instalado. Incluye el selector común de emotes y conserva Jug Band. Validación de instalación nueva, preparación de una copia existente y arranque hasta el menú aprobadas. Setup de 60.311.904 bytes, SHA-256 `9d6eb88a15567bc16a760f4a3e03774b6a598f27c40f4f3cd1e0850d7e3a994d`. [Perfil y pruebas de compatibilidad](docs/LethalCompanyV81Mods.md).
+
 **Coco 2 0.6.60:** publicado en `coco2-channel` y verificado (Latest sigue en `v0.5.186`). Portadas nuevas de Other Mommy y Resident Evil: backdrops oficiales de TMDB sin texto, recortados a 2:1 con `scripts/Make-CocoCover.py`; procedimiento en `docs/AGENT_ADD_GAME.md` («Portadas»). Setup 60.180.774 bytes, SHA-256 `2dc717d4cc915e041b0d9fe3a11ebfaef74a3ef3e44643a97acd300837eb3083`.
 
 **Coco 2 0.6.59:** publicado en `coco2-channel` y verificado (Latest sigue en `v0.5.186`). Películas partidas por bytes en varios assets que el proxy sirve como un solo archivo (abre la parte siguiente unos 16 MB antes del corte); pista de subtítulos por película. Agrega Other Mommy (2026) en 4K, 3 partes, subtítulos en español; cortes en 28:30 y 58:23 medidos sin saltos de imagen. Setup 60.169.689 bytes, SHA-256 `8ec30f98b91f77cd194f50e6426bcbd11bfbf89d9432d966e45a87f5ee218478`. Rust 312 PASS, JS 568 PASS.
