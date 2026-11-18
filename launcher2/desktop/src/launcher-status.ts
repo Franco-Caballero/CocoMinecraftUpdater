@@ -12,6 +12,8 @@ export type StatusInput={
   launching:string|null;
   launchMods?:{description:string;percent:number};
   playing:string[];
+  /** A new Coco is ready but waits for the game to close: say so under "Jugando". */
+  playingUpdateWaiting?:boolean;
   processUncertain:boolean;
   uninstalling:string|null;
   authorizing:boolean;
@@ -53,7 +55,7 @@ export function deriveLauncherStatus(input:StatusInput):LauncherStatus{
       detail:input.launchMods?.description||'Comprobando sus archivos',percent:input.launchMods?.percent??null};
   if(input.playing.length)
     return {tone:'playing',label:input.playing.length===1?`Jugando ${input.playing[0]}`:`${input.playing.length} juegos abiertos`,
-      detail:'',percent:null};
+      detail:input.playingUpdateWaiting?'Cierra el juego para actualizar Coco':'',percent:null};
   if(input.installed)
     return {tone:'installed',label:'Instalado',subject:input.installed.name,detail:'Listo para jugar',percent:100};
   if(input.pendingRecovery>0)

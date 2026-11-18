@@ -1582,6 +1582,26 @@ function App(){
     },1500);
     return()=>window.clearTimeout(timer);
   },[bootstrapLoaded,startupUpdateSettled,introStage,updateInFlight]);
+  // A game stuck while quitting keeps "Jugando" and blocks Coco's update:
+  // the first click asks, the second ends its processes.
+  const [closeGameStep,setCloseGameStep]=useState<'idle'|'confirm'|'closing'>('idle');
+  useEffect(()=>{if(closeGameStep!=='confirm')return;const timer=window.setTimeout(()=>setCloseGameStep('idle'),6000);return()=>window.clearTimeout(timer);},[closeGameStep]);
+  const closeRunningGames=async()=>{
+    if(closeGameStep==='idle'){setCloseGameStep('confirm');return;}
+    if(closeGameStep!=='confirm')return;
+    setCloseGameStep('closing');
+    const ids=[...new Set([...observedGameIds,...(runtime?.state==='running'?[runtime.id]:[])])];
+    try{
+      for(const id of ids)await invoke<number>('close_game',{id});
+      await new Promise(resolve=>window.setTimeout(resolve,800));
+      const report=await invoke<ActiveGameProcessReport>('get_active_game_processes');
+      setObservedGameIds(current=>retainObservedGameIds(current,report.gameIds));
+      setGameProcessUncertain(report.status==='unknown');
+      if(runtime?.state==='running'&&!report.gameIds.includes(runtime.id))setRuntime(null);
+      setOperationMessage(report.gameIds.length?'Windows no dejó cerrar el juego. Ciérralo desde el Administrador de tareas.':'Juego cerrado.');
+    }catch(error){setOperationMessage(`No se pudo cerrar el juego: ${String(error)}`);}
+    finally{setCloseGameStep('idle');}
+  };
   // One paste for the host: the native report plus what this screen knows.
   const copyDiagnostic=async()=>{
     setDiagnosticNote('Preparando…');
@@ -1911,6 +1931,7 @@ function App(){
     launchMods:runtime?.state==='verifying'&&installProgress?.id===runtime.id&&installProgress.phase.startsWith('mods-')
       ?{description:nativeProgressDescription(installProgress.phase),percent:installProgress.percent}:undefined,
     playing:[...new Set([...observedGameIds,...(runtime?.state==='running'?[runtime.id]:[])])].map(entryName),
+    playingUpdateWaiting:appUpdate.stage==='deferred'&&Boolean(appUpdate.version),
     processUncertain:gameProcessUncertain,
     pendingRecovery:pendingOperations.length,
     arrival,
@@ -1952,6 +1973,7 @@ function App(){
           </div>
         </div>}
         {cancelCurrentOperation&&<button className="coco-status-action" onClick={cancelCurrentOperation}>{mediaCancelPending?'Cancelando…':'Cancelar'}</button>}
+        {launcherStatus.tone==='playing'&&<button className="coco-status-action" disabled={closeGameStep==='closing'} title="Para un juego que sigue abierto aunque cerraste su ventana" onClick={()=>void closeRunningGames()}>{closeGameStep==='confirm'?'¿Cerrar a la fuerza? Pulsa otra vez':closeGameStep==='closing'?'Cerrando…':'Cerrar juego'}</button>}
         {appUpdate.stage==='deferred'&&<button className="coco-status-action is-primary" disabled={nativeBusy||hostStudioOpen} onClick={()=>void applyAppUpdate()}>Actualizar Coco</button>}
       </div>
       <button className="coco-player" aria-label={`Perfil de ${identity.username||'jugador sin nombre'}`} onClick={()=>navigate('settings')}><ProfileAvatar src={avatar} name={identity.username}/><span>{identity.username||'Elige tu nombre'}</span><ArrowUpRight size={14}/></button>

@@ -71,6 +71,7 @@ pub fn run() {
             services::inventory::get_local_instances,
             services::status::get_engine_status,
             services::standalone::list_running_games,
+            services::standalone::close_game,
             services::standalone::get_active_game_processes,
             services::standalone::launch_standalone,
             services::session::get_session_status,

@@ -484,6 +484,37 @@ fn active_id(state:&RuntimeState)->Result<Vec<String>,String>{
         .map_err(|_|"Estado del juego no disponible".into())
 }
 
+/// "Cerrar juego": ends a game that stays alive after its window closed (a game
+/// stuck while quitting keeps Coco saying "Jugando" and blocks its update).
+/// Only processes that run from this game's registered folder, or that Coco
+/// started for it, and their children. Returns how many were ended.
+#[tauri::command]
+pub async fn close_game(id:String,state:State<'_,RuntimeState>)->Result<usize,String>{
+    let running=state.running.lock().map_err(|_|"Estado del juego no disponible")?.clone();
+    let history:Vec<(String,u32)>=state.launch_ancestors.lock().map_err(|_|"Estado del juego no disponible")?
+        .iter().filter(|entry|entry.started.elapsed()<ANCESTOR_TTL).map(|entry|(entry.game_id.clone(),entry.pid)).collect();
+    tauri::async_runtime::spawn_blocking(move||close_game_processes(&id,running,history))
+        .await.map_err(|_|"Cierre interrumpido".to_string())?
+}
+
+fn close_game_processes(id:&str,running:HashMap<String,u32>,history:Vec<(String,u32)>)->Result<usize,String>{
+    {
+        let direct=running.get(id).copied();
+        let report=active_snapshot(running,None,history);
+        let mut pids:std::collections::HashSet<u32>=report.matched_processes.iter()
+            .filter(|process|process.game_id==*id).map(|process|process.pid).collect();
+        pids.extend(direct);
+        if pids.is_empty(){return Ok(0);}
+        extend_process_tree(&mut pids);
+        let names:std::collections::HashMap<u32,String>=os_process_snapshot().unwrap_or_default().into_iter()
+            .map(|process|(process.pid,process.executable_name)).collect();
+        let mut closed=Vec::new();
+        for pid in &pids{if let Some(name)=names.get(pid){terminate_process(*pid);closed.push(format!("{name} ({pid})"));}}
+        crate::services::diagnostics::log("cerrar",&format!("{id}: cerrado a pedido del jugador: {}",closed.join(", ")));
+        Ok(closed.len())
+    }
+}
+
 #[tauri::command]
 pub fn list_running_games(state:State<'_,RuntimeState>)->Result<Vec<String>,String>{active_id(&state)}
 
@@ -636,6 +667,19 @@ pub async fn launch_standalone(id:String,app:AppHandle,state:State<'_,RuntimeSta
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Ends the real processes of COCO_CLOSE_GAME_ID on this PC (a game stuck after
+    /// its window closed), as the "Cerrar juego" button does.
+    #[test]
+    #[ignore]
+    fn closing_a_stuck_game_ends_only_its_processes(){
+        let id=std::env::var("COCO_CLOSE_GAME_ID").unwrap();
+        let closed=close_game_processes(&id,HashMap::new(),Vec::new()).unwrap();
+        assert!(closed>0,"no process of {id} found");
+        std::thread::sleep(Duration::from_millis(800));
+        let report=active_snapshot(HashMap::new(),None,Vec::new());
+        assert!(!report.game_ids.contains(&id),"{report:?}");
+    }
 
     fn root(id:&str,registered:&str,canonical:&str,exe:&str)->KnownGameRoot{
         KnownGameRoot{id:id.into(),registered:PathBuf::from(registered),
