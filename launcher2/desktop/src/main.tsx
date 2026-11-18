@@ -1586,13 +1586,13 @@ function App(){
   const copyDiagnostic=async()=>{
     setDiagnosticNote('Preparando…');
     try{
-      const copied=await copyDiagnosticReport([
+      const result=await copyDiagnosticReport([
         `Juegos instalados: ${[...installedIds].join(', ')||'ninguno'}`,
         `Pantalla: ${view}${selected?` · ${selected.id}`:''}`,
         `Último mensaje: ${operationMessage||'-'}`,
         `Actualización de Coco: ${appUpdate.stage}${appUpdate.message?` · ${appUpdate.message}`:''}`,
       ]);
-      setDiagnosticNote(copied?'Copiado. Pégalo en el chat con Coco.':'Windows no dejó copiar. Abre los registros y envía coco.log.');
+      setDiagnosticNote(result.copied?'Archivo copiado. Pégalo en el chat (Ctrl+V) y se envía como archivo.':'Windows no dejó copiar. Abre los registros y envía coco-diagnostico.txt.');
     }catch(error){setDiagnosticNote(`No se pudo preparar: ${String(error)}`);}
   };
   const checkDefender=async()=>{

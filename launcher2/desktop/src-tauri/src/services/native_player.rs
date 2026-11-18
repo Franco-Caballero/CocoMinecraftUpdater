@@ -59,6 +59,8 @@ mod win {
     extern "system"{
         fn LoadLibraryExW(path:*const u16,file:isize,flags:u32)->isize;
         fn GetProcAddress(module:isize,name:*const u8)->*mut c_void;
+        fn FreeLibrary(module:isize)->i32;
+        fn GetLastError()->u32;
     }
     type P=*mut c_void;
     type Lock=unsafe extern "C" fn(P,*mut P)->P;
@@ -72,6 +74,8 @@ mod win {
     struct VideoTrack{height:u32,width:u32,sar_num:u32,sar_den:u32,rate_num:u32,rate_den:u32,orientation:i32,projection:i32,viewpoint:[f32;4]}
     struct Api {
         _core:isize,_dll:isize,
+        /// Where the bundled runtime lives, for the repair copy and the log.
+        dir:PathBuf,
         new:unsafe extern "C" fn(i32,*const *const c_char)->P,
         /// Unused: the decoder instance lives for the whole session.
         _release:unsafe extern "C" fn(P),
@@ -104,10 +108,16 @@ mod win {
         if ptr.is_null(){return Err("Bundled decoder API incomplete".into());}
         Ok(unsafe{std::mem::transmute_copy(&ptr)})
     }
-    fn verify(directory:&Path)->Result<(),String>{
-        let manifest:serde_json::Value=serde_json::from_str(include_str!("../../resources/vlc-runtime-manifest.json")).map_err(|_|"Invalid decoder manifest")?;
+    fn manifest()->Result<serde_json::Value,String>{
+        serde_json::from_str(include_str!("../../resources/vlc-runtime-manifest.json")).map_err(|_|"Invalid decoder manifest".into())
+    }
+    fn verify(directory:&Path)->Result<(),String>{verify_where(directory,"")}
+    /// Checks every manifest file whose path starts with `prefix` (all of them for "").
+    fn verify_where(directory:&Path,prefix:&str)->Result<(),String>{
+        let manifest=manifest()?;
         for entry in manifest["files"].as_array().ok_or("Incomplete decoder manifest")?{
             let relative=entry["path"].as_str().ok_or("Invalid decoder path")?;
+            if !relative.starts_with(prefix){continue;}
             if relative.starts_with('/')||relative.split('/').any(|p|p==".."||p.contains(':')){return Err("Unsafe decoder path".into());}
             let path=directory.join(relative);
             let meta=std::fs::symlink_metadata(&path).map_err(|_|"Falta un archivo del motor de vídeo. Reinstala Coco.")?;
@@ -139,7 +149,7 @@ mod win {
             use std::os::windows::ffi::OsStrExt;
             let core=load("libvlccore.dll")?;let dll=load("libvlc.dll")?;
             unsafe{Ok(Arc::new(Api{
-                _core:core,_dll:dll,
+                _core:core,_dll:dll,dir:directory.to_path_buf(),
                 new:symbol(dll,b"libvlc_new\0")?,_release:symbol(dll,b"libvlc_release\0")?,
                 media:symbol(dll,b"libvlc_media_new_location\0")?,media_release:symbol(dll,b"libvlc_media_release\0")?,
                 media_option:symbol(dll,b"libvlc_media_add_option\0")?,tracks:symbol(dll,b"libvlc_media_tracks_get\0")?,tracks_release:symbol(dll,b"libvlc_media_tracks_release\0")?,
@@ -161,29 +171,101 @@ mod win {
         let lines:Vec<&str>=text.lines().filter(|line|!line.trim().is_empty()&&!line.contains("Cancellation")).collect();
         lines[lines.len().saturating_sub(6)..].join(" | ")
     }
+    /// Every plugin the decoder ships, loaded once by Windows the same way the
+    /// decoder loads it. With none loading the decoder cannot start, and the
+    /// Windows error says why (5: blocked by an antivirus, 126: missing DLL,
+    /// 1260/4551: blocked by a Windows policy). Goes to coco.log.
+    fn probe_plugins(plugins:&Path)->String{
+        fn walk(dir:&Path,files:&mut Vec<PathBuf>){
+            let Ok(entries)=std::fs::read_dir(dir)else{return};
+            for entry in entries.flatten(){let path=entry.path();if path.is_dir(){walk(&path,files);}else if path.extension().is_some_and(|e|e.eq_ignore_ascii_case("dll")){files.push(path);}}
+        }
+        let mut files=Vec::new();
+        walk(plugins,&mut files);
+        use std::os::windows::ffi::OsStrExt;
+        let (mut loaded,mut failures)=(0usize,Vec::new());
+        let mut codes=std::collections::BTreeMap::<u32,usize>::new();
+        for file in &files{
+            let wide:Vec<u16>=file.as_os_str().encode_wide().chain(Some(0)).collect();
+            let module=unsafe{LoadLibraryExW(wide.as_ptr(),0,0x1100)};
+            if module!=0{loaded+=1;unsafe{FreeLibrary(module);}continue;}
+            let code=unsafe{GetLastError()};*codes.entry(code).or_default()+=1;
+            if failures.len()<5{failures.push(format!("{} (error {code})",file.strip_prefix(plugins).unwrap_or(file).display()));}
+        }
+        let codes=codes.iter().map(|(code,count)|format!("error {code}×{count}")).collect::<Vec<_>>().join(", ");
+        format!("módulos en {}: {loaded}/{} cargan{}{}",plugins.display(),files.len(),
+            if codes.is_empty(){String::new()}else{format!(" · {codes}")},
+            if failures.is_empty(){String::new()}else{format!(" · p.ej. {}",failures.join("; "))})
+    }
+    /// Copies the verified plugins to Coco's own data folder. Fixes PCs where the
+    /// install folder's copy cannot be loaded (a damaged or locked install).
+    fn repair_copy(source:&Path)->Result<PathBuf,String>{
+        let local=std::env::var_os("LOCALAPPDATA").ok_or("Sin LOCALAPPDATA")?;
+        let version=manifest()?["version"].as_str().unwrap_or("runtime").to_owned();
+        let target=Path::new(&local).join("CocoLauncher2").join("player-runtime").join(version);
+        if verify_where(&target,"plugins/").is_ok(){return Ok(target.join("plugins"));}
+        for entry in manifest()?["files"].as_array().ok_or("Incomplete decoder manifest")?{
+            let Some(relative)=entry["path"].as_str().filter(|p|p.starts_with("plugins/"))else{continue};
+            if relative.split('/').any(|p|p==".."||p.contains(':')){return Err("Unsafe decoder path".into());}
+            let to=target.join(relative);
+            if let Some(parent)=to.parent(){std::fs::create_dir_all(parent).map_err(|e|format!("copia del motor: {e}"))?;}
+            std::fs::copy(source.join(relative),&to).map_err(|e|format!("copia del motor ({relative}): {e}"))?;
+        }
+        verify_where(&target,"plugins/")?;
+        Ok(target.join("plugins"))
+    }
+    /// The decoder reads VLC_PLUGIN_PATH through msvcrt's own copy of the
+    /// environment, which std::env::set_var does not reach after startup.
+    fn set_plugin_path(path:&Path)->bool{
+        let Some(text)=path.to_str().and_then(|t|CString::new(t).ok())else{return false};
+        let wide:Vec<u16>="msvcrt.dll".encode_utf16().chain(Some(0)).collect();
+        let module=unsafe{LoadLibraryExW(wide.as_ptr(),0,0x800)};
+        if module==0{return false;}
+        let Ok(putenv)=(unsafe{symbol::<unsafe extern "C" fn(*const c_char,*const c_char)->i32>(module,b"_putenv_s\0")})else{return false};
+        unsafe{putenv(c"VLC_PLUGIN_PATH".as_ptr(),text.as_ptr())==0}
+    }
     /// One decoder instance per session: scanning its plugins is the slow part of
     /// opening a film, so it happens once (and ahead of time, see `prewarm`).
+    /// A failure is not remembered, so "Reintentar" really tries again; the first
+    /// failure of the session writes the reason to coco.log and tries a repair copy.
     fn instance(api:&Api)->Result<usize,String>{
-        static INSTANCE:OnceLock<Result<usize,String>>=OnceLock::new();
-        INSTANCE.get_or_init(||{
-            let base=["--ignore-config","--no-osd","--no-video-title-show","--no-sub-autodetect-file","--no-stats","--no-media-library","--no-plugins-cache","--network-caching=1000"];
-            let mut logging=Vec::new();
-            if let Some(path)=vlc_log(){
-                if let Some(parent)=path.parent(){let _=std::fs::create_dir_all(parent);}
-                // The decoder appends; start each session clean so the file stays small.
-                let _=std::fs::remove_file(&path);
-                if let Some(text)=path.to_str(){logging=vec!["--file-logging".to_owned(),format!("--logfile={text}"),"--log-verbose=0".to_owned()];}
+        static INSTANCE:Mutex<Option<usize>>=Mutex::new(None);
+        static EXPLAINED:std::sync::atomic::AtomicBool=std::sync::atomic::AtomicBool::new(false);
+        let mut cached=INSTANCE.lock().map_err(|_|"Decoder unavailable")?;
+        if let Some(instance)=*cached{return Ok(instance);}
+        let base=["--ignore-config","--no-osd","--no-video-title-show","--no-sub-autodetect-file","--no-stats","--no-media-library","--no-plugins-cache","--network-caching=1000"];
+        let mut logging=Vec::new();
+        if let Some(path)=vlc_log(){
+            if let Some(parent)=path.parent(){let _=std::fs::create_dir_all(parent);}
+            // The decoder appends; start each session clean so the file stays small.
+            let _=std::fs::remove_file(&path);
+            if let Some(text)=path.to_str(){logging=vec!["--file-logging".to_owned(),format!("--logfile={text}"),"--log-verbose=0".to_owned()];}
+        }
+        let start=|extra:&[String]|{
+            let options:Vec<CString>=base.iter().map(|s|(*s).to_owned()).chain(extra.iter().cloned()).filter_map(|s|CString::new(s).ok()).collect();
+            let args:Vec<_>=options.iter().map(|s|s.as_ptr()).collect();
+            unsafe{(api.new)(args.len() as i32,args.as_ptr())}
+        };
+        let mut instance=start(&logging);
+        // A log the decoder cannot write must not keep films from playing.
+        if instance.is_null()&&!logging.is_empty(){instance=start(&[]);}
+        if instance.is_null()&&!EXPLAINED.swap(true,Ordering::AcqRel){
+            let log=|text:&str|crate::services::diagnostics::log("player",text);
+            log(&format!("el motor de vídeo no arranca desde {}",api.dir.display()));
+            log(&probe_plugins(&api.dir.join("plugins")));
+            let tail=vlc_log_tail();if !tail.is_empty(){log(&format!("motor: {tail}"));}
+            match repair_copy(&api.dir){
+                Ok(copy)=>{
+                    log(&probe_plugins(&copy));
+                    if set_plugin_path(&copy){instance=start(&logging);if instance.is_null(){instance=start(&[]);}}
+                    log(if instance.is_null(){"la copia de reparación tampoco arrancó"}else{"arrancó con la copia de reparación"});
+                }
+                Err(error)=>log(&format!("no se pudo crear la copia de reparación: {error}")),
             }
-            let start=|extra:&[String]|{
-                let options:Vec<CString>=base.iter().map(|s|(*s).to_owned()).chain(extra.iter().cloned()).filter_map(|s|CString::new(s).ok()).collect();
-                let args:Vec<_>=options.iter().map(|s|s.as_ptr()).collect();
-                unsafe{(api.new)(args.len() as i32,args.as_ptr())}
-            };
-            let mut instance=start(&logging);
-            // A log the decoder cannot write must not keep films from playing.
-            if instance.is_null()&&!logging.is_empty(){instance=start(&[]);}
-            if instance.is_null(){Err("Cannot initialize bundled decoder".into())}else{Ok(instance as usize)}
-        }).clone()
+        }
+        if instance.is_null(){return Err("Cannot initialize bundled decoder".into());}
+        *cached=Some(instance as usize);
+        Ok(instance as usize)
     }
     /// Loads and checks the decoder before the viewer presses play.
     pub fn prewarm(app:&tauri::AppHandle)->Result<(),String>{
@@ -382,6 +464,31 @@ mod win {
         if r.as_deref()==Some(id){*r=None;}drop(r);drop(player);Ok(true)
     }
     pub fn shutdown(){if let Ok(mut r)=reservation().lock(){*r=None;}if let Ok(mut guard)=slot().lock(){if let Some(player)=guard.take(){let _=std::thread::spawn(move||drop(player));}}}
+
+    /// A runtime whose plugins cannot be loaded (the friend's "Cannot initialize
+    /// bundled decoder") starts from the repair copy and logs why. Uses a copy of
+    /// COCO_PLAYER_RUNTIME and writes the repair copy under %LOCALAPPDATA%.
+    #[test]
+    #[ignore]
+    fn a_runtime_without_loadable_plugins_starts_from_the_repair_copy(){
+        let installed=PathBuf::from(std::env::var("COCO_PLAYER_RUNTIME").unwrap());
+        let broken=std::env::temp_dir().join(format!("coco-player-broken-{}",std::process::id()));
+        let _=std::fs::remove_dir_all(&broken);
+        fn copy(from:&Path,to:&Path){std::fs::create_dir_all(to).unwrap();for e in std::fs::read_dir(from).unwrap().flatten(){let p=e.path();if p.is_dir(){copy(&p,&to.join(e.file_name()));}else{std::fs::copy(&p,to.join(e.file_name())).unwrap();}}}
+        copy(&installed,&broken);
+        let api=api(&broken).unwrap();
+        // After verification, as when an antivirus blocks the plugins: none load.
+        std::fs::rename(broken.join("plugins"),broken.join("plugins-blocked")).unwrap();
+        std::fs::create_dir(broken.join("plugins")).unwrap();
+        assert!(probe_plugins(&broken.join("plugins")).contains(": 0/0 cargan"));
+        // repair_copy reads from the install; point it back at the real files.
+        let copy_dir=repair_copy(&installed).unwrap();
+        assert!(probe_plugins(&copy_dir).contains("cargan")&&!probe_plugins(&copy_dir).contains("error"));
+        assert!(instance(&api).is_ok(),"the repair copy must start the decoder");
+        let log=std::fs::read_to_string(Path::new(&std::env::var_os("LOCALAPPDATA").unwrap()).join("CocoLauncher2/logs/coco.log")).unwrap();
+        assert!(log.contains("arrancó con la copia de reparación"),"{log}");
+        let _=std::fs::remove_dir_all(&broken);
+    }
 
     #[test]
     #[ignore]

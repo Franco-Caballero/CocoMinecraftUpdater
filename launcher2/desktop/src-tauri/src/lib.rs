@@ -30,6 +30,7 @@ pub fn run() {
             services::uninstall::sweep_in_background();
             services::handoff::retire_launcher1_shortcuts_in_background();
             services::zerotier_host::accept_friends_in_background();
+            services::diagnostics::log_session_start(app.package_info().version.to_string());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -90,6 +91,7 @@ pub fn run() {
             services::diagnostics::log_event,
             services::diagnostics::get_diagnostic_report,
             services::diagnostics::open_log_folder,
+            services::diagnostics::copy_diagnostic_file,
             services::location::get_install_location,
             services::location::check_install_location,
             services::location::set_install_location,

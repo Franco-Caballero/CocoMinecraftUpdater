@@ -3,7 +3,7 @@ import { invoke as nativeInvoke, type InvokeArgs } from '@tauri-apps/api/core';
 /** Operations worth a line in the log even when they work, so a failure has its context. */
 const MILESTONES=new Set(['install_standalone','upgrade_standalone','launch_standalone','uninstall_standalone',
   'move_installation','commit_standalone_repair','prepare_windows','ensure_defender_exclusions']);
-const QUIET=new Set(['log_event','get_diagnostic_report']);
+const QUIET=new Set(['log_event','get_diagnostic_report','copy_diagnostic_file']);
 
 const describe=(args?:InvokeArgs)=>{
   const id=args&&typeof args==='object'&&!Array.isArray(args)&&'id' in args?String((args as Record<string,unknown>).id):'';
@@ -39,10 +39,8 @@ export function captureUnexpectedErrors(){
   window.addEventListener('unhandledrejection',event=>logEvent('crash',`promesa sin manejar: ${String(event.reason)}`));
 }
 
-/** Copies the report to paste to the host; returns false when the clipboard refused it. */
-export async function copyDiagnosticReport(extra:string[]):Promise<boolean>{
-  const report=await nativeInvoke<string>('get_diagnostic_report');
-  const text=[report.split('\n\n')[0],...extra,'',...report.split('\n\n').slice(1)].join('\n');
-  try{await navigator.clipboard.writeText(text);return true;}
-  catch{return false;}
+/** Saves the full report as coco-diagnostico.txt and puts that file on the clipboard,
+ * to paste in the chat as an attachment. `copied` is false when Windows refused the clipboard. */
+export async function copyDiagnosticReport(extra:string[]):Promise<{path:string,copied:boolean}>{
+  return nativeInvoke<{path:string,copied:boolean}>('copy_diagnostic_file',{extra});
 }
