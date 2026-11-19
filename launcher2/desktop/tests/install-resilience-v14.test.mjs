@@ -37,7 +37,7 @@ test('ZIP archive redirects are rejected before any insecure HTTP follow-up requ
 test('assembled split part publication never overwrites an existing user or foreign file',async()=>{
   const text=await source();
   assert.match(text,/fn publish_reassembled_file\(/);
-  assert.match(text,/fs::hard_link\(temporary,target\)/);
+  assert.match(text,/publish_new_file\(temporary,target\)/);
   assert.match(text,/publish_reassembled_file\(&temporary,&target\)\?/);
   assert.match(text,/fn split_publish_foreign_collision_preserves_destination/);
 });

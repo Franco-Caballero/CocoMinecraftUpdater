@@ -29,7 +29,7 @@ test('overlong and forged 206 must fail closed; full SHA and create-only publica
   assert.match(code,/fn overlong_206_range_must_fail_closed_without_partial_or_archive_v21/);
   assert.match(code,/if matches_digest\(&working, spec\.size, &hash, token\)\? \{ break; \}/);
   assert.match(code,/publish_verified_archive\(&working,&archive,spec,token\)\?/);
-  assert.match(code,/fs::hard_link\(work,archive\)/);
+  assert.match(code,/publish_new_file\(work,archive\)/);
   assert.match(code,/fn safe_archive_redirect\(\)->reqwest::redirect::Policy/);
   assert.match(code,/fn resumable_checkpoint\(cache:&Path, hash:&str, expected:u64, token:&AtomicBool\)/);
   assert.match(code,/fn pinned_unicode_zip_cache_denies_concurrent_writes_rename_and_same_size_asset_spoof/);

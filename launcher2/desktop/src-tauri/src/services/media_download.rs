@@ -746,7 +746,8 @@ fn transfer(
     no_links(&target.path)?;
     // Hardlink from *same directory* atomically refuses an existing user file
     // on both Windows and Unix, unlike fs::rename on Unix.
-    fs::hard_link(&target.partial,&target.path)
+    // Drives without hard links (exFAT) move the .partial instead, still create-new.
+    crate::services::install::publish_new_file(&target.partial,&target.path)
         .map_err(|_| "Verified media cannot be committed without overwriting existing user data")?;
     let _=fs::remove_file(&target.partial); // Only this managed .partial is removed.
     let _=fs::remove_file(&target.state);

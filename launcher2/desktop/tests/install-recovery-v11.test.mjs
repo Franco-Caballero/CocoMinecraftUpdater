@@ -17,8 +17,8 @@ test('interrupted downloads publish immutable checkpoints and resume greatest pr
   const code=await impl();
   assert.match(code,/struct PartialResumeGuard \{/);
   assert.match(code,/meta\.len\(\)>self\.previous_len/);
-  assert.match(code,/fs::hard_link\(&self\.work,&self\.canonical\)\.is_err\(\)/);
-  assert.match(code,/fs::hard_link\(&self\.work,&self\.checkpoint\)/);
+  assert.match(code,/publish_new_file\(&self\.work,&self\.canonical\)\.is_err\(\)/);
+  assert.match(code,/publish_new_file\(&self\.work,&self\.checkpoint\)/);
   assert.match(code,/fn resumable_checkpoint\(/);
   assert.match(code,/\.zip\.partial\.v11\./);
   assert.match(code,/let resume = resumable_checkpoint\(cache,&hash,spec\.size,token\)\?/);

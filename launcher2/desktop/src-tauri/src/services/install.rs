@@ -290,8 +290,8 @@ impl Drop for PartialResumeGuard {
                 if let Ok(file)=OpenOptions::new().read(true).write(true).open(&self.work) {
                     let _=file.sync_all();
                 }
-                if fs::hard_link(&self.work,&self.canonical).is_err(){
-                    let _=fs::hard_link(&self.work,&self.checkpoint);
+                if publish_new_file(&self.work,&self.canonical).is_err(){
+                    let _=publish_new_file(&self.work,&self.checkpoint);
                 }
             }
         }
@@ -407,13 +407,58 @@ fn retry_http_delay(attempt:usize,retry_after:Option<&str>,token:&AtomicBool)->R
     cancelled(token)
 }
 
+/// Publishes `from` at `to` only if `to` does not exist yet. A hard link is the
+/// normal route; drives without hard links (exFAT/FAT32 USB or second disks answer
+/// "Función incorrecta", os error 1) MOVE the file instead, still create-new:
+/// MoveFileExW without REPLACE_EXISTING never overwrites another writer's file.
+/// Either way `to` ends with `from`'s bytes; after a move `from` is gone.
+pub(crate) fn publish_new_file(from:&Path,to:&Path)->std::io::Result<()>{
+    publish_new_file_with(from,to,|from,to|fs::hard_link(from,to))
+}
+
+fn publish_new_file_with(from:&Path,to:&Path,link:impl Fn(&Path,&Path)->std::io::Result<()>)
+    ->std::io::Result<()>
+{
+    match link(from,to){
+        Err(error) if error.kind()!=std::io::ErrorKind::AlreadyExists=>{
+            if to.exists(){return Err(std::io::ErrorKind::AlreadyExists.into());}
+            move_new(from,to)
+        },
+        other=>other,
+    }
+}
+
+#[cfg(windows)]
+fn move_new(from:&Path,to:&Path)->std::io::Result<()>{
+    use std::os::windows::ffi::OsStrExt;
+    #[link(name="kernel32")]
+    unsafe extern "system" {
+        fn MoveFileExW(from:*const u16,to:*const u16,flags:u32)->i32;
+    }
+    let wide=|path:&Path|->Vec<u16>{path.as_os_str().encode_wide().chain(Some(0)).collect()};
+    const MOVEFILE_WRITE_THROUGH:u32=0x0000_0008;
+    if unsafe {MoveFileExW(wide(from).as_ptr(),wide(to).as_ptr(),MOVEFILE_WRITE_THROUGH)}==0{
+        let error=std::io::Error::last_os_error();
+        // 80 ERROR_FILE_EXISTS / 183 ERROR_ALREADY_EXISTS: someone else published first.
+        if matches!(error.raw_os_error(),Some(80|183)){return Err(std::io::ErrorKind::AlreadyExists.into());}
+        return Err(error);
+    }
+    Ok(())
+}
+
+#[cfg(not(windows))]
+fn move_new(from:&Path,to:&Path)->std::io::Result<()>{
+    if to.exists(){return Err(std::io::ErrorKind::AlreadyExists.into());}
+    fs::rename(from,to)
+}
+
 /// Both winners of a concurrent SHA cache race can reuse the same verified
 /// ZIP; a differently sized/hashed file remains an explicit conflict. This
 /// never replaces, truncates or removes the competing writer's entry.
 fn publish_verified_archive(work:&Path,archive:&Path,spec:&ArchiveSpec,token:&AtomicBool)
     -> Result<(),String>
 {
-    match fs::hard_link(work,archive){
+    match publish_new_file(work,archive){
         Ok(())=>Ok(()),
         Err(error) if error.kind()==std::io::ErrorKind::AlreadyExists=>{
             if matches_digest(archive,spec.size,&spec.sha256,token)? {Ok(())}
@@ -1871,8 +1916,9 @@ fn reassemble_splits(stage: &Path, token: &AtomicBool) -> Result<(), String> {
 fn publish_reassembled_file(temporary:&Path,target:&Path)->Result<(),String>{
     assert_no_links(temporary)?;
     assert_no_links(target)?;
-    fs::hard_link(temporary,target)
+    publish_new_file(temporary,target)
         .map_err(|e|format!("Salida dividida existente/bloqueada, sin sobrescribir: {e}"))?;
+    if !temporary.exists(){return Ok(());}
     fs::remove_file(temporary).map_err(|e|format!("No se pudo liberar temporal reensamblado: {e}"))
 }
 
@@ -3417,6 +3463,25 @@ mod tests {
         fs::remove_file(&archive).unwrap();
         publish_verified_archive(&private,&archive,&spec,&token).unwrap();
         assert!(matches_digest(&archive,spec.size,&spec.sha256,&token).unwrap());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_drive_without_hard_links_moves_the_verified_zip_without_overwriting(){
+        let root=temp_root("no-hard-links");
+        let work=root.join("work.zip");
+        let archive=root.join("archive.zip");
+        // exFAT answers hard links with ERROR_INVALID_FUNCTION (os error 1).
+        let exfat=|_:&Path,_:&Path|Err(std::io::Error::from_raw_os_error(1));
+        fs::write(&work,b"verified").unwrap();
+        publish_new_file_with(&work,&archive,exfat).unwrap();
+        assert_eq!(fs::read(&archive).unwrap(),b"verified");
+        assert!(!work.exists());
+        fs::write(&work,b"other").unwrap();
+        let error=publish_new_file_with(&work,&archive,exfat).unwrap_err();
+        assert_eq!(error.kind(),std::io::ErrorKind::AlreadyExists);
+        assert_eq!(fs::read(&archive).unwrap(),b"verified");
+        assert_eq!(fs::read(&work).unwrap(),b"other");
         fs::remove_dir_all(root).unwrap();
     }
 

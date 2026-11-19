@@ -33,7 +33,7 @@ test('full SHA mismatch on completed partial restarts only manifest-owned partia
   assert.match(code,/format!\("\{:x\}",digest\.clone\(\)\.finalize\(\)\)!=target\.sha256/);
   assert.match(code,/save_state\(&target\.state,&initial\)\?/);
   assert.match(code,/partial\.set_len\(0\)/);
-  assert.match(code,/fs::hard_link\(&target\.partial,&target\.path\)/);
+  assert.match(code,/publish_new_file\(&target\.partial,&target\.path\)/);
   assert.match(code,/fn fully_checkpointed_wrong_sha_recovers_next_invocation_without_user_overwrite/);
   assert.match(code,/media::upstream_allowed\(&url, local_fixture\)/);
 });

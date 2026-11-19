@@ -35,7 +35,7 @@ test('fresh CDN full SHA poison retries once and still denies publishing persist
   assert.match(code,/if may_restart_after_bad_sha && source\.scheme\(\)!="file"/);
   assert.match(code,/No se pudo reiniciar copia privada/);
   assert.match(code,/publish_verified_archive\(&working,&archive,spec,token\)\?/);
-  assert.match(code,/fs::hard_link\(work,archive\)/);
+  assert.match(code,/publish_new_file\(work,archive\)/);
   assert.match(code,/fn first_fresh_mirror_full_sha_poison_recovers_without_user_retry_v16/);
   assert.match(code,/fn repeated_fresh_mirror_full_sha_poison_refuses_publish_v16/);
 });
@@ -45,7 +45,7 @@ test('HTTPS redirect protection, bounded retries and immutable resume checkpoint
   assert.match(code,/fn safe_archive_redirect\(\)->reqwest::redirect::Policy/);
   assert.match(code,/fn mark_download_stage\(stage:&Path,hash:&str,size:u64\)/);
   assert.match(code,/fn resumable_checkpoint\(cache:&Path, hash:&str, expected:u64, token:&AtomicBool\)/);
-  assert.match(code,/fs::hard_link\(&self\.work,&self\.checkpoint\)/);
+  assert.match(code,/publish_new_file\(&self\.work,&self\.checkpoint\)/);
   assert.match(code,/const HTTP_ATTEMPTS: usize = 4/);
   assert.match(code,/const HTTP_ADVANCING_TRUNCATIONS: usize = 16/);
   assert.match(code,/fn rejected_resume_range_416_and_200_restart_once_without_touching_partial/);

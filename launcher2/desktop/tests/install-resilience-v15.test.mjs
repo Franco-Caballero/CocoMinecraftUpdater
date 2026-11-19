@@ -42,8 +42,14 @@ test('repeated short bodies count advancing offsets but cap malicious trickle',a
 test('SHA publication, immutability, checkpoints, HTTPS and save protection stay intact',async()=>{
   const code=await source();
   assert.match(code,/if matches_digest\(&working, spec\.size, &hash, token\)\? \{ break; \}/);
-  assert.match(code,/fs::hard_link\(work,archive\)/);
-  assert.match(code,/fs::hard_link\(&self\.work,&self\.canonical\)/);
+  assert.match(code,/publish_new_file\(work,archive\)/);
+  // Create-new publication: hard link, or on drives without hard links (exFAT) a move
+  // that never replaces an existing file (MoveFileExW without REPLACE_EXISTING).
+  assert.match(code,/publish_new_file_with\(from,to,\|from,to\|fs::hard_link\(from,to\)\)/);
+  assert.match(code,/if to\.exists\(\)\{return Err\(std::io::ErrorKind::AlreadyExists\.into\(\)\);\}\s*move_new\(from,to\)/);
+  assert.match(code,/MoveFileExW\(wide\(from\)\.as_ptr\(\),wide\(to\)\.as_ptr\(\),MOVEFILE_WRITE_THROUGH\)/);
+  assert.doesNotMatch(code,/MOVEFILE_REPLACE_EXISTING/);
+  assert.match(code,/publish_new_file\(&self\.work,&self\.canonical\)/);
   assert.match(code,/fn mark_download_stage\(stage:&Path,hash:&str,size:u64\)/);
   assert.match(code,/if source\.scheme\(\)!="https" && source\.scheme\(\)!="file" && !synthetic_http_fixture\(&source\)/);
   assert.match(code,/fn safe_archive_redirect\(\)->reqwest::redirect::Policy/);
