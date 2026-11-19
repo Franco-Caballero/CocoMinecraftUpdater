@@ -2525,5 +2525,46 @@
       }
     ],
     "extraFiles": []
+  },
+  {
+    "id": "just-volleyball",
+    "instanceId": "just-volleyball",
+    "workflow": "coco-standalone",
+    "version": "1.0.0",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/just-volleyball-1.0.0/just-volleyball-1.0.0-part01.zip",
+        "sha256": "c2a61b1834d8c11e49ec0b5de2434b0eb1f9acea2b470ef9ea9befceb69f9239",
+        "size": 207308572
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "just volleyball/steam_api64.dll",
+        "sha256": "c4e0d0bcad937a9273c754bb01a0386189171bbd10a95f0a93bf52f99ab6d9ca",
+        "size": 11234216
+      },
+      {
+        "path": "just volleyball/steam_api64_o.dll",
+        "sha256": "8de54d32508e216c9135b8bf025749243d44e404c1c22a8e5fe35acecabe7a9c",
+        "size": 319128
+      },
+      {
+        "path": "just volleyball/steam_settings/configs.main.ini",
+        "sha256": "a78aa33ac06b354e520885a7214517db3a8e1a5a4c59f4d5d6a535ad4830bda4",
+        "size": 681
+      },
+      {
+        "path": "just volleyball/steam_settings/configs.user.ini",
+        "sha256": "cc7d2652a95b056fb1e11efa4e11a498e35c2836de8599f67d66c315fd58be72",
+        "size": 568
+      },
+      {
+        "path": "just volleyball/volleyball.exe",
+        "sha256": "09f8e3bfacec1c645bb5a47e88ab05a56c110578a3b622dd16445e642b765c56",
+        "size": 256242600
+      }
+    ],
+    "extraFiles": []
   }
 ]

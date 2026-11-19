@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "just-volleyball",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/just-volleyball-1.0.0/just-volleyball-1.0.0-part01.zip",
+    "sha256": "c2a61b1834d8c11e49ec0b5de2434b0eb1f9acea2b470ef9ea9befceb69f9239",
+    "size": 207308572
+  }
+}

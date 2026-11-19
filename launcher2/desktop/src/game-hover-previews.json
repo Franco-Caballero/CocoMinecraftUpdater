@@ -255,5 +255,11 @@
     "steamAppId": 4019220,
     "trailerId": 257195686,
     "bytes": 2062813
+  },
+  "just-volleyball": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/5037200/1155622392/91d52fb30eed058bfe9c1ca1c054834f1b4effe1/1793633336/microtrailer.webm",
+    "steamAppId": 5037200,
+    "trailerId": 257488969,
+    "bytes": 1908584
   }
 }

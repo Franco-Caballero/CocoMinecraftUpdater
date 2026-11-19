@@ -306,6 +306,12 @@
       "packVersion": "2026.10.21",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "just-volleyball",
+      "packVersion": "1.0.0",
+      "host": "",
+      "port": 0
     }
   ]
 }

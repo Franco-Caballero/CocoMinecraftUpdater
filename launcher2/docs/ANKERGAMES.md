@@ -135,6 +135,7 @@ Un fix distinto **no es motivo para descartar el juego**. Coco no exige Online-F
 
 1. **Identifica qué trae:** `steam_api64.dll` con `steam_settings/` (Goldberg), `rune.ini` o `steam_emu.ini` (RUNE/CODEX), carpetas o DLL de EOS, PlayFab o un fix propio (`union-crax`…). Lee los `.ini`/`.txt` de la carpeta (no los `.bat`) para saber cómo se conecta: Steam (Spacewar 480), EOS/PlayFab por internet o LAN/IP directa.
 2. **Empaquétalo tal cual.** No borres los archivos del emulador ni del fix: aquí son el multijugador. No añadas el juego a `online-fix.json`. El nombre de jugador lo pone el `.ini` del emulador; no inventes cuentas ni credenciales.
+   - **Goldberg (`steam_settings/configs.user.ini`) con `account_steamid=` fijo:** quítale esa línea con `--override` (copia en `prepared`). Si no, todos los amigos tienen el mismo SteamID y chocan en la partida; sin la línea, el emulador genera uno por PC y lo guarda en su carpeta global. Conserva `account_name` y `configs.main.ini` (`listen_port`, red activada). La primera vez Windows pregunta por el Firewall: hay que pulsar «Permitir» (Coco no lo gestiona).
 3. **Prueba en 7b** que llega al menú y, si puedes, que se crea una partida o sala (menú de multijugador, lobby, «host»). Si necesita Steam abierto, ábrelo y anótalo.
 4. **Anota en la descripción del juego cómo se juega con amigos** si no es automático (p. ej. «conecta por IP con la red Coco» o «invita por código de sala»).
 5. Descártalo solo si no llega al menú, exige una cuenta real de terceros que no tenemos o el multijugador está claramente cortado (el menú online no hace nada). Ante la duda, publícalo igualmente: se puede retirar después (guía maestra, «Retirar un juego»).
@@ -279,6 +280,7 @@ Después:
 | Grocery Store Simulator | `/game/grocery-store-simulator` | 92 | 2961880 | 1.2.4 | 6.623.041.166 B (5 partes, RAR de origen, `--split-large`) | `grocery-store-simulator-1.2.4` | Unreal, `Binaries/Win64` | Setup 0.6.55 (lleva un `Read Me.txt` inofensivo) |
 | Paint the Town Red | `/game/paint-the-town-red` | 716 | 337320 | 1.3.4 | 2.527.207.121 B (2 partes) | `paint-the-town-red-1.3.4` | Unity 64 IL2CPP (conserva `1=`) | Setup 0.6.55 |
 | Lethal Company | `/game/lethal-company` | 233 | 1966720 | 81 | 731.543.135 B | `lethal-company-81` | Unity 64 (`dlllist.txt`) | Canal s28 |
+| just volleyball | `/game/just-volleyball` | 7705 | 5037200 | 1.0.0 | 207.308.572 B | `just-volleyball-1.0.0` | Godot, Goldberg (sin Online-Fix; `account_steamid` quitado) | Canal s30 |
 
 Gamble With Your Friends no vino de AnkerGames por enlace: era una carpeta ya descargada (receta de la guía maestra).
 

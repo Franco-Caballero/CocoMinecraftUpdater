@@ -4859,6 +4859,76 @@
     "serverName": "Coco - Dressmaker"
   },
   "files": []
+},
+        {
+  "id": "just-volleyball",
+  "name": "just volleyball",
+  "ui": {
+    "imagePath": "assets/experiences/just-volleyball.jpg"
+  },
+  "description": "V\u00f3ley arcade con controles simples y mucha t\u00e9cnica: apunta con el cursor y mu\u00e9vete a mano en partidos de 1 contra 1 hasta equipos de 6 contra 6. Practica solo con bots o juega con amigos en la red Coco.",
+  "instanceId": "just-volleyball",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "just volleyball/volleyball.exe",
+    "requiredFiles": [
+      {
+        "path": "just volleyball/steam_api64.dll",
+        "size": 11234216,
+        "sha256": "c4e0d0bcad937a9273c754bb01a0386189171bbd10a95f0a93bf52f99ab6d9ca",
+        "archiveSha256": "c2a61b1834d8c11e49ec0b5de2434b0eb1f9acea2b470ef9ea9befceb69f9239"
+      },
+      {
+        "path": "just volleyball/steam_api64_o.dll",
+        "size": 319128,
+        "sha256": "8de54d32508e216c9135b8bf025749243d44e404c1c22a8e5fe35acecabe7a9c",
+        "archiveSha256": "c2a61b1834d8c11e49ec0b5de2434b0eb1f9acea2b470ef9ea9befceb69f9239"
+      },
+      {
+        "path": "just volleyball/steam_settings/configs.main.ini",
+        "size": 681,
+        "sha256": "a78aa33ac06b354e520885a7214517db3a8e1a5a4c59f4d5d6a535ad4830bda4",
+        "archiveSha256": "c2a61b1834d8c11e49ec0b5de2434b0eb1f9acea2b470ef9ea9befceb69f9239"
+      },
+      {
+        "path": "just volleyball/steam_settings/configs.user.ini",
+        "size": 568,
+        "sha256": "cc7d2652a95b056fb1e11efa4e11a498e35c2836de8599f67d66c315fd58be72",
+        "archiveSha256": "c2a61b1834d8c11e49ec0b5de2434b0eb1f9acea2b470ef9ea9befceb69f9239"
+      },
+      {
+        "path": "just volleyball/volleyball.exe",
+        "size": 256242600,
+        "sha256": "09f8e3bfacec1c645bb5a47e88ab05a56c110578a3b622dd16445e642b765c56",
+        "archiveSha256": "c2a61b1834d8c11e49ec0b5de2434b0eb1f9acea2b470ef9ea9befceb69f9239"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-just-volleyball",
+    "lockPath": "launcher/experiences/just-volleyball.lock.json",
+    "version": "1.0.0",
+    "sha256": "c2a61b1834d8c11e49ec0b5de2434b0eb1f9acea2b470ef9ea9befceb69f9239",
+    "size": 207308572,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/just-volleyball-1.0.0/just-volleyball-1.0.0-part01.zip",
+        "sha256": "c2a61b1834d8c11e49ec0b5de2434b0eb1f9acea2b470ef9ea9befceb69f9239",
+        "size": 207308572
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - just volleyball"
+  },
+  "files": []
 }
   ]
 }
