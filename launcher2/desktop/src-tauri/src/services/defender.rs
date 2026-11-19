@@ -2,6 +2,8 @@
 //! Exclusions need one UAC approval and cover game folders and Coco's cache, never a whole
 //! drive or a personal folder. Defender does not let a normal user read its exclusions, so
 //! what was added is remembered here and Windows is only asked about what is new.
+//! The same approval lets each game's program through Windows Firewall, so a LAN game
+//! never stops on «¿Quieres permitir que las redes accedan a esta aplicación?».
 use crate::services::inventory;
 use serde::{Deserialize,Serialize};
 use serde_json::{Map,Value};
@@ -19,7 +21,7 @@ const WORK_FOLDER_PATTERNS:&[&str]=&[".coco2-stage-*",".coco-moving-*",".coco-mo
 
 #[derive(Debug,Default,Serialize,Deserialize)]
 #[serde(rename_all="camelCase",default)]
-struct State{paths:Vec<String>,retry_after:u64,network_retry_after:u64}
+struct State{paths:Vec<String>,retry_after:u64,network_retry_after:u64,firewall:Vec<String>}
 
 fn retry_pending(state:&State,network:bool,timestamp:u64)->bool{
     timestamp<if network{state.network_retry_after}else{state.retry_after}
@@ -71,6 +73,32 @@ fn desired_paths(app_data:&Path,local_data:&Path,locations:&Map<String,Value>,ex
 }
 
 fn powershell_literal(value:&str)->String{format!("'{}'",value.replace('\'',"''"))}
+
+/// The programs of a game that open network ports: its executable and every other .exe it
+/// declares (an Unreal `-Shipping.exe` behind a launcher). Crash reporters never listen.
+pub(crate) fn game_programs<'a>(root:&Path,executable:&'a str,declared:impl IntoIterator<Item=&'a str>)->Vec<PathBuf>{
+    let mut programs:Vec<PathBuf>=Vec::new();
+    for relative in std::iter::once(executable).chain(declared){
+        let lower=relative.to_ascii_lowercase();
+        if !lower.ends_with(".exe")||lower.contains("crashhandler")||lower.contains("crashreport"){continue;}
+        if relative.split(['/','\\']).any(|part|part==".."||part.is_empty()){continue;}
+        let path=root.join(relative.replace('/',"\\"));
+        if !programs.iter().any(|known|normalized(&known.display().to_string())==normalized(&path.display().to_string())){programs.push(path);}
+    }
+    programs
+}
+
+/// One allow rule per program, named after it so a repeat replaces instead of piling up.
+/// Windows' own block rules for that program (left when someone pressed «Cancelar» on its
+/// prompt) are removed: a block rule wins over any allow rule.
+fn firewall_script(programs:&[String])->String{
+    if programs.is_empty(){return String::new();}
+    let list=programs.iter().map(|path|powershell_literal(path)).collect::<Vec<_>>().join(",");
+    format!("foreach($g in @({list})){{try{{$n='Coco - '+$g;\
+Get-NetFirewallApplicationFilter -Program $g -ErrorAction SilentlyContinue|Get-NetFirewallRule -ErrorAction SilentlyContinue|Where-Object{{$_.Direction -eq 'Inbound' -and $_.Action -eq 'Block'}}|Remove-NetFirewallRule -ErrorAction SilentlyContinue;\
+Get-NetFirewallRule -DisplayName $n -ErrorAction SilentlyContinue|Remove-NetFirewallRule -ErrorAction SilentlyContinue;\
+New-NetFirewallRule -DisplayName $n -Direction Inbound -Action Allow -Program $g -Profile Any -ErrorAction Stop|Out-Null;$done+=('firewall:'+$g)}}catch{{$done+=('firewall:error:'+$_.Exception.Message)}}}};")
+}
 
 fn elevated_script(paths:&[String],result:&Path,extra:&str)->String{
     let list=paths.iter().map(|path|powershell_literal(path)).collect::<Vec<_>>().join(",");
@@ -205,11 +233,11 @@ fn defender_installed()->bool{
     false
 }
 
-fn request(app:Option<&AppHandle>,extra:&[PathBuf],force:bool)->&'static str{
-    request_with(app,extra,force,None)
+fn request(app:Option<&AppHandle>,extra:&[PathBuf],programs:&[PathBuf],force:bool)->&'static str{
+    request_with(app,extra,programs,force,None)
 }
 
-fn request_with(app:Option<&AppHandle>,extra:&[PathBuf],force:bool,zerotier:Option<String>)->&'static str{
+fn request_with(app:Option<&AppHandle>,extra:&[PathBuf],programs:&[PathBuf],force:bool,zerotier:Option<String>)->&'static str{
     let (Some(app_data),Some(local_data))=(std::env::var_os("APPDATA"),std::env::var_os("LOCALAPPDATA")) else {return "failed"};
     let (app_data,local_data)=(PathBuf::from(app_data),PathBuf::from(local_data));
     let locations=inventory::custom_locations(&local_data).unwrap_or_default();
@@ -219,7 +247,12 @@ fn request_with(app:Option<&AppHandle>,extra:&[PathBuf],force:bool,zerotier:Opti
     let mut state=read_state(&state_path);
     let defender=defender_installed();
     let missing:Vec<String>=if defender{desired.into_iter().filter(|path|!covered(path,&state.paths)).collect()}else{Vec::new()};
-    if missing.is_empty()&&zerotier.is_none(){return if defender{"present"}else{"unavailable"};}
+    let mut firewall:Vec<String>=Vec::new();
+    for program in programs.iter().filter(|path|is_local_absolute(path)).map(|path|path.display().to_string()){
+        let key=normalized(&program);
+        if !state.firewall.iter().any(|known|normalized(known)==key)&&!firewall.iter().any(|known|normalized(known)==key){firewall.push(program);}
+    }
+    if missing.is_empty()&&firewall.is_empty()&&zerotier.is_none(){return if defender{"present"}else{"unavailable"};}
     let networking=zerotier.is_some();
     // A previous Defender refusal must not silently suppress a new LAN repair
     // for six hours (or seven days). Each permission has its own quiet period.
@@ -227,26 +260,31 @@ fn request_with(app:Option<&AppHandle>,extra:&[PathBuf],force:bool,zerotier:Opti
     let result=state_path.with_file_name(format!("defender-result-{}.txt",std::process::id()));
     let _=fs::remove_file(&result);
     if let Some(app)=app{let _=app.emit(AUTHORIZATION_EVENT,true);}
-    let elevation=run_elevated(&elevated_script(&missing,&result,zerotier.as_deref().unwrap_or_default()));
+    let extra_script=format!("{}{}",firewall_script(&firewall),zerotier.as_deref().unwrap_or_default());
+    let elevation=run_elevated(&elevated_script(&missing,&result,&extra_script));
     if let Some(app)=app{let _=app.emit(AUTHORIZATION_EVENT,false);}
     let status=match elevation{
         Elevation::Declined=>{
             if networking{state.network_retry_after=now()+DECLINED_RETRY_SECONDS;}
-            if !missing.is_empty(){state.retry_after=now()+DECLINED_RETRY_SECONDS;}
+            if !missing.is_empty()||!firewall.is_empty(){state.retry_after=now()+DECLINED_RETRY_SECONDS;}
             "declined"
         }
         Elevation::Failed=>"failed",
         Elevation::Finished=>{
             let lines:Vec<String>=fs::read_to_string(&result).unwrap_or_default().lines()
                 .map(|line|line.trim_start_matches('\u{feff}').trim().to_string()).filter(|line|!line.is_empty()).collect();
-            for line in lines.iter().filter(|line|line.starts_with("zerotier:")||line.starts_with("error:")){
+            for line in lines.iter().filter(|line|line.starts_with("zerotier:")||line.starts_with("error:")||line.starts_with("firewall:")){
                 crate::services::diagnostics::log("windows",line);
             }
+            let allowed:Vec<String>=lines.iter().filter_map(|line|line.strip_prefix("firewall:"))
+                .filter(|program|!program.starts_with("error:")).map(str::to_string).collect();
+            let firewall_complete=allowed.len()==firewall.len();
+            state.firewall.extend(allowed);
             let network_complete=lines.iter().any(|line|line=="zerotier:lan")
                 &&!lines.iter().any(|line|line.starts_with("zerotier:error:"));
-            let added:Vec<String>=lines.into_iter().filter(|line|!line.starts_with("zerotier:")&&!line.starts_with("error:")).collect();
-            let complete=added.len()==missing.len();
-            let zerotier_only=missing.is_empty();
+            let added:Vec<String>=lines.into_iter().filter(|line|!line.starts_with("zerotier:")&&!line.starts_with("error:")&&!line.starts_with("firewall:")).collect();
+            let complete=added.len()==missing.len()&&firewall_complete;
+            let zerotier_only=missing.is_empty()&&firewall.is_empty();
             state.paths.extend(added);
             // No Defender (another antivirus) or a policy that forbids it: do not nag. A ZeroTier-only
             // prompt is not repeated right away either if the join did not take.
@@ -261,15 +299,15 @@ fn request_with(app:Option<&AppHandle>,extra:&[PathBuf],force:bool,zerotier:Opti
 }
 
 /// Never blocks playing: if Windows says no, the game still gets its chance to run.
-pub(crate) fn ensure(app:&AppHandle,extra:&[PathBuf]){
-    let status=request(Some(app),extra,false);
+pub(crate) fn ensure(app:&AppHandle,extra:&[PathBuf],programs:&[PathBuf]){
+    let status=request(Some(app),extra,programs,false);
     if !matches!(status,"present"|"skipped"){crate::services::diagnostics::log("defender",&format!("exclusiones al abrir: {status}"));}
 }
 
 /// Installing or moving into a folder is something the player just chose, so it asks even inside
 /// the quiet period after an earlier «No»: otherwise Defender could strip the fix files on the way.
-pub(crate) fn ensure_for_new_folder(app:&AppHandle,root:&Path){
-    let status=request(Some(app),std::slice::from_ref(&root.to_path_buf()),true);
+pub(crate) fn ensure_for_new_folder(app:&AppHandle,root:&Path,programs:&[PathBuf]){
+    let status=request(Some(app),std::slice::from_ref(&root.to_path_buf()),programs,true);
     if status!="present"{crate::services::diagnostics::log("defender",&format!("exclusiones al instalar o mover: {status}"));}
 }
 
@@ -302,7 +340,7 @@ pub async fn prepare_windows(app:AppHandle)->Result<&'static str,String>{
     tauri::async_runtime::spawn_blocking(move||{
         // The verified MSI stays locked against changes until Windows has installed it.
         let _locked=msi;
-        let status=request_with(Some(&app),&[],false,script);
+        let status=request_with(Some(&app),&[],&[],false,script);
         crate::services::diagnostics::log("windows",&format!("preparación al abrir: {status}"));
         status
     }).await.map_err(|error|format!("Autorización interrumpida: {error}"))
@@ -310,7 +348,7 @@ pub async fn prepare_windows(app:AppHandle)->Result<&'static str,String>{
 
 #[tauri::command]
 pub async fn ensure_defender_exclusions(app:AppHandle)->Result<&'static str,String>{
-    tauri::async_runtime::spawn_blocking(move||request(Some(&app),&[],true))
+    tauri::async_runtime::spawn_blocking(move||request(Some(&app),&[],&[],true))
         .await.map_err(|error|format!("Autorización interrumpida: {error}"))
 }
 
@@ -441,6 +479,54 @@ function Set-NetIPInterface {[CmdletBinding()]param([Parameter(ValueFromPipeline
         assert!(!without.contains("msiexec"),"an installed ZeroTier is never reinstalled");
         let whole=elevated_script(&["C:\\G".into()],Path::new("C:\\r.txt"),&without);
         assert!(whole.find("join").unwrap()<whole.find("WriteAllLines").unwrap(),"results are written after ZeroTier");
+    }
+
+    #[test]
+    fn a_game_gets_firewall_rules_for_its_programs_only(){
+        let root=Path::new("D:\\Juegos\\grocery");
+        let programs=game_programs(root,"Grocery/Grocery.exe",["Grocery/Binaries/Win64/Grocery-Win64-Shipping.exe",
+            "Grocery/Grocery.exe","Engine/Binaries/Win64/CrashReportClient.exe","UnityCrashHandler64.exe",
+            "Grocery/Binaries/Win64/OnlineFix64.dll","../evil.exe"]);
+        assert_eq!(programs,vec![root.join("Grocery\\Grocery.exe"),root.join("Grocery\\Binaries\\Win64\\Grocery-Win64-Shipping.exe")]);
+    }
+
+    #[test]
+    fn firewall_rules_ride_on_the_same_prompt_and_remove_windows_block_rules(){
+        let script=firewall_script(&["D:\\it's';calc;'\\volleyball.exe".to_string()]);
+        assert!(script.contains("@('D:\\it''s'';calc;''\\volleyball.exe')"),"program path is one quoted literal");
+        assert!(script.contains("-Action Allow -Program $g -Profile Any"));
+        assert!(script.contains("$_.Action -eq 'Block'"));
+        assert!(firewall_script(&[]).is_empty());
+        let whole=elevated_script(&[],Path::new("C:\\r.txt"),&script);
+        assert!(whole.find("New-NetFirewallRule").unwrap()<whole.find("WriteAllLines").unwrap());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn the_elevated_script_with_firewall_rules_parses_in_windows_powershell(){
+        let script=elevated_script(&["C:\\G".into()],Path::new("C:\\r.txt"),
+            &format!("{}{}",firewall_script(&["C:\\G\\game's.exe".into()]),zerotier_script(None,Path::new("C:\\L"))));
+        let check=format!("$e=$null;[void][Management.Automation.Language.Parser]::ParseInput([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('{}')),[ref]$null,[ref]$e);$e.Count",encoded_command(&script));
+        let output=std::process::Command::new("powershell.exe").args(["-NoProfile","-NonInteractive","-Command",&check]).output().unwrap();
+        assert_eq!(String::from_utf8_lossy(&output.stdout).trim(),"0","{}",String::from_utf8_lossy(&output.stderr));
+    }
+
+    /// Real Windows check (asks for UAC): the rule is created for a program, read back while
+    /// elevated, and removed again. COCO_FIREWALL_PROGRAM names any .exe path.
+    #[cfg(windows)]
+    #[test]
+    #[ignore]
+    fn real_firewall_rule_is_created_and_removed(){
+        let program=std::env::var("COCO_FIREWALL_PROGRAM").expect("COCO_FIREWALL_PROGRAM");
+        let result=std::env::temp_dir().join(format!("coco-firewall-{}.txt",std::process::id()));
+        let check=format!("$r=Get-NetFirewallRule -DisplayName ('Coco - '+{p}) -ErrorAction SilentlyContinue;$done+=('rule:'+[string]$r.Action+'|'+[string]$r.Direction+'|'+(($r|Get-NetFirewallApplicationFilter).Program));$r|Remove-NetFirewallRule;",p=powershell_literal(&program));
+        let script=elevated_script(&[],&result,&format!("{}{}",firewall_script(std::slice::from_ref(&program)),check));
+        assert!(matches!(run_elevated(&script),Elevation::Finished),"UAC accepted");
+        let lines=fs::read_to_string(&result).unwrap();
+        let _=fs::remove_file(&result);
+        println!("{lines}");
+        assert!(lines.contains(&format!("firewall:{program}")),"{lines}");
+        assert!(lines.contains(&format!("rule:Allow|Inbound|{program}")),"{lines}");
     }
 
     #[test]

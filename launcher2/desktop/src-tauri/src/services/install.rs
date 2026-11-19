@@ -2483,7 +2483,10 @@ pub async fn install_standalone(id: String, app: AppHandle, state: State<'_, Ins
     tauri::async_runtime::spawn_blocking(move || {
         let _guard = ActiveGuard { id: m.id.clone(), active };
         // Before any byte arrives: Defender removes Online-Fix files as they unpack.
-        crate::services::defender::ensure_for_new_folder(&app, &target);
+        // The same approval lets the game's programs through Windows Firewall.
+        let programs = crate::services::defender::game_programs(&target, &m.executable,
+            m.required_files.iter().map(|file| file.path.as_str()));
+        crate::services::defender::ensure_for_new_folder(&app, &target, &programs);
         let result = install_new(&m, &target, &cache, &token, |phase, file, done, total| {
             emit_progress(&app, &m.id, phase, file, done, total);
         });

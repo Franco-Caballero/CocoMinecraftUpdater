@@ -14,7 +14,7 @@ test('ZeroTier is set up on first open inside the one Windows prompt, never from
   assert.match(main,/invoke<string>\('prepare_windows'\)/);
   assert.doesNotMatch(main,/join_coco_network|install_zerotier_msi|<h2>Multijugador<\/h2>/,'no network buttons left for the friend');
   assert.match(lib,/services::defender::prepare_windows/);
-  assert.match(defender,/fn prepare_windows[\s\S]*?zerotier_script\(msi[\s\S]*?request_with\(Some\(&app\),&\[\],false,script\)/,'one elevation for Defender and ZeroTier');
+  assert.match(defender,/fn prepare_windows[\s\S]*?zerotier_script\(msi[\s\S]*?request_with\(Some\(&app\),&\[\],&\[\],false,script\)/,'one elevation for Defender and ZeroTier');
   assert.match(defender,/service_installed==Some\(false\)/,'only installs ZeroTier when it is missing');
   assert.match(defender,/pinned_installer/,'only the SHA-pinned bundled MSI');
 });

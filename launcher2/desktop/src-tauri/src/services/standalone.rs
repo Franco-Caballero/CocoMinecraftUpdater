@@ -582,7 +582,10 @@ pub async fn launch_standalone(id:String,app:AppHandle,state:State<'_,RuntimeSta
         if !root.is_absolute()||root.to_string_lossy().starts_with("\\\\"){
             return Err("La ruta de la instancia no es local".into());
         }
-        crate::services::defender::ensure(&app,std::slice::from_ref(&root));
+        // Games installed before Coco handled the firewall get their rule on the next launch.
+        let programs=crate::services::defender::game_programs(&root,&entry.executable,
+            entry.required_files.iter().map(|file|file.path.as_str()));
+        crate::services::defender::ensure(&app,std::slice::from_ref(&root),&programs);
         // When the signed channel advances to B, allow an intact installed A
         // to launch with A's trusted manifest; a mutable receipt alone never
         // supplies paths/hashes, and a pending journal always blocks launch.

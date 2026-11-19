@@ -316,7 +316,7 @@ pub async fn move_installation(id:String,parent:Option<String>,app:AppHandle,run
         install::assert_can_remove(&roots.current,&entry.id,&entry.instance_id)?;
         let chosen=destination_parent(parent,&roots)?;
         let root=validate_destination(&chosen,&entry.instance_id,&roots.current,&roots.others)?;
-        crate::services::defender::ensure_for_new_folder(&app,&root);
+        crate::services::defender::ensure_for_new_folder(&app,&root,&[]);
         let previous=roots.locations.get(&entry.instance_id).and_then(Value::as_str).map(str::to_string);
         let total=uninstall::measure(&roots.current).0.saturating_mul(2);
         let (mut done,mut last)=(0u64,Instant::now());
