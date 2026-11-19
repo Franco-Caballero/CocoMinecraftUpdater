@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "experienceId": "dressmaker",
+  "type": "standalone",
+  "files": [],
+  "archive": {
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/dressmaker-2026.10.21/dressmaker-2026.10.21-part01.zip",
+    "sha256": "7b324d6fa70309ce020edf016eedc1f5857b2ae01b03058f9ac5d7c2a26f60c0",
+    "size": 355495377
+  }
+}

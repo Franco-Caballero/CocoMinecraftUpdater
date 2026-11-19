@@ -4795,6 +4795,70 @@
     "serverName": "Coco - Lethal Company"
   },
   "files": []
+},
+        {
+  "id": "dressmaker",
+  "name": "Dressmaker",
+  "ui": {
+    "imagePath": "assets/experiences/dressmaker.jpg"
+  },
+  "description": "Juego relajante de costura para un jugador: elige la tela, corta las piezas seg\u00fan los patrones y cose vestidos por encargo para los clientes de tu taller.",
+  "instanceId": "dressmaker",
+  "managementMode": "managed",
+  "runtime": {
+    "type": "standalone",
+    "executable": "Dressmaker.exe",
+    "requiredFiles": [
+      {
+        "path": "Dressmaker.exe",
+        "size": 667648,
+        "sha256": "58223bf2923cb2ca984d1a7f80cfdc7862dd4400a17049188ff12b05d2ac9907",
+        "archiveSha256": "7b324d6fa70309ce020edf016eedc1f5857b2ae01b03058f9ac5d7c2a26f60c0"
+      },
+      {
+        "path": "Dressmaker_Data/Plugins/x86_64/steam_api64.dll",
+        "size": 11423144,
+        "sha256": "cc5a2c9cb93fdbde7dadb825138ab7f694e3f8c310cdd675f733eaa784cbcc3e",
+        "archiveSha256": "7b324d6fa70309ce020edf016eedc1f5857b2ae01b03058f9ac5d7c2a26f60c0"
+      },
+      {
+        "path": "Dressmaker_Data/Plugins/x86_64/steam_settings/configs.user.ini",
+        "size": 1659,
+        "sha256": "2af6e70b2f5ca493200b1882445d8baec8e3efcedabf44daea530adf618adc11",
+        "archiveSha256": "7b324d6fa70309ce020edf016eedc1f5857b2ae01b03058f9ac5d7c2a26f60c0"
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "size": 35766696,
+        "sha256": "120ed568564d9184cdea3dac92d5762977f6ade6fabc510d453be12c419ee052",
+        "archiveSha256": "7b324d6fa70309ce020edf016eedc1f5857b2ae01b03058f9ac5d7c2a26f60c0"
+      }
+    ]
+  },
+  "pack": {
+    "packId": "standalone-dressmaker",
+    "lockPath": "launcher/experiences/dressmaker.lock.json",
+    "version": "2026.10.21",
+    "sha256": "7b324d6fa70309ce020edf016eedc1f5857b2ae01b03058f9ac5d7c2a26f60c0",
+    "size": 355495377,
+    "archives": [
+      {
+        "archiveUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/dressmaker-2026.10.21/dressmaker-2026.10.21-part01.zip",
+        "sha256": "7b324d6fa70309ce020edf016eedc1f5857b2ae01b03058f9ac5d7c2a26f60c0",
+        "size": 355495377
+      }
+    ]
+  },
+  "hosting": {
+    "mode": "p2p"
+  },
+  "launch": {
+    "workflow": "coco-standalone",
+    "arguments": [],
+    "autoJoin": false,
+    "serverName": "Coco - Dressmaker"
+  },
+  "files": []
 }
   ]
 }

@@ -249,5 +249,11 @@
     "steamAppId": 1966720,
     "trailerId": 256961309,
     "bytes": 985526
+  },
+  "dressmaker": {
+    "url": "https://video.akamai.steamstatic.com/store_trailers/4019220/1773598328/55042e1338f7c3c2bceab0322f61b697a7950ba9/1789984950/microtrailer.webm",
+    "steamAppId": 4019220,
+    "trailerId": 257195686,
+    "bytes": 2062813
   }
 }

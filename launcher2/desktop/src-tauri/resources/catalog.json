@@ -2191,5 +2191,40 @@
     "executable": "Lethal Company/Lethal Company.exe",
     "launchArguments": [],
     "hostingMode": "p2p"
+  },
+  {
+    "id": "dressmaker",
+    "instanceId": "dressmaker",
+    "name": "Dressmaker",
+    "image": "/covers/dressmaker.jpg.webp",
+    "description": "Juego relajante de costura para un jugador: elige la tela, corta las piezas según los patrones y cose vestidos por encargo para los clientes de tu taller.",
+    "workflow": "coco-standalone",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [
+      {
+        "path": "Dressmaker.exe",
+        "sha256": "58223bf2923cb2ca984d1a7f80cfdc7862dd4400a17049188ff12b05d2ac9907",
+        "size": 667648
+      },
+      {
+        "path": "Dressmaker_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "cc5a2c9cb93fdbde7dadb825138ab7f694e3f8c310cdd675f733eaa784cbcc3e",
+        "size": 11423144
+      },
+      {
+        "path": "Dressmaker_Data/Plugins/x86_64/steam_settings/configs.user.ini",
+        "sha256": "2af6e70b2f5ca493200b1882445d8baec8e3efcedabf44daea530adf618adc11",
+        "size": 1659
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "120ed568564d9184cdea3dac92d5762977f6ade6fabc510d453be12c419ee052",
+        "size": 35766696
+      }
+    ],
+    "executable": "Dressmaker.exe",
+    "launchArguments": [],
+    "hostingMode": "p2p"
   }
 ]

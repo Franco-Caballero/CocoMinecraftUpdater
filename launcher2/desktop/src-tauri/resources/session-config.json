@@ -300,6 +300,12 @@
       "packVersion": "81",
       "host": "",
       "port": 0
+    },
+    {
+      "id": "dressmaker",
+      "packVersion": "2026.10.21",
+      "host": "",
+      "port": 0
     }
   ]
 }

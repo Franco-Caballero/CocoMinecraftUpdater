@@ -2489,5 +2489,41 @@
       }
     ],
     "extraFiles": []
+  },
+  {
+    "id": "dressmaker",
+    "instanceId": "dressmaker",
+    "workflow": "coco-standalone",
+    "version": "2026.10.21",
+    "archives": [
+      {
+        "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/dressmaker-2026.10.21/dressmaker-2026.10.21-part01.zip",
+        "sha256": "7b324d6fa70309ce020edf016eedc1f5857b2ae01b03058f9ac5d7c2a26f60c0",
+        "size": 355495377
+      }
+    ],
+    "requiredFiles": [
+      {
+        "path": "Dressmaker.exe",
+        "sha256": "58223bf2923cb2ca984d1a7f80cfdc7862dd4400a17049188ff12b05d2ac9907",
+        "size": 667648
+      },
+      {
+        "path": "Dressmaker_Data/Plugins/x86_64/steam_api64.dll",
+        "sha256": "cc5a2c9cb93fdbde7dadb825138ab7f694e3f8c310cdd675f733eaa784cbcc3e",
+        "size": 11423144
+      },
+      {
+        "path": "Dressmaker_Data/Plugins/x86_64/steam_settings/configs.user.ini",
+        "sha256": "2af6e70b2f5ca493200b1882445d8baec8e3efcedabf44daea530adf618adc11",
+        "size": 1659
+      },
+      {
+        "path": "UnityPlayer.dll",
+        "sha256": "120ed568564d9184cdea3dac92d5762977f6ade6fabc510d453be12c419ee052",
+        "size": 35766696
+      }
+    ],
+    "extraFiles": []
   }
 ]
