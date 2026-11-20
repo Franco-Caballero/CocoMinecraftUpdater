@@ -371,18 +371,45 @@ fn with_account_name(content:&str,name:&str)->String{
     let mut out=lines.join(newline);out.push_str(newline);out
 }
 
-/// Every `steam_settings\configs.user.ini` of the game gets the player's name.
+/// An emulator INI that already has `key=`: that line gets the player's name, nothing else changes.
+fn with_existing_key(content:&str,key:&str,name:&str)->String{
+    let newline=if content.contains("\r\n"){"\r\n"}else{"\n"};
+    let mut out=content.lines().map(|line|{
+        if line.split_once('=').is_some_and(|(k,_)|k.trim().eq_ignore_ascii_case(key)){format!("{key}={name}")}else{line.to_string()}
+    }).collect::<Vec<_>>().join(newline);
+    if !content.is_empty(){out.push_str(newline);}
+    out
+}
+
+fn write_if_changed(file:&Path,content:&str,updated:String,name:&str){
+    if updated==content{return;}
+    match fs::write(file,updated){
+        Ok(())=>crate::services::diagnostics::log("game",&format!("nombre de jugador {name} en {}",file.display())),
+        Err(error)=>crate::services::diagnostics::log("game",&format!("no se pudo poner el nombre en {}: {error}",file.display())),
+    }
+}
+
+fn in_steam_settings(file:&Path)->bool{
+    file.parent().and_then(|dir|dir.file_name()).is_some_and(|dir|dir.to_string_lossy().eq_ignore_ascii_case("steam_settings"))
+}
+
+/// Steam emulators a game ships with show the player's Coco name instead of the uploader's:
+/// Goldberg/GSE (`steam_settings\configs.user.ini`), old Goldberg
+/// (`steam_settings\force_account_name.txt`) and RUNE/CODEX (`steam_emu.ini`, `rune.ini`
+/// `UserName=`). Online-Fix games use the real Steam name and are left alone.
 pub(crate) fn set_player_name(root:&Path,name:&str){
-    for file in find_named(root,"configs.user.ini"){
-        let in_settings=file.parent().and_then(|dir|dir.file_name()).is_some_and(|dir|dir.to_string_lossy().eq_ignore_ascii_case("steam_settings"));
-        if !in_settings{continue;}
+    for file in find_named(root,"configs.user.ini").into_iter().filter(|file|in_steam_settings(file)){
         let Ok(content)=fs::read_to_string(&file) else {continue};
-        let updated=with_account_name(&content,name);
-        if updated!=content{
-            match fs::write(&file,updated){
-                Ok(())=>crate::services::diagnostics::log("game",&format!("nombre de jugador {name} en {}",file.display())),
-                Err(error)=>crate::services::diagnostics::log("game",&format!("no se pudo poner el nombre en {}: {error}",file.display())),
-            }
+        write_if_changed(&file,&content,with_account_name(&content,name),name);
+    }
+    for file in find_named(root,"force_account_name.txt").into_iter().filter(|file|in_steam_settings(file)){
+        let Ok(content)=fs::read_to_string(&file) else {continue};
+        write_if_changed(&file,&content,name.to_string(),name);
+    }
+    for ini in ["steam_emu.ini","rune.ini"]{
+        for file in find_named(root,ini){
+            let Ok(content)=fs::read_to_string(&file) else {continue};
+            write_if_changed(&file,&content,with_existing_key(&content,"UserName",name),name);
         }
     }
 }
@@ -648,6 +675,23 @@ account_name=Ana
 "));
         assert_eq!(std::fs::read_to_string(dir.join("configs.user.ini")).unwrap(),"account_name=Other
 ");
+        let _=std::fs::remove_dir_all(&dir);
+    }
+    #[test]
+    fn other_steam_emulators_get_the_player_name_too(){
+        let codex="[Settings]\r\nUserName=CODEX\r\nLanguage=english\r\n";
+        assert_eq!(super::with_existing_key(codex,"UserName","Ana"),"[Settings]\r\nUserName=Ana\r\nLanguage=english\r\n");
+        assert_eq!(super::with_existing_key("[Settings]\nLanguage=english\n","UserName","Ana"),"[Settings]\nLanguage=english\n");
+        let dir=std::env::temp_dir().join(format!("coco-emu-name-{}",std::process::id()));
+        let settings=dir.join("steam_settings");
+        std::fs::create_dir_all(&settings).unwrap();
+        std::fs::write(settings.join("force_account_name.txt"),"Uploader").unwrap();
+        std::fs::write(dir.join("steam_emu.ini"),codex).unwrap();
+        std::fs::write(dir.join("force_account_name.txt"),"Other").unwrap();
+        super::set_player_name(&dir,"Ana");
+        assert_eq!(std::fs::read_to_string(settings.join("force_account_name.txt")).unwrap(),"Ana");
+        assert!(std::fs::read_to_string(dir.join("steam_emu.ini")).unwrap().contains("UserName=Ana\r\n"));
+        assert_eq!(std::fs::read_to_string(dir.join("force_account_name.txt")).unwrap(),"Other");
         let _=std::fs::remove_dir_all(&dir);
     }
 
