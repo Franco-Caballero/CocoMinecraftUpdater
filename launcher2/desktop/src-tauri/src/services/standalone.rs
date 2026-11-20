@@ -614,6 +614,11 @@ pub async fn launch_standalone(id:String,app:AppHandle,state:State<'_,RuntimeSta
             preloader
         }else{None};
         crate::services::game_prepare::prepare_files(&verified_entry,&root);
+        // Goldberg games show the name chosen in Coco's profile, not the uploader's.
+        if let Ok(crate::services::identity::LocalIdentity{username:Some(name),..})=crate::services::identity::get_local_identity_at_path(
+            &crate::services::identity::identity_path_from_local_app_data(&local_data)){
+            crate::services::game_prepare::set_player_name(&root,&name);
+        }
         crate::services::game_prepare::wait_for_steam(process_is_running,|waiting|{let _=app.emit("coco2://steam-starting",waiting);})?;
         // The first time on this PC, the fix gets its popup out of the way where nobody sees it.
         if crate::services::game_prepare::needs_first_run(&verified_entry,&root){

@@ -351,6 +351,42 @@ fn remove_stale_host_files(root:&Path){
     for file in find_named(root,"ip.txt"){let _=fs::remove_file(file);}
 }
 
+/// Goldberg's `account_name` with the player's Coco name: a packaged config names everyone
+/// after the uploader («AnkerGames»). Only the key changes; the rest of the file is kept.
+fn with_account_name(content:&str,name:&str)->String{
+    let newline=if content.contains("
+"){"
+"}else{"
+"};
+    let mut lines:Vec<String>=content.lines().map(str::to_string).collect();
+    let line=format!("account_name={name}");
+    if let Some(at)=lines.iter().position(|l|l.trim_start().starts_with("account_name")&&l.split('=').next().is_some_and(|k|k.trim()=="account_name")){
+        lines[at]=line;
+    }else if let Some(at)=lines.iter().position(|l|l.trim().eq_ignore_ascii_case("[user::general]")){
+        lines.insert(at+1,line);
+    }else{
+        if lines.last().is_some_and(|l|!l.trim().is_empty()){lines.push(String::new());}
+        lines.push("[user::general]".into());lines.push(line);
+    }
+    let mut out=lines.join(newline);out.push_str(newline);out
+}
+
+/// Every `steam_settings\configs.user.ini` of the game gets the player's name.
+pub(crate) fn set_player_name(root:&Path,name:&str){
+    for file in find_named(root,"configs.user.ini"){
+        let in_settings=file.parent().and_then(|dir|dir.file_name()).is_some_and(|dir|dir.to_string_lossy().eq_ignore_ascii_case("steam_settings"));
+        if !in_settings{continue;}
+        let Ok(content)=fs::read_to_string(&file) else {continue};
+        let updated=with_account_name(&content,name);
+        if updated!=content{
+            match fs::write(&file,updated){
+                Ok(())=>crate::services::diagnostics::log("game",&format!("nombre de jugador {name} en {}",file.display())),
+                Err(error)=>crate::services::diagnostics::log("game",&format!("no se pudo poner el nombre en {}: {error}",file.display())),
+            }
+        }
+    }
+}
+
 pub(crate) fn prepare_files(entry:&Experience,root:&Path){
     prepare_online_fix(entry,root);
     remove_stale_host_files(root);
@@ -580,6 +616,41 @@ pub(crate) fn watch_popups(root_pid:u32,process_tree:impl Fn(&mut HashSet<u32>)-
 
 #[cfg(test)]
 mod tests{
+    #[test]
+    fn the_player_name_replaces_the_packaged_account_name_and_keeps_the_rest(){
+        let packaged="[user::general]
+# user account name
+account_name=AnkerGames
+language=english
+";
+        assert_eq!(super::with_account_name(packaged,"Coco_1"),"[user::general]
+# user account name
+account_name=Coco_1
+language=english
+");
+        assert_eq!(super::with_account_name("[user::general]
+language=english
+","Ana"),"[user::general]
+account_name=Ana
+language=english
+");
+        assert_eq!(super::with_account_name("","Ana"),"[user::general]
+account_name=Ana
+");
+        let dir=std::env::temp_dir().join(format!("coco-goldberg-name-{}",std::process::id()));
+        let settings=dir.join("game").join("steam_settings");
+        std::fs::create_dir_all(&settings).unwrap();
+        std::fs::write(settings.join("configs.user.ini"),packaged).unwrap();
+        std::fs::write(dir.join("configs.user.ini"),"account_name=Other
+").unwrap();
+        super::set_player_name(&dir,"Ana");
+        assert!(std::fs::read_to_string(settings.join("configs.user.ini")).unwrap().contains("account_name=Ana
+"));
+        assert_eq!(std::fs::read_to_string(dir.join("configs.user.ini")).unwrap(),"account_name=Other
+");
+        let _=std::fs::remove_dir_all(&dir);
+    }
+
     use super::*;
     use crate::services::catalog::RequiredFile;
     use std::sync::atomic::{AtomicU64,Ordering};
