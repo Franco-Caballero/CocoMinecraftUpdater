@@ -454,4 +454,31 @@ body{background:#0b0a0f}
   .coco-player{display:none}.coco-room{margin-left:0}.coco-status{margin:0 10px 10px}
   .coco2-desktop .coco-latest-card{grid-template-columns:1fr}
 }
+/* ---- Detail drawer notices: same card language as «En este PC» / «Carpeta» ---- */
+.coco2-desktop .detail-drawer :is(.coco-action-hint,.operation-message,.coco-install-summary>p,.coco-native-failure-card,.verify-control,.drawer-note){margin:12px 0 0;padding:11px 12px;background:var(--ink-3);border:1px solid var(--line-soft);border-radius:4px;box-shadow:none;color:var(--dim);font:400 12px/1.5 var(--body);animation:coco-rise-in .26s var(--snap)}
+.coco2-desktop .detail-drawer .coco-action-hint{display:flex;align-items:center;gap:11px}
+.coco2-desktop .detail-drawer .coco-notice-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.coco2-desktop .detail-drawer .coco-notice-copy small{font:400 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.coco2-desktop .detail-drawer .coco-notice-copy p{margin:0;color:var(--cream);font-size:12px;line-height:1.45}
+.coco2-desktop .detail-drawer .operation-message{display:flex;align-items:flex-start;gap:9px;color:var(--cream)}
+.coco2-desktop .detail-drawer .operation-message svg{flex:none;margin-top:2px;color:var(--gold)}
+.coco2-desktop .detail-drawer .operation-message[role="alert"]{border-color:color-mix(in srgb,var(--gold) 38%,transparent);background:color-mix(in srgb,var(--gold) 6%,var(--ink-3))}
+.coco2-desktop .detail-drawer .verify-control p,.coco2-desktop .detail-drawer .drawer-note{color:var(--dim)}
+.coco2-desktop .detail-drawer .verify-control .drawer-note{margin:10px 0 0;padding:10px 0 0;background:none;border:0;border-top:1px solid var(--line-soft);border-radius:0}
+.coco2-desktop .detail-drawer .verify-title{display:flex;align-items:center;gap:9px;color:var(--gold)}
+.coco2-desktop .detail-drawer .verify-title strong{color:var(--cream)}
+.coco2-desktop .detail-drawer .upgrade-version{font:400 11px var(--mono);color:var(--dim)}
+.coco2-desktop .detail-drawer .upgrade-version strong{font:800 17px/1 var(--display);color:var(--cream)}
+.coco2-desktop .detail-drawer .upgrade-version svg{color:var(--hot)}
+.coco2-desktop .detail-drawer .coco-native-failure-card>strong{display:block;font:400 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.coco2-desktop .detail-drawer .coco-native-failure-card>p{margin:6px 0 11px;font-size:12px;line-height:1.5;color:var(--cream)}
+.coco2-desktop .detail-drawer .coco-native-failure-path{margin-top:10px;padding:10px 0 0;background:none;border:0;border-top:1px solid var(--line-soft);border-radius:0}
+.coco2-desktop .detail-drawer .coco-native-failure-path small,.coco2-desktop .detail-drawer .coco-native-quoted-file small{font:400 9.5px var(--mono);letter-spacing:.04em;color:var(--faint)}
+.coco2-desktop .detail-drawer .coco-native-failure-path code{font:500 11px/1.4 var(--mono);color:var(--cream);background:none;padding:0}
+.coco2-desktop .detail-drawer .coco-defender-evidence{margin:10px 0 0;padding:10px 0 0;background:none;border:0;border-top:1px solid var(--line-soft);border-radius:0;font-size:11.5px;line-height:1.55;color:var(--dim)}
+.coco2-desktop .detail-drawer .coco-failure-help{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line-soft)}
+.coco2-desktop .detail-drawer .repair-advanced{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft);color:var(--dim);font-size:11.5px}
+.coco2-desktop .detail-drawer .repair-advanced summary{color:var(--faint);font:400 10px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.coco2-desktop .detail-drawer .coco-native-failure-card .operation-message{margin-top:10px}
+.coco2-desktop .detail-drawer .coco-media-loading{margin-top:12px}
 @media(prefers-reduced-motion:reduce){.coco2-desktop *,.coco2-desktop *::before,.coco2-desktop *::after{animation:none!important;transition:none!important}}

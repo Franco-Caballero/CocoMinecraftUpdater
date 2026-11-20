@@ -2048,7 +2048,7 @@ function App(){
           })()}
           <button className="secondary-button" aria-label="Favorito" aria-pressed={favorites.has(selected.id)} onClick={()=>toggleFavorite(selected.id)}><Heart size={16} fill={favorites.has(selected.id)?'currentColor':'none'}/></button>
         </div>
-        {primaryGame&&primaryGame.kind==='disabled'&&installing!==selected.id&&moving!==selected.id&&<p id="gamePrimaryHint" className="coco-action-hint" role="status">{primaryGame.reason}</p>}
+        {primaryGame&&primaryGame.kind==='disabled'&&installing!==selected.id&&moving!==selected.id&&<div id="gamePrimaryHint" className="coco-action-hint" role="status"><span className="coco-storage-icon">{primaryGame.pending?<LoaderCircle className="spin" size={16}/>:primaryGame.label==='Juego activo'?<Play size={16}/>:<CircleAlert size={16}/>}</span><div className="coco-notice-copy"><small>{primaryGame.label}</small><p>{primaryGame.reason}</p></div></div>}
         {selected.workflow==='coco-media'&&(()=>{
           const media=mediaCatalog.find(x=>x.id===selected.id);
           return <>
