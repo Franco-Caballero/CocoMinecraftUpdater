@@ -152,6 +152,17 @@ mod win {
         if let Some(path)=std::env::var_os("COCO_PLAYER_RUNTIME"){return Ok(plain(Path::new(&path)));}
         Ok(plain(&app.path().resource_dir().map_err(|_|"Missing resource directory")?.join("player")))
     }
+    /// The engine's module index (`plugins/plugins.dat`). With it the engine opens only the few
+    /// modules a film needs; without it, it opens all 360 to learn what each does, and an
+    /// antivirus scans every one (33 s seen on a friend's PC instead of under a second).
+    /// Coco ships one built on the installed files; when it does not fit this PC (another time
+    /// zone, files changed) the slow start is noticed and the next start rebuilds it here.
+    const PLUGIN_CACHE:&str="plugins.dat";
+    /// A start slower than this read the modules one by one: the index did not fit.
+    const SLOW_START:Duration=Duration::from_millis(1500);
+    fn rebuild_cache_marker()->Option<PathBuf>{
+        std::env::var_os("LOCALAPPDATA").map(|local|Path::new(&local).join("CocoLauncher2").join("player-runtime").join("rebuild-plugins-cache"))
+    }
     /// Marks that this PC needs the repair copy, so later sessions start with it directly.
     fn prefer_copy_marker()->Option<PathBuf>{
         std::env::var_os("LOCALAPPDATA").map(|local|Path::new(&local).join("CocoLauncher2").join("player-runtime").join("use-copy"))
@@ -227,7 +238,12 @@ mod win {
         let local=std::env::var_os("LOCALAPPDATA").ok_or("Sin LOCALAPPDATA")?;
         let version=manifest()?["version"].as_str().unwrap_or("runtime").to_owned();
         let target=Path::new(&local).join("CocoLauncher2").join("player-runtime").join(version);
-        if verify_where(&target,"plugins/").is_ok(){return Ok(target.join("plugins"));}
+        let index=|| {
+            // Best effort: the copy keeps the install's file times, so the same index fits it.
+            let (from,to)=(source.join(PLUGIN_CACHE),target.join("plugins").join(PLUGIN_CACHE));
+            if from.is_file()&&!to.is_file(){let _=std::fs::copy(from,to);}
+        };
+        if verify_where(&target,"plugins/").is_ok(){index();return Ok(target.join("plugins"));}
         for entry in manifest()?["files"].as_array().ok_or("Incomplete decoder manifest")?{
             let Some(relative)=entry["path"].as_str().filter(|p|p.starts_with("plugins/"))else{continue};
             if relative.split('/').any(|p|p==".."||p.contains(':')){return Err("Unsafe decoder path".into());}
@@ -236,6 +252,7 @@ mod win {
             std::fs::copy(source.join(relative),&to).map_err(|e|format!("copia del motor ({relative}): {e}"))?;
         }
         verify_where(&target,"plugins/")?;
+        index();
         Ok(target.join("plugins"))
     }
     /// The decoder reads VLC_PLUGIN_PATH through msvcrt's own copy of the
@@ -257,7 +274,9 @@ mod win {
         static EXPLAINED:std::sync::atomic::AtomicBool=std::sync::atomic::AtomicBool::new(false);
         let mut cached=INSTANCE.lock().map_err(|_|"Decoder unavailable")?;
         if let Some(instance)=*cached{return Ok(instance);}
-        let base=["--ignore-config","--no-osd","--no-video-title-show","--no-sub-autodetect-file","--no-stats","--no-media-library","--no-plugins-cache","--network-caching=1000"];
+        let base=["--ignore-config","--no-osd","--no-video-title-show","--no-sub-autodetect-file","--no-stats","--no-media-library","--network-caching=1000"];
+        let rebuild=rebuild_cache_marker().is_some_and(|marker|marker.exists());
+        let started=std::time::Instant::now();
         let mut logging=Vec::new();
         if let Some(path)=vlc_log(){
             if let Some(parent)=path.parent(){let _=std::fs::create_dir_all(parent);}
@@ -266,7 +285,9 @@ mod win {
             if let Some(text)=path.to_str(){logging=vec!["--file-logging".to_owned(),format!("--logfile={text}"),"--log-verbose=0".to_owned()];}
         }
         let start=|extra:&[String]|{
-            let options:Vec<CString>=base.iter().map(|s|(*s).to_owned()).chain(extra.iter().cloned()).filter_map(|s|CString::new(s).ok()).collect();
+            let options:Vec<CString>=base.iter().map(|s|(*s).to_owned())
+                .chain(rebuild.then(||"--reset-plugins-cache".to_owned()))
+                .chain(extra.iter().cloned()).filter_map(|s|CString::new(s).ok()).collect();
             let args:Vec<_>=options.iter().map(|s|s.as_ptr()).collect();
             unsafe{(api.new)(args.len() as i32,args.as_ptr())}
         };
@@ -302,6 +323,17 @@ mod win {
             }
         }
         if instance.is_null(){return Err("Cannot initialize bundled decoder".into());}
+        let took=started.elapsed().as_millis();
+        if rebuild{
+            if let Some(marker)=rebuild_cache_marker(){let _=std::fs::remove_file(marker);}
+            crate::services::diagnostics::log("player",&format!("índice de módulos del motor rehecho para este PC ({took} ms)"));
+        }else if started.elapsed()>SLOW_START{
+            if let Some(marker)=rebuild_cache_marker(){
+                if let Some(parent)=marker.parent(){let _=std::fs::create_dir_all(parent);}
+                let _=std::fs::write(marker,b"1");
+            }
+            crate::services::diagnostics::log("player",&format!("el motor revisó sus módulos uno por uno ({took} ms); el próximo arranque rehace su índice"));
+        }
         *cached=Some(instance as usize);
         Ok(instance as usize)
     }

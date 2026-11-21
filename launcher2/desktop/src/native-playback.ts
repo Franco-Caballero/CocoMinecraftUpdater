@@ -209,6 +209,9 @@ export function useNativePlayback(enabled:boolean,url:string,videoRef:RefObject<
       if(drawn){
         const seconds=Math.max(0,Date.now()-firstFrameAt-pausedMs)/1000;
         notify('closed',`${frames} fotogramas, ${Math.round(seconds)} s reproduciendo${seconds>=5?` (${(frames/seconds).toFixed(1)} por segundo)`:''}, ${yuv?'rápido':'compatible'}`);
+      }else if(!gaveUp){
+        // A film closed before its first picture says nothing otherwise: record where it stood.
+        notify('note',`se cerró sin imagen tras ${Math.round((Date.now()-openedAt)/1000)} s (${id?'abierto':'el motor no llegó a abrirlo'}, posición ${state.position.toFixed(1)} s, ${state.buffering?'cargando':'sin cargar'}, ${state.hasVideo?'con':'sin'} pista de vídeo, ${yuv?'rápido':'compatible'})`);
       }
       disposed=true;window.clearTimeout(timer);window.clearTimeout(seekTimer);window.cancelAnimationFrame(raf);observer.disconnect();window.removeEventListener('resize',fit);
       shared?.removeEventListener('sharedbufferreceived',receive);

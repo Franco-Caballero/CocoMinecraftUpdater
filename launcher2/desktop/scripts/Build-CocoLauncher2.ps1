@@ -106,6 +106,8 @@ try {
     foreach($resource in $config.bundle.resources){$resourceMap[$resource]=$resource}
     $runtimeManifest=Get-Content -LiteralPath (Join-Path $root 'src-tauri\resources\vlc-runtime-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
     foreach($entry in $runtimeManifest.files){$resourceMap['resources/.player-runtime/'+$entry.path]='player/'+$entry.path}
+    # The engine's module index, built on the installed files: it opens only the modules a film needs.
+    $resourceMap['resources/vlc-plugins.dat']='player/plugins/plugins.dat'
     $playerConfig=Join-Path $buildTemp 'player-bundle.json'
     [IO.File]::WriteAllText($playerConfig,(@{bundle=@{resources=$resourceMap}} | ConvertTo-Json -Depth 5),(New-Object Text.UTF8Encoding($false)))
     # A fresh developer checkout needs no manual prerequisite step. Verify or

@@ -531,7 +531,7 @@ function Set-NetIPInterface {[CmdletBinding()]param([Parameter(ValueFromPipeline
         let result=std::env::temp_dir().join(format!("coco-firewall-{}.txt",std::process::id()));
         let check=format!("$r=Get-NetFirewallRule -DisplayName ('Coco - '+{p}) -ErrorAction SilentlyContinue;$done+=('rule:'+[string]$r.Action+'|'+[string]$r.Direction+'|'+(($r|Get-NetFirewallApplicationFilter).Program));$r|Remove-NetFirewallRule;",p=powershell_literal(&program));
         let script=elevated_script(&[],&result,&format!("{}{}",firewall_script(std::slice::from_ref(&program)),check));
-        assert!(matches!(run_elevated(&script),Elevation::Finished),"UAC accepted");
+        assert!(matches!(run_elevated(&script,|_|{}),Elevation::Finished),"UAC accepted");
         let lines=fs::read_to_string(&result).unwrap();
         let _=fs::remove_file(&result);
         println!("{lines}");
