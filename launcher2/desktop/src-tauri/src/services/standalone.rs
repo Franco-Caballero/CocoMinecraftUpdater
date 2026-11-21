@@ -589,6 +589,8 @@ pub async fn launch_standalone(id:String,app:AppHandle,state:State<'_,RuntimeSta
         // When the signed channel advances to B, allow an intact installed A
         // to launch with A's trusted manifest; a mutable receipt alone never
         // supplies paths/hashes, and a pending journal always blocks launch.
+        // The name Coco gave the emulator last time goes back first, so the files verify.
+        crate::services::game_prepare::restore_player_names(&root);
         let verified_entry=crate::services::install::trusted_installed_launch_entry(&entry,&root)?
             .unwrap_or_else(||entry.clone());
         let outcome=verify::verify_entry(&verified_entry,&app_data,&local_data,&AtomicBool::new(false),|progress|{
@@ -667,6 +669,7 @@ pub async fn launch_standalone(id:String,app:AppHandle,state:State<'_,RuntimeSta
         let adopted_root=root.clone();
         monitor(id,child,app,running,Box::new(move||{
             crate::services::game_prepare::adopt_new_hashes(&verified_entry,&adopted_root,&hashes_before);
+            crate::services::game_prepare::restore_player_names(&adopted_root);
         }));
         Ok(event)
     }).await.map_err(|e|format!("Motor interrumpido: {e}"))?

@@ -381,8 +381,46 @@ fn with_existing_key(content:&str,key:&str,name:&str)->String{
     out
 }
 
-fn write_if_changed(file:&Path,content:&str,updated:String,name:&str){
+/// The emulator files Coco wrote the name into, with their packaged text, so they go back
+/// to the verified bytes before the next check (at the next launch and when the game ends).
+#[derive(Serialize,Deserialize,Default)]
+struct NameRecord{path:String,original:String,written:String}
+
+fn names_file(root:&Path)->PathBuf{root.join(".coco").join("player-names.json")}
+
+fn read_names(root:&Path)->Vec<NameRecord>{
+    fs::read(names_file(root)).ok().and_then(|bytes|serde_json::from_slice(&bytes).ok()).unwrap_or_default()
+}
+
+/// Puts back every file Coco changed for the name, only while it still holds what Coco wrote
+/// (a repair or the player may have replaced it since). The verified bytes are untouched.
+pub(crate) fn restore_player_names(root:&Path){
+    let records=read_names(root);
+    if records.is_empty(){let _=fs::remove_file(names_file(root));return;}
+    for record in &records{
+        let path=PathBuf::from(&record.path);
+        if !path.starts_with(root){continue;}
+        if fs::read_to_string(&path).is_ok_and(|current|current==record.written){
+            if let Err(error)=fs::write(&path,&record.original){
+                crate::services::diagnostics::log("game",&format!("no se pudo devolver {} a su versión verificada: {error}",path.display()));
+                return;
+            }
+        }
+    }
+    let _=fs::remove_file(names_file(root));
+}
+
+fn write_if_changed(root:&Path,file:&Path,content:&str,updated:String,name:&str){
     if updated==content{return;}
+    // Recorded before writing: a crash in between still leaves a way back.
+    let mut records=read_names(root);
+    records.retain(|record|Path::new(&record.path)!=file);
+    records.push(NameRecord{path:file.display().to_string(),original:content.to_string(),written:updated.clone()});
+    let saved=fs::create_dir_all(root.join(".coco")).and_then(|_|fs::write(names_file(root),serde_json::to_vec(&records).unwrap_or_default()));
+    if let Err(error)=saved{
+        crate::services::diagnostics::log("game",&format!("no se pudo guardar el nombre de jugador: {error}"));
+        return;
+    }
     match fs::write(file,updated){
         Ok(())=>crate::services::diagnostics::log("game",&format!("nombre de jugador {name} en {}",file.display())),
         Err(error)=>crate::services::diagnostics::log("game",&format!("no se pudo poner el nombre en {}: {error}",file.display())),
@@ -400,16 +438,16 @@ fn in_steam_settings(file:&Path)->bool{
 pub(crate) fn set_player_name(root:&Path,name:&str){
     for file in find_named(root,"configs.user.ini").into_iter().filter(|file|in_steam_settings(file)){
         let Ok(content)=fs::read_to_string(&file) else {continue};
-        write_if_changed(&file,&content,with_account_name(&content,name),name);
+        write_if_changed(root,&file,&content,with_account_name(&content,name),name);
     }
     for file in find_named(root,"force_account_name.txt").into_iter().filter(|file|in_steam_settings(file)){
         let Ok(content)=fs::read_to_string(&file) else {continue};
-        write_if_changed(&file,&content,name.to_string(),name);
+        write_if_changed(root,&file,&content,name.to_string(),name);
     }
     for ini in ["steam_emu.ini","rune.ini"]{
         for file in find_named(root,ini){
             let Ok(content)=fs::read_to_string(&file) else {continue};
-            write_if_changed(&file,&content,with_existing_key(&content,"UserName",name),name);
+            write_if_changed(root,&file,&content,with_existing_key(&content,"UserName",name),name);
         }
     }
 }
@@ -677,6 +715,27 @@ account_name=Ana
 ");
         let _=std::fs::remove_dir_all(&dir);
     }
+    #[test]
+    fn the_packaged_file_comes_back_before_the_next_verification(){
+        let dir=std::env::temp_dir().join(format!("coco-name-restore-{}",std::process::id()));
+        let settings=dir.join("steam_settings");
+        std::fs::create_dir_all(&settings).unwrap();
+        let file=settings.join("configs.user.ini");
+        let packaged="[user::general]\r\naccount_name=AnkerGames\r\n";
+        std::fs::write(&file,packaged).unwrap();
+        super::set_player_name(&dir,"Ana");
+        assert!(std::fs::read_to_string(&file).unwrap().contains("account_name=Ana"));
+        super::restore_player_names(&dir);
+        assert_eq!(std::fs::read_to_string(&file).unwrap(),packaged);
+        assert!(!dir.join(".coco").join("player-names.json").exists());
+        // A file replaced since (a repair) is left as it is.
+        super::set_player_name(&dir,"Ana");
+        std::fs::write(&file,"repaired").unwrap();
+        super::restore_player_names(&dir);
+        assert_eq!(std::fs::read_to_string(&file).unwrap(),"repaired");
+        let _=std::fs::remove_dir_all(&dir);
+    }
+
     #[test]
     fn other_steam_emulators_get_the_player_name_too(){
         let codex="[Settings]\r\nUserName=CODEX\r\nLanguage=english\r\n";

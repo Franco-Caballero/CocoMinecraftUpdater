@@ -130,10 +130,24 @@ mod win {
         }
         Ok(())
     }
+    /// `\?\C:\…` → `C:\…`. Tauri hands the install folder over in that form, and on some
+    /// Windows 10 PCs the decoder cannot start from it although every plugin loads.
+    pub(super) fn plain(path:&Path)->PathBuf{
+        let text=path.to_string_lossy();
+        if let Some(rest)=text.strip_prefix(r"\?\UNC\"){return PathBuf::from(format!(r"\{rest}"));}
+        match text.strip_prefix(r"\?\"){
+            Some(rest) if rest.as_bytes().get(1)==Some(&b':')=>PathBuf::from(rest),
+            _=>path.to_path_buf(),
+        }
+    }
     fn runtime(app:&tauri::AppHandle)->Result<PathBuf,String>{
         #[cfg(debug_assertions)]
-        if let Some(path)=std::env::var_os("COCO_PLAYER_RUNTIME"){return Ok(path.into());}
-        Ok(app.path().resource_dir().map_err(|_|"Missing resource directory")?.join("player"))
+        if let Some(path)=std::env::var_os("COCO_PLAYER_RUNTIME"){return Ok(plain(Path::new(&path)));}
+        Ok(plain(&app.path().resource_dir().map_err(|_|"Missing resource directory")?.join("player")))
+    }
+    /// Marks that this PC needs the repair copy, so later sessions start with it directly.
+    fn prefer_copy_marker()->Option<PathBuf>{
+        std::env::var_os("LOCALAPPDATA").map(|local|Path::new(&local).join("CocoLauncher2").join("player-runtime").join("use-copy"))
     }
     fn api(directory:&Path)->Result<Arc<Api>,String>{
         static API:OnceLock<Result<Arc<Api>,String>>=OnceLock::new();
@@ -141,6 +155,8 @@ mod win {
             verify(directory)?;
             // Process-local library path; no system codec/association changes.
             std::env::set_var("VLC_PLUGIN_PATH",directory.join("plugins"));
+            // The decoder reads the C runtime's copy of the environment: set it there too.
+            set_plugin_path(&directory.join("plugins"));
             let load=|name:&str|->Result<isize,String>{
                 let wide:Vec<u16>=directory.join(name).as_os_str().encode_wide().chain(Some(0)).collect();
                 let module=unsafe{LoadLibraryExW(wide.as_ptr(),0,0x1100)};
@@ -246,9 +262,22 @@ mod win {
             let args:Vec<_>=options.iter().map(|s|s.as_ptr()).collect();
             unsafe{(api.new)(args.len() as i32,args.as_ptr())}
         };
+        // A PC that needed the repair copy before goes straight to it (no slow failed start).
+        let mut preferred=false;
+        if prefer_copy_marker().is_some_and(|marker|marker.exists()){
+            match repair_copy(&api.dir){
+                Ok(copy)=>preferred=set_plugin_path(&copy),
+                Err(_)=>{set_plugin_path(&api.dir.join("plugins"));}
+            }
+        }
         let mut instance=start(&logging);
         // A log the decoder cannot write must not keep films from playing.
         if instance.is_null()&&!logging.is_empty(){instance=start(&[]);}
+        // The copy stopped working (or vanished): back to the install folder's plugins.
+        if instance.is_null()&&preferred&&set_plugin_path(&api.dir.join("plugins")){
+            instance=start(&logging);if instance.is_null(){instance=start(&[]);}
+            if !instance.is_null(){if let Some(marker)=prefer_copy_marker(){let _=std::fs::remove_file(marker);}}
+        }
         if instance.is_null()&&!EXPLAINED.swap(true,Ordering::AcqRel){
             let log=|text:&str|crate::services::diagnostics::log("player",text);
             log(&format!("el motor de vídeo no arranca desde {}",api.dir.display()));
@@ -259,6 +288,7 @@ mod win {
                     log(&probe_plugins(&copy));
                     if set_plugin_path(&copy){instance=start(&logging);if instance.is_null(){instance=start(&[]);}}
                     log(if instance.is_null(){"la copia de reparación tampoco arrancó"}else{"arrancó con la copia de reparación"});
+                    if !instance.is_null(){if let Some(marker)=prefer_copy_marker(){let _=std::fs::write(marker,b"1");}}
                 }
                 Err(error)=>log(&format!("no se pudo crear la copia de reparación: {error}")),
             }
@@ -572,6 +602,14 @@ pub fn shutdown(){#[cfg(windows)]win::shutdown();}
 #[cfg(test)]
 mod tests{
     use super::*;
+    #[cfg(windows)]
+    #[test]fn the_decoder_folder_is_handed_over_without_the_verbatim_prefix(){
+        use std::path::{Path,PathBuf};
+        assert_eq!(win::plain(Path::new(r"\?\C:\Users\a b\AppData\Local\Coco Launcher 2\player")),PathBuf::from(r"C:\Users\a b\AppData\Local\Coco Launcher 2\player"));
+        assert_eq!(win::plain(Path::new(r"\?\UNC\server\share\player")),PathBuf::from(r"\server\share\player"));
+        assert_eq!(win::plain(Path::new(r"C:\Coco\player")),PathBuf::from(r"C:\Coco\player"));
+        assert_eq!(win::plain(Path::new(r"\?\Volume{1}\player")),PathBuf::from(r"\?\Volume{1}\player"));
+    }
     #[test]fn controls_do_not_expose_arbitrary_decoder_commands(){
         for action in ["run","loadfile","screenshot","quit"]{assert!(valid_value(action,None).is_err());}
         assert!(valid_value("volume",Some(f64::NAN)).is_err());assert!(valid_value("seek",Some(-1.0)).is_err());

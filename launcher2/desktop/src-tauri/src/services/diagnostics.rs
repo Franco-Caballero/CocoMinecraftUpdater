@@ -113,6 +113,22 @@ fn antivirus()->String{
     "no se pudo consultar".into()
 }
 
+/// The graphics cards and their drivers: a film that will not decode often comes down to them.
+fn graphics()->String{
+    #[cfg(windows)]{
+        use std::os::windows::process::CommandExt;
+        let mut exe=std::env::var_os("SystemRoot").map(PathBuf::from).unwrap_or_else(||PathBuf::from("C:\\Windows"));
+        exe.push("System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+        let script="(Get-CimInstance Win32_VideoController -ErrorAction Stop | ForEach-Object { $_.Name + ' (driver ' + $_.DriverVersion + ')' }) -join ', '";
+        if let Ok(output)=std::process::Command::new(exe).args(["-NoProfile","-NonInteractive","-Command",script])
+            .stdin(std::process::Stdio::null()).creation_flags(0x08000000).output(){
+            let text=clean(&String::from_utf8_lossy(&output.stdout),300);
+            if output.status.success()&&!text.is_empty(){return text;}
+        }
+    }
+    "no se pudo consultar".into()
+}
+
 /// Once per session, so coco.log alone says which PC and Coco version wrote it.
 pub(crate) fn log_session_start(version:String){
     std::thread::spawn(move||{
@@ -155,6 +171,7 @@ async fn build_report(app:tauri::AppHandle)->Result<String,String>{
             format!("ZeroTier: {zerotier}"),
             format!("Defender: {defender}"),
             format!("Antivirus: {}",antivirus()),
+            format!("Gráfica: {}",graphics()),
             format!("Traspaso: {handoff}"),
             String::new(),
             "Registro reciente:".into(),
