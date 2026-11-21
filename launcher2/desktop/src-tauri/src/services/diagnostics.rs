@@ -144,6 +144,57 @@ pub fn log_event(area:String,message:String){
 #[tauri::command]
 pub async fn get_diagnostic_report(app:tauri::AppHandle)->Result<String,String>{build_report(app).await}
 
+const GAME_LOG_LINES:usize=80;
+
+/// Where a game's engine writes its own log, from what is in its folder:
+/// Godot (`%APPDATA%/Godot/app_userdata/<name>/logs/godot.log`, or a custom user folder),
+/// Unity (`<exe>_Data/app.info` names `LocalLow/<company>/<product>/Player.log`) and
+/// Unreal (`%LOCALAPPDATA%/<project>/Saved/Logs/<project>.log`).
+fn engine_logs(root:&Path,executable:&str,app_data:&Path,local:&Path)->Vec<PathBuf>{
+    let exe=root.join(executable);
+    let Some(stem)=exe.file_stem().map(|s|s.to_string_lossy().into_owned()) else {return Vec::new()};
+    let dir=exe.parent().unwrap_or(root).to_path_buf();
+    let mut logs=vec![
+        app_data.join("Godot").join("app_userdata").join(&stem).join("logs").join("godot.log"),
+        app_data.join(&stem).join("logs").join("godot.log"),
+    ];
+    if let Ok(info)=fs::read_to_string(dir.join(format!("{stem}_Data")).join("app.info")){
+        let mut lines=info.lines().map(str::trim).filter(|line|!line.is_empty());
+        if let (Some(company),Some(product))=(lines.next(),lines.next()){
+            if let Some(low)=local.parent().map(|parent|parent.join("LocalLow")){
+                logs.push(low.join(company).join(product).join("Player.log"));
+            }
+        }
+    }
+    // An Unreal executable lives in <project>/Binaries/Win64; the launcher stub sits above it.
+    let shipping=dir.ancestors().find(|d|d.file_name().is_some_and(|n|n.eq_ignore_ascii_case("Binaries")))
+        .and_then(|binaries|binaries.parent()).map(Path::to_path_buf);
+    let projects:Vec<PathBuf>=shipping.into_iter().chain(fs::read_dir(&dir).ok().into_iter().flatten().flatten()
+        .map(|entry|entry.path()).filter(|path|path.join("Binaries").is_dir())).collect();
+    for project in projects{
+        if let Some(name)=project.file_name().map(|n|n.to_string_lossy().into_owned()){
+            logs.push(local.join(&name).join("Saved").join("Logs").join(format!("{name}.log")));
+        }
+    }
+    logs
+}
+
+/// The newest engine log among the installed games: the one that just closed on its own.
+fn latest_game_log(app_data:&Path,local:&Path)->Option<(String,PathBuf)>{
+    let entries=crate::services::catalog::read_catalog().ok()?;
+    let locations=crate::services::inventory::custom_locations(local).unwrap_or_default();
+    let mut best:Option<(std::time::SystemTime,String,PathBuf)>=None;
+    for entry in entries.iter().filter(|entry|entry.workflow=="coco-standalone"){
+        let root=crate::services::inventory::resolve_instance_root(entry,app_data,&locations);
+        if !root.is_dir(){continue;}
+        for log in engine_logs(&root,&entry.executable,app_data,local){
+            let Ok(modified)=fs::metadata(&log).and_then(|meta|meta.modified()) else {continue};
+            if best.as_ref().is_none_or(|(time,_,_)|modified>*time){best=Some((modified,entry.id.clone(),log));}
+        }
+    }
+    best.map(|(_,id,path)|(id,path))
+}
+
 async fn build_report(app:tauri::AppHandle)->Result<String,String>{
     let network=crate::services::network::get_network_status().await.ok();
     tauri::async_runtime::spawn_blocking(move||{
@@ -186,6 +237,16 @@ async fn build_report(app:tauri::AppHandle)->Result<String,String>{
             let lines:Vec<&str>=text.lines().collect();
             report.push(String::new());report.push("Motor de vídeo (player.log):".into());
             report.extend(lines[lines.len().saturating_sub(PLAYER_LINES)..].iter().map(|line|clean(line,500)));
+        }
+        // The game's own words when it closes by itself after opening.
+        if let Some((id,path))=latest_game_log(&app_data,&local){
+            if let Ok(bytes)=fs::read(&path){
+                let text=String::from_utf8_lossy(&bytes[bytes.len().saturating_sub(64*1024)..]).into_owned();
+                let lines:Vec<&str>=text.lines().filter(|line|!line.trim().is_empty()).collect();
+                report.push(String::new());
+                report.push(format!("Registro del juego {id} ({}):",path.display()));
+                report.extend(lines[lines.len().saturating_sub(GAME_LOG_LINES)..].iter().map(|line|clean(line,400)));
+            }
         }
         report.join("\n")
     }).await.map_err(|error|format!("Diagnóstico interrumpido: {error}"))
@@ -275,6 +336,33 @@ mod clipboard{pub fn put_file(_:&std::path::Path)->bool{false}}
 
 #[cfg(test)]
 mod tests{
+    #[test]
+    fn the_engine_log_of_godot_unity_and_unreal_games_is_found(){
+        let base=std::env::temp_dir().join(format!("coco-engine-logs-{}",std::process::id()));
+        let (app_data,local)=(base.join("Roaming"),base.join("Local"));
+        let godot=engine_logs(&base.join("g"),"Machine Party.exe",&app_data,&local);
+        assert!(godot.contains(&app_data.join("Godot").join("app_userdata").join("Machine Party").join("logs").join("godot.log")));
+        let unity=base.join("u");
+        fs::create_dir_all(unity.join("Peak_Data")).unwrap();
+        fs::write(unity.join("Peak_Data").join("app.info"),"LANDFALL\nPEAK").unwrap();
+        assert!(engine_logs(&unity,"Peak.exe",&app_data,&local).contains(&base.join("LocalLow").join("LANDFALL").join("PEAK").join("Player.log")));
+        let unreal=base.join("r");
+        fs::create_dir_all(unreal.join("CrabChampions").join("Binaries").join("Win64")).unwrap();
+        let expected=local.join("CrabChampions").join("Saved").join("Logs").join("CrabChampions.log");
+        assert!(engine_logs(&unreal,"CrabChampions/Binaries/Win64/CrabChampions-Win64-Shipping.exe",&app_data,&local).contains(&expected));
+        assert!(engine_logs(&unreal,"CrabChampions.exe",&app_data,&local).contains(&expected));
+        let _=fs::remove_dir_all(&base);
+    }
+
+    /// Prints the game log the diagnostic would attach on this PC.
+    #[test]
+    #[ignore]
+    fn real_latest_game_log(){
+        let app_data=PathBuf::from(std::env::var_os("APPDATA").unwrap());
+        let local=PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap());
+        println!("{:?}",latest_game_log(&app_data,&local));
+    }
+
     use super::*;
 
     /// Touches the real clipboard; check afterwards with
