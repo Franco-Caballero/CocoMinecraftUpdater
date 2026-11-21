@@ -55,7 +55,7 @@ import {lockBackgroundScroll} from './modal-scroll-lock';
 import {formatBytes,formatBytePair,shortPath,isComingSoon,latestAddition,matchesLibraryFilter,sortLibrary,unseenEntries,type LibraryFilter,type LibrarySort} from './library-view';
 import {attachCardTilt,attachStageParallax} from './stage-motion';
 import LauncherIntro from './LauncherIntro';
-import {deriveLauncherStatus,type CatalogSyncState} from './launcher-status';
+import {deriveLauncherStatus,type CatalogSyncState,type WindowsPreparation} from './launcher-status';
 import {useFlipGrid} from './flip-grid';
 
 type View = 'library' | 'settings';
@@ -477,7 +477,7 @@ function App(){
   const [locationError,setLocationError]=useState('');
   const [moveDraft,setMoveDraft]=useState<MoveDraft|null>(null);
   const [moving,setMoving]=useState<string|null>(null);
-  const [authorizing,setAuthorizing]=useState(false);
+  const [windowsPreparation,setWindowsPreparation]=useState<WindowsPreparation>('idle');
   const [startingSteam,setStartingSteam]=useState(false);
   const [firstGameRun,setFirstGameRun]=useState(false);
   const [defenderOutcome,setDefenderOutcome]=useState('');
@@ -937,7 +937,16 @@ function App(){
   useEffect(()=>{
     if(!isTauri())return;
     let disposed=false;let stop:(()=>void)|undefined;
-    void listen<boolean>('coco2://windows-authorization',event=>{if(!disposed)setAuthorizing(event.payload);})
+    let consentHintTimer:number|undefined;
+    void listen<Exclude<WindowsPreparation,'checking'>>('coco2://windows-authorization',({payload})=>{
+      if(disposed)return;
+      window.clearTimeout(consentHintTimer);
+      if(payload==='requesting'){
+        setWindowsPreparation('checking');
+        // A fast or silent elevation should never flash an instruction to the player.
+        consentHintTimer=window.setTimeout(()=>setWindowsPreparation('requesting'),900);
+      }else setWindowsPreparation(payload);
+    })
       .then(unlisten=>{if(disposed)unlisten();else stop=unlisten;}).catch(console.error);
     let stopSteam:(()=>void)|undefined;
     let stopFirstRun:(()=>void)|undefined;
@@ -945,7 +954,7 @@ function App(){
       .then(unlisten=>{if(disposed)unlisten();else stopFirstRun=unlisten;}).catch(console.error);
     void listen<boolean>('coco2://steam-starting',event=>{if(!disposed)setStartingSteam(event.payload);})
       .then(unlisten=>{if(disposed)unlisten();else stopSteam=unlisten;}).catch(console.error);
-    return()=>{disposed=true;stop?.();stopSteam?.();stopFirstRun?.();};
+    return()=>{disposed=true;window.clearTimeout(consentHintTimer);stop?.();stopSteam?.();stopFirstRun?.();};
   },[]);
 
   useEffect(()=>{
@@ -1107,9 +1116,10 @@ function App(){
   // Minecraft is set aside for now: its packs stay in the catalog for a future Coco 2 version.
   const library=useMemo(()=>items.filter(x=>category(x)!=='minecraft'),[items]);
   const unseenIds=useMemo(()=>new Set(unseenEntries(library.map(x=>x.id),seenCatalog)),[library,seenCatalog]);
-  const filtered=useMemo(()=>sortLibrary(library.filter(x=>
+  const orderedLibrary=useMemo(()=>sortLibrary(library,sort),[library,sort]);
+  const filtered=useMemo(()=>orderedLibrary.filter(x=>
     matchesLibraryFilter(x,filter,favorites,installedIds)&&
-    matchesExperienceQuery(searchable,x.id,normalizedQuery)),sort),[library,filter,sort,favorites,installedIds,normalizedQuery,searchable]);
+    matchesExperienceQuery(searchable,x.id,normalizedQuery)),[orderedLibrary,filter,favorites,installedIds,normalizedQuery,searchable]);
   // The newest game opens the page, and every other one follows right below it.
   const latest=useMemo(()=>filter==='all'&&!normalizedQuery?latestAddition(library):null,[library,filter,normalizedQuery]);
   const gridEntries=useMemo(()=>latest?filtered.filter(x=>x.id!==latest.id):filtered,[filtered,latest]);
@@ -1121,9 +1131,20 @@ function App(){
   // progressively mount subsequent pages only as the viewport approaches.
   // All entries remain indexed/searchable, and the preview pool still scans
   // the full curated source list for eventual metadata coverage.
-  const [visibleCount,setVisibleCount]=useState(EXPERIENCE_PAGE_SIZE);
+  const pageKey=JSON.stringify([view,filter,normalizedQuery]);
+  const [page,setPage]=useState({key:pageKey,count:EXPERIENCE_PAGE_SIZE});
+  const pageChanged=page.key!==pageKey;
+  const visibleCount=pageChanged?EXPERIENCE_PAGE_SIZE:page.count;
+  // Reset before committing a new result set so it never mounts the old page count.
+  if(pageChanged)setPage({key:pageKey,count:visibleCount});
+  const setVisibleCount=React.useCallback((update:(count:number)=>number)=>{
+    setPage(current=>{
+      if(current.key!==pageKey)return current;
+      const count=update(current.count);
+      return count===current.count?current:{key:pageKey,count};
+    });
+  },[pageKey]);
   const moreCardsRef=React.useRef<HTMLDivElement>(null);
-  useEffect(()=>{setVisibleCount(EXPERIENCE_PAGE_SIZE);},[view,filter,normalizedQuery]);
   useEffect(()=>{
     if(visibleCount>=gridEntries.length||view!=='library'||typeof IntersectionObserver==='undefined')return;
     const anchor=moreCardsRef.current;
@@ -1133,7 +1154,7 @@ function App(){
     },{rootMargin:'600px 0px'});
     observer.observe(anchor);
     return()=>observer.disconnect();
-  },[visibleCount,gridEntries.length,view]);
+  },[visibleCount,gridEntries.length,view,setVisibleCount]);
 
   const navigate=(next:View)=>{stageArt.current?.classList.remove('is-lit');setView(next);if(selected)closeDetails();setSearchOpen(false);if(next!=='library')setSearch('');window.scrollTo({top:0,behavior:'instant'});};
   const rememberActivity=(kind:ActivityKind,id:string)=>setActivity(recordActivity(kind,id));
@@ -1675,7 +1696,7 @@ function App(){
     setDefenderBusy(true);setDefenderOutcome('');
     try{
       const status=await invoke<string>('ensure_defender_exclusions');
-      setDefenderOutcome(status==='declined'?'Windows no lo autorizó. Coco volverá a pedirlo cuando instales o juegues.':
+      setDefenderOutcome(status==='declined'?'El cambio quedó sin aplicar. Puedes volver a revisarlo aquí.':
         status==='unavailable'?'Este PC no usa Windows Defender o no permite cambiarlo.':
         status==='failed'?'No se pudo completar. Inténtalo de nuevo.':'Tus carpetas de juegos están protegidas.');
     }catch(error){setDefenderOutcome(String(error));}
@@ -1951,7 +1972,7 @@ function App(){
       if(box.top<top||box.bottom>window.innerHeight-12)card.scrollIntoView({behavior:motion?'smooth':'auto',block:'center'});
     },selected?0:120);
     return()=>window.clearTimeout(timer);
-  },[spotlightId,view,visibleCount]);
+  },[spotlightId,view,visibleCount,setVisibleCount]);
   // The lift settles back as soon as the player clicks anywhere else or presses Escape.
   useEffect(()=>{
     if(!spotlightId)return;
@@ -1993,7 +2014,7 @@ function App(){
     catalog:catalogSync,
     catalogLoaded,
     uninstalling:uninstalling?entryName(uninstalling):null,
-    authorizing,
+    windowsPreparation,
     startingSteam,
     firstGameRun,
     installed:installedCue?{name:entryName(installedCue.id)}:null,
@@ -2016,7 +2037,7 @@ function App(){
       <div className="coco-reyna-drift"><img className="coco-reyna" src="/reyna-2.webp" alt="" decoding="async"/></div>
       <div className="coco-edition" aria-hidden="true"><i/><span>Launcher</span><b>2</b></div>
       <div className="coco-status" role="status" aria-live="polite">
-        <div className="coco-status-line"><span className="coco-status-dot" aria-hidden="true"/><div className="coco-status-copy" key={launcherStatus.label+(launcherStatus.subject||'')}><div className="coco-status-head"><strong>{launcherStatus.label}</strong>{cueEntry?<span className="coco-status-check" aria-hidden="true"><Check size={15} strokeWidth={3.2}/></span>:launcherStatus.percent!==null&&<span className="coco-status-percent">{launcherStatus.percent}<i>%</i></span>}</div>{launcherStatus.subject&&<b className="coco-status-subject" title={launcherStatus.subject}>{launcherStatus.subject}</b>}{launcherStatus.detail&&<small>{launcherStatus.detail}</small>}</div></div>
+        <div className="coco-status-line"><span className="coco-status-dot" aria-hidden="true"/><div className="coco-status-copy" key={launcherStatus.label+(launcherStatus.subject||'')}><div className="coco-status-head"><strong>{launcherStatus.label}</strong>{cueEntry?<span className="coco-status-check" aria-hidden="true"><Check size={15} strokeWidth={3.2}/></span>:launcherStatus.percent!==null&&<span className="coco-status-percent">{launcherStatus.percent}<i>%</i></span>}</div>{launcherStatus.subject&&<b className="coco-status-subject" title={launcherStatus.subject}>{launcherStatus.subject}</b>}{launcherStatus.detail&&<small className={windowsPreparation==='requesting'?'coco-consent-hint':undefined}>{launcherStatus.detail}</small>}</div></div>
         {cueEntry&&<i className="coco-status-burst" key={cueEntry.id} aria-hidden="true"/>}
         {launcherStatus.percent!==null?<div className={`coco-status-bar${cueEntry?' is-complete':''}`}><span style={{width:`${launcherStatus.percent}%`}}/></div>:launcherStatus.tone==='busy'&&<div className="coco-status-bar is-waiting"><span/></div>}
         {launcherStatus.metrics!==undefined&&<div className="coco-status-metrics">{launcherStatus.metrics||' '}</div>}
@@ -2028,7 +2049,7 @@ function App(){
             <button className="coco-status-dismiss" aria-label="Ocultar aviso de instalación" title="Ocultar" onClick={dismissInstalledCue}><X size={15}/></button>
           </div>
         </div>}
-        {cancelCurrentOperation&&<button className="coco-status-action" onClick={cancelCurrentOperation}>{mediaCancelPending?'Cancelando…':'Cancelar'}</button>}
+        {cancelCurrentOperation&&<button className="coco-status-action" onClick={cancelCurrentOperation}>{mediaCancelPending?'Cancelando…':installing?'Cancelar instalación':'Cancelar'}</button>}
         {launcherStatus.tone==='playing'&&<button className="coco-status-action" disabled={closeGameStep==='closing'} title="Para un juego que sigue abierto aunque cerraste su ventana" onClick={()=>void closeRunningGames()}>{closeGameStep==='confirm'?'¿Cerrar a la fuerza? Pulsa otra vez':closeGameStep==='closing'?'Cerrando…':'Cerrar juego'}</button>}
         {appUpdate.stage==='deferred'&&<button className="coco-status-action is-primary" disabled={nativeBusy||hostStudioOpen} onClick={()=>void applyAppUpdate()}>Actualizar Coco</button>}
       </div>
@@ -2065,7 +2086,7 @@ function App(){
           <section className="coco-setting coco-profile"><div className="coco-profile-picture"><label className={`coco-avatar-picker ${avatarBusy?'is-busy':''}`} title="Cambiar foto"><ProfileAvatar src={avatar} name={identity.username}/><span className="coco-avatar-overlay"><Camera size={20}/></span><input className="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="Elegir foto de perfil" disabled={avatarBusy||!isTauri()} onChange={event=>{void chooseAvatar(event.target.files?.[0]);event.target.value='';}}/></label>{avatar&&<button className="coco-avatar-remove" disabled={avatarBusy} onClick={()=>void removeAvatar()}>Quitar foto</button>}</div><div className="coco-profile-copy"><h2>Tu perfil</h2><p>Así te verán tus amigos cuando se conecten.</p><div className="coco-setting-control"><label htmlFor="minecraftIdentity" className="sr-only">Tu nombre de jugador</label><input id="minecraftIdentity" className="settings-input" maxLength={16} placeholder="Tu nombre" value={identityName} onChange={e=>{setIdentityName(e.target.value);setConfirmIdentity(false);setIdentityError('');}}/>
             <button className="toggle-button" disabled={!isTauri()||savingIdentity||identityName===identity.username} onClick={saveIdentity}><Check size={15}/>{confirmIdentity?'Confirmar cambio':'Guardar'}</button>
             {confirmIdentity&&<p className="identity-warning">Cambiar el nombre puede cambiar tu inventario y avances. Confirma el cambio.</p>}{identityError&&<p className="operation-message" role="alert">{identityError}</p>}{avatarError&&<p className="operation-message" role="alert">{avatarError}</p>}</div></div></section>
-          <section className="coco-setting"><div><h2>Windows Defender</h2><p>{defenderOutcome||'Coco excluye solo las carpetas de juegos y sus descargas.'}</p></div><div className="coco-setting-control"><button className="filter-button" disabled={!isTauri()||defenderBusy||authorizing} onClick={()=>void checkDefender()}><ShieldCheck size={14}/> {defenderBusy?'Revisando…':'Volver a pedir'}</button></div></section>
+          <section className="coco-setting"><div><h2>Windows Defender</h2><p>{defenderOutcome||'Coco excluye solo las carpetas de juegos y sus descargas.'}</p></div><div className="coco-setting-control"><button className="filter-button" disabled={!isTauri()||defenderBusy||windowsPreparation!=='idle'} onClick={()=>void checkDefender()}><ShieldCheck size={14}/> {defenderBusy?'Revisando…':'Revisar permisos'}</button></div></section>
           <section className="coco-setting"><div><h2>Ayuda</h2><p>{diagnosticNote||'Si algo falla, copia el diagnóstico y pégalo en el chat con Coco.'}</p></div><div className="coco-setting-control"><button className="filter-button active" disabled={!isTauri()} onClick={()=>void copyDiagnostic()}><ClipboardCopy size={14}/> Copiar diagnóstico</button><button className="filter-button" disabled={!isTauri()} onClick={()=>void invoke('open_log_folder').catch(console.warn)}><FolderOpen size={14}/> Abrir registros</button></div></section>
           {hostStudioAvailable&&<section className="coco-setting coco-host"><div><h2>Anfitrión</h2><p>Solo aparece en tu PC. Prepara juegos y revisa paquetes de prueba.</p></div><div className="coco-setting-control"><button className="host-studio-button" title={hostStudioBlocked?'Termina la operación activa o revisa el paquete pendiente antes de crear otro':'Crear un paquete compartible'} disabled={hostStudioBlocked} onClick={()=>{if(!hostStudioBlocked)setHostStudioOpen(true);}}><PackagePlus size={17}/><span>Crear juego</span></button></div>{incomingPackages.length===0&&isTauri()&&<React.Suspense fallback={null}><LazyCatalogHub hostStudioAvailable={hostStudioAvailable} onChanged={refreshNativeCatalog} onImported={openImportedGame} pickerRequestId={hostStudioAvailable?packagePickerRequest:0} onPickerRequestConsumed={()=>setPackagePickerRequest(0)}/></React.Suspense>}</section>}
           <section className="coco-activity-history" aria-label="Actividad reciente guardada en este PC">

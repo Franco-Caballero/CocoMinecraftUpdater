@@ -4,6 +4,7 @@ export type StatusTone='ready'|'busy'|'playing'|'attention'|'installed';
 /** subject: what the operation acts on, on its own line. metrics: one fixed-format line of figures. */
 export type LauncherStatus={tone:StatusTone;label:string;detail:string;percent:number|null;subject?:string;metrics?:string};
 export type CatalogSyncState='idle'|'syncing'|'current'|'updated'|'local';
+export type WindowsPreparation='idle'|'checking'|'requesting'|'configuring';
 
 export type StatusInput={
   update:{stage:string;version:string;percent:number;message:string};
@@ -16,7 +17,7 @@ export type StatusInput={
   playingUpdateWaiting?:boolean;
   processUncertain:boolean;
   uninstalling:string|null;
-  authorizing:boolean;
+  windowsPreparation:WindowsPreparation;
   startingSteam:boolean;
   /** The fix's one-time setup for this PC, run out of sight before the game opens. */
   firstGameRun?:boolean;
@@ -29,11 +30,15 @@ export type StatusInput={
 };
 
 const operationLabels={install:'Instalando',upgrade:'Actualizando',repair:'Reparando',recover:'Recuperando',move:'Moviendo'} as const;
+const windowsPreparationDetails={
+  idle:'',
+  checking:'Comprobando permisos',
+  requesting:'Si Windows te pide permiso, pulsa «Sí».',
+  configuring:'Aplicando ajustes del sistema',
+} satisfies Record<WindowsPreparation,string>;
 
 export function deriveLauncherStatus(input:StatusInput):LauncherStatus{
   const {update,operation}=input;
-  if(input.authorizing)
-    return {tone:'attention',label:'Autorización de Windows',detail:'Pulsa «Sí» en el aviso de Windows',percent:null};
   if(input.startingSteam)
     return {tone:'busy',label:'Abriendo Steam',detail:'Tu juego parte en cuanto esté listo',percent:null};
   if(input.firstGameRun)
@@ -42,9 +47,12 @@ export function deriveLauncherStatus(input:StatusInput):LauncherStatus{
     return {tone:'busy',label:'Reiniciando Coco',detail:`Instalando la versión ${update.version}`,percent:100};
   if(update.stage==='downloading')
     return {tone:'busy',label:'Actualizando Coco',detail:`Descargando la versión ${update.version}`,percent:update.percent};
+  const windowsDetail=windowsPreparationDetails[input.windowsPreparation];
   if(operation)
     return {tone:'busy',label:operationLabels[operation.kind],subject:operation.name,
-      detail:operation.description,metrics:operation.metrics||operation.rate,percent:Math.round(operation.percent)};
+      detail:windowsDetail||operation.description,metrics:operation.metrics||operation.rate,percent:Math.round(operation.percent)};
+  if(windowsDetail)
+    return {tone:'busy',label:'Preparando Windows',detail:windowsDetail,percent:null};
   if(input.mediaDownload)
     return {tone:'busy',label:input.mediaDownload.verifying?'Comprobando video':'Guardando video',
       detail:input.mediaDownload.title,percent:input.mediaDownload.percent};

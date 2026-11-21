@@ -64,7 +64,7 @@ test('the first catalog is the baseline; only later arrivals count as new',async
 });
 
 const idle={update:{stage:'idle',version:'',percent:0,message:''},operation:null,mediaDownload:null,launching:null,playing:[],
-  processUncertain:false,uninstalling:null,authorizing:false,startingSteam:false,pendingRecovery:0,arrival:null,catalog:'current',catalogLoaded:true};
+  processUncertain:false,uninstalling:null,windowsPreparation:'idle',startingSteam:false,pendingRecovery:0,arrival:null,catalog:'current',catalogLoaded:true};
 
 test('the panel always says one true thing, most important first',async()=>{
   const {deriveLauncherStatus:status}=await load('src/launcher-status.ts');
@@ -76,7 +76,6 @@ test('the panel always says one true thing, most important first',async()=>{
   assert.equal(status(idle).detail,'','no «al día» line after a check');
   assert.equal(status({...idle,uninstalling:'PEAK'}).label,'Desinstalando PEAK');
   assert.equal(status({...idle,startingSteam:true,launching:'PEAK'}).label,'Abriendo Steam');
-  assert.equal(status({...idle,authorizing:true,operation:{kind:'install',name:'PEAK',description:'',percent:1,rate:''}}).label,'Autorización de Windows','the only thing waiting on the player comes first');
   assert.equal(status({...idle,arrival:'Pilgrim'}).detail,'Pilgrim');
   const install={kind:'install',name:'PEAK',description:'Descargando',percent:34,rate:'5 MB/s'};
   const installing=status({...idle,catalog:'syncing',arrival:'Pilgrim',operation:install});
@@ -85,6 +84,24 @@ test('the panel always says one true thing, most important first',async()=>{
   assert.equal(status({...idle,playing:['PEAK']}).tone,'playing');
   assert.equal(status({...idle,update:{stage:'downloading',version:'1.0.0',percent:20,message:''},operation:install}).label,'Actualizando Coco');
   assert.equal(status({...idle,pendingRecovery:2}).tone,'attention');
+});
+
+test('Windows preparation keeps the install in view and only gives conditional consent advice',async()=>{
+  const {deriveLauncherStatus:status}=await load('src/launcher-status.ts');
+  const input={...idle,operation:{kind:'install',name:'PEAK',description:'Preparando archivos',percent:0,rate:''}};
+  for(const [phase,detail] of Object.entries({
+    idle:'Preparando archivos',
+    checking:'Comprobando permisos',
+    requesting:'Si Windows te pide permiso, pulsa «Sí».',
+    configuring:'Aplicando ajustes del sistema',
+  })){
+    const view=status({...input,windowsPreparation:phase});
+    assert.equal(view.label,'Instalando');
+    assert.equal(view.subject,'PEAK');
+    assert.equal(view.tone,'busy');
+    assert.equal(view.detail,detail);
+  }
+  assert.equal(status({...idle,windowsPreparation:'configuring'}).label,'Preparando Windows');
 });
 
 test('an offline launcher reads as ready, not as an error',async()=>{
@@ -99,6 +116,15 @@ test('existing cards glide and a new one is announced as entering',async()=>{
   const plan=plain(planFlip(new Map([['a',{left:0,top:0}],['b',{left:100,top:0}],['gone',{left:9,top:9}]]),
     new Map([['new',{left:0,top:0}],['a',{left:100,top:0}],['b',{left:100,top:0}]])));
   assert.deepEqual(plan,{moved:[{id:'a',dx:-100,dy:0}],entered:['new']});
+});
+
+test('the grid animates cards that are visible anywhere along their glide',async()=>{
+  const {crossesVerticalRange}=await load('src/flip-grid.ts');
+  assert.equal(crossesVerticalRange(-200,500,80,0,400),true);
+  assert.equal(crossesVerticalRange(500,-200,80,0,400),true);
+  assert.equal(crossesVerticalRange(-40,-40,80,0,400),true);
+  assert.equal(crossesVerticalRange(500,450,80,0,400),false);
+  assert.equal(crossesVerticalRange(-120,-160,80,0,400),false);
 });
 
 test('a cached clip replaces streaming and an unreadable one falls back without losing the preview',async()=>{

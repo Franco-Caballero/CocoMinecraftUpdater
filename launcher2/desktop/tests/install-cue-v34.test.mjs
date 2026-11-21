@@ -17,7 +17,7 @@ async function load(path){
   return module.exports;
 }
 const idle={update:{stage:'idle',version:'',percent:0,message:''},operation:null,mediaDownload:null,launching:null,playing:[],
-  processUncertain:false,uninstalling:null,authorizing:false,startingSteam:false,pendingRecovery:0,arrival:null,catalog:'current',catalogLoaded:true};
+  processUncertain:false,uninstalling:null,windowsPreparation:'idle',startingSteam:false,pendingRecovery:0,arrival:null,catalog:'current',catalogLoaded:true};
 
 test('a finished install stays in the panel as ready to play, below anything still happening',async()=>{
   const {deriveLauncherStatus:status}=await load('src/launcher-status.ts');

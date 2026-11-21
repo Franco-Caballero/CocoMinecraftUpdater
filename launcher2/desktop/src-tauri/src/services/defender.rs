@@ -9,11 +9,13 @@ use serde::{Deserialize,Serialize};
 use serde_json::{Map,Value};
 use std::fs;
 use std::path::{Path,PathBuf};
+use std::sync::Mutex;
 use std::time::{SystemTime,UNIX_EPOCH};
 use tauri::{AppHandle,Emitter};
 
 const STATE_FILE:&str="defender-exclusions.json";
 const AUTHORIZATION_EVENT:&str="coco2://windows-authorization";
+static PREPARATION:Mutex<()>=Mutex::new(());
 const DECLINED_RETRY_SECONDS:u64=6*60*60;
 const UNAVAILABLE_RETRY_SECONDS:u64=7*24*60*60;
 /// Folders next to a game hold its installation stage, a move in progress and kept saves.
@@ -172,8 +174,12 @@ fn encoded_command(script:&str)->String{
 
 enum Elevation{Finished,Declined,Failed}
 
+#[derive(Clone,Copy,Serialize)]
+#[serde(rename_all="kebab-case")]
+enum WindowsPreparation{Requesting,Configuring,Idle}
+
 #[cfg(windows)]
-fn run_elevated(script:&str)->Elevation{
+fn run_elevated(script:&str,set_phase:impl Fn(WindowsPreparation))->Elevation{
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::Foundation::{CloseHandle,GetLastError};
     use windows_sys::Win32::System::SystemInformation::GetSystemDirectoryW;
@@ -196,10 +202,12 @@ fn run_elevated(script:&str)->Elevation{
     info.lpFile=program.as_ptr();
     info.lpParameters=arguments.as_ptr();
     info.nShow=0;
+    set_phase(WindowsPreparation::Requesting);
     if unsafe{ShellExecuteExW(&mut info)}==0{
         return if unsafe{GetLastError()}==1223{Elevation::Declined}else{Elevation::Failed};
     }
     if info.hProcess.is_null(){return Elevation::Failed;}
+    set_phase(WindowsPreparation::Configuring);
     // Installing ZeroTier and waiting for its service can take a few minutes on a slow PC.
     let waited=unsafe{WaitForSingleObject(info.hProcess,300_000)};
     unsafe{CloseHandle(info.hProcess)};
@@ -207,7 +215,7 @@ fn run_elevated(script:&str)->Elevation{
 }
 
 #[cfg(not(windows))]
-fn run_elevated(_script:&str)->Elevation{Elevation::Failed}
+fn run_elevated(_script:&str,_set_phase:impl Fn(WindowsPreparation))->Elevation{Elevation::Failed}
 
 fn read_state(path:&Path)->State{
     fs::read(path).ok().and_then(|bytes|serde_json::from_slice(&bytes).ok()).unwrap_or_default()
@@ -240,6 +248,8 @@ fn request(app:Option<&AppHandle>,extra:&[PathBuf],programs:&[PathBuf],force:boo
 fn request_with(app:Option<&AppHandle>,extra:&[PathBuf],programs:&[PathBuf],force:bool,zerotier:Option<String>)->&'static str{
     let (Some(app_data),Some(local_data))=(std::env::var_os("APPDATA"),std::env::var_os("LOCALAPPDATA")) else {return "failed"};
     let (app_data,local_data)=(PathBuf::from(app_data),PathBuf::from(local_data));
+    // Startup and game operations share the permissions cache and helper result file.
+    let Ok(_preparation)=PREPARATION.lock() else{return "failed"};
     let locations=inventory::custom_locations(&local_data).unwrap_or_default();
     let home=std::env::var_os("USERPROFILE").map(PathBuf::from);
     let desired=desired_paths(&app_data,&local_data,&locations,extra,home.as_deref());
@@ -259,10 +269,10 @@ fn request_with(app:Option<&AppHandle>,extra:&[PathBuf],programs:&[PathBuf],forc
     if !force&&retry_pending(&state,networking,now()){return "skipped";}
     let result=state_path.with_file_name(format!("defender-result-{}.txt",std::process::id()));
     let _=fs::remove_file(&result);
-    if let Some(app)=app{let _=app.emit(AUTHORIZATION_EVENT,true);}
+    let set_phase=|phase|{if let Some(app)=app{let _=app.emit(AUTHORIZATION_EVENT,phase);}};
     let extra_script=format!("{}{}",firewall_script(&firewall),zerotier.as_deref().unwrap_or_default());
-    let elevation=run_elevated(&elevated_script(&missing,&result,&extra_script));
-    if let Some(app)=app{let _=app.emit(AUTHORIZATION_EVENT,false);}
+    let elevation=run_elevated(&elevated_script(&missing,&result,&extra_script),set_phase);
+    set_phase(WindowsPreparation::Idle);
     let status=match elevation{
         Elevation::Declined=>{
             if networking{state.network_retry_after=now()+DECLINED_RETRY_SECONDS;}

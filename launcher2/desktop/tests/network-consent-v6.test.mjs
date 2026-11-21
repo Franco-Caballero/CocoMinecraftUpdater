@@ -19,6 +19,14 @@ test('ZeroTier is set up on first open inside the one Windows prompt, never from
   assert.match(defender,/pinned_installer/,'only the SHA-pinned bundled MSI');
 });
 
+test('Windows consent guidance ends when the elevated helper starts or the request fails',async()=>{
+  const [main,defender]=await Promise.all([read('src/main.tsx'),read('src-tauri/src/services/defender.rs')]);
+  assert.match(defender,/set_phase\(WindowsPreparation::Requesting\);\s*if unsafe\{ShellExecuteExW/);
+  assert.match(defender,/set_phase\(WindowsPreparation::Configuring\);[\s\S]*?let waited=unsafe\{WaitForSingleObject/);
+  assert.match(defender,/let elevation=run_elevated[^;]*;\s*set_phase\(WindowsPreparation::Idle\);/);
+  assert.match(main,/window\.clearTimeout\(consentHintTimer\);\s*if\(payload==='requesting'\)\{\s*setWindowsPreparation\('checking'\);[\s\S]*?window\.setTimeout\(\(\)=>setWindowsPreparation\('requesting'\),900\);\s*\}else setWindowsPreparation\(payload\)/);
+});
+
 test('the host accepts friends automatically while Coco is open, and only for Coco\'s network',async()=>{
   const authorizer=await read('src-tauri/src/services/zerotier_host.rs');
   assert.match(authorizer,/58997fc5f3c0c001/);

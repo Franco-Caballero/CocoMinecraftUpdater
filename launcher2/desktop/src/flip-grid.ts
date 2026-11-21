@@ -17,49 +17,77 @@ export function planFlip(previous:ReadonlyMap<string,Slot>,next:ReadonlyMap<stri
 }
 
 const EASE='cubic-bezier(.2,.9,.25,1)';
-const MAX_ANIMATED=60;
+// Leave room for a row just outside the viewport and for hover/entry overflow.
+const VIEWPORT_MARGIN=180;
+
+export function crossesVerticalRange(fromTop:number,toTop:number,height:number,top:number,bottom:number){
+  return Math.min(fromTop,toTop)<bottom&&Math.max(fromTop,toTop)+height>top;
+}
 
 function measure(container:HTMLElement){
-  const origin=container.getBoundingClientRect();
   const cards=new Map<string,HTMLElement>(),slots=new Map<string,Slot>();
-  container.querySelectorAll<HTMLElement>('[data-flip-id]').forEach(card=>{
-    const id=card.dataset.flipId!;
-    // offset* ignores a running lift or glide, so the slot stays the real one.
-    const rect=card.getBoundingClientRect();
+  for(const child of container.children){
+    const card=child as HTMLElement;
+    const id=card.dataset.flipId;
+    if(!id)continue;
+    // The positioned grid is the offset parent, including the first row/column at zero.
     cards.set(id,card);
-    slots.set(id,{left:card.offsetLeft||rect.left-origin.left,top:card.offsetTop||rect.top-origin.top});
-  });
+    slots.set(id,{left:card.offsetLeft,top:card.offsetTop});
+  }
   return {cards,slots};
 }
 
 export function useFlipGrid(container:RefObject<HTMLElement|null>,signature:string,enabled:boolean,suspended?:()=>boolean){
   const slots=useRef<Map<string,Slot>|null>(null);
+  const animations=useRef(new WeakMap<HTMLElement,Animation>());
   useLayoutEffect(()=>{
     const element=container.current;
-    if(!element)return;
+    if(!element||!enabled){slots.current=null;return;}
     const current=measure(element);
     const previous=slots.current;
     slots.current=current.slots;
     // A view transition already moves every card: gliding them again would move them twice.
-    if(!previous||!enabled||suspended?.()||typeof Element.prototype.animate!=='function')return;
-    const plan=planFlip(previous,current.slots);
-    plan.moved.slice(0,MAX_ANIMATED).forEach(({id,dx,dy})=>{
-      current.cards.get(id)?.animate(
+    if(suspended?.()||typeof Element.prototype.animate!=='function')return;
+
+    const origin=element.getBoundingClientRect().top;
+    const top=-origin-VIEWPORT_MARGIN;
+    const bottom=element.ownerDocument.documentElement.clientHeight-origin+VIEWPORT_MARGIN;
+    const visibleDuringMove=(id:string,dy=0)=>{
+      const {top:destination}=current.slots.get(id)!;
+      return crossesVerticalRange(destination+dy,destination,current.cards.get(id)!.offsetHeight,top,bottom);
+    };
+    const plan=previous?planFlip(previous,current.slots):{moved:[],entered:[...current.cards.keys()]};
+    // Read geometry for the full batch before changing styles or starting animations.
+    const moves=plan.moved.map(move=>({...move,visible:visibleDuringMove(move.id,move.dy)}));
+    const entries=plan.entered.map(id=>({id,visible:visibleDuringMove(id)}));
+    const running=animations.current;
+    for(const {id,dx,dy,visible} of moves){
+      const card=current.cards.get(id)!;
+      running.get(card)?.cancel();
+      if(!visible)continue;
+      running.set(card,card.animate(
         [{transform:`translate(${dx}px,${dy}px)`},{transform:'none'}],
-        {duration:440,easing:EASE});
-    });
-    plan.entered.slice(0,MAX_ANIMATED).forEach((id,index)=>{
-      current.cards.get(id)?.animate(
+        {duration:440,easing:EASE}));
+    }
+    entries.forEach(({id,visible},index)=>{
+      const card=current.cards.get(id)!;
+      // Keep the CSS entrance on first paint. Later entries use one animation.
+      if(!previous&&visible)return;
+      card.dataset.flipEntry='managed';
+      if(!visible)return;
+      running.set(card,card.animate(
         [{opacity:0,transform:'translateY(14px) scale(.94)'},{opacity:1,transform:'none'}],
-        {duration:480,delay:Math.min(index,10)*26,easing:EASE,fill:'backwards'});
+        {duration:480,delay:Math.min(index,10)*26,easing:EASE,fill:'backwards'}));
     });
   },[signature,enabled]);
   // A window resize moves every card legitimately: it must not read as a move.
   useEffect(()=>{
-    const element=container.current;
-    if(!element||typeof ResizeObserver==='undefined')return;
-    const observer=new ResizeObserver(()=>{slots.current=measure(element).slots;});
-    observer.observe(element);
-    return()=>observer.disconnect();
-  },[]);
+    if(!enabled)return;
+    const resize=()=>{
+      const element=container.current;
+      slots.current=element?measure(element).slots:null;
+    };
+    window.addEventListener('resize',resize);
+    return()=>window.removeEventListener('resize',resize);
+  },[container,enabled]);
 }
