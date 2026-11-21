@@ -130,12 +130,12 @@ mod win {
         }
         Ok(())
     }
-    /// `\?\C:\…` → `C:\…`. Tauri hands the install folder over in that form, and on some
+    /// `\\?\C:\…` → `C:\…`. Tauri hands the install folder over in that form, and on some
     /// Windows 10 PCs the decoder cannot start from it although every plugin loads.
     pub(super) fn plain(path:&Path)->PathBuf{
         let text=path.to_string_lossy();
-        if let Some(rest)=text.strip_prefix(r"\?\UNC\"){return PathBuf::from(format!(r"\{rest}"));}
-        match text.strip_prefix(r"\?\"){
+        if let Some(rest)=text.strip_prefix(r"\\?\UNC\"){return PathBuf::from(format!(r"\\{rest}"));}
+        match text.strip_prefix(r"\\?\"){
             Some(rest) if rest.as_bytes().get(1)==Some(&b':')=>PathBuf::from(rest),
             _=>path.to_path_buf(),
         }
@@ -605,10 +605,16 @@ mod tests{
     #[cfg(windows)]
     #[test]fn the_decoder_folder_is_handed_over_without_the_verbatim_prefix(){
         use std::path::{Path,PathBuf};
-        assert_eq!(win::plain(Path::new(r"\?\C:\Users\a b\AppData\Local\Coco Launcher 2\player")),PathBuf::from(r"C:\Users\a b\AppData\Local\Coco Launcher 2\player"));
-        assert_eq!(win::plain(Path::new(r"\?\UNC\server\share\player")),PathBuf::from(r"\server\share\player"));
+        assert_eq!(win::plain(Path::new(r"\\?\C:\Users\a b\AppData\Local\Coco Launcher 2\player")),PathBuf::from(r"C:\Users\a b\AppData\Local\Coco Launcher 2\player"));
+        assert_eq!(win::plain(Path::new(r"\\?\UNC\server\share\player")),PathBuf::from(r"\\server\share\player"));
         assert_eq!(win::plain(Path::new(r"C:\Coco\player")),PathBuf::from(r"C:\Coco\player"));
-        assert_eq!(win::plain(Path::new(r"\?\Volume{1}\player")),PathBuf::from(r"\?\Volume{1}\player"));
+        assert_eq!(win::plain(Path::new(r"\\?\Volume{1}\player")),PathBuf::from(r"\\?\Volume{1}\player"));
+        // What Windows really hands over (the form Tauri's resource folder arrives in).
+        let real=std::fs::canonicalize(std::env::temp_dir()).unwrap();
+        assert!(real.to_string_lossy().starts_with(r"\\?\"),"{}",real.display());
+        let plain=win::plain(&real);
+        assert!(!plain.to_string_lossy().starts_with(r"\\"),"{}",plain.display());
+        assert!(plain.is_dir());
     }
     #[test]fn controls_do_not_expose_arbitrary_decoder_commands(){
         for action in ["run","loadfile","screenshot","quit"]{assert!(valid_value(action,None).is_err());}
