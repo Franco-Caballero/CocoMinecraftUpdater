@@ -5157,6 +5157,27 @@
                 "default": true
               }
             ]
+          },
+          {
+            "id": "ep-51",
+            "title": "Episodio 51",
+            "fileName": "Yumeiro.Patissiere.51.1080p.ES.mkv",
+            "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.51.1080p.ES.mkv",
+            "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.51.1080p.ES.mkv",
+            "size": 373153325,
+            "sha256": "1aa68879113d59e17f9704c629f2b52dc02ff29d47421515347810be35196e88",
+            "subtitles": [
+              {
+                "id": "spa",
+                "label": "Español latino",
+                "language": "spa",
+                "format": "ass",
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.51.1080p.1.spa.ass",
+                "size": 44096,
+                "sha256": "a71e6067b4cb2a151dc0c36004c04768a5ac6fe9752fa7f5e65d72958fe7fe3d",
+                "default": true
+              }
+            ]
           }
         ]
       },
