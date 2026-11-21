@@ -23,5 +23,6 @@ pub mod handoff;
 pub mod zerotier_host;
 pub mod location;
 pub mod uninstall;
+pub mod update_curtain;
 pub mod verify;
 pub mod windows_security;

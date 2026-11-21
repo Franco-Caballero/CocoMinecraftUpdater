@@ -1,7 +1,7 @@
 import React, { useDeferredValue, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { convertFileSrc, isTauri } from '@tauri-apps/api/core';
+import { convertFileSrc, isTauri, invoke as invokeNative } from '@tauri-apps/api/core';
 import { invoke, captureUnexpectedErrors, copyDiagnosticReport } from './diagnostics';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -246,6 +246,32 @@ function restoreFavorites(): Set<string> {
   }catch{return new Set();}
 }
 
+/** «Actualizando Coco». The launcher shows it before closing for the silent installer, a
+ * stand-in window shows the same screen meanwhile and the new version shows it once more while
+ * it fades into the library, so the swap of processes is never visible. The bar's phase comes
+ * from the clock so all three copies line up. */
+function UpdateCurtain({version,leaving}:{version?:string;leaving?:boolean}){
+  const phase=useMemo(()=>`-${Date.now()%1300}ms`,[]);
+  return <div className={`coco-update-curtain${leaving?' is-leaving':''}`} role="status" aria-live="polite" data-tauri-drag-region>
+    <div className="coco-update-curtain-copy" data-tauri-drag-region>
+      <small>Coco Launcher 2</small>
+      <h1>Actualizando Coco</h1>
+      <p>{version?`Versión ${version} · `:''}se abre sola en unos segundos</p>
+      <span className="coco-update-curtain-bar" aria-hidden="true"><i style={{animationDelay:phase}}/></span>
+    </div>
+  </div>;
+}
+
+/** The stand-in process: only the curtain, and a word to the launcher once it is on screen. */
+function CurtainWindow({version}:{version:string}){
+  useEffect(()=>{
+    document.documentElement.classList.remove('coco-booting');
+    let frame=requestAnimationFrame(()=>{frame=requestAnimationFrame(()=>{void invokeNative('update_curtain_painted').catch(console.warn);});});
+    return ()=>cancelAnimationFrame(frame);
+  },[]);
+  return <div className="coco2-desktop"><UpdateCurtain version={version}/></div>;
+}
+
 function App(){
   const [items,setItems]=useState<Experience[]>(restoreCatalogSnapshot);
   const itemsLive=React.useRef(items);
@@ -337,6 +363,22 @@ function App(){
   const [introStage,setIntroStage]=useState<'hold'|'reveal'|'done'|'none'>(motion?'hold':'none');
   // The window starts in the presentation's color; afterwards resizing must not show it.
   const introCovering=introStage==='hold';
+  useEffect(()=>{
+    if(!isTauri())return;
+    let cancelled=false;
+    const timers:number[]=[];
+    void invoke<{version:string}|null>('take_update_curtain').then(arrival=>{
+      if(cancelled||!arrival)return;
+      // No presentation after an update: Coco never looked closed.
+      flushSync(()=>{setIntroStage('none');setArrivalCurtain({version:arrival.version,leaving:false});});
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        void invoke('update_curtain_ready').catch(console.warn);
+        timers.push(window.setTimeout(()=>setArrivalCurtain(c=>c&&{...c,leaving:true}),450));
+        timers.push(window.setTimeout(()=>setArrivalCurtain(null),1000));
+      }));
+    }).catch(console.warn);
+    return ()=>{cancelled=true;timers.forEach(window.clearTimeout);};
+  },[]);
   useEffect(()=>{
     if(introCovering)return;
     document.documentElement.classList.remove('coco-booting');
@@ -472,6 +514,8 @@ function App(){
   const [mediaDownloadProgress,setMediaDownloadProgress]=useState<MediaDownloadProgress|null>(null);
   const [mediaCancelPending,setMediaCancelPending]=useState(false);
   const [appUpdate,setAppUpdate]=useState<AppUpdateProgress>({stage:'idle',version:'',percent:0,downloaded:0,total:0,message:''});
+  // Arriving from an update: the stand-in window is still on top showing «Actualizando Coco».
+  const [arrivalCurtain,setArrivalCurtain]=useState<{version:string;leaving:boolean}|null>(null);
   const [hostStudioAvailable,setHostStudioAvailable]=useState(false);
   const [securityGuide,setSecurityGuide]=useState<GameSecurityGuide|null>(null);
   const [securityBusy,setSecurityBusy]=useState(false);
@@ -1187,6 +1231,7 @@ function App(){
       const transfer=new AppUpdaterProgressMeter();
       let installStarted=false;
       let armRequested=false;
+      let curtainRequested=false;
       try{
         await update.download(event=>{
           if(attempt!==updateAttempt.current||!updateRunning.current)return;
@@ -1234,6 +1279,10 @@ function App(){
           return;
         }
         setAppUpdate({stage:'installing',version:update.version,percent:100,downloaded,total,message:'Instalando y reiniciando Coco…'});
+        // The installer runs silently: a stand-in window with this same screen covers
+        // the seconds in which Coco is closed, until the new version is on screen.
+        curtainRequested=true;
+        await invoke<boolean>('prepare_update_curtain',{version:update.version}).catch(()=>false);
         // On Windows the signed updater starts NSIS and exits this process.
         await update.install({restartAfterInstall:true});
         installStarted=true;
@@ -1246,6 +1295,7 @@ function App(){
           try{await invoke('finish_app_update_install_guard');}
           catch(error){console.warn('Could not release Coco updater restart guard:',error);}
         }
+        if(!installStarted&&curtainRequested)await invoke('cancel_update_curtain').catch(console.warn);
         if(!installStarted)await update.close().catch(console.error);
       }
     }catch(error){setAppUpdate(p=>({...p,stage:'error',message:`No se pudo instalar: ${String(error)}`}));}
@@ -1951,6 +2001,7 @@ function App(){
     null;
 
   return <div className={`app-shell coco2-desktop coco-intro-${introStage}`}>
+    {(arrivalCurtain||appUpdate.stage==='installing')&&<UpdateCurtain version={arrivalCurtain?.version??appUpdate.version} leaving={arrivalCurtain?.leaving}/>}
     {(introStage==='hold'||introStage==='reveal')&&<LauncherIntro onReveal={()=>setIntroStage(stage=>stage==='hold'?'reveal':stage)} onDone={()=>setIntroStage('done')}/>}
     <aside className="coco-stage" ref={stageRef} data-tone={launcherStatus.tone} aria-label="Estado de Coco">
       <div className="coco-stage-art" ref={stageArt} aria-hidden="true"/>
@@ -2179,4 +2230,5 @@ function App(){
 }
 
 captureUnexpectedErrors();
-createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
+const updateCurtain=(window as unknown as {__COCO_UPDATE_CURTAIN__?:{version:string}}).__COCO_UPDATE_CURTAIN__;
+createRoot(document.getElementById('root')!).render(<React.StrictMode>{updateCurtain?<CurtainWindow version={updateCurtain.version}/>:<App/>}</React.StrictMode>);

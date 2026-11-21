@@ -112,6 +112,13 @@ mod win {
         serde_json::from_str(include_str!("../../resources/vlc-runtime-manifest.json")).map_err(|_|"Invalid decoder manifest".into())
     }
     fn verify(directory:&Path)->Result<(),String>{verify_where(directory,"")}
+    /// The installer keeps an engine marked `.coco-runtime-<version>` instead of rewriting it.
+    /// Dropping the mark makes the next Coco update write every engine file again.
+    fn forget_installed_runtime(directory:&Path){
+        for entry in std::fs::read_dir(directory).into_iter().flatten().flatten(){
+            if entry.file_name().to_string_lossy().starts_with(".coco-runtime-"){let _=std::fs::remove_file(entry.path());}
+        }
+    }
     /// Checks every manifest file whose path starts with `prefix` (all of them for "").
     fn verify_where(directory:&Path,prefix:&str)->Result<(),String>{
         let manifest=manifest()?;
@@ -152,7 +159,8 @@ mod win {
     fn api(directory:&Path)->Result<Arc<Api>,String>{
         static API:OnceLock<Result<Arc<Api>,String>>=OnceLock::new();
         API.get_or_init(||{
-            verify(directory)?;
+            // A damaged engine must not be kept by the next update's installer.
+            verify(directory).inspect_err(|_|forget_installed_runtime(directory))?;
             // Process-local library path; no system codec/association changes.
             std::env::set_var("VLC_PLUGIN_PATH",directory.join("plugins"));
             // The decoder reads the C runtime's copy of the environment: set it there too.

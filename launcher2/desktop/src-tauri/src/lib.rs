@@ -2,6 +2,12 @@ mod services;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let context=tauri::generate_context!();
+    // The stand-in window shown while a silent update replaces this executable.
+    if services::update_curtain::is_curtain_launch() {
+        services::update_curtain::run_curtain(context);
+        return;
+    }
     // A second Explorer invocation only delivers a validated path request to
     // the running primary process. Never display a second UI on IPC failure.
     match services::activation::start_or_handoff() {
@@ -23,6 +29,7 @@ pub fn run() {
         .setup(|app| {
             services::activation::attach_app(app.handle())
                 .map_err(std::io::Error::other)?;
+            services::update_curtain::place_arriving_window(app.handle());
             // Before any install can start: what a closed or crashed session left behind.
             if let Some(local_data)=std::env::var_os("LOCALAPPDATA"){
                 services::install::sweep_download_cache(std::path::Path::new(&local_data));
@@ -40,6 +47,10 @@ pub fn run() {
             services::activation::has_pending_package_open_requests,
             services::activation::try_arm_app_update_install,
             services::activation::finish_app_update_install_guard,
+            services::update_curtain::prepare_update_curtain,
+            services::update_curtain::cancel_update_curtain,
+            services::update_curtain::take_update_curtain,
+            services::update_curtain::update_curtain_ready,
             services::activation::confirm_package_open_listener_ready,
             services::activation::cancel_pending_package_open_request,
             services::activation::release_reviewed_package_replay_suppression,
@@ -125,7 +136,7 @@ pub fn run() {
             services::windows_security::get_game_security_guide,
             services::windows_security::open_windows_security
         ])
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("failed to build Coco Launcher 2")
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {

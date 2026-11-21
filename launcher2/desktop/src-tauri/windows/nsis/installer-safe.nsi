@@ -89,6 +89,15 @@ ${StrLoc}
 ; replace its default/OpenWith list. Each marker identifies the exact install.
 !define COCO2PACK_OWNERSHIP "Software\${BUNDLEID}\Coco2PackAssociation"
 
+; The video engine (365 files, ~143 MB) is the same between Coco versions. An
+; install that already holds this exact runtime keeps it instead of rewriting
+; it (and having the antivirus scan it again) on every update. Must equal
+; "<version>-<first 8 of archiveSha256>" of resources/vlc-runtime-manifest.json.
+!define COCO_PLAYER_RUNTIME "3.0.24-1ed59c09"
+!define COCO_PLAYER_MARKER "player\.coco-runtime-${COCO_PLAYER_RUNTIME}"
+Var CocoPlayerKept
+Var CocoResourcePrefix
+
 Var PassiveMode
 Var UpdateMode
 Var NoShortcutMode
@@ -870,9 +879,28 @@ Section Install
   {{#each resources_dirs}}
     CreateDirectory "$INSTDIR\\{{this}}"
   {{/each}}
+  StrCpy $CocoPlayerKept 0
+  ${If} ${FileExists} "$INSTDIR\${COCO_PLAYER_MARKER}"
+    StrCpy $CocoPlayerKept 1
+  ${Else}
+    ; Another runtime (or none): rewrite every engine file and mark it afterwards.
+    Delete "$INSTDIR\player\.coco-runtime-*"
+  ${EndIf}
   {{#each resources}}
-    File /a "/oname={{this.[1]}}" "{{no-escape @key}}"
+    StrCpy $CocoResourcePrefix "{{this.[1]}}" 7
+    ${If} $CocoPlayerKept = 1
+    ${AndIf} $CocoResourcePrefix == "player\"
+    ${AndIf} ${FileExists} "$INSTDIR\\{{this.[1]}}"
+      ; Same runtime already installed: keep this engine file.
+    ${Else}
+      File /a "/oname={{this.[1]}}" "{{no-escape @key}}"
+    ${EndIf}
   {{/each}}
+  ${If} $CocoPlayerKept <> 1
+  ${AndIf} ${FileExists} "$INSTDIR\player\libvlc.dll"
+    FileOpen $0 "$INSTDIR\${COCO_PLAYER_MARKER}" w
+    FileClose $0
+  ${EndIf}
 
   ; Copy external binaries
   {{#each binaries}}
@@ -1015,6 +1043,7 @@ Section Uninstall
   {{#each resources}}
     Delete "$INSTDIR\\{{this.[1]}}"
   {{/each}}
+  Delete "$INSTDIR\player\.coco-runtime-*"
 
   ; Delete external binaries
   {{#each binaries}}

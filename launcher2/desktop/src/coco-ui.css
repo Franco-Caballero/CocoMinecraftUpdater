@@ -482,3 +482,14 @@ body{background:#0b0a0f}
 .coco2-desktop .detail-drawer .coco-native-failure-card .operation-message{margin-top:10px}
 .coco2-desktop .detail-drawer .coco-media-loading{margin-top:12px}
 @media(prefers-reduced-motion:reduce){.coco2-desktop *,.coco2-desktop *::before,.coco2-desktop *::after{animation:none!important;transition:none!important}}
+/* «Actualizando Coco»: identical in the closing launcher, the stand-in window and the new launcher. */
+.coco-update-curtain{position:fixed;inset:0;z-index:400;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 46%,color-mix(in srgb,var(--hot) 14%,transparent),transparent 62%),var(--ink);color:var(--cream);font-family:var(--body);overflow:hidden;transition:opacity .5s ease}
+.coco-update-curtain.is-leaving{opacity:0;pointer-events:none}
+.coco-update-curtain-copy{display:grid;justify-items:center;gap:12px;padding:0 16px;text-align:center}
+.coco-update-curtain-copy small{font:600 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.coco-update-curtain-copy h1{margin:0;font:900 clamp(54px,7vw,96px)/.9 var(--display);text-transform:uppercase;letter-spacing:-.01em}
+.coco-update-curtain-copy p{margin:0;color:var(--dim);font-size:15px}
+.coco-update-curtain-bar{position:relative;width:min(320px,60vw);height:3px;margin-top:12px;border-radius:2px;background:var(--line);overflow:hidden}
+.coco-update-curtain-bar i{position:absolute;inset:0 auto 0 0;width:38%;background:linear-gradient(90deg,var(--hot),var(--gold));animation:coco-update-slide 1.3s ease-in-out infinite}
+@keyframes coco-update-slide{from{translate:-110% 0}to{translate:280% 0}}
+@media(prefers-reduced-motion:reduce){.coco-update-curtain{transition:none}.coco-update-curtain-bar i{animation:none;width:100%;opacity:.6}}
