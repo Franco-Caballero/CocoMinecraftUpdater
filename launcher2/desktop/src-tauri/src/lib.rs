@@ -29,7 +29,10 @@ pub fn run() {
         .setup(|app| {
             services::activation::attach_app(app.handle())
                 .map_err(std::io::Error::other)?;
-            services::update_curtain::place_arriving_window(app.handle());
+            // After an update: where the old window was. Otherwise: centered on the screen in use.
+            if !services::update_curtain::place_arriving_window(app.handle()) {
+                services::window_placement::center_on_active_screen(app.handle());
+            }
             // Before any install can start: what a closed or crashed session left behind.
             if let Some(local_data)=std::env::var_os("LOCALAPPDATA"){
                 services::install::sweep_download_cache(std::path::Path::new(&local_data));
@@ -116,6 +119,7 @@ pub fn run() {
             services::media::prepare_media_stream,
             services::media::prepare_local_media_stream,
             services::media::close_media_stream,
+            services::media::get_media_subtitle,
             services::native_player::open_native_player,
             services::native_player::prewarm_native_player,
             services::native_player::native_player_status,

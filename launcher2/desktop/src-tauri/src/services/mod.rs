@@ -24,5 +24,6 @@ pub mod zerotier_host;
 pub mod location;
 pub mod uninstall;
 pub mod update_curtain;
+pub mod window_placement;
 pub mod verify;
 pub mod windows_security;

@@ -169,6 +169,22 @@ export function toMediaManifest(entry){
       episode.subtitleTrack=e.subtitleTrack;
     }
     if(e.softwareDecode!==undefined)episode.softwareDecode=e.softwareDecode===true;
+    // Text subtitle tracks copied out of the film (the video bytes stay untouched): Coco draws
+    // them over the picture, so the viewer can pick a track and a style.
+    if(e.subtitles!==undefined){
+      if(!Array.isArray(e.subtitles)||!e.subtitles.length||e.subtitles.length>16)throw Error(`Invalid subtitles ${entry.id}/${e.id}`);
+      const trackIds=new Set();
+      episode.subtitles=e.subtitles.map(track=>{
+        const id=String(track.id||''),label=String(track.label||'').trim(),language=String(track.language||'');
+        if(!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,47}$/.test(id)||trackIds.has(id)||!label||label.length>80||/[\u0000-\u001f]/.test(label)
+          ||!/^[a-zA-Z0-9_-]{0,35}$/.test(language)||!['ass','ssa','srt','vtt'].includes(track.format)
+          ||!String(track.url).startsWith('https://github.com/')||!Number.isSafeInteger(track.size)||track.size<=0||track.size>4*1024*1024
+          ||!/^[a-fA-F0-9]{64}$/.test(String(track.sha256||'')))throw Error(`Invalid subtitle track ${entry.id}/${e.id}/${id}`);
+        trackIds.add(id);
+        return {id,label,language,format:track.format,url:String(track.url),size:track.size,sha256:String(track.sha256).toLowerCase(),
+          ...(track.default===true?{default:true}:{}),...(track.forced===true?{forced:true}:{})};
+      });
+    }
     return episode;
   })};
 }

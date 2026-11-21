@@ -11,10 +11,18 @@ type SharedView={addEventListener:(name:string,listener:(event:SharedEvent)=>voi
 /** 'fallback': the fast mode cannot show this film here; reopen with `safe`.
  * 'first-frame', 'note' and 'closed' are for the log; 'problem' is the cause of an error. */
 export type PlaybackEvent='fallback'|'first-frame'|'problem'|'note'|'closed';
+/** The decoder's last reported position, when it was read and whether the film was moving then. */
+export type PlaybackClock={position:number;at:number;moving:boolean;rate:number};
+/** Where the film is now: between polls the clock runs on from the last report. */
+export function clockTime(clock:PlaybackClock,now=performance.now()){
+  return clock.moving?clock.position+Math.min(1.5,(now-clock.at)/1000)*clock.rate:clock.position;
+}
 export type PlaybackOptions={
   /** Compatible mode: software decoding and a 2D canvas. Default is the fast mode (GPU decoding, WebGL). */
   safe?:boolean;
   onEvent?:(kind:PlaybackEvent,detail:string)=>void;
+  /** Kept up to date for subtitles, which need the time between the 250 ms polls. */
+  clock?:{current:PlaybackClock};
 };
 const POLL_MS=250;
 /** Seeks while an arrow key is held are merged: each one reopens the stream. */
@@ -156,6 +164,10 @@ export function useNativePlayback(enabled:boolean,url:string,videoRef:RefObject<
           else next.position=holdTarget;
         }
         state=next;
+        if(options?.clock){
+          const moving=metadata&&!next.paused&&!next.ended&&!next.buffering&&Date.now()>=holdUntil&&stalled<STALL_POLLS;
+          options.clock.current={position:next.position,at:performance.now(),moving,rate:next.rate||1};
+        }
         if(next.error){
           if(yuv&&!drawn&&canFallBack){fallBack('el decodificador no pudo abrir el vídeo');return;}
           notify('problem',next.error);event('error');return;

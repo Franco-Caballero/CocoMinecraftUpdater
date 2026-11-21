@@ -92,7 +92,7 @@ type RepairRecoveryStatus = {id:string;pending:boolean;cleanupPending:boolean;me
 type UpgradePlan = {id:string;status:'upgrade-ready'|'already-current'|'downgrade-blocked'|'not-installed'|'unsupported-extras'|'untrusted-existing'|string;fromVersion:string|null;toVersion:string;neededBytes:number;instancePath:string;message:string};
 type UpgradeOutcome = {id:string;status:string;fromVersion:string|null;toVersion:string;neededBytes:number;instancePath:string;message:string};
 type PendingStandaloneOperation = {id:string;instancePath:string;kind:string;status:'recovery-required'|'cleanup-pending'|'blocked-unsafe'|string;fromVersion?:string|null;toVersion?:string|null;message:string};
-type MediaEntry = {id:string;name:string;type:string;episodes:{id:string;title:string;fileName:string;size:number;mimeType:string}[]};
+type MediaEntry = {id:string;name:string;type:string;episodes:{id:string;title:string;fileName:string;size:number;mimeType:string;subtitles?:{id:string;label:string;language:string;format:string;default:boolean;forced:boolean}[]}[]};
 type PreparedMediaStream = {id:string;episodeId:string;url:string;mimeType:string;expiresInSeconds:number};
 type MediaDownloadProgress = {id:string;episodeId:string;phase:string;downloadedBytes:number;totalBytes:number;percent:number};
 type UpdateStage = 'idle'|'checking'|'current'|'downloading'|'installing'|'deferred'|'error';
@@ -2183,7 +2183,10 @@ function App(){
     </aside></>}
     {mediaPlaying&&<React.Suspense fallback={<div className="coco-player-loading"><LoaderCircle className="spin"/> Preparando reproductor…</div>}><LazyMediaPlayer title={mediaPlaying.title} subtitle={mediaPlaying.subtitle} startAt={mediaPlaying.startAt}
       url={mediaPlaying.stream.url} mimeType={mediaPlaying.stream.mimeType} onClose={closeMedia} onReopen={reopenMedia}
-      progress={{id:mediaPlaying.stream.id,episodeId:mediaPlaying.stream.episodeId}} next={(()=>{
+      progress={{id:mediaPlaying.stream.id,episodeId:mediaPlaying.stream.episodeId}}
+      subtitleTracks={mediaCatalog.find(item=>item.id===mediaPlaying.stream.id)?.episodes.find(item=>item.id===mediaPlaying.stream.episodeId)?.subtitles}
+      loadSubtitle={trackId=>invoke<string>('get_media_subtitle',{id:mediaPlaying.stream.id,episodeId:mediaPlaying.stream.episodeId,subtitleId:trackId})}
+      next={(()=>{
         const media=mediaCatalog.find(item=>item.id===mediaPlaying.stream.id);
         const at=media?media.episodes.findIndex(item=>item.id===mediaPlaying.stream.episodeId):-1;
         const following=media&&at>=0?media.episodes[at+1]:undefined;

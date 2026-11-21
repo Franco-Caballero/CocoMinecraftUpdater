@@ -1,10 +1,12 @@
-import {useEffect,useRef,useState,type KeyboardEvent,type PointerEvent as ReactPointerEvent,type SyntheticEvent} from 'react';
-import {AlertCircle,ArrowLeft,Keyboard,Maximize,Minimize,Pause,Play,RefreshCw,RotateCcw,RotateCw,SkipForward,Volume1,Volume2,VolumeX} from 'lucide-react';
+import {useCallback,useEffect,useMemo,useRef,useState,type KeyboardEvent,type PointerEvent as ReactPointerEvent,type SyntheticEvent} from 'react';
+import {AlertCircle,ArrowLeft,Captions,CaptionsOff,Keyboard,Maximize,Minimize,Pause,Play,RefreshCw,RotateCcw,RotateCw,SkipForward,Volume1,Volume2,VolumeX} from 'lucide-react';
 import {isTauri} from '@tauri-apps/api/core';
 import {getCurrentWindow} from '@tauri-apps/api/window';
 import {nextPlaybackRate,resumeMediaPosition,seekRelative,shouldHandlePlaybackKey,stepVolume} from './media-playback-controls';
 import {formatClock,saveProgress} from './media-progress';
-import {useNativePlayback,type PlaybackEvent} from './native-playback';
+import {clockTime,useNativePlayback,type PlaybackClock,type PlaybackEvent} from './native-playback';
+import {chooseTrack,languageFamily,parseSubtitles,readSubtitlePrefs,saveSubtitlePrefs,type Cue,type SubtitlePrefs,type SubtitleTrack} from './subtitles';
+import {SubtitleOverlay,SubtitlePanel} from './SubtitleLayer';
 import {logEvent} from './diagnostics';
 
 type Props={title:string;url:string;mimeType:string;onClose:()=>void;onReopen?:()=>Promise<boolean>;
@@ -14,9 +16,12 @@ type Props={title:string;url:string;mimeType:string;onClose:()=>void;onReopen?:(
   startAt?:number|null;
   /** Saves where the viewer is, so the detail view can offer to continue. */
   progress?:{id:string;episodeId:string};
-  next?:{title:string;play:()=>void};};
+  next?:{title:string;play:()=>void};
+  /** Text subtitle tracks Coco draws over the picture, and how to fetch one. */
+  subtitleTracks?:SubtitleTrack[];
+  loadSubtitle?:(trackId:string)=>Promise<string>;};
 type State='loading'|'ready'|'buffering'|'error'|'blocked';
-type Flash={icon:'play'|'pause'|'back'|'forward'|'mute'|'volume';label?:string;key:number};
+type Flash={icon:'play'|'pause'|'back'|'forward'|'mute'|'volume'|'subs'|'subs-off';label?:string;key:number};
 
 const IDLE_MS=2600;
 const CLOSE_MS=230;
@@ -41,7 +46,11 @@ const DECODER_CANNOT_START=/bundled decoder|decoder (manifest|path|file|hash|API
 /** Coco's controls work with the bundled native decoder on Windows and an
  * HTML video in browser previews. Native media never enters WebView2's decoder.
  * It starts in the fast mode (GPU) and reopens in the compatible one if that fails here. */
-export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt,progress,next}:Props){
+const NO_TRACKS:SubtitleTrack[]=[];
+/** Parsed tracks of this session: switching back and forth never fetches twice. */
+const parsedTracks=new Map<string,Cue[]>();
+
+export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt,progress,next,subtitleTracks=NO_TRACKS,loadSubtitle}:Props){
   const videoRef=useRef<HTMLVideoElement>(null);
   const canvasRef=useRef<HTMLCanvasElement>(null);
   const [web,setWeb]=useState(()=>decoderUnavailable);
@@ -83,6 +92,47 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
   const [compatible,setCompatible]=useState(prefersCompatible);
   const [problem,setProblem]=useState('');
   const fellBack=useRef(false);
+  // Subtitles: Spanish on its own, the viewer's style, and a menu to change both.
+  const [subPrefs,setSubPrefs]=useState<SubtitlePrefs>(readSubtitlePrefs);
+  const [trackId,setTrackId]=useState<string|null>(()=>chooseTrack(subtitleTracks,readSubtitlePrefs())?.id??null);
+  const [cues,setCues]=useState<Cue[]|null>(null);
+  const [subStatus,setSubStatus]=useState<'idle'|'loading'|'error'>('idle');
+  const [subsOpen,setSubsOpen]=useState(false);
+  const [subAttempt,setSubAttempt]=useState(0);
+  const clock=useRef<PlaybackClock>({position:0,at:0,moving:false,rate:1});
+  const track=subtitleTracks.find(item=>item.id===trackId)??null;
+  const cacheKey=track&&progress?`${progress.id}/${progress.episodeId}/${track.id}`:'';
+  useEffect(()=>{
+    if(!track||!loadSubtitle||!cacheKey){setCues(null);setSubStatus('idle');return;}
+    const ready=parsedTracks.get(cacheKey);
+    if(ready){setCues(ready);setSubStatus('idle');return;}
+    let current=true;
+    setCues(null);setSubStatus('loading');
+    loadSubtitle(track.id).then(text=>{
+      if(!current)return;
+      const parsed=parseSubtitles(text,track.format);
+      parsedTracks.set(cacheKey,parsed);setCues(parsed);setSubStatus('idle');
+      logEvent('player',`subtítulos «${track.label}» de «${title}»: ${parsed.length} líneas`);
+    }).catch(error=>{
+      if(!current)return;
+      setSubStatus('error');logEvent('player',`no se pudieron cargar los subtítulos «${track.label}» de «${title}»: ${String(error)}`);
+    });
+    return()=>{current=false;};
+  },[cacheKey,subAttempt]);
+  const chooseSubtitles=(choice:SubtitleTrack|null)=>{
+    setTrackId(choice?.id??null);
+    const prefs={...subPrefs,enabled:choice!==null,family:choice?languageFamily(choice)||subPrefs.family:subPrefs.family};
+    setSubPrefs(prefs);saveSubtitlePrefs(prefs);
+  };
+  const changeSubPrefs=(prefs:SubtitlePrefs)=>{setSubPrefs(prefs);saveSubtitlePrefs(prefs);};
+  /** C: subtitles off, or back on in the viewer's language. */
+  const toggleSubtitles=()=>{
+    if(!subtitleTracks.length)return;
+    if(track){chooseSubtitles(null);showFlash('subs-off','Sin subtítulos');return;}
+    const choice=chooseTrack(subtitleTracks,{...subPrefs,enabled:true})??subtitleTracks[0];
+    chooseSubtitles(choice);showFlash('subs',choice.label);
+  };
+  const subtitleSample=useMemo(()=>cues?.find(cue=>!cue.sign)?.look,[cues]);
   const playbackEvent=(kind:PlaybackEvent,detail:string)=>{
     if(kind==='fallback'){
       logEvent('player',`el modo rápido no funcionó (${detail}); se abre en modo compatible`);
@@ -99,7 +149,11 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
     }else if(kind==='problem'){setProblem(detail);logEvent('player',`no se pudo reproducir «${title}»: ${detail}`);}
     else logEvent('player',detail);
   };
-  useNativePlayback(native,url,videoRef,canvasRef,{safe:compatible,onEvent:playbackEvent});
+  useNativePlayback(native,url,videoRef,canvasRef,{safe:compatible,onEvent:playbackEvent,clock});
+  const subtitleClock=useCallback(()=>{
+    const video=videoRef.current;
+    return native?clockTime(clock.current):video&&Number.isFinite(video.currentTime)?video.currentTime:0;
+  },[native]);
   const videoEvent=(event:SyntheticEvent<HTMLVideoElement>,next:State)=>{
     // A revoked Range token may dispatch a late waiting/error/playing event
     // after a new key={url} video has mounted. Such events belong only to the
@@ -291,6 +345,7 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
     if(event.key==='Escape'&&!event.ctrlKey&&!event.metaKey&&!event.altKey){
       event.preventDefault();event.stopPropagation();
       // Step back one layer at a time: the shortcut sheet, then fullscreen, then the player.
+      if(subsOpen){setSubsOpen(false);return;}
       if(help){setHelp(false);return;}
       if(fullscreen){void setScreen(false);return;}
       requestClose();
@@ -312,7 +367,8 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
     else if(key==='m')toggleMute();
     else if(key==='f')void setScreen(!fullscreen);
     else if(key==='n')playNext();
-    else if(key==='?')setHelp(open=>!open);
+    else if(key==='?'){setSubsOpen(false);setHelp(open=>!open);}
+    else if(key==='c')toggleSubtitles();
     else if(/^[0-9]$/.test(key)&&Number.isFinite(video.duration))seekTo(video.duration*Number(key)/10);
   };
 
@@ -335,10 +391,11 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
   const shown=scrub?.dragging&&duration?scrub.fraction*duration:current;
   const played=duration?Math.min(1,shown/duration):0;
   const loading=state==='loading'||state==='buffering';
-  const controlsHidden=idle&&!paused&&!help&&state==='ready';
+  const controlsHidden=idle&&!paused&&!help&&!subsOpen&&state==='ready';
   const VolumeIcon=muted||volume===0?VolumeX:volume<.5?Volume1:Volume2;
   const flashIcon=flash&&{play:<Play size={30} fill="currentColor"/>,pause:<Pause size={30} fill="currentColor"/>,
-    back:<RotateCcw size={28}/>,forward:<RotateCw size={28}/>,mute:<VolumeX size={28}/>,volume:<Volume2 size={28}/>}[flash.icon];
+    back:<RotateCcw size={28}/>,forward:<RotateCw size={28}/>,mute:<VolumeX size={28}/>,volume:<Volume2 size={28}/>,
+    subs:<Captions size={28}/>,'subs-off':<CaptionsOff size={28}/>}[flash.icon];
 
   return <div className={`coco-player-shell ${native?'is-native':''} ${closing?'is-closing':''} ${controlsHidden?'is-idle':''} ${paused?'is-paused':''}`}
     role="dialog" aria-modal="true" aria-label={`Reproduciendo ${title}`} ref={dialogRef} tabIndex={-1} onKeyDown={handleKey}
@@ -411,6 +468,8 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
         onStalled={event=>videoEvent(event,'buffering')} onSeeking={event=>videoEvent(event,'buffering')}
         onError={event=>videoEvent(event,'error')} />
 
+      {cues&&track&&<SubtitleOverlay cues={cues} clock={subtitleClock} target={()=>native?canvasRef.current:videoRef.current}
+        preset={subPrefs.preset} scale={subPrefs.scale} lifted={!controlsHidden}/>}
       {flash&&<span key={flash.key} className="coco-player-flash" aria-hidden="true">{flashIcon}{flash.label&&<small>{flash.label}</small>}</span>}
       {loading&&<div className="coco-player-state" role="status"><i className="coco-player-ring"/><span>{state==='loading'?'Preparando':'Cargando'}</span></div>}
       {state==='blocked'&&<button className="coco-player-bigplay" aria-label="Reproducir" onClick={togglePlay}><Play size={34} fill="currentColor"/></button>}
@@ -445,9 +504,13 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
           <dt>F · doble clic</dt><dd>Pantalla completa</dd>
           <dt>0 – 9</dt><dd>Saltar al 0–90 %</dd>
           {next&&<><dt>N</dt><dd>Siguiente episodio</dd></>}
+          {subtitleTracks.length>0&&<><dt>C</dt><dd>Subtítulos sí o no</dd></>}
           <dt>Esc</dt><dd>Salir</dd>
         </dl>
       </div>}
+      {subsOpen&&<SubtitlePanel tracks={subtitleTracks} chosen={trackId} status={subStatus} prefs={subPrefs} sample={subtitleSample}
+        onChoose={chooseSubtitles} onPrefs={changeSubPrefs} onRetry={()=>setSubAttempt(n=>n+1)}
+        onClose={()=>{setSubsOpen(false);dialogRef.current?.focus();}}/>}
     </div>
 
     <header className="coco-player-top">
@@ -482,7 +545,10 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
         <span className="coco-player-spacer"/>
         {next&&<button className="coco-player-next" title={`Siguiente: ${next.title} (N)`} onClick={playNext}><SkipForward size={17}/><span>Siguiente</span></button>}
         <button className="coco-player-rate" aria-label={`Velocidad ${rate}×`} title="Velocidad" onClick={cycleRate}>{rate}×</button>
-        <button aria-label="Atajos de teclado" aria-pressed={help} title="Atajos (?)" onClick={()=>setHelp(open=>!open)}><Keyboard size={18}/></button>
+        {subtitleTracks.length>0&&<button className={`coco-player-subs-toggle${track?' is-active':''}`} aria-label="Subtítulos" aria-haspopup="menu" aria-expanded={subsOpen}
+          title={track?`Subtítulos: ${track.label} (C)`:'Subtítulos (C)'} onClick={()=>{setHelp(false);setSubsOpen(open=>!open);}}>
+          {track?<Captions size={19}/>:<CaptionsOff size={19}/>}</button>}
+        <button aria-label="Atajos de teclado" aria-pressed={help} title="Atajos (?)" onClick={()=>{setSubsOpen(false);setHelp(open=>!open);}}><Keyboard size={18}/></button>
         <button aria-label={fullscreen?'Salir de pantalla completa':'Pantalla completa'} title="Pantalla completa (F)" onClick={()=>void setScreen(!fullscreen)}>{fullscreen?<Minimize size={18}/>:<Maximize size={18}/>}</button>
       </div>
     </div>

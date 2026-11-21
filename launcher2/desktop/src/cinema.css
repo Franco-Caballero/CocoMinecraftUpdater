@@ -101,7 +101,65 @@
 .coco-player-error span{font-size:12.5px;line-height:1.5;color:var(--dim)}
 .coco-player-error small{max-width:100%;font:400 10px/1.4 var(--mono);color:var(--faint);overflow-wrap:anywhere}
 .coco-player-loading{position:fixed;z-index:70;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;background:#000;color:var(--dim);font:400 10px var(--mono);letter-spacing:.14em;text-transform:uppercase}
-@media(max-width:720px){.coco-player-top{padding:14px 14px 50px}.coco-player-controls{padding:60px 14px 14px}.coco-player-volume input,.coco-player-bar .coco-player-next span,.coco-player-bar .coco-player-rate{display:none}:is(.coco-player-toast,.coco-player-upnext,.coco-player-help){left:14px;right:14px;width:auto;bottom:112px}}
+/* Subtitles: drawn by Coco over the picture (never by the engine), so they take any style. */
+.coco-subs{position:absolute;z-index:3;pointer-events:none;font:600 var(--sub-px)/1.22 var(--body);color:#fff;letter-spacing:.005em;text-wrap:balance}
+.coco-sub-group{position:absolute;left:6%;right:6%;display:flex;flex-direction:column;gap:.18em}
+.coco-sub-group.is-bottom{bottom:5.5%;translate:0 var(--sub-lift,0);transition:translate .45s var(--snap)}
+.coco-sub-group.is-top{top:5%}
+.coco-sub-group.is-middle{top:50%;translate:0 -50%}
+.coco-sub-cue{margin:0;text-align:center}
+.coco-sub-cue.is-left{text-align:left}.coco-sub-cue.is-right{text-align:right}
+.coco-sub-line{display:block}
+.coco-sub-text .is-italic{font-style:italic}.coco-sub-text .is-bold{font-weight:800}
+.coco-sub-sign{position:absolute;margin:0;max-width:60%;text-align:center;line-height:1.15;white-space:pre-line}
+.coco-subs-look-clasico .coco-sub-text{text-shadow:.06em 0 0 #000,-.06em 0 0 #000,0 .06em 0 #000,0 -.06em 0 #000,.045em .045em 0 #000,-.045em .045em 0 #000,.045em -.045em 0 #000,-.045em -.045em 0 #000,0 .07em .22em #000b}
+.coco-subs-look-amarillo .coco-sub-text{color:#ffd84a;text-shadow:.06em 0 0 #1a1300,-.06em 0 0 #1a1300,0 .06em 0 #1a1300,0 -.06em 0 #1a1300,.045em .045em 0 #1a1300,-.045em .045em 0 #1a1300,.045em -.045em 0 #1a1300,-.045em -.045em 0 #1a1300,0 .07em .22em #000b}
+.coco-subs-look-caja .coco-sub-line{line-height:1.42}
+.coco-subs-look-caja .coco-sub-text{padding:.06em .42em;border-radius:.16em;background:#0b0a0fd1;box-decoration-break:clone;-webkit-box-decoration-break:clone;font-weight:500}
+.coco-subs-look-original{font-weight:700}
+
+/* The subtitle menu floats where the shortcut sheet does. */
+.coco-player-subs{position:absolute;z-index:7;right:28px;bottom:128px;display:grid;gap:14px;width:min(372px,calc(100% - 56px));max-height:calc(100% - 170px);overflow:auto;padding:16px 16px 14px;border:1px solid var(--line);border-radius:5px;background:color-mix(in srgb,var(--ink-2) 90%,transparent);backdrop-filter:blur(14px);box-shadow:0 20px 60px #000c;animation:coco-cinema-slide .4s var(--snap) both;scrollbar-width:thin}
+.coco-player-subs:focus{outline:none}
+.coco-subs-section{display:grid;gap:7px}
+.coco-subs-section+.coco-subs-section{padding-top:13px;border-top:1px solid var(--line-soft)}
+.coco-subs-section h3{margin:0;font:400 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.coco-subs-tracks{display:grid;gap:2px}
+.coco-subs-track{display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:11px;width:100%;min-height:40px;padding:6px 10px;border:1px solid transparent;border-radius:4px;background:none;color:var(--cream);text-align:left;cursor:pointer;transition:background .18s,border-color .18s}
+.coco-subs-track:hover{background:#ffffff12}
+.coco-subs-track:focus-visible{outline:2px solid var(--hot);outline-offset:1px}
+.coco-subs-track.is-on{border-color:color-mix(in srgb,var(--hot) 45%,transparent);background:linear-gradient(90deg,color-mix(in srgb,var(--hot) 16%,transparent),transparent 85%)}
+.coco-subs-radio{display:grid;place-items:center;width:18px;height:18px;border:1.5px solid var(--faint);border-radius:50%;color:#16061a;transition:background .2s,border-color .2s,scale .25s var(--snap)}
+.coco-subs-track.is-on .coco-subs-radio{border-color:var(--hot);background:var(--hot);box-shadow:0 0 10px color-mix(in srgb,var(--hot) 60%,transparent)}
+.coco-subs-track-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.coco-subs-track-copy strong{font:600 13px/1.2 var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coco-subs-track-copy small{font:400 10px/1 var(--mono);letter-spacing:.05em;color:var(--dim)}
+.coco-subs-track.is-on .coco-subs-track-copy small{color:var(--hot)}
+.coco-subs-problem{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 0;padding:8px 10px;border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);border-radius:4px;font-size:12px;color:var(--dim)}
+.coco-subs-problem button{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid var(--line);border-radius:3px;background:none;color:var(--cream);font:800 12px var(--display);letter-spacing:.05em;text-transform:uppercase;cursor:pointer}
+.coco-subs-problem button:hover{border-color:var(--hot);background:color-mix(in srgb,var(--hot) 15%,transparent)}
+.coco-subs-presets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.coco-subs-preset{display:grid;gap:8px;padding:6px 6px 9px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--cream);text-align:left;cursor:pointer;transition:border-color .18s,background .18s,transform .2s var(--snap)}
+.coco-subs-preset:hover{border-color:color-mix(in srgb,var(--hot) 55%,var(--line));transform:translateY(-1px)}
+.coco-subs-preset:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+.coco-subs-preset.is-on{border-color:var(--hot);background:color-mix(in srgb,var(--hot) 10%,transparent);box-shadow:inset 0 0 0 1px var(--hot)}
+.coco-subs-sample{display:grid;place-items:end center;height:52px;padding-bottom:9px;border-radius:2px;overflow:hidden;font:600 19px/1 var(--body);color:#fff;background:radial-gradient(ellipse at 30% 30%,#6d5a8a,transparent 60%),radial-gradient(ellipse at 80% 70%,#b07a52,transparent 55%),linear-gradient(160deg,#3a3550,#1b1924)}
+.coco-subs-sample.coco-subs-look-original{font-weight:700}
+.coco-subs-preset-copy{display:flex;flex-direction:column;gap:3px;padding:0 3px}
+.coco-subs-preset-copy strong{font:800 14px/1 var(--display);letter-spacing:.05em;text-transform:uppercase}
+.coco-subs-preset-copy small{font:400 10px/1.2 var(--mono);color:var(--dim)}
+.coco-subs-preset.is-on .coco-subs-preset-copy strong{color:var(--hot)}
+.coco-subs-section h3 b{float:right;font-weight:600;color:var(--cream);font-variant-numeric:tabular-nums}
+.coco-subs-size{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:4px;background:#0000002e}
+.coco-subs-size span{font:700 12px/1 var(--body);color:var(--dim)}
+.coco-subs-size span.is-large{font-size:20px}
+.coco-subs-size input{width:100%;height:4px;margin:0;appearance:none;-webkit-appearance:none;border-radius:99px;background:linear-gradient(90deg,var(--hot) var(--level),#ffffff33 var(--level));cursor:pointer}
+.coco-subs-size input::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--hot) 40%,transparent);transition:scale .2s var(--snap)}
+.coco-subs-size input:active::-webkit-slider-thumb{scale:1.18}
+.coco-subs-size input:focus-visible{outline:2px solid var(--hot);outline-offset:6px}
+.coco-player-bar .coco-player-subs-toggle{position:relative}
+.coco-player-bar .coco-player-subs-toggle.is-active::after{content:"";position:absolute;left:11px;right:11px;bottom:5px;height:2px;border-radius:2px;background:var(--hot);box-shadow:0 0 8px var(--hot)}
+@media(max-width:720px){.coco-player-top{padding:14px 14px 50px}.coco-player-controls{padding:60px 14px 14px}.coco-player-volume input,.coco-player-bar .coco-player-next span,.coco-player-bar .coco-player-rate{display:none}:is(.coco-player-toast,.coco-player-upnext,.coco-player-help,.coco-player-subs){left:14px;right:14px;width:auto;bottom:112px}}
 
 
 /* ---- Picking what to watch, in a title's detail ---- */

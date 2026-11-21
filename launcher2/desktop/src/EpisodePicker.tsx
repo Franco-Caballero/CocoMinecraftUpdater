@@ -10,6 +10,14 @@ export function episodeLabels(episodes:readonly MediaEpisode[]){
   return {season:shared,labels:parts.map(part=>(shared?part.slice(1):part).join(' · '))};
 }
 
+/** The number each episode goes by: the one in its title («Episodio 41») when every title has
+ * its own, otherwise its place in the list (a series split into parts repeats numbers). */
+export function episodeNumbers(episodes:readonly MediaEpisode[]){
+  const named=episodes.map(episode=>{const match=/(?:episodio|episode|cap[ií]tulo|ep\.?)\s*(\d{1,4})/i.exec(episode.title);return match?Number(match[1]):NaN;});
+  const usable=named.every(Number.isFinite)&&new Set(named).size===named.length;
+  return episodes.map((_,index)=>usable?named[index]:index+1);
+}
+
 /** What the main button plays: the episode in progress, else the one after the last watched. */
 export function mediaPlan(id:string,episodes:readonly MediaEpisode[],movie:boolean){
   const progress=episodes.map(episode=>progressFor(id,episode.id));
@@ -21,7 +29,7 @@ export function mediaPlan(id:string,episodes:readonly MediaEpisode[],movie:boole
   const episode=episodes[index];
   const current=progress[index]??null;
   const resume=resumePoint(current);
-  const number=index+1;
+  const number=episodeNumbers(episodes)[index]??index+1;
   const label=movie
     ?(resume!==null?'Continuar':current?.finished?'Ver de nuevo':'Ver película')
     :(resume!==null?`Continuar E${number}`:`Ver episodio ${number}`);
@@ -44,6 +52,7 @@ export function EpisodePicker({id,episodes,movie,loadingId,disabled,onPlay}:Prop
     </section>;
   }
   const {season,labels}=episodeLabels(episodes);
+  const numbers=episodeNumbers(episodes);
   return <section className="coco-episodes" aria-label="Episodios">
     <header className="coco-episodes-head"><span className="coco-media-eyebrow">{season||'Episodios'}</span><small>{episodes.length} {episodes.length===1?'episodio':'episodios'}</small></header>
     <ol>{episodes.map((episode,index)=>{
@@ -55,7 +64,7 @@ export function EpisodePicker({id,episodes,movie,loadingId,disabled,onPlay}:Prop
       return <li key={episode.id} style={{['--i' as string]:index}}>
         <button type="button" className={`coco-episode ${isNext?'is-next':''} ${progress?.finished?'is-watched':''} ${loading?'is-loading':''}`}
           disabled={disabled} aria-label={`Reproducir ${labels[index]}${status?`, ${status}`:''}`} onClick={()=>onPlay(episode,false)}>
-          <span className="coco-episode-num" aria-hidden="true">{String(index+1).padStart(2,'0')}</span>
+          <span className="coco-episode-num" aria-hidden="true">{String(numbers[index]).padStart(2,'0')}</span>
           <span className="coco-episode-copy"><strong>{labels[index]}</strong>{status&&<small>{status}</small>}</span>
           <span className="coco-episode-go" aria-hidden="true">{loading?<LoaderCircle className="spin" size={16}/>:progress?.finished?<Check size={16}/>:<Play size={15} fill="currentColor"/>}</span>
           {progress&&!progress.finished&&<i className="coco-episode-progress" style={{width:`${watchedFraction(progress)*100}%`}}/>}

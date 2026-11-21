@@ -101,9 +101,15 @@ function mountPlayer({onReopen=async()=>false}={}){
       return slots[index];
     },
     useEffect(effect,deps){effects.push({effect,deps});},
+    useCallback(callback){return callback;},
+    useMemo(factory){return factory();},
   };
+  // Subtitles are covered by subtitles-v1; here the player simply has no tracks.
+  const subtitles={readSubtitlePrefs:()=>({enabled:true,family:'es',preset:'clasico',scale:1}),chooseTrack:()=>null,
+    saveSubtitlePrefs(){},languageFamily:()=>'',parseSubtitles:()=>[]};
   const modules={react,'./media-playback-controls':controls,'./media-progress':mediaProgress,
-    '@tauri-apps/api/core':{isTauri:()=>false},'./native-playback':{useNativePlayback(){}},
+    '@tauri-apps/api/core':{isTauri:()=>false},'./native-playback':{useNativePlayback(){},clockTime:()=>0},
+    './subtitles':subtitles,'./SubtitleLayer':{SubtitleOverlay:()=>null,SubtitlePanel:()=>null},
     'lucide-react':new Proxy({}, {get:()=>()=>null})};
   const module=evaluate(compiled.player,{require:name=>modules[name]||{},h,
     Fragment:'fragment',console,queueMicrotask,
@@ -117,7 +123,8 @@ function mountPlayer({onReopen=async()=>false}={}){
   function activate(video){
     slots[hooks.indexOf('videoRef')].current=video;
     slots[hooks.indexOf('dialogRef')].current={focus(){}};
-    const next=effects.find(e=>Array.isArray(e.deps)&&e.deps.length>0);
+    // The effect keyed on the stream URL (the subtitle loader's comes first and is keyed on its track).
+    const next=effects.find(e=>Array.isArray(e.deps)&&e.deps.includes(props.url));
     assert.ok(next,'actual media player URL effect');
     cleanup=next.effect()||(()=>{});
   }

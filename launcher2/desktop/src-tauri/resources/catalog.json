@@ -2266,5 +2266,19 @@
     "executable": "just volleyball/volleyball.exe",
     "launchArguments": [],
     "hostingMode": "p2p"
+  },
+  {
+    "id": "yumeiro-patissiere",
+    "instanceId": "yumeiro-patissiere",
+    "name": "Yumeiro Patissiere",
+    "image": "/covers/yumeiro-patissiere.jpg.webp",
+    "description": "Anime (2009) de Studio Pierrot. Ichigo Amano tiene catorce años, es bastante torpe y casi todo le sale mal, pero tiene un paladar prodigioso. Un pastel probado en una feria la lleva a la Academia St. Marie, donde aprende a ser pastelera junto a los Espíritus de los Dulces y tres compañeros con mucho talento. Una serie luminosa sobre amistad, esfuerzo y postres imposibles. Con subtítulos en español latino.",
+    "workflow": "coco-media",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [],
+    "executable": "",
+    "launchArguments": [],
+    "hostingMode": ""
   }
 ]

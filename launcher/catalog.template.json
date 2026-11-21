@@ -4929,6 +4929,95 @@
     "serverName": "Coco - just volleyball"
   },
   "files": []
-}
+},
+    {
+      "id": "yumeiro-patissiere",
+      "name": "Yumeiro Patissiere",
+      "ui": {
+        "accentColor": "#E86FA6",
+        "imagePath": "assets/experiences/yumeiro-patissiere.jpg"
+      },
+      "description": "Anime (2009) de Studio Pierrot. Ichigo Amano tiene catorce años, es bastante torpe y casi todo le sale mal, pero tiene un paladar prodigioso. Un pastel probado en una feria la lleva a la Academia St. Marie, donde aprende a ser pastelera junto a los Espíritus de los Dulces y tres compañeros con mucho talento. Una serie luminosa sobre amistad, esfuerzo y postres imposibles. Con subtítulos en español latino.",
+      "instanceId": "yumeiro-patissiere",
+      "managementMode": "managed",
+      "runtime": {
+        "type": "media"
+      },
+      "content": {
+        "type": "episodic-video",
+        "downloadFolderName": "yumeiro patissiere",
+        "openAfterDownload": false,
+        "episodes": [
+          {
+            "id": "ep-41",
+            "title": "Episodio 41",
+            "fileName": "Yumeiro.Patissiere.41.1080p.ES.mkv",
+            "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.41.1080p.ES.mkv",
+            "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.41.1080p.ES.mkv",
+            "size": 207622601,
+            "sha256": "9503bc1b30300fd8bb79d48be0888fef1a381cfe4545ccd381e14c2f397b6386",
+            "subtitles": [
+              {
+                "id": "spa",
+                "label": "Español latino",
+                "language": "spa",
+                "format": "ass",
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.41.1080p.1.spa.ass",
+                "size": 36439,
+                "sha256": "04d5bf1e341f5db4cd242f59ffa00771c0a1dc156a14058625f111912aecfe79",
+                "default": true
+              }
+            ]
+          },
+          {
+            "id": "ep-42",
+            "title": "Episodio 42",
+            "fileName": "Yumeiro.Patissiere.42.1080p.ES.mkv",
+            "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.42.1080p.ES.mkv",
+            "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.42.1080p.ES.mkv",
+            "size": 224020400,
+            "sha256": "3ba61bc14341be6a78d287549f44e3e0039266052e6fd182aa4d9ff2a3c5484c",
+            "subtitles": [
+              {
+                "id": "spa",
+                "label": "Español latino",
+                "language": "spa",
+                "format": "ass",
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.42.1080p.1.spa.ass",
+                "size": 32429,
+                "sha256": "3817ec3dbde92c3f491ad2aeb7c5b9eecb06f0b9bef2315c584fb071f6b92978",
+                "default": true
+              }
+            ]
+          },
+          {
+            "id": "ep-43",
+            "title": "Episodio 43",
+            "fileName": "Yumeiro.Patissiere.43.1080p.ES.mkv",
+            "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.43.1080p.ES.mkv",
+            "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.43.1080p.ES.mkv",
+            "size": 227312579,
+            "sha256": "b6280fd2f017ec2d7c49b010e45a1f032d8a0d73623298a0fb7214ec4a2f4559",
+            "subtitles": [
+              {
+                "id": "spa",
+                "label": "Español latino",
+                "language": "spa",
+                "format": "ass",
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.43.1080p.1.spa.ass",
+                "size": 25763,
+                "sha256": "5c57d426f443d101e766b77ee413dfe3bbd41f1d7bace8d976aef49575d17f2c",
+                "default": true
+              }
+            ]
+          }
+        ]
+      },
+      "launch": {
+        "workflow": "coco-media",
+        "serverName": "Yumeiro Patissiere"
+      },
+      "files": []
+    }
   ]
 }

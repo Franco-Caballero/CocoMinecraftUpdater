@@ -180,18 +180,20 @@ pub fn cancel_update_curtain() {
 // ---------------------------------------------------------------------------
 
 /// Opens the new version exactly where the old window was, under the curtain.
-pub fn place_arriving_window(app: &tauri::AppHandle) {
+/// `false` when no update is arriving: the caller places the window as usual.
+pub fn place_arriving_window(app: &tauri::AppHandle) -> bool {
     use tauri::Manager;
-    let Some(dir) = folder() else { return };
+    let Some(dir) = folder() else { return false };
     let Some(handoff) = pending_arrival(&dir, SystemTime::now()) else {
         // Nothing waiting: clear what an earlier update left behind (the curtain exe may still be closing).
         if dir.is_dir() && !fresh(&dir.join(HANDOFF), SystemTime::now()) {
             let _ = std::fs::remove_dir_all(&dir);
         }
-        return;
+        return false;
     };
-    let (Some(geometry), Some(window)) = (handoff.geometry, app.get_webview_window("main")) else { return };
+    let (Some(geometry), Some(window)) = (handoff.geometry, app.get_webview_window("main")) else { return false };
     apply_geometry(&window, geometry);
+    true
 }
 
 fn apply_geometry<R: tauri::Runtime>(window: &tauri::WebviewWindow<R>, geometry: Geometry) {

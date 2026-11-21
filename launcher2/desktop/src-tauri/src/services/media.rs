@@ -106,7 +106,30 @@ pub(super) struct PrivateEpisode {
     pub(super) subtitle_track: Option<u32>,
     #[serde(default)]
     pub(super) software_decode: bool,
+    /// Text subtitle tracks copied out of the film, drawn by Coco over the picture.
+    #[serde(default)]
+    pub(super) subtitles: Vec<SubtitleFile>,
 }
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct SubtitleFile {
+    pub(super) id: String,
+    label: String,
+    #[serde(default)]
+    language: String,
+    format: String,
+    url: String,
+    size: u64,
+    sha256: String,
+    #[serde(default)]
+    default: bool,
+    #[serde(default)]
+    forced: bool,
+}
+
+const MAX_SUBTITLE_TRACKS: usize = 16;
+const MAX_SUBTITLE_BYTES: u64 = 4 * 1024 * 1024;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -122,7 +145,9 @@ const PREFETCH_BYTES: u64 = 16 * 1024 * 1024;
 
 impl PrivateEpisode {
     fn hints(&self) -> PlaybackHints {
-        PlaybackHints {subtitle_track: self.subtitle_track, software_decode: self.software_decode || self.subtitle_track.is_some()}
+        // With its own subtitle files the engine draws none: Coco does, and the GPU can decode.
+        let subtitle_track = if self.subtitles.is_empty() { self.subtitle_track } else { None };
+        PlaybackHints {subtitle_track, software_decode: self.software_decode || subtitle_track.is_some()}
     }
 }
 
@@ -134,6 +159,19 @@ pub struct MediaEpisode {
     pub file_name: String,
     pub size: u64,
     pub mime_type: &'static str,
+    pub subtitles: Vec<SubtitleInfo>,
+}
+
+/// What the player shows about a subtitle track; its address stays private.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubtitleInfo {
+    pub id: String,
+    pub label: String,
+    pub language: String,
+    pub format: String,
+    pub default: bool,
+    pub forced: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -240,6 +278,19 @@ fn validate_manifest(raw: &[u8]) -> Result<Vec<PrivateMedia>, String> {
             if episode.subtitle_track.is_some_and(|track| track > 63) {
                 return Err(format!("Invalid subtitle track in {} / {}", entry.id, episode.id));
             }
+            let mut track_ids = std::collections::HashSet::new();
+            let subtitles_valid = episode.subtitles.len() <= MAX_SUBTITLE_TRACKS && episode.subtitles.iter().all(|track| {
+                valid_id(&track.id) && track.id.len() <= 48 && track_ids.insert(track.id.as_str())
+                    && !track.label.trim().is_empty() && track.label.chars().count() <= 80 && !track.label.chars().any(char::is_control)
+                    && track.language.len() <= 35 && track.language.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_'))
+                    && matches!(track.format.as_str(), "ass" | "ssa" | "srt" | "vtt")
+                    && track.size > 0 && track.size <= MAX_SUBTITLE_BYTES
+                    && track.sha256.len() == 64 && track.sha256.bytes().all(|b| b.is_ascii_hexdigit())
+                    && reqwest::Url::parse(&track.url).is_ok_and(|url| upstream_allowed(&url, false))
+            });
+            if !subtitles_valid {
+                return Err(format!("Invalid subtitles in {} / {}", entry.id, episode.id));
+            }
             if !episode.parts.is_empty() {
                 let mut total = 0u64;
                 let valid = episode.parts.len() <= MAX_PARTS && episode.parts.iter().all(|part| {
@@ -276,6 +327,14 @@ fn public_catalog(
             file_name: ep.file_name.clone(),
             size: ep.size,
             mime_type: mime_type(&ep.file_name).unwrap().0,
+            subtitles: ep.subtitles.iter().map(|track| SubtitleInfo {
+                id: track.id.clone(),
+                label: track.label.clone(),
+                language: track.language.clone(),
+                format: track.format.clone(),
+                default: track.default,
+                forced: track.forced,
+            }).collect(),
         }).collect(),
     }).collect()
 }
@@ -292,6 +351,66 @@ fn read_media_catalog() -> Result<Vec<MediaEntry>, String> {
         .into_iter().filter(|item| item.workflow == "coco-media")
         .map(|item| (item.id, item.image)).collect::<Vec<_>>();
     Ok(public_catalog(&private, &covers))
+}
+
+/// The text of one subtitle track, verified against the catalog and kept in a local cache.
+#[tauri::command]
+pub async fn get_media_subtitle(id: String, episode_id: String, subtitle_id: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || read_subtitle(&id, &episode_id, &subtitle_id))
+        .await.map_err(|error| format!("Subtitle read interrupted: {error}"))?
+}
+
+fn read_subtitle(id: &str, episode_id: &str, subtitle_id: &str) -> Result<String, String> {
+    let private = private_catalog()?;
+    let track = private.iter().find(|entry| entry.id == id)
+        .and_then(|entry| entry.episodes.iter().find(|episode| episode.id == episode_id))
+        .and_then(|episode| episode.subtitles.iter().find(|track| track.id == subtitle_id))
+        .ok_or("Pista de subtítulos desconocida")?;
+    let cache = std::env::var_os("LOCALAPPDATA").map(|local| std::path::Path::new(&local)
+        .join("CocoLauncher2").join("subtitle-cache").join(format!("{}.{}", track.sha256.to_ascii_lowercase(), track.format)));
+    if let Some(bytes) = cache.as_ref().and_then(|path| std::fs::read(path).ok()) {
+        if subtitle_bytes_match(&bytes, track) { return Ok(subtitle_text(&bytes)); }
+    }
+    let bytes = download_subtitle(&track.url, track.size)?;
+    if !subtitle_bytes_match(&bytes, track) {
+        return Err("Los subtítulos descargados no coinciden con el catálogo".into());
+    }
+    if let Some(path) = cache {
+        if let Some(parent) = path.parent() { let _ = std::fs::create_dir_all(parent); }
+        let _ = std::fs::write(&path, &bytes);
+    }
+    Ok(subtitle_text(&bytes))
+}
+
+fn subtitle_bytes_match(bytes: &[u8], track: &SubtitleFile) -> bool {
+    use sha2::{Digest, Sha256};
+    bytes.len() as u64 == track.size && format!("{:x}", Sha256::digest(bytes)).eq_ignore_ascii_case(&track.sha256)
+}
+
+/// UTF-8 without its byte-order mark; anything undecodable becomes a replacement character.
+fn subtitle_text(bytes: &[u8]) -> String {
+    String::from_utf8_lossy(bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(bytes)).into_owned()
+}
+
+fn download_subtitle(url: &str, size: u64) -> Result<Vec<u8>, String> {
+    let parsed = reqwest::Url::parse(url).map_err(|_| "Dirección de subtítulos inválida")?;
+    if !upstream_allowed(&parsed, false) { return Err("Dirección de subtítulos no permitida".into()); }
+    // Every redirect stays on the release hosts the films themselves come from.
+    let policy = reqwest::redirect::Policy::custom(|attempt| {
+        if attempt.previous().len() >= 5 { attempt.error("demasiadas redirecciones") }
+        else if upstream_allowed(attempt.url(), false) { attempt.follow() }
+        else { attempt.stop() }
+    });
+    let client = reqwest::blocking::Client::builder().redirect(policy)
+        .connect_timeout(UPSTREAM_CONNECT_TIMEOUT).timeout(Duration::from_secs(60))
+        .build().map_err(|error| format!("Sin cliente de red: {error}"))?;
+    let response = client.get(parsed).send().map_err(|error| format!("No se pudieron descargar los subtítulos: {error}"))?;
+    if !response.status().is_success() {
+        return Err(format!("No se pudieron descargar los subtítulos (HTTP {})", response.status().as_u16()));
+    }
+    let mut bytes = Vec::with_capacity(size as usize);
+    response.take(size + 1).read_to_end(&mut bytes).map_err(|error| format!("Descarga de subtítulos cortada: {error}"))?;
+    Ok(bytes)
 }
 
 // Token entropy comes from the operating system, not timestamps or a process ID.
@@ -1061,7 +1180,7 @@ mod tests {
             episodes: vec![PrivateEpisode {
                 id: "part-1".into(), title: "Part 1".into(),
                 file_name: "sample.mp4".into(), stream_url: url.into(), source_url:url.into(),
-                size: 12, sha256: String::new(), parts: Vec::new(), subtitle_track: None, software_decode: false,
+                size: 12, sha256: String::new(), parts: Vec::new(), subtitle_track: None, software_decode: false, subtitles: Vec::new(),
             }],
         }]
     }
@@ -1622,6 +1741,37 @@ mod tests {
         assert!(serialized.contains("/covers/demo.jpg"));
         let invalid = raw.to_string().replace("github.com", "localhost");
         assert!(validate_manifest(invalid.as_bytes()).is_err());
+    }
+
+    #[test]
+    fn subtitle_files_are_validated_listed_without_their_address_and_replace_engine_subtitles() {
+        let url = "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v1/video.mkv";
+        let subtitle = "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/v1/video.es.ass";
+        let sha = "a".repeat(64);
+        let manifest = |track: serde_json::Value| serde_json::json!([{
+            "id":"demo", "name":"Demo", "type":"episodic-video",
+            "episodes":[{"id":"ep-1","title":"Ep 1","fileName":"sample.mkv","streamUrl":url,"sourceUrl":url,"size":12,
+                "subtitleTrack":1,"subtitles":[track]}]
+        }]).to_string();
+        let good = serde_json::json!({"id":"es","label":"Español latino","language":"spa","format":"ass",
+            "url":subtitle,"size":100,"sha256":sha,"default":true});
+        let parsed = validate_manifest(manifest(good.clone()).as_bytes()).unwrap();
+        let episode = &parsed[0].episodes[0];
+        assert_eq!(episode.hints(), PlaybackHints { subtitle_track: None, software_decode: false },
+            "Coco draws the subtitles, so the engine draws none and the GPU may decode");
+        let public = serde_json::to_string(&public_catalog(&parsed, &[])).unwrap();
+        assert!(public.contains("\"label\":\"Español latino\"") && public.contains("\"language\":\"spa\"") && public.contains("\"default\":true"));
+        assert!(!public.contains("video.es.ass") && !public.contains(&sha), "{public}");
+        for (key, value) in [("url", serde_json::json!(subtitle.replace("github.com", "evil.example"))),
+            ("format", serde_json::json!("pgs")), ("size", serde_json::json!(5 * 1024 * 1024)),
+            ("sha256", serde_json::json!("xyz")), ("id", serde_json::json!("../es")), ("label", serde_json::json!(" "))] {
+            let mut bad = good.clone();
+            bad[key] = value;
+            assert!(validate_manifest(manifest(bad).as_bytes()).is_err(), "{key} must be refused");
+        }
+        let track = &episode.subtitles[0];
+        assert!(!subtitle_bytes_match(b"short", track));
+        assert_eq!(subtitle_text("\u{feff}[Script Info]".as_bytes()), "[Script Info]");
     }
 
     #[test]
