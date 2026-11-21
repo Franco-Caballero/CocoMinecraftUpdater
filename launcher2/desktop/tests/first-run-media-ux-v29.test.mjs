@@ -105,7 +105,7 @@ function mountPlayer({onReopen=async()=>false}={}){
     useMemo(factory){return factory();},
   };
   // Subtitles are covered by subtitles-v1; here the player simply has no tracks.
-  const subtitles={readSubtitlePrefs:()=>({enabled:true,family:'es',preset:'clasico',scale:1}),chooseTrack:()=>null,
+  const subtitles={readSubtitlePrefs:()=>({enabled:true,family:'es',preset:'clasico',scale:1,offset:0}),chooseTrack:()=>null,
     saveSubtitlePrefs(){},languageFamily:()=>'',parseSubtitles:()=>[]};
   const modules={react,'./media-playback-controls':controls,'./media-progress':mediaProgress,
     '@tauri-apps/api/core':{isTauri:()=>false},'./native-playback':{useNativePlayback(){},clockTime:()=>0},

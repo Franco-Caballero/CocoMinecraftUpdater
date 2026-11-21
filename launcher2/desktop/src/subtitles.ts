@@ -54,8 +54,9 @@ export function languageName(track:SubtitleTrack){
 }
 
 export type SubtitlePreset='clasico'|'caja'|'amarillo'|'original';
-/** `scale` multiplies the text size: 1 is the usual size, set with a slider. */
-export type SubtitlePrefs={enabled:boolean;family:string;preset:SubtitlePreset;scale:number};
+/** `scale` multiplies the text size: 1 is the usual size, set with a slider. `offset` moves the
+ * bottom lines, as a share of the picture height (negative is up), dragged by the viewer. */
+export type SubtitlePrefs={enabled:boolean;family:string;preset:SubtitlePreset;scale:number;offset:number};
 export const SUBTITLE_PRESETS:{id:SubtitlePreset;label:string;hint:string}[]=[
   {id:'clasico',label:'Clásico',hint:'Blanco con borde'},
   {id:'caja',label:'Caja',hint:'Sobre fondo oscuro'},
@@ -63,11 +64,13 @@ export const SUBTITLE_PRESETS:{id:SubtitlePreset;label:string;hint:string}[]=[
   {id:'original',label:'Original',hint:'Colores del archivo'},
 ];
 export const SUBTITLE_SCALE={min:.6,max:1.8,step:.05};
+export const SUBTITLE_OFFSET={min:-.75,max:.04};
+export const clampOffset=(value:number)=>Number.isFinite(value)?Math.round(Math.min(SUBTITLE_OFFSET.max,Math.max(SUBTITLE_OFFSET.min,value))*1000)/1000:0;
 export const clampScale=(value:number)=>Number.isFinite(value)?Math.round(Math.min(SUBTITLE_SCALE.max,Math.max(SUBTITLE_SCALE.min,value))*100)/100:1;
 /** Sizes saved by the first version of the menu (three buttons). */
 const LEGACY_SIZES:Record<string,number>={s:.82,m:1,l:1.24};
 const PREFS_KEY='coco2.subtitles.v1';
-export const DEFAULT_PREFS:SubtitlePrefs={enabled:true,family:'es',preset:'clasico',scale:1};
+export const DEFAULT_PREFS:SubtitlePrefs={enabled:true,family:'es',preset:'clasico',scale:1,offset:0};
 
 export function readSubtitlePrefs():SubtitlePrefs{
   try{
@@ -78,6 +81,7 @@ export function readSubtitlePrefs():SubtitlePrefs{
       family:typeof saved.family==='string'&&/^[a-z]{0,3}$/.test(saved.family)?saved.family:'es',
       preset:SUBTITLE_PRESETS.some(p=>p.id===saved.preset)?saved.preset:DEFAULT_PREFS.preset,
       scale:typeof saved.scale==='number'?clampScale(saved.scale):LEGACY_SIZES[saved.size]??DEFAULT_PREFS.scale,
+      offset:typeof saved.offset==='number'?clampOffset(saved.offset):0,
     };
   }catch{return DEFAULT_PREFS;}
 }

@@ -5,6 +5,7 @@ pub mod r#import;
 pub mod install;
 pub mod managed;
 pub mod media;
+pub mod media_channel;
 pub mod native_player;
 pub mod media_download;
 pub mod network;

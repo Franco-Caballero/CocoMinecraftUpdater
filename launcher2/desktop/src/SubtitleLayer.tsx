@@ -1,11 +1,13 @@
 import {useEffect,useLayoutEffect,useRef,useState,type CSSProperties} from 'react';
-import {Check,LoaderCircle,RefreshCw} from 'lucide-react';
-import {activeCues,clampScale,trackDetail,SUBTITLE_PRESETS,SUBTITLE_SCALE,type Cue,type CueLook,type SubtitlePreset,type SubtitlePrefs,type SubtitleTrack} from './subtitles';
+import {Check,LoaderCircle,MoveVertical,RefreshCw,RotateCcw} from 'lucide-react';
+import {activeCues,clampOffset,clampScale,trackDetail,SUBTITLE_PRESETS,SUBTITLE_SCALE,type Cue,type CueLook,type SubtitlePreset,type SubtitlePrefs,type SubtitleTrack} from './subtitles';
 
 /** Text height of a dialogue line, as a share of the picture height, at the «Mediano» size. */
 const LINE_SHARE=.054;
 /** Space the controls take at the bottom of the window while they are visible. */
 const CONTROLS_PX=122;
+/** Where the bottom lines sit: a share of the picture plus a fixed lift, matching `.coco-sub-group.is-bottom`. */
+const BOTTOM_SHARE=.055,BOTTOM_PX=30;
 
 type Box={left:number;top:number;width:number;height:number;frameHeight:number};
 
@@ -47,11 +49,14 @@ function CueLines({cue}:{cue:Cue}){
 const horizontal=(align:number)=>align%3===1?'left':align%3===0?'right':'center';
 
 /** Subtitles drawn over the picture, in sync with the player clock. `lifted` moves the bottom
- * lines above the controls while they are visible, like the controls themselves move. */
-export function SubtitleOverlay({cues,clock,target,preset,scale,lifted}:{cues:readonly Cue[];clock:()=>number;
-  target:()=>HTMLElement|null;preset:SubtitlePreset;scale:number;lifted:boolean}){
+ * lines above the controls while they are visible, like the controls themselves move. The bottom
+ * lines can be dragged up or down by hand (`offset`); a double click puts them back. */
+export function SubtitleOverlay({cues,clock,target,preset,scale,lifted,offset,onMove}:{cues:readonly Cue[];clock:()=>number;
+  target:()=>HTMLElement|null;preset:SubtitlePreset;scale:number;lifted:boolean;offset:number;onMove:(offset:number)=>void}){
   const [shown,setShown]=useState<number[]>([]);
   const [box,setBox]=useState<Box|null>(null);
+  const [dragging,setDragging]=useState<number|null>(null);
+  const dragFrom=useRef<{y:number;offset:number;moved:boolean}|null>(null);
   const clockRef=useRef(clock);clockRef.current=clock;
   const targetRef=useRef(target);targetRef.current=target;
   useEffect(()=>{
@@ -80,7 +85,27 @@ export function SubtitleOverlay({cues,clock,target,preset,scale,lifted}:{cues:re
   if(!box||!shown.length)return null;
   const linePx=box.height*LINE_SHARE*scale;
   const bottomGap=box.frameHeight-(box.top+box.height);
-  const lift=lifted?Math.max(0,CONTROLS_PX-bottomGap-box.height*.05):0;
+  const placed=dragging??offset;
+  // Only as much lift as it takes to clear the controls from where the viewer put the lines.
+  const clearance=bottomGap+box.height*BOTTOM_SHARE+BOTTOM_PX-placed*box.height;
+  const lift=lifted?Math.max(0,CONTROLS_PX-clearance):0;
+  const shift=placed*box.height-lift;
+  const grab=(event:React.PointerEvent<HTMLDivElement>)=>{
+    if(event.button!==0)return;
+    event.stopPropagation();event.currentTarget.setPointerCapture(event.pointerId);
+    dragFrom.current={y:event.clientY,offset:placed,moved:false};setDragging(placed);
+  };
+  const drag=(event:React.PointerEvent<HTMLDivElement>)=>{
+    const from=dragFrom.current;if(!from)return;
+    if(Math.abs(event.clientY-from.y)>2)from.moved=true;
+    setDragging(clampOffset(from.offset+(event.clientY-from.y)/box.height));
+  };
+  const drop=(event:React.PointerEvent<HTMLDivElement>)=>{
+    const from=dragFrom.current;if(!from)return;
+    event.stopPropagation();dragFrom.current=null;
+    const next=clampOffset(from.offset+(event.clientY-from.y)/box.height);
+    setDragging(null);if(from.moved)onMove(next);
+  };
   const original=preset==='original';
   const groups:Record<'top'|'middle'|'bottom',Cue[]>={top:[],middle:[],bottom:[]};
   const signs:Cue[]=[];
@@ -90,8 +115,12 @@ export function SubtitleOverlay({cues,clock,target,preset,scale,lifted}:{cues:re
     else groups[cue.align>=7?'top':cue.align>=4?'middle':'bottom'].push(cue);
   }
   return <div className={`coco-subs coco-subs-look-${preset}`} aria-hidden="true"
-    style={{left:box.left,top:box.top,width:box.width,height:box.height,['--sub-px' as string]:`${linePx.toFixed(1)}px`,['--sub-lift' as string]:`${-lift}px`} as CSSProperties}>
-    {(['top','middle','bottom'] as const).map(place=>groups[place].length>0&&<div key={place} className={`coco-sub-group is-${place}`}>
+    style={{left:box.left,top:box.top,width:box.width,height:box.height,['--sub-px' as string]:`${linePx.toFixed(1)}px`,['--sub-lift' as string]:`${shift.toFixed(1)}px`} as CSSProperties}>
+    {(['top','middle','bottom'] as const).map(place=>groups[place].length>0&&<div key={place} className={`coco-sub-group is-${place}${place==='bottom'&&dragging!==null?' is-dragging':''}`}
+      {...(place==='bottom'?{onPointerDown:grab,onPointerMove:drag,onPointerUp:drop,onPointerCancel:drop,
+        onClick:(event:React.MouseEvent)=>event.stopPropagation(),
+        onDoubleClick:(event:React.MouseEvent)=>{event.stopPropagation();onMove(0);}}:{})}>
+      {place==='bottom'&&<span className="coco-sub-handle"><MoveVertical size={13}/>{placed!==0?'Arrastra · doble clic para volver':'Arrastra para mover'}</span>}
       {(place==='bottom'?[...groups[place]].reverse():groups[place]).map((cue,index)=><p key={`${cue.start}-${index}`} className={`coco-sub-cue is-${horizontal(cue.align)}`}
         style={original?lookStyle(cue.look,box.height,scale,linePx):undefined}><CueLines cue={cue}/></p>)}
     </div>)}
@@ -154,6 +183,8 @@ export function SubtitlePanel({tracks,chosen,status,prefs,sample,onChoose,onPref
         </button>;
       })}</div>
     </section>
+    {prefs.offset!==0&&<button className="coco-subs-reset" onClick={()=>onPrefs({...prefs,offset:0})}>
+      <RotateCcw size={13}/> Subtítulos en su lugar original</button>}
     <section className="coco-subs-section" aria-label="Tamaño">
       <h3>Tamaño <b>{Math.round(prefs.scale*100)} %</b></h3>
       {/* Applies while dragging; a double click goes back to the usual size. */}

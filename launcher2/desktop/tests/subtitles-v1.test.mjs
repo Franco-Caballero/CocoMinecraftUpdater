@@ -39,13 +39,14 @@ test('the Spanish track is chosen by default, a full one over signs only, Latin 
 test('preferences survive bad stored values',async()=>{
   const storage=new Map([['coco2.subtitles.v1','{"enabled":false,"family":"<x>","preset":"neon","size":"xl"}']]);
   const {readSubtitlePrefs,saveSubtitlePrefs}=await subtitles(storage);
-  assert.deepEqual({...readSubtitlePrefs()},{enabled:false,family:'es',preset:'clasico',scale:1});
+  assert.deepEqual({...readSubtitlePrefs()},{enabled:false,family:'es',preset:'clasico',scale:1,offset:0});
   storage.set('coco2.subtitles.v1','{"size":"l"}');
   assert.equal(readSubtitlePrefs().scale,1.24,'the first menu\'s three sizes carry over');
-  saveSubtitlePrefs({enabled:true,family:'en',preset:'caja',scale:9});
+  saveSubtitlePrefs({enabled:true,family:'en',preset:'caja',scale:9,offset:-3});
   assert.equal(readSubtitlePrefs().scale,1.8,'clamped to the slider');
-  saveSubtitlePrefs({enabled:true,family:'en',preset:'caja',scale:1.35});
-  assert.deepEqual({...readSubtitlePrefs()},{enabled:true,family:'en',preset:'caja',scale:1.35});
+  assert.equal(readSubtitlePrefs().offset,-.75,'never dragged off the picture');
+  saveSubtitlePrefs({enabled:true,family:'en',preset:'caja',scale:1.35,offset:-.12});
+  assert.deepEqual({...readSubtitlePrefs()},{enabled:true,family:'en',preset:'caja',scale:1.35,offset:-.12});
 });
 
 test('a track\'s second line only says what its name does not',async()=>{

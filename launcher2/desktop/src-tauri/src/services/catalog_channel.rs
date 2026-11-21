@@ -384,17 +384,7 @@ fn verify_entry(accepted: &Accepted) -> Result<(),String> {
         || !e.executable.to_ascii_lowercase().ends_with(".exe") {
         return Err("Invalid standalone catalog entry or workflow".into());
     }
-    let prefix = if e.image.starts_with("data:image/png;base64,") { "data:image/png;base64," }
-        else if e.image.starts_with("data:image/jpeg;base64,") { "data:image/jpeg;base64," }
-        else if e.image.starts_with("data:image/webp;base64,") { "data:image/webp;base64," }
-        else { return Err("Dynamic cover must be embedded as a safe image".into()); };
-    if e.image.len()>MAX_COVER as usize*4/3+100 {return Err("Cover exceeds size budget".into());}
-    let cover=STANDARD.decode(&e.image[prefix.len()..]).map_err(|_| "Invalid cover encoding")?;
-    if cover.is_empty() || cover.len() as u64>MAX_COVER {return Err("Invalid cover bytes".into());}
-    let valid=if prefix.contains("png") {cover.starts_with(b"\x89PNG\r\n\x1a\n")}
-        else if prefix.contains("jpeg"){cover.starts_with(&[0xFF,0xD8,0xFF])}
-        else {cover.starts_with(b"RIFF")&&cover.get(8..12)==Some(b"WEBP")};
-    if !valid {return Err("Cover bytes disagree with media type".into());}
+    verify_cover(&e.image)?;
     let m=&accepted.manifest;
     if m["id"]!=e.id || m["instanceId"]!=e.id || m["workflow"]!="coco-standalone"
         || m["version"].as_str()!=Some(accepted.version.as_str())
@@ -472,7 +462,7 @@ fn embedded_versions()->&'static HashMap<String,String>{
 }
 /// Games the host withdrew. A launcher may still hold them in its signed channel cache, and the
 /// channel can only add or update, so this build hides them and never accepts them again.
-fn withdrawn(id:&str)->bool{
+pub(crate) fn withdrawn(id:&str)->bool{
     static IDS:OnceLock<HashSet<String>>=OnceLock::new();
     IDS.get_or_init(||serde_json::from_str::<Vec<String>>(include_str!("../../resources/withdrawn-games.json"))
         .unwrap_or_default().into_iter().collect()).contains(id)
@@ -1210,7 +1200,31 @@ fn minisign_key_from_config(config:&str)->Result<[u8;32],String>{
     if raw.len()!=42 || &raw[..2]!=b"Ed"{return Err("Unsupported updater minisign Ed25519 public key".into());}
     let mut key=[0u8;32];key.copy_from_slice(&raw[10..42]);Ok(key)
 }
-fn embedded_key()->Result<[u8;32],String>{
+/// A cover carried inside a signed entry: a PNG, JPEG or WebP data URL whose bytes match its type.
+pub(crate) fn verify_cover(image:&str)->Result<(),String>{
+    let prefix = if image.starts_with("data:image/png;base64,") { "data:image/png;base64," }
+        else if image.starts_with("data:image/jpeg;base64,") { "data:image/jpeg;base64," }
+        else if image.starts_with("data:image/webp;base64,") { "data:image/webp;base64," }
+        else { return Err("Dynamic cover must be embedded as a safe image".into()); };
+    if image.len()>MAX_COVER as usize*4/3+100 {return Err("Cover exceeds size budget".into());}
+    let cover=STANDARD.decode(&image[prefix.len()..]).map_err(|_| "Invalid cover encoding")?;
+    if cover.is_empty() || cover.len() as u64>MAX_COVER {return Err("Invalid cover bytes".into());}
+    let valid=if prefix.contains("png") {cover.starts_with(b"\x89PNG\r\n\x1a\n")}
+        else if prefix.contains("jpeg"){cover.starts_with(&[0xFF,0xD8,0xFF])}
+        else {cover.starts_with(b"RIFF")&&cover.get(8..12)==Some(b"WEBP")};
+    if !valid {return Err("Cover bytes disagree with media type".into());}
+    Ok(())
+}
+/// A detached base64 Ed25519 signature by the host's updater key over `body`.
+pub(crate) fn verify_detached(body:&[u8],detached_sig:&[u8],key:&[u8;32])->Result<(),String>{
+    if detached_sig.len()>512 {return Err("Signature oversized".into());}
+    let text=std::str::from_utf8(detached_sig).map_err(|_|"Signature must be base64 text")?;
+    let sig=STANDARD.decode(text.trim()).map_err(|_|"Invalid Ed25519 signature")?;
+    if sig.len()!=64{return Err("A 64-byte detached Ed25519 signature is required".into());}
+    UnparsedPublicKey::new(&ED25519,key).verify(body,&sig)
+        .map_err(|_|"Signature does not match embedded updater public key".into())
+}
+pub(crate) fn embedded_key()->Result<[u8;32],String>{
     minisign_key_from_config(include_str!("../../tauri.conf.json"))
 }
 fn verify_signed_channel(json:&[u8],detached_sig:&[u8],key:&[u8;32])
@@ -1261,7 +1275,7 @@ fn allowed_http_redirect(url:&reqwest::Url)->bool{
         _=>false,
     }
 }
-fn http_client()->Result<reqwest::blocking::Client,String>{
+pub(crate) fn http_client()->Result<reqwest::blocking::Client,String>{
     reqwest::blocking::Client::builder()
         .redirect(reqwest::redirect::Policy::custom(|attempt|{
             if attempt.previous().len()>=5 || !allowed_http_redirect(attempt.url()) {
@@ -1271,7 +1285,7 @@ fn http_client()->Result<reqwest::blocking::Client,String>{
         .timeout(Duration::from_secs(25))
         .build().map_err(|e|format!("Cannot create signed channel HTTP client: {e}"))
 }
-fn fetch_bounded(client:&reqwest::blocking::Client,url:&str,max:u64)->Result<Vec<u8>,String>{
+pub(crate) fn fetch_bounded(client:&reqwest::blocking::Client,url:&str,max:u64)->Result<Vec<u8>,String>{
     let parsed=reqwest::Url::parse(url).map_err(|_|"Invalid official channel URL")?;
     if !allowed_http_redirect(&parsed) {return Err("Nonofficial catalog endpoint".into());}
     let resp=client.get(parsed).send().map_err(|e|format!("Official catalog request failed: {e}"))?
@@ -1340,14 +1354,14 @@ fn apply_signed_at_scoped(dir:&Path,body:&[u8],sig:&[u8],key:&[u8;32],client_onl
     commit(dir,snap,sha)?;
     Ok(status(dir,"updated","Verified official Ed25519 channel snapshot accepted".into()))
 }
-fn channel_base()->String{
+pub(crate) fn channel_base()->String{
     // Debug builds can point at a local copy of the channel to test arrivals end to end.
     #[cfg(debug_assertions)]
     if let Some(base)=std::env::var("COCO_CATALOG_CHANNEL_BASE").ok()
         .filter(|base|base.starts_with("http://127.0.0.1:") && base.ends_with('/')) {return base;}
     CHANNEL_BASE.into()
 }
-fn offline_error(error:&str)->bool{
+pub(crate) fn offline_error(error:&str)->bool{
     error.starts_with("Official catalog request failed:") || error.starts_with("Official release unavailable:")
 }
 /// Reads the small head first and downloads the signed body only when it names a newer
@@ -1393,7 +1407,17 @@ pub async fn sync_catalog_channel()->Result<CatalogChannelStatus,String>{
     tauri::async_runtime::spawn_blocking(move||{
         let root=cache_dir()?;
         let key=embedded_key()?;
-        sync_fast_channel(&root,&key)
+        let games=sync_fast_channel(&root,&key);
+        // Movies and series have their own signed channel: a new episode refreshes the library too.
+        match crate::services::media_channel::sync(&key) {
+            Ok(true)=>{
+                let mut status=games?;
+                if status.status!="updated" {status.status="updated";status.message="Signed movies and series updated".into();}
+                Ok(status)
+            }
+            Ok(false)=>games,
+            Err(error)=>{crate::services::diagnostics::log("catalog",&format!("canal de películas y series rechazado: {error}"));games}
+        }
     }).await.map_err(|e|format!("Channel synchronization interrupted: {e}"))?
 }
 /// The first channel format, one fixed file pair. Kept for the host review tools only.

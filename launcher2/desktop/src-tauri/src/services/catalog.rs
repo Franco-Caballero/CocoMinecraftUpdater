@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 #[path = "catalog_channel.rs"]
-mod catalog_channel;
+pub(crate) mod catalog_channel;
 #[cfg(test)]
 pub(crate) use catalog_channel::test_api;
 pub(crate) use catalog_channel::{channel_extras,online_fix_extra,GameExtras};
@@ -44,7 +44,16 @@ fn embedded_catalog() -> Result<Vec<Experience>, String> {
 
 pub fn read_catalog() -> Result<Vec<Experience>, String> {
     let baseline = embedded_catalog()?;
-    Ok(catalog_channel::merged_catalog(baseline))
+    let mut catalog = catalog_channel::merged_catalog(baseline);
+    // Signed movies and series: an update keeps its place, a new title goes last («Último agregado»).
+    for record in crate::services::media_channel::accepted() {
+        match catalog.iter_mut().find(|entry| entry.id == record.entry.id) {
+            Some(slot) if slot.workflow == "coco-media" => *slot = record.entry,
+            Some(_) => {}
+            None => catalog.push(record.entry),
+        }
+    }
+    Ok(catalog)
 }
 
 /// Validated source for native installer, including newly accepted local or

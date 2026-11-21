@@ -469,7 +469,8 @@ export default function MediaPlayer({title,url,onClose,onReopen,subtitle,startAt
         onError={event=>videoEvent(event,'error')} />
 
       {cues&&track&&<SubtitleOverlay cues={cues} clock={subtitleClock} target={()=>native?canvasRef.current:videoRef.current}
-        preset={subPrefs.preset} scale={subPrefs.scale} lifted={!controlsHidden}/>}
+        preset={subPrefs.preset} scale={subPrefs.scale} lifted={!controlsHidden}
+        offset={subPrefs.offset} onMove={offset=>changeSubPrefs({...subPrefs,offset})}/>}
       {flash&&<span key={flash.key} className="coco-player-flash" aria-hidden="true">{flashIcon}{flash.label&&<small>{flash.label}</small>}</span>}
       {loading&&<div className="coco-player-state" role="status"><i className="coco-player-ring"/><span>{state==='loading'?'Preparando':'Cargando'}</span></div>}
       {state==='blocked'&&<button className="coco-player-bigplay" aria-label="Reproducir" onClick={togglePlay}><Play size={34} fill="currentColor"/></button>}

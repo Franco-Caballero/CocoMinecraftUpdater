@@ -235,7 +235,7 @@ pub(super) fn upstream_allowed(url: &reqwest::Url, local_fixture: bool) -> bool 
     }
 }
 
-fn validate_manifest(raw: &[u8]) -> Result<Vec<PrivateMedia>, String> {
+pub(super) fn validate_manifest(raw: &[u8]) -> Result<Vec<PrivateMedia>, String> {
     let entries: Vec<PrivateMedia> = serde_json::from_slice(raw)
         .map_err(|_| "Invalid private media manifest")?;
     if entries.len() > 256 {
@@ -307,8 +307,21 @@ fn validate_manifest(raw: &[u8]) -> Result<Vec<PrivateMedia>, String> {
     Ok(entries)
 }
 
-pub(super) fn private_catalog() -> Result<Vec<PrivateMedia>, String> {
+/// The movies and series this Setup ships.
+pub(super) fn embedded_media() -> Result<Vec<PrivateMedia>, String> {
     validate_manifest(include_bytes!("../../resources/media-manifests.json"))
+}
+
+/// What can be played: this Setup's titles, updated and extended by the signed media channel.
+pub(super) fn private_catalog() -> Result<Vec<PrivateMedia>, String> {
+    let mut media = embedded_media()?;
+    for record in crate::services::media_channel::accepted() {
+        match media.iter_mut().find(|entry| entry.id == record.media.id) {
+            Some(slot) => *slot = record.media,
+            None => media.push(record.media),
+        }
+    }
+    Ok(media)
 }
 
 fn public_catalog(

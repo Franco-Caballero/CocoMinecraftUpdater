@@ -5010,6 +5010,48 @@
                 "default": true
               }
             ]
+          },
+          {
+            "id": "ep-44",
+            "title": "Episodio 44",
+            "fileName": "Yumeiro.Patissiere.44.1080p.ES.mkv",
+            "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.44.1080p.ES.mkv",
+            "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.44.1080p.ES.mkv",
+            "size": 272421518,
+            "sha256": "9733b32f0a9a5390ab5088e616fe22e8a32f3983b1bebbe083e621f94252ca6b",
+            "subtitles": [
+              {
+                "id": "spa",
+                "label": "Español latino",
+                "language": "spa",
+                "format": "ass",
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.44.1080p.1.spa.ass",
+                "size": 37084,
+                "sha256": "127c35435b20253382144fdcc0ef1b2c123749e810b0d909c613d536c6bd2f74",
+                "default": true
+              }
+            ]
+          },
+          {
+            "id": "ep-45",
+            "title": "Episodio 45",
+            "fileName": "Yumeiro.Patissiere.45.1080p.ES.mkv",
+            "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.45.1080p.ES.mkv",
+            "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.45.1080p.ES.mkv",
+            "size": 203697448,
+            "sha256": "218a80be89c6c712bdcf4d74343a63198820680f66e8f8b1ab3e4a140de7c774",
+            "subtitles": [
+              {
+                "id": "spa",
+                "label": "Español latino",
+                "language": "spa",
+                "format": "ass",
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.45.1080p.1.spa.ass",
+                "size": 32904,
+                "sha256": "2ed3ddcf322945957702b451d3d3ed2f609e373fb26007fda13be92ab66e0ac5",
+                "default": true
+              }
+            ]
           }
         ]
       },

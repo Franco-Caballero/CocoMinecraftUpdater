@@ -991,14 +991,19 @@ function App(){
     return()=>{active=false;};
   },[selected?.id,localInstances,catalogEpoch]);
 
+  // Read again whenever the catalog changes: a signed episode can arrive while Coco is open.
+  const mediaCatalogEpoch=React.useRef(-1);
   useEffect(()=>{
-    if(!selected||selected.workflow!=='coco-media'||!isTauri()||mediaCatalog.length)return;
-    let active=true;setMediaLoading(true);setMediaError('');
-    void invoke<MediaEntry[]>('get_media_catalog').then(result=>{if(active)setMediaCatalog(result);})
+    if(!selected||selected.workflow!=='coco-media'||!isTauri()||mediaCatalogEpoch.current===catalogEpoch)return;
+    const epoch=catalogEpoch;
+    let active=true;
+    if(!mediaCatalog.length)setMediaLoading(true);
+    setMediaError('');
+    void invoke<MediaEntry[]>('get_media_catalog').then(result=>{if(active){mediaCatalogEpoch.current=epoch;setMediaCatalog(result);}})
       .catch(error=>{if(active)setMediaError(String(error));})
       .finally(()=>{if(active)setMediaLoading(false);});
     return()=>{active=false;};
-  },[selected?.id,mediaCatalog.length]);
+  },[selected?.id,catalogEpoch]);
   // Navigating away during a slow native stream preparation must never reopen
   // the media player unexpectedly. Keep native work single-flight until its
   // promise settles; dispose its proxy token if the user left meanwhile.

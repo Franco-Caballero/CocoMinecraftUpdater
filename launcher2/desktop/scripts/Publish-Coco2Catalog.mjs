@@ -163,7 +163,7 @@ export function ed25519Keys(seed,publicKey){
   };
 }
 
-function readHostKey(){
+export function readHostKey(){
   // DPAPI (CurrentUser) with the same entropy Configure-Coco2Updater.ps1 used to store it.
   const script=[
     "$ErrorActionPreference='Stop'",
@@ -181,7 +181,7 @@ function readHostKey(){
 
 // ── GitHub ───────────────────────────────────────────────────────────────────────────────
 
-async function fetchBytes(url){
+export async function fetchBytes(url){
   const response=await fetch(url,{redirect:'follow',cache:'no-store'});
   if(response.status===404)return null;
   if(!response.ok)throw new Error(`${url}: HTTP ${response.status}`);
@@ -192,13 +192,13 @@ async function archiveServed(archive){
   const length=Number(response.headers.get('content-length'));
   if(!response.ok||length!==archive.size)throw new Error(`El ZIP ${archive.url} no está publicado con ${archive.size} bytes (HTTP ${response.status}, ${length||'?'} bytes).`);
 }
-function gh(args){
+export function gh(args){
   const result=spawnSync('gh',args,{encoding:'utf8',windowsHide:true});
   if(result.status!==0)throw new Error(`gh ${args.join(' ')}: ${(result.stderr||result.stdout).trim()}`);
   return result.stdout;
 }
 
-async function coverDataUrl(imagePath){
+export async function coverDataUrl(imagePath){
   const source=resolve(repoRoot,imagePath);
   const webp=await sharp(source).rotate().resize({width:1200,height:800,fit:'inside',withoutEnlargement:true}).webp({quality:78,effort:4}).toBuffer();
   if(webp.length>3_500_000)throw new Error(`Portada demasiado grande: ${imagePath}`);

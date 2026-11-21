@@ -1,6 +1,6 @@
 /* ---- Coco Cinema: the player fills the window, its chrome floats over the film and steps aside
    while it plays. Entrance and exit are the same motion, played forwards and backwards. ---- */
-.coco-player-shell{position:fixed;z-index:65;inset:0;overflow:hidden;background:#000;color:var(--cream);outline:none;animation:coco-cinema-in .42s var(--snap) both}
+.coco-player-shell{position:fixed;z-index:65;inset:0;overflow:hidden;background:#000;color:var(--cream);outline:none;user-select:none;-webkit-user-select:none;animation:coco-cinema-in .42s var(--snap) both}
 .coco-player-shell.is-closing{animation:coco-cinema-out .23s ease-in both;pointer-events:none}
 .coco-player-shell.is-idle{cursor:none}
 @keyframes coco-cinema-in{from{opacity:0}}
@@ -104,7 +104,17 @@
 /* Subtitles: drawn by Coco over the picture (never by the engine), so they take any style. */
 .coco-subs{position:absolute;z-index:3;pointer-events:none;font:600 var(--sub-px)/1.22 var(--body);color:#fff;letter-spacing:.005em;text-wrap:balance}
 .coco-sub-group{position:absolute;left:6%;right:6%;display:flex;flex-direction:column;gap:.18em}
-.coco-sub-group.is-bottom{bottom:5.5%;translate:0 var(--sub-lift,0);transition:translate .45s var(--snap)}
+.coco-sub-group.is-bottom{left:50%;right:auto;width:max-content;max-width:88%;bottom:calc(5.5% + 30px);translate:-50% var(--sub-lift,0);transition:translate .45s var(--snap)}
+/* The bottom lines can be moved by hand: the text is the handle, and hovering says so. */
+.coco-sub-group.is-bottom .coco-sub-text{pointer-events:auto;cursor:grab}
+.coco-sub-group.is-bottom.is-dragging{transition:none}
+.coco-sub-group.is-bottom.is-dragging .coco-sub-text{cursor:grabbing}
+.coco-sub-group.is-bottom::before{content:"";position:absolute;inset:-.28em -.6em;border:1.5px dashed #ffffff00;border-radius:8px;background:#0b0a0f00;pointer-events:none;transition:border-color .2s,background .2s}
+.coco-sub-group.is-bottom:has(.coco-sub-text:hover)::before,.coco-sub-group.is-bottom.is-dragging::before{border-color:#ffffff73;background:#0b0a0f38}
+.coco-sub-handle{position:absolute;left:50%;bottom:calc(100% + .45em);translate:-50% 4px;display:flex;align-items:center;gap:6px;padding:5px 10px 5px 8px;border:1px solid var(--line);border-radius:99px;background:color-mix(in srgb,var(--ink-2) 92%,transparent);backdrop-filter:blur(10px);color:var(--cream);font:500 11px/1 var(--body);letter-spacing:.01em;white-space:nowrap;text-shadow:none;opacity:0;pointer-events:none;transition:opacity .2s,translate .25s var(--snap)}
+.coco-sub-handle svg{color:var(--hot)}
+.coco-sub-group.is-bottom:has(.coco-sub-text:hover) .coco-sub-handle,.coco-sub-group.is-bottom.is-dragging .coco-sub-handle{opacity:1;translate:-50% 0}
+.coco-player-shell.is-idle .coco-sub-group.is-bottom .coco-sub-text{cursor:none}
 .coco-sub-group.is-top{top:5%}
 .coco-sub-group.is-middle{top:50%;translate:0 -50%}
 .coco-sub-cue{margin:0;text-align:center}
@@ -149,6 +159,8 @@
 .coco-subs-preset-copy strong{font:800 14px/1 var(--display);letter-spacing:.05em;text-transform:uppercase}
 .coco-subs-preset-copy small{font:400 10px/1.2 var(--mono);color:var(--dim)}
 .coco-subs-preset.is-on .coco-subs-preset-copy strong{color:var(--hot)}
+.coco-subs-reset{justify-self:start;display:inline-flex;align-items:center;gap:7px;height:30px;margin-top:-4px;padding:0 11px;border:1px solid var(--line);border-radius:3px;background:none;color:var(--cream);font:800 12px var(--display);letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:border-color .18s,background .18s}
+.coco-subs-reset:hover{border-color:var(--hot);background:color-mix(in srgb,var(--hot) 15%,transparent)}
 .coco-subs-section h3 b{float:right;font-weight:600;color:var(--cream);font-variant-numeric:tabular-nums}
 .coco-subs-size{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:4px;background:#0000002e}
 .coco-subs-size span{font:700 12px/1 var(--body);color:var(--dim)}
