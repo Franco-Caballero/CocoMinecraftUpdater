@@ -5304,6 +5304,27 @@
                 "default": true
               }
             ]
+          },
+          {
+            "id": "ep-58",
+            "title": "Episodio 58",
+            "fileName": "Yumeiro.Patissiere.58.1080p.ES.mkv",
+            "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.58.1080p.ES.mkv",
+            "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.58.1080p.ES.mkv",
+            "size": 428359545,
+            "sha256": "c05cb1341b47a8cbe8f36d2d4e9142d1422f568a630dde1a6ad7e9aa300c2cb7",
+            "subtitles": [
+              {
+                "id": "spa",
+                "label": "Español latino",
+                "language": "spa",
+                "format": "ass",
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/yumeiro-patissiere/Yumeiro.Patissiere.58.1080p.1.spa.ass",
+                "size": 39884,
+                "sha256": "a15f8d0ad285272ce1980506b15ea554cf65044da09b6ad7417632d0284506ff",
+                "default": true
+              }
+            ]
           }
         ]
       },
