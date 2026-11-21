@@ -60,13 +60,18 @@ fn add_game_folder(root:&Path,home:Option<&Path>,paths:&mut Vec<String>){
 }
 
 /// Everything a game can touch: both default folders, Coco's downloads and every location
-/// the player chose, including the one an operation is about to use.
-fn desired_paths(app_data:&Path,local_data:&Path,locations:&Map<String,Value>,extra:&[PathBuf],home:Option<&Path>)->Vec<String>{
+/// the player chose, including the one an operation is about to use. Also the video engine
+/// (`engine`, the install's `player` folder) and its repair copy: an antivirus otherwise scans
+/// each of its modules again after every update before a film can start. Coco checks the
+/// SHA-256 of every engine file before loading it, so nothing unverified runs from there.
+fn desired_paths(app_data:&Path,local_data:&Path,locations:&Map<String,Value>,extra:&[PathBuf],home:Option<&Path>,engine:Option<&Path>)->Vec<String>{
     let mut paths=vec![
         app_data.join("CocoLauncher2").display().to_string(),
         app_data.join("CocoMinecraft").display().to_string(),
         local_data.join("CocoMinecraftUpdater").display().to_string(),
+        local_data.join("CocoLauncher2").join("player-runtime").display().to_string(),
     ];
+    if let Some(engine)=engine.filter(|path|is_local_absolute(path)&&path.parent().is_some()){paths.push(engine.display().to_string());}
     for value in locations.values().filter_map(Value::as_str){add_game_folder(Path::new(value),home,&mut paths);}
     for root in extra{add_game_folder(root,home,&mut paths);}
     let mut seen=Vec::new();
@@ -252,7 +257,9 @@ fn request_with(app:Option<&AppHandle>,extra:&[PathBuf],programs:&[PathBuf],forc
     let Ok(_preparation)=PREPARATION.lock() else{return "failed"};
     let locations=inventory::custom_locations(&local_data).unwrap_or_default();
     let home=std::env::var_os("USERPROFILE").map(PathBuf::from);
-    let desired=desired_paths(&app_data,&local_data,&locations,extra,home.as_deref());
+    // The installed video engine sits next to Coco's own executable.
+    let engine=std::env::current_exe().ok().and_then(|exe|exe.parent().map(|dir|dir.join("player"))).filter(|dir|dir.is_dir());
+    let desired=desired_paths(&app_data,&local_data,&locations,extra,home.as_deref(),engine.as_deref());
     let state_path=local_data.join("CocoMinecraftUpdater").join(STATE_FILE);
     let mut state=read_state(&state_path);
     let defender=defender_installed();
@@ -373,7 +380,7 @@ mod tests{
     const LOCAL:&str="C:\\Users\\a\\AppData\\Local";
     const HOME:&str="C:\\Users\\a";
     fn desired(locations:&[(&str,&str)],extra:&[&str])->Vec<String>{
-        desired_paths(Path::new(APP),Path::new(LOCAL),&map(locations),&extra.iter().map(PathBuf::from).collect::<Vec<_>>(),Some(Path::new(HOME)))
+        desired_paths(Path::new(APP),Path::new(LOCAL),&map(locations),&extra.iter().map(PathBuf::from).collect::<Vec<_>>(),Some(Path::new(HOME)),None)
     }
 
     #[test]
@@ -453,6 +460,18 @@ function Set-NetIPInterface {[CmdletBinding()]param([Parameter(ValueFromPipeline
             "C:\\Users\\a\\AppData\\Local\\CocoMinecraftUpdater","D:\\Juegos\\a","D:\\Juegos","E:\\Otros\\b","E:\\Otros"]{
             assert!(paths.iter().any(|path|path==expected),"{expected} missing from {paths:?}");
         }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn the_video_engine_and_its_repair_copy_are_excluded_but_not_coco_itself(){
+        let engine=Path::new("C:\\Users\\a\\AppData\\Local\\Coco Launcher 2\\player");
+        let paths=desired_paths(Path::new(APP),Path::new(LOCAL),&map(&[]),&[],Some(Path::new(HOME)),Some(engine));
+        assert!(paths.iter().any(|path|path=="C:\\Users\\a\\AppData\\Local\\Coco Launcher 2\\player"));
+        assert!(paths.iter().any(|path|path=="C:\\Users\\a\\AppData\\Local\\CocoLauncher2\\player-runtime"));
+        assert!(!paths.iter().any(|path|path=="C:\\Users\\a\\AppData\\Local\\Coco Launcher 2"),"only the engine, never the launcher's own folder");
+        let without=desired_paths(Path::new(APP),Path::new(LOCAL),&map(&[]),&[],Some(Path::new(HOME)),Some(Path::new("\\\\server\\player")));
+        assert!(!without.iter().any(|path|path.contains("server")),"a network engine folder is not excluded");
     }
 
     #[cfg(windows)]

@@ -41,6 +41,7 @@ pub fn run() {
             services::handoff::retire_launcher1_shortcuts_in_background();
             services::zerotier_host::accept_friends_in_background();
             services::diagnostics::log_session_start(app.package_info().version.to_string());
+            services::native_player::prewarm_after_start(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

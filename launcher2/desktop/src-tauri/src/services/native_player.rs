@@ -617,6 +617,16 @@ pub async fn open_native_player(app:tauri::AppHandle,window:tauri::WebviewWindow
     #[cfg(windows)]{tauri::async_runtime::spawn_blocking(move||win::open(app,window,url,request_id,fast.unwrap_or(false))).await.map_err(|_|"Decoder start interrupted".to_owned())?}
     #[cfg(not(windows))]{let _=(app,window,url,request_id,fast);Err("Native playback requires Windows".into())}
 }
+/// A few seconds after Coco opens, the engine is checked and started in the background: checking
+/// reads every engine file, so an antivirus scans them now and not when the viewer presses play.
+pub fn prewarm_after_start(app:tauri::AppHandle){
+    #[cfg(windows)]
+    std::thread::spawn(move||{
+        std::thread::sleep(std::time::Duration::from_secs(6));
+        if let Err(error)=win::prewarm(&app){crate::services::diagnostics::log("player",&format!("precarga del motor al abrir Coco: {error}"));}
+    });
+    #[cfg(not(windows))]{let _=app;}
+}
 /// Called when a film's page opens: by the time the viewer presses play the decoder is loaded.
 #[tauri::command]
 pub async fn prewarm_native_player(app:tauri::AppHandle)->Result<(),String>{

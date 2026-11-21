@@ -23,3 +23,11 @@ test('a film closed before its first picture leaves a line in the log',async()=>
   const playback=await read('src/native-playback.ts');
   assert.match(playback,/se cerró sin imagen tras/);
 });
+
+test('the engine is warmed after Coco opens and excluded from Defender with its repair copy',async()=>{
+  const lib=await read('src-tauri/src/lib.rs');
+  assert.match(lib,/native_player::prewarm_after_start\(app\.handle\(\)\.clone\(\)\)/);
+  const defender=await read('src-tauri/src/services/defender.rs');
+  assert.match(defender,/join\("player-runtime"\)/);
+  assert.match(defender,/exe\.parent\(\)\.map\(\|dir\|dir\.join\("player"\)\)/);
+});
