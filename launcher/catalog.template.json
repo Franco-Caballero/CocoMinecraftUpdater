@@ -5060,6 +5060,105 @@
         "serverName": "Yumeiro Patissiere"
       },
       "files": []
+    },
+    {
+      "id": "nueve-reinas-2000",
+      "name": "Nueve Reinas",
+      "ui": {
+        "badge": "Película",
+        "accentColor": "#B8893A",
+        "imagePath": "assets/experiences/nueve-reinas.jpg"
+      },
+      "description": "Thriller de estafas argentino (2000) escrito y dirigido por Fabián Bielinsky, con Ricardo Darín, Gastón Pauls y Leticia Brédice. Una mañana cualquiera en Buenos Aires, Marcos, un estafador con oficio, conoce a Juan, un timador de poca monta, y lo toma como socio por un día. Cuando aparece la oportunidad de venderle a un coleccionista una falsificación de las Nueve Reinas, una serie de estampillas valiosísima, el golpe se convierte en una carrera de engaños donde nadie es de fiar. En español, en 1080p.",
+      "instanceId": "nueve-reinas-2000",
+      "managementMode": "managed",
+      "runtime": {
+        "type": "media"
+      },
+      "content": {
+        "type": "movie",
+        "downloadFolderName": "nueve reinas",
+        "openAfterDownload": false,
+        "movie": {
+          "id": "nueve-reinas-2000",
+          "title": "Nueve Reinas (2000)",
+          "fileName": "Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv",
+          "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.001",
+          "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.001",
+          "size": 9539861668,
+          "sha256": "8511cad832de6c85488b30d8aee22e0e32f700c666afb8096f0362cc96c615d7",
+          "parts": [
+            {
+              "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.001",
+              "size": 1907972334,
+              "sha256": "b7493833fbd88c2b6bf7fd6f61485c32f83d090684e6333b6d5d6d4d3cf6bd50"
+            },
+            {
+              "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.002",
+              "size": 1907972334,
+              "sha256": "b6bf14af45ff176a84e2e7c3af891b90bc0722f494ec3f5981eca32c8b26bbc3"
+            },
+            {
+              "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.003",
+              "size": 1907972334,
+              "sha256": "c53ebedc6cc83b5bbf67c635cd2602f574441796f50a0fb8897fe3348c28de10"
+            },
+            {
+              "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.004",
+              "size": 1907972334,
+              "sha256": "f96bfa37130718e47bb229312bec7abab640b2b73ef1e1cd619f65fd1118d161"
+            },
+            {
+              "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.005",
+              "size": 1907972332,
+              "sha256": "abbed79bdaa0e1f0cee3661ede795c1ed3dd710a0c8879aab388d25e95e01795"
+            }
+          ]
+        },
+        "episodes": [
+          {
+            "id": "nueve-reinas-2000",
+            "title": "Nueve Reinas (2000)",
+            "fileName": "Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv",
+            "sourceUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.001",
+            "streamUrl": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.001",
+            "size": 9539861668,
+            "sha256": "8511cad832de6c85488b30d8aee22e0e32f700c666afb8096f0362cc96c615d7",
+            "parts": [
+              {
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.001",
+                "size": 1907972334,
+                "sha256": "b7493833fbd88c2b6bf7fd6f61485c32f83d090684e6333b6d5d6d4d3cf6bd50"
+              },
+              {
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.002",
+                "size": 1907972334,
+                "sha256": "b6bf14af45ff176a84e2e7c3af891b90bc0722f494ec3f5981eca32c8b26bbc3"
+              },
+              {
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.003",
+                "size": 1907972334,
+                "sha256": "c53ebedc6cc83b5bbf67c635cd2602f574441796f50a0fb8897fe3348c28de10"
+              },
+              {
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.004",
+                "size": 1907972334,
+                "sha256": "f96bfa37130718e47bb229312bec7abab640b2b73ef1e1cd619f65fd1118d161"
+              },
+              {
+                "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/nueve-reinas-2000/Nine.Queens.2000.1080p.BluRay.x265.10bit.mkv.005",
+                "size": 1907972332,
+                "sha256": "abbed79bdaa0e1f0cee3661ede795c1ed3dd710a0c8879aab388d25e95e01795"
+              }
+            ]
+          }
+        ]
+      },
+      "launch": {
+        "workflow": "coco-media",
+        "serverName": "Nueve Reinas"
+      },
+      "files": []
     }
   ]
 }

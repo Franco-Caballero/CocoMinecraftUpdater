@@ -2280,5 +2280,19 @@
     "executable": "",
     "launchArguments": [],
     "hostingMode": ""
+  },
+  {
+    "id": "nueve-reinas-2000",
+    "instanceId": "nueve-reinas-2000",
+    "name": "Nueve Reinas",
+    "image": "/covers/nueve-reinas.jpg.webp",
+    "description": "Thriller de estafas argentino (2000) escrito y dirigido por Fabián Bielinsky, con Ricardo Darín, Gastón Pauls y Leticia Brédice. Una mañana cualquiera en Buenos Aires, Marcos, un estafador con oficio, conoce a Juan, un timador de poca monta, y lo toma como socio por un día. Cuando aparece la oportunidad de venderle a un coleccionista una falsificación de las Nueve Reinas, una serie de estampillas valiosísima, el golpe se convierte en una carrera de engaños donde nadie es de fiar. En español, en 1080p.",
+    "workflow": "coco-media",
+    "minecraftVersion": "",
+    "loader": "",
+    "requiredFiles": [],
+    "executable": "",
+    "launchArguments": [],
+    "hostingMode": ""
   }
 ]
