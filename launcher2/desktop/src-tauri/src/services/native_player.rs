@@ -167,11 +167,96 @@ mod win {
     fn prefer_copy_marker()->Option<PathBuf>{
         std::env::var_os("LOCALAPPDATA").map(|local|Path::new(&local).join("CocoLauncher2").join("player-runtime").join("use-copy"))
     }
+    /// The engine as a verified archive, for a PC whose installed copy is damaged or was put in
+    /// quarantine by an antivirus: downloaded once, every file checked against the manifest.
+    const ENGINE_ARCHIVE:&str="https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/video-engine-3.0.24/coco-video-engine-3.0.24.zip";
+    const ENGINE_ARCHIVE_SIZE:u64=66_115_198;
+    const ENGINE_ARCHIVE_SHA256:&str="f0652a4c764efd0ec8a2283f481bd02a6981a80c112476ccbef3c9b56a189359";
+    /// A complete engine in Coco's data folder, rebuilt from the archive when the install's is broken.
+    fn healed_engine()->Result<PathBuf,String>{
+        let local=std::env::var_os("LOCALAPPDATA").ok_or("Sin LOCALAPPDATA")?;
+        let version=manifest()?["version"].as_str().unwrap_or("runtime").to_owned();
+        let base=Path::new(&local).join("CocoLauncher2").join("player-runtime");
+        let target=base.join(format!("{version}-full"));
+        if verify(&target).is_ok(){return Ok(target);}
+        let log=|text:&str|crate::services::diagnostics::log("player",text);
+        log("el motor de vídeo instalado está dañado o en cuarentena; se descarga una copia verificada");
+        let started=std::time::Instant::now();
+        std::fs::create_dir_all(&base).map_err(|e|format!("motor de reparación: {e}"))?;
+        let archive=download_engine(&base.join(format!("{version}-full.zip.part")))?;
+        let staging=base.join(format!("{version}-full.staging"));
+        let _=std::fs::remove_dir_all(&staging);
+        let result=(||{
+            let mut zip=zip::ZipArchive::new(std::fs::File::open(&archive).map_err(|e|e.to_string())?).map_err(|e|e.to_string())?;
+            for entry in manifest()?["files"].as_array().ok_or("Incomplete decoder manifest")?{
+                let relative=entry["path"].as_str().ok_or("Invalid decoder path")?;
+                if relative.starts_with('/')||relative.split('/').any(|p|p.is_empty()||p==".."||p.contains(':')){return Err("Unsafe decoder path".into());}
+                let mut file=zip.by_name(relative).map_err(|_|format!("falta {relative} en la copia descargada"))?;
+                let to=staging.join(relative);
+                if let Some(parent)=to.parent(){std::fs::create_dir_all(parent).map_err(|e|e.to_string())?;}
+                let mut out=std::fs::File::create(&to).map_err(|e|e.to_string())?;
+                std::io::copy(&mut (&mut file).take(entry["size"].as_u64().unwrap_or(0)+1),&mut out).map_err(|e|e.to_string())?;
+            }
+            verify(&staging)?;
+            let _=std::fs::remove_dir_all(&target);
+            std::fs::rename(&staging,&target).map_err(|e|e.to_string())?;
+            Ok::<(),String>(())
+        })();
+        let _=std::fs::remove_file(&archive);
+        if let Err(error)=result{let _=std::fs::remove_dir_all(&staging);log(&format!("no se pudo reparar el motor de vídeo: {error}"));return Err(error);}
+        log(&format!("motor de vídeo reparado desde la copia verificada en {} s",started.elapsed().as_secs()));
+        Ok(target)
+    }
+    fn download_engine(part:&Path)->Result<PathBuf,String>{
+        use std::io::Write;
+        let policy=reqwest::redirect::Policy::custom(|attempt|{
+            if attempt.previous().len()>=5{attempt.error("demasiadas redirecciones")}
+            else if super::super::media::upstream_allowed(attempt.url(),false){attempt.follow()}
+            else{attempt.stop()}
+        });
+        let client=reqwest::blocking::Client::builder().redirect(policy).connect_timeout(Duration::from_secs(15))
+            .timeout(Duration::from_secs(15*60)).build().map_err(|e|format!("Sin cliente de red: {e}"))?;
+        let mut last=String::new();
+        for attempt in 0..4u32{
+            if attempt>0{std::thread::sleep(Duration::from_secs(2u64<<attempt));}
+            let response=match client.get(ENGINE_ARCHIVE).send().and_then(|r|r.error_for_status()){
+                Ok(response)=>response,Err(error)=>{last=format!("descarga del motor: {error}");continue;}
+            };
+            let mut out=std::fs::File::create(part).map_err(|e|e.to_string())?;
+            let mut hash=Sha256::new();let mut block=vec![0u8;256*1024];let mut total=0u64;
+            let mut body=response.take(ENGINE_ARCHIVE_SIZE+1);
+            let ok=loop{
+                match body.read(&mut block){
+                    Ok(0)=>break true,
+                    Ok(n)=>{total+=n as u64;hash.update(&block[..n]);if out.write_all(&block[..n]).is_err(){break false;}}
+                    Err(error)=>{last=format!("descarga del motor cortada: {error}");break false;}
+                }
+            };
+            drop(out);
+            if ok&&total==ENGINE_ARCHIVE_SIZE&&format!("{:x}",hash.finalize())==ENGINE_ARCHIVE_SHA256{return Ok(part.to_path_buf());}
+            if ok{last="la copia descargada del motor no coincide con su huella".into();}
+            let _=std::fs::remove_file(part);
+        }
+        Err(last)
+    }
     fn api(directory:&Path)->Result<Arc<Api>,String>{
-        static API:OnceLock<Result<Arc<Api>,String>>=OnceLock::new();
-        API.get_or_init(||{
-            // A damaged engine must not be kept by the next update's installer.
-            verify(directory).inspect_err(|_|forget_installed_runtime(directory))?;
+        // Only a working engine is kept: after a failure «Reintentar» really tries again.
+        static API:Mutex<Option<Arc<Api>>>=Mutex::new(None);
+        let mut cached=API.lock().map_err(|_|"Decoder unavailable")?;
+        if let Some(api)=cached.as_ref(){return Ok(Arc::clone(api));}
+        let built=(||->Result<Arc<Api>,String>{
+            // A damaged engine must not be kept by the next update's installer; meanwhile a
+            // verified copy is fetched so films keep playing.
+            let healed;
+            let directory=match verify(directory){
+                Ok(())=>directory,
+                Err(error)=>{
+                    forget_installed_runtime(directory);
+                    crate::services::diagnostics::log("player",&format!("motor de vídeo instalado no verifica ({error})"));
+                    healed=healed_engine().map_err(|_|error)?;
+                    healed.as_path()
+                }
+            };
             // Process-local library path; no system codec/association changes.
             std::env::set_var("VLC_PLUGIN_PATH",directory.join("plugins"));
             // The decoder reads the C runtime's copy of the environment: set it there too.
@@ -195,7 +280,9 @@ mod win {
                 mute:symbol(dll,b"libvlc_audio_get_mute\0")?,set_mute:symbol(dll,b"libvlc_audio_set_mute\0")?,rate:symbol(dll,b"libvlc_media_player_get_rate\0")?,set_rate:symbol(dll,b"libvlc_media_player_set_rate\0")?,audio_track:symbol(dll,b"libvlc_audio_get_track\0")?,
                 callbacks:symbol(dll,b"libvlc_video_set_callbacks\0")?,format:symbol(dll,b"libvlc_video_set_format_callbacks\0")?,
             }))}
-        }).clone()
+        })()?;
+        *cached=Some(Arc::clone(&built));
+        Ok(built)
     }
 
     fn vlc_log()->Option<PathBuf>{std::env::var_os("LOCALAPPDATA").map(|local|Path::new(&local).join("CocoLauncher2").join("logs").join("player.log"))}
@@ -498,7 +585,21 @@ mod win {
         let Some(hints)=super::super::media::stream_hints(&url)else{return Err("Unrecognized prepared movie".into());};
         let mut random=[0u8;16];ring::rand::SecureRandom::fill(&ring::rand::SystemRandom::new(),&mut random).map_err(|_|"Cannot create video session")?;
         let id=random.iter().map(|b|format!("{b:02x}")).collect::<String>();
-        {let mut r=reservation().lock().map_err(|_|"Player unavailable")?;if r.is_some(){return Err("A video is already active".into());}*r=Some(id.clone());}
+        // Coco has one viewer: a new film replaces a session nobody closed (a reloaded view, a
+        // crash mid-film) instead of refusing every film until Coco restarts. An open still in
+        // progress for the old session sees it was superseded and drops its own player.
+        let abandoned={
+            let mut r=reservation().lock().map_err(|_|"Player unavailable")?;
+            match r.replace(id.clone()){
+                Some(old)=>{
+                    let mut guard=slot().lock().map_err(|_|"Player unavailable")?;
+                    crate::services::diagnostics::log("player","una sesión de vídeo anterior quedó abierta; se cierra para abrir la nueva");
+                    if guard.as_ref().is_some_and(|p|p.id==old){guard.take()}else{None}
+                }
+                None=>None,
+            }
+        };
+        if let Some(player)=abandoned{let _=std::thread::spawn(move||drop(player));}
         let result=(||{let api=api(&runtime(&app)?)?;let memory=shared_memory(&window,&id,&request)?;create(api,memory,&url,id.clone(),window.label().into(),fast,hints)})();
         let mut r=reservation().lock().map_err(|_|"Player unavailable")?;
         match result{

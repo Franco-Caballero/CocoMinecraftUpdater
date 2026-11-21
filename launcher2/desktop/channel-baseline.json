@@ -1,6 +1,6 @@
 {
     "note":  "Games and versions shipped inside the last published Coco 2 Setup. Publish-Coco2Release.ps1 rewrites it; Publish-Coco2Catalog.mjs sends everything newer through the signed channel.",
-    "setupVersion":  "0.6.79",
+    "setupVersion":  "0.6.80",
     "games":  {
                   "anime-shop-simulator":  "1.1.1",
                   "big-walk":  "1.0.0",

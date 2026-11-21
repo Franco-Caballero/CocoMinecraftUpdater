@@ -53,25 +53,30 @@ test('closing playback stops an active GET after the next bounded read and keeps
   assert.match(source,/ACTIVE_PROXIES\.fetch_sub\(1,Ordering::AcqRel\)/,
     'closing a stream releases its quota exactly once, before worker exit');
   assert.match(source,/while remaining>0 && !spec\.cancelled\.load\(Ordering::Acquire\)/);
-  assert.match(source,/if count==0 \|\| spec\.cancelled\.load\(Ordering::Acquire\) \{break;\}/);
+  assert.match(source,/if spec\.cancelled\.load\(Ordering::Acquire\) \{break;\}/,'a closed stream stops after the current bounded read');
   assert.match(source,/let mut buffer=\[0u8;64\*1024\]/);
-  assert.match(source,/let mut source=response\.take\(length\)/);
+  assert.match(source,/let mut source: Box<dyn Read> = Box::new\(response\.take\(length\)\)/);
+  assert.match(source,/if resumes >= RESUMES_PER_RESPONSE \{break;\}/,'a dropped transfer resumes a bounded number of times');
+  assert.match(source,/fn a_transfer_dropped_mid_film_continues_from_the_same_byte\(/);
   assert.doesNotMatch(source,/std::io::copy\(&mut response\.take\(length\)/);
   assert.match(source,/request\.method == "HEAD" && spec\.expected_bytes != 0/,
     'a HEAD carrying Range is answered locally from trusted manifest length');
   assert.match(source,/fn closing_stream_stops_active_remote_get_before_later_upstream_chunks\(/);
 });
 
-test('concurrent media GET/HEAD retries one transient socket abort without widening Range or timeouts',async()=>{
+test('media GET/HEAD retries transient failures a bounded number of times without widening Range',async()=>{
   const source=await read('src-tauri/src/services/media.rs');
   assert.match(source,/fn transient_media_transport\(error: &\(dyn std::error::Error \+ 'static\)\) -> bool/);
   for(const kind of ['ConnectionAborted','ConnectionReset','BrokenPipe','UnexpectedEof']){
     assert.ok(source.includes(`std::io::ErrorKind::${kind}`),`missing transient transport kind ${kind}`);
   }
-  assert.match(source,/let mut retried_transport = false;/);
+  assert.match(source,/let mut attempts = 0;/);
+  assert.match(source,/const UPSTREAM_ATTEMPTS: usize = 5;/,'retries are bounded');
   assert.match(source,/if spec\.cancelled\.load\(Ordering::Acquire\) \{return;\}/);
-  assert.match(source,/Err\(error\) if !retried_transport && transient_media_transport\(&error\)/);
-  assert.match(source,/retried_transport = true;/);
+  assert.match(source,/Err\(error\) if attempts \+ 1 < UPSTREAM_ATTEMPTS && retryable_transport\(&error\)/);
+  assert.match(source,/Ok\(response\) if retryable_status\(response\.status\(\)\.as_u16\(\)\) && attempts \+ 1 < UPSTREAM_ATTEMPTS/,
+    "GitHub's busy answers (429/5xx) are asked again, not handed to the engine");
+  assert.match(source,/fn a_busy_origin_is_asked_again_before_the_engine_hears_of_it\(/);
   assert.match(source,/upstream = upstream\.header\(reqwest::header::RANGE, range\)/);
   assert.match(source,/fn aborted_first_upstream_connection_retries_identical_range_once\(/);
   assert.match(source,/fn transport_retries_only_reset_abort_and_eof_not_timeout_or_untrusted_http\(/);

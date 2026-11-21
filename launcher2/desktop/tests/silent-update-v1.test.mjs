@@ -33,6 +33,6 @@ test('the installer keeps an identical video engine instead of rewriting it',asy
   assert.match(nsis,/\$\{Else\}\r?\n\s*File \/a "\/oname=\{\{this\.\[1\]\}\}" "\{\{no-escape @key\}\}"/);
   assert.match(nsis,/Delete "\$INSTDIR\\player\\\.coco-runtime-\*"\r?\n\s*\$\{EndIf\}/,'a different runtime clears the old mark first');
   const player=await read('src-tauri/src/services/native_player.rs');
-  assert.match(player,/verify\(directory\)\.inspect_err\(\|_\|forget_installed_runtime\(directory\)\)/,
+  assert.match(player,/Err\(error\)=>\{\s*forget_installed_runtime\(directory\);/,
     'a damaged engine is rewritten by the next update');
 });

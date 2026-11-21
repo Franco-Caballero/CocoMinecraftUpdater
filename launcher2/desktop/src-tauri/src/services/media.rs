@@ -417,13 +417,31 @@ fn download_subtitle(url: &str, size: u64) -> Result<Vec<u8>, String> {
     let client = reqwest::blocking::Client::builder().redirect(policy)
         .connect_timeout(UPSTREAM_CONNECT_TIMEOUT).timeout(Duration::from_secs(60))
         .build().map_err(|error| format!("Sin cliente de red: {error}"))?;
-    let response = client.get(parsed).send().map_err(|error| format!("No se pudieron descargar los subtítulos: {error}"))?;
-    if !response.status().is_success() {
-        return Err(format!("No se pudieron descargar los subtítulos (HTTP {})", response.status().as_u16()));
+    // A busy origin or a dropped connection is asked again, like the film itself.
+    let never_cancelled = AtomicBool::new(false);
+    let mut last = String::new();
+    for attempt in 0..UPSTREAM_ATTEMPTS {
+        if attempt > 0 { upstream_pause(&never_cancelled, attempt - 1); }
+        let response = match client.get(parsed.clone()).send() {
+            Ok(response) => response,
+            Err(error) => {
+                last = format!("No se pudieron descargar los subtítulos: {error}");
+                if retryable_transport(&error) { continue; } else { break; }
+            }
+        };
+        let code = response.status().as_u16();
+        if !response.status().is_success() {
+            last = format!("No se pudieron descargar los subtítulos (HTTP {code})");
+            if retryable_status(code) { continue; } else { break; }
+        }
+        let mut bytes = Vec::with_capacity(size as usize);
+        match response.take(size + 1).read_to_end(&mut bytes) {
+            // The caller compares size and hash with the catalog.
+            Ok(_) => return Ok(bytes),
+            Err(error) => last = format!("Descarga de subtítulos cortada: {error}"),
+        }
     }
-    let mut bytes = Vec::with_capacity(size as usize);
-    response.take(size + 1).read_to_end(&mut bytes).map_err(|error| format!("Descarga de subtítulos cortada: {error}"))?;
-    Ok(bytes)
+    Err(last)
 }
 
 // Token entropy comes from the operating system, not timestamps or a process ID.
@@ -644,6 +662,28 @@ fn make_client(local_fixture: bool) -> Result<reqwest::blocking::Client, String>
 // requests (WSAECONNABORTED/10053), before the origin sees an HTTP request.
 // Retrying exactly once is safe here: only idempotent GET/HEAD are issued and
 // no response body has reached the video client when send() returns an error.
+/// GitHub answers anonymous downloads with these when it is busy; a moment later the same
+/// request succeeds. Passing one straight to the engine reads as the end of the film.
+fn retryable_status(code: u16) -> bool {
+    matches!(code, 408 | 425 | 429 | 500 | 502 | 503 | 504)
+}
+/// Tries per request before the engine is told the origin failed (about 6 s of waiting).
+const UPSTREAM_ATTEMPTS: usize = 5;
+/// Times a dropped transfer is picked up again from the byte where it stopped.
+const RESUMES_PER_RESPONSE: usize = 8;
+/// Waits before another try (0.4, 0.8, 1.6, 3.2 s); `false` when the stream was closed meanwhile.
+fn upstream_pause(cancelled: &AtomicBool, attempt: usize) -> bool {
+    let until = Instant::now() + Duration::from_millis(400u64 << attempt.min(3));
+    while Instant::now() < until {
+        if cancelled.load(Ordering::Acquire) {return false;}
+        thread::sleep(Duration::from_millis(50));
+    }
+    !cancelled.load(Ordering::Acquire)
+}
+fn retryable_transport(error: &reqwest::Error) -> bool {
+    error.is_timeout() || error.is_connect() || transient_media_transport(error)
+}
+
 fn transient_media_transport(error: &(dyn std::error::Error + 'static)) -> bool {
     let mut cause = Some(error);
     while let Some(current) = cause {
@@ -791,7 +831,7 @@ fn serve_connection(mut stream: TcpStream, spec: &ProxySpec, client: &reqwest::b
         let _ = send_headers(&mut stream, 200, spec.mime, spec.expected_bytes, None, false);
         return;
     }
-    let mut retried_transport = false;
+    let mut attempts = 0;
     let mut shortcut = spec.resolved.lock().ok().and_then(|known| known.clone())
         .filter(|(url, since)| since.elapsed() < REDIRECT_TTL && upstream_allowed(url, spec.local_fixture))
         .map(|(url, _)| url);
@@ -812,13 +852,20 @@ fn serve_connection(mut stream: TcpStream, spec: &ProxySpec, client: &reqwest::b
                 shortcut = None;
                 if let Ok(mut known) = spec.resolved.lock() {*known = None;}
             }
+            Ok(response) if retryable_status(response.status().as_u16()) && attempts + 1 < UPSTREAM_ATTEMPTS => {
+                drop(response);
+                if !upstream_pause(&spec.cancelled, attempts) {return;}
+                attempts += 1;
+            }
             Ok(response) => break response,
             Err(_) if shortcut.is_some() => {
                 shortcut = None;
                 if let Ok(mut known) = spec.resolved.lock() {*known = None;}
             }
-            Err(error) if !retried_transport && transient_media_transport(&error) => {
-                retried_transport = true;
+            Err(error) if attempts + 1 < UPSTREAM_ATTEMPTS && retryable_transport(&error) => {
+                // The first retry is immediate: a pooled connection the origin already closed.
+                if attempts > 0 && !upstream_pause(&spec.cancelled, attempts - 1) {return;}
+                attempts += 1;
             }
             Err(_) => {
                 let _ = send_headers(&mut stream, 502, "text/plain", 0, None, false);
@@ -911,13 +958,33 @@ fn serve_connection(mut stream: TcpStream, spec: &ProxySpec, client: &reqwest::b
     if request.method == "GET" {
         // A released stream must stop forwarding a prior video GET. A bounded
         // per-chunk copy observes cancellation without buffering large media.
-        let mut source=response.take(length);
+        // Where these bytes sit in the file, to ask for the rest if the origin drops the transfer.
+        let start = if code == 206 {
+            content_range.as_deref().and_then(|value| value.strip_prefix("bytes "))
+                .and_then(|value| value.split_once('-')).and_then(|(first, _)| first.parse::<u64>().ok())
+        } else {Some(0)};
+        let whole = (spec.expected_bytes != 0).then(|| Segment {
+            url: spec.url.clone(), start: 0, len: spec.expected_bytes,
+            resolved: Mutex::new(spec.resolved.lock().ok().and_then(|known| known.clone())),
+        });
+        let mut source: Box<dyn Read> = Box::new(response.take(length));
         let mut buffer=[0u8;64*1024];
         let mut remaining=length;
+        let mut resumes=0;
         while remaining>0 && !spec.cancelled.load(Ordering::Acquire) {
             let requested=remaining.min(buffer.len() as u64) as usize;
-            let Ok(count)=source.read(&mut buffer[..requested])else{break};
-            if count==0 || spec.cancelled.load(Ordering::Acquire) {break;}
+            let count=source.read(&mut buffer[..requested]).unwrap_or(0);
+            if spec.cancelled.load(Ordering::Acquire) {break;}
+            if count==0 {
+                // The origin dropped the transfer: continue from this exact byte, same response.
+                let (Some(start), Some(whole)) = (start, whole.as_ref()) else {break};
+                if resumes >= RESUMES_PER_RESPONSE {break;}
+                resumes += 1;
+                let from = start + (length - remaining);
+                let Some(next) = fetch_part(spec, client, whole, from, start + length - 1) else {break};
+                source = Box::new(next);
+                continue;
+            }
             if stream.write_all(&buffer[..count]).is_err(){break;}
             remaining-=count as u64;
         }
@@ -932,16 +999,24 @@ fn fetch_part(spec:&ProxySpec,client:&reqwest::blocking::Client,segment:&Segment
     let mut shortcut=segment.resolved.lock().ok().and_then(|known|known.clone())
         .filter(|(url,since)|since.elapsed()<REDIRECT_TTL&&upstream_allowed(url,spec.local_fixture))
         .map(|(url,_)|url);
-    let mut retried=false;
+    let mut attempts=0;
     loop{
         if spec.cancelled.load(Ordering::Acquire){return None;}
         let target=shortcut.clone().unwrap_or_else(||segment.url.clone());
         let sent=client.get(target).header(reqwest::header::ACCEPT_ENCODING,"identity")
             .header(reqwest::header::RANGE,&range).send();
         let response=match sent{
+            Ok(response) if shortcut.is_none()&&retryable_status(response.status().as_u16())&&attempts+1<UPSTREAM_ATTEMPTS=>{
+                drop(response);
+                if !upstream_pause(&spec.cancelled,attempts){return None;}
+                attempts+=1;continue;
+            }
             Ok(response)=>response,
             Err(_) if shortcut.is_some()=>{shortcut=None;continue;}
-            Err(error) if !retried&&transient_media_transport(&error)=>{retried=true;continue;}
+            Err(error) if attempts+1<UPSTREAM_ATTEMPTS&&retryable_transport(&error)=>{
+                if attempts>0&&!upstream_pause(&spec.cancelled,attempts-1){return None;}
+                attempts+=1;continue;
+            }
             Err(_)=>return None,
         };
         let mut ranges=response.headers().get_all(reqwest::header::CONTENT_RANGE).iter();
@@ -1008,6 +1083,7 @@ fn serve_parts(mut stream:TcpStream,request:&Request,spec:&ProxySpec,client:&req
                 response=next;
             }
             let mut remaining=b-a+1;
+            let mut resumes=0;
             while remaining>0&&!spec.cancelled.load(Ordering::Acquire){
                 if ahead.is_none()&&remaining<=PREFETCH_BYTES{
                     if let Some(&(next,x,y))=pieces.get(index+1){
@@ -1015,8 +1091,15 @@ fn serve_parts(mut stream:TcpStream,request:&Request,spec:&ProxySpec,client:&req
                     }
                 }
                 let requested=remaining.min(buffer.len() as u64) as usize;
-                let Ok(count)=response.read(&mut buffer[..requested])else{return};
-                if count==0||spec.cancelled.load(Ordering::Acquire){return;}
+                let count=response.read(&mut buffer[..requested]).unwrap_or(0);
+                if spec.cancelled.load(Ordering::Acquire){return;}
+                if count==0{
+                    // The origin dropped this part: continue from this exact byte, same response.
+                    if resumes>=RESUMES_PER_RESPONSE{return;}
+                    resumes+=1;
+                    let Some(next)=fetch_part(spec,client,segment,b+1-remaining,b)else{return};
+                    response=next;continue;
+                }
                 if stream.write_all(&buffer[..count]).is_err(){return;}
                 remaining-=count as u64;
             }
@@ -1349,6 +1432,58 @@ mod tests {
         assert!(retried.contains("\r\nrange: bytes=3-5\r\n")
             || retried.contains("\r\nRange: bytes=3-5\r\n"),
             "retry must keep the caller's requested byte range");
+        assert!(release_proxy(&url));
+        server.join().unwrap();
+    }
+
+    #[test]
+    fn a_busy_origin_is_asked_again_before_the_engine_hears_of_it() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let origin = format!("http://127.0.0.1:{}/busy", listener.local_addr().unwrap().port());
+        let server = thread::spawn(move || {
+            for answer in [&b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"[..],
+                &b"HTTP/1.1 429 Too Many Requests\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"[..]] {
+                let (mut busy,_) = listener.accept().unwrap();
+                let _ = upstream_test_request(&busy);
+                busy.write_all(answer).unwrap();
+            }
+            let (mut ok,_) = listener.accept().unwrap();
+            let request = upstream_test_request(&ok);
+            assert!(request.to_ascii_lowercase().contains("range: bytes=3-5"),"{request}");
+            ok.write_all(b"HTTP/1.1 206 Partial Content\r\nContent-Length: 3\r\nContent-Range: bytes 3-5/12\r\nConnection: close\r\n\r\ndef").unwrap();
+        });
+        let (url,_) = start_proxy_internal(reqwest::Url::parse(&origin).unwrap(),
+            "video/mp4", "mp4", 12, true, Duration::from_secs(5), None).unwrap();
+        let (status, _, body) = fetch(&url, "GET", Some("bytes=3-5"));
+        assert_eq!(status, 206, "GitHub's 503/429 for anonymous downloads must not reach the engine");
+        assert_eq!(body, b"def");
+        assert!(release_proxy(&url));
+        server.join().unwrap();
+    }
+
+    #[test]
+    fn a_transfer_dropped_mid_film_continues_from_the_same_byte() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let origin = format!("http://127.0.0.1:{}/dropped", listener.local_addr().unwrap().port());
+        let (seen_tx,seen_rx) = mpsc::channel::<String>();
+        let server = thread::spawn(move || {
+            let (mut first,_) = listener.accept().unwrap();
+            let _ = upstream_test_request(&first);
+            // Promises 12 bytes, sends 6 and hangs up, like a connection the origin drops.
+            first.write_all(b"HTTP/1.1 206 Partial Content\r\nContent-Length: 12\r\nContent-Range: bytes 0-11/12\r\nConnection: close\r\n\r\nabcdef").unwrap();
+            drop(first);
+            let (mut second,_) = listener.accept().unwrap();
+            let request = upstream_test_request(&second);
+            second.write_all(b"HTTP/1.1 206 Partial Content\r\nContent-Length: 6\r\nContent-Range: bytes 6-11/12\r\nConnection: close\r\n\r\nghijkl").unwrap();
+            seen_tx.send(request).unwrap();
+        });
+        let (url,_) = start_proxy_internal(reqwest::Url::parse(&origin).unwrap(),
+            "video/mp4", "mp4", 12, true, Duration::from_secs(5), None).unwrap();
+        let (status, _, body) = fetch(&url, "GET", Some("bytes=0-11"));
+        assert_eq!(status, 206);
+        assert_eq!(body, b"abcdefghijkl", "the engine receives the whole range in one response");
+        let resumed = seen_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        assert!(resumed.to_ascii_lowercase().contains("range: bytes=6-11"), "{resumed}");
         assert!(release_proxy(&url));
         server.join().unwrap();
     }

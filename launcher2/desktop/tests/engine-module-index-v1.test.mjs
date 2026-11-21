@@ -31,3 +31,14 @@ test('the engine is warmed after Coco opens and excluded from Defender with its 
   assert.match(defender,/join\("player-runtime"\)/);
   assert.match(defender,/exe\.parent\(\)\.map\(\|dir\|dir\.join\("player"\)\)/);
 });
+
+test('a damaged or quarantined engine is replaced by a verified download of the same version',async()=>{
+  const player=await read('src-tauri/src/services/native_player.rs');
+  const manifest=JSON.parse(await read('src-tauri/resources/vlc-runtime-manifest.json'));
+  const url=/const ENGINE_ARCHIVE:&str="([^"]+)"/.exec(player)?.[1]??'';
+  assert.ok(url.includes(`video-engine-${manifest.version}/coco-video-engine-${manifest.version}.zip`),'rebuild and republish the archive with the engine');
+  assert.match(player,/const ENGINE_ARCHIVE_SHA256:&str="[0-9a-f]{64}"/);
+  assert.match(player,/healed=healed_engine\(\)\.map_err\(\|_\|error\)\?;/);
+  assert.match(player,/static API:Mutex<Option<Arc<Api>>>/,'a failed start is not remembered, so «Reintentar» really retries');
+  assert.match(player,/una sesión de vídeo anterior quedó abierta/,'a session nobody closed never blocks the next film');
+});
