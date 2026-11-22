@@ -328,6 +328,19 @@ pub(crate) fn ensure_for_new_folder(app:&AppHandle,root:&Path,programs:&[PathBuf
     if status!="present"{crate::services::diagnostics::log("defender",&format!("exclusiones al instalar o mover: {status}"));}
 }
 
+/// A friend without ZeroTier gets the bundled MSI. Only a definite «service does not exist»
+/// counts: an unreadable service state must not reinstall over a working ZeroTier.
+/// (NetworkStatus::setup_supported is the old read-only status flag and is never true, so it
+/// must not gate this: it kept every friend who did not come from Coco 1 off the network.)
+fn zerotier_install_needed(service_installed:Option<bool>)->bool{
+    cfg!(windows)&&service_installed==Some(false)
+}
+
+/// An installed ZeroTier joins Coco's network unless its own API says it already has.
+fn zerotier_join_needed(service_installed:Option<bool>,joined:Option<bool>)->bool{
+    cfg!(windows)&&service_installed==Some(true)&&joined!=Some(true)
+}
+
 /// Everything Windows needs to approve, asked together once when Coco opens: Defender for
 /// the game folders and, when missing, ZeroTier for playing with the host. Never blocks the
 /// launcher: a refusal, no Defender or the host being offline all leave Coco fully usable.
@@ -335,12 +348,12 @@ pub(crate) fn ensure_for_new_folder(app:&AppHandle,root:&Path,programs:&[PathBuf
 pub async fn prepare_windows(app:AppHandle)->Result<&'static str,String>{
     use tauri::Manager;
     let status=crate::services::network::get_network_status().await.ok();
-    let zerotier_missing=status.as_ref().is_some_and(|s|s.setup_supported&&s.service_installed==Some(false));
+    let service=status.as_ref().and_then(|s|s.service_installed);
+    let zerotier_missing=zerotier_install_needed(service);
     // Membership comes from ZeroTier's own API: its CLI lives in different folders per installer
     // version, and a wrong "not joined" would ask for permission on every start.
     let membership=tauri::async_runtime::spawn_blocking(crate::services::zerotier_host::local_membership).await.ok().flatten();
-    let needs_join=status.as_ref().is_some_and(|s|s.setup_supported&&s.service_installed==Some(true))
-        &&!membership.as_ref().is_some_and(|(joined,_)|*joined);
+    let needs_join=zerotier_join_needed(service,membership.as_ref().map(|(joined,_)|*joined));
     let msi=if zerotier_missing{
         let resources=app.path().resource_dir().map_err(|_|"Recursos de Coco no disponibles")?;
         match crate::services::network_installer::pinned_installer(&resources){
@@ -517,6 +530,24 @@ function Set-NetIPInterface {[CmdletBinding()]param([Parameter(ValueFromPipeline
             "Grocery/Grocery.exe","Engine/Binaries/Win64/CrashReportClient.exe","UnityCrashHandler64.exe",
             "Grocery/Binaries/Win64/OnlineFix64.dll","../evil.exe"]);
         assert_eq!(programs,vec![root.join("Grocery\\Grocery.exe"),root.join("Grocery\\Binaries\\Win64\\Grocery-Win64-Shipping.exe")]);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_friend_without_zerotier_gets_it_installed_and_joined(){
+        assert!(zerotier_install_needed(Some(false)));
+        assert!(!zerotier_install_needed(Some(true)));
+        assert!(!zerotier_install_needed(None));
+        assert!(zerotier_join_needed(Some(true),Some(false)));
+        assert!(zerotier_join_needed(Some(true),None));
+        assert!(!zerotier_join_needed(Some(true),Some(true)));
+        assert!(!zerotier_join_needed(Some(false),None));
+        // The bundled MSI and its pinned hash must ship, or the install above has nothing to run.
+        let root=Path::new(env!("CARGO_MANIFEST_DIR"));
+        assert!(crate::services::network_installer::pinned_installer(root).is_ok());
+        let source=include_str!("defender.rs");
+        let prepare=&source[source.find("pub async fn prepare_windows").unwrap()..];
+        assert!(!prepare[..prepare.find("\n}").unwrap()].contains("setup_supported"));
     }
 
     #[test]
