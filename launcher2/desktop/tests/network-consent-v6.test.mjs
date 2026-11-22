@@ -14,7 +14,9 @@ test('ZeroTier is set up on first open inside the one Windows prompt, never from
   assert.match(main,/invoke<string>\('prepare_windows'\)/);
   assert.doesNotMatch(main,/join_coco_network|install_zerotier_msi|<h2>Multijugador<\/h2>/,'no network buttons left for the friend');
   assert.match(lib,/services::defender::prepare_windows/);
-  assert.match(defender,/fn prepare_windows[\s\S]*?zerotier_script\(msi[\s\S]*?request_with\(Some\(&app\),&\[\],&\[\],false,script\)/,'one elevation for Defender and ZeroTier');
+  assert.match(defender,/fn prepare_windows[\s\S]*?zerotier_script\(msi[\s\S]*?request_with\(Some\(&app\),&\[\],&host_program,false,script\)/,'one elevation for Defender and ZeroTier');
+  assert.match(defender,/let host_program[^;]*is_host\(\)\{std::env::current_exe\(\)/,'only the host lets Coco itself through the firewall');
+  assert.doesNotMatch(defender.slice(defender.indexOf('pub async fn prepare_windows')).split('\n}')[0],/setup_supported/,'the never-true status flag must not gate the setup');
   assert.match(defender,/service_installed==Some\(false\)/,'only installs ZeroTier when it is missing');
   assert.match(defender,/pinned_installer/,'only the SHA-pinned bundled MSI');
 });
@@ -32,4 +34,11 @@ test('the host accepts friends automatically while Coco is open, and only for Co
   assert.match(authorizer,/58997fc5f3c0c001/);
   assert.match(authorizer,/127\.0\.0\.1:9993\/controller\/network/);
   assert.match(authorizer,/"authorized":true/);
+});
+
+test('profile names reach the host only over the Coco network',async()=>{
+  const names=await read('src-tauri/src/services/zerotier_host.rs');
+  assert.match(names,/TcpListener::bind\(\(HOST_IP,NAME_PORT\)\)/,'listens on 10.77.37.1 only, never on every interface');
+  assert.match(names,/if !is_coco_client_address\(peer\.ip\(\)\)\{continue;\}/);
+  assert.match(names,/valid_minecraft_username\(name\)/);
 });
