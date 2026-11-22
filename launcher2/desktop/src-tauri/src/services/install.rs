@@ -2654,6 +2654,26 @@ mod tests {
         verify_staged_files(&target,&manifest.required_files,&AtomicBool::new(false)).unwrap();
     }
 
+    /// Opt-in host validation of a published game update: upgrades a COPY of a real
+    /// installation of the previous version through the production upgrade transaction.
+    #[test]
+    #[ignore = "requires a copy of an installed previous version and a verified local ZIP cache"]
+    fn host_package_upgrade_smoke(){
+        let id=std::env::var("COCO2_HOST_SMOKE_ID").expect("select catalog id");
+        let target=PathBuf::from(std::env::var_os("COCO2_HOST_SMOKE_TARGET").expect("select installed copy"));
+        let cache=PathBuf::from(std::env::var_os("COCO2_HOST_SMOKE_CACHE").expect("select cache"));
+        assert!(target.is_absolute()&&cache.is_absolute()&&target.is_dir());
+        let manifest=read_manifest(&id).unwrap();
+        let plan=upgrade_plan(&manifest,&target,&cache);
+        println!("plan {} {:?} -> {}: {}",plan.status,plan.from_version,plan.to_version,plan.message);
+        assert_eq!(plan.status,"upgrade-ready");
+        let result=upgrade_internal(&manifest,&target,&cache,&AtomicBool::new(false),&||Ok(()),
+            |phase,file,done,total|{if done==total {println!("{phase}: {file} {done}/{total}");}}).unwrap();
+        assert_eq!(result.status,"upgraded");
+        verify_staged_files(&target,&manifest.required_files,&AtomicBool::new(false)).unwrap();
+        assert_eq!(upgrade_plan(&manifest,&target,&cache).status,"already-current");
+    }
+
     #[test]
     fn leftover_downloads_never_outlive_the_session_but_foreign_files_stay(){
         let root=std::env::temp_dir().join(format!("coco-sweep-{}",std::process::id()));

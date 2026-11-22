@@ -2239,28 +2239,38 @@
     "requiredFiles": [
       {
         "path": "just volleyball/steam_api64.dll",
-        "sha256": "c4e0d0bcad937a9273c754bb01a0386189171bbd10a95f0a93bf52f99ab6d9ca",
-        "size": 11234216
+        "sha256": "70d9826a402d3a78b0c07e9f7ea7c6832468a1113013f31ea570fccaa5445ea9",
+        "size": 11431336
       },
       {
-        "path": "just volleyball/steam_api64_o.dll",
-        "sha256": "8de54d32508e216c9135b8bf025749243d44e404c1c22a8e5fe35acecabe7a9c",
-        "size": 319128
+        "path": "just volleyball/steam_appid.txt",
+        "sha256": "e2e4d92b8be5280289f68a4a717e2490d7799d75feecf8c8066032ca4201dffa",
+        "size": 7
+      },
+      {
+        "path": "just volleyball/steam_settings/achievements.json",
+        "sha256": "a396e0aee2d3727fb386af303335d6016f8041e5ab3272e72e494035566462a4",
+        "size": 13277
       },
       {
         "path": "just volleyball/steam_settings/configs.main.ini",
-        "sha256": "a78aa33ac06b354e520885a7214517db3a8e1a5a4c59f4d5d6a535ad4830bda4",
-        "size": 681
+        "sha256": "8ea6ccf17b9abff37f32bdc0ffa1fe23a651b4ee31d731de73cec62377930d9e",
+        "size": 235
       },
       {
-        "path": "just volleyball/steam_settings/configs.user.ini",
-        "sha256": "cc7d2652a95b056fb1e11efa4e11a498e35c2836de8599f67d66c315fd58be72",
-        "size": 568
+        "path": "just volleyball/steam_settings/steam_interfaces.txt",
+        "sha256": "336b1797862427f2fe63ce1783bb3d719c7f41d2ab5798c3d2c0613bbde2c005",
+        "size": 779
       },
       {
         "path": "just volleyball/volleyball.exe",
-        "sha256": "09f8e3bfacec1c645bb5a47e88ab05a56c110578a3b622dd16445e642b765c56",
-        "size": 256242600
+        "sha256": "224a5ea56536081b84369a0e90590a688a8510fefcc24ab84af1a31b3e052435",
+        "size": 85303808
+      },
+      {
+        "path": "just volleyball/volleyball.pck",
+        "sha256": "7bd0d38b1005acee9720c9b4dad6588586949dfad3576102b73b289697c2ea98",
+        "size": 171072332
       }
     ],
     "executable": "just volleyball/volleyball.exe",

@@ -280,9 +280,19 @@ Después:
 | Grocery Store Simulator | `/game/grocery-store-simulator` | 92 | 2961880 | 1.2.4 | 6.623.041.166 B (5 partes, RAR de origen, `--split-large`) | `grocery-store-simulator-1.2.4` | Unreal, `Binaries/Win64` | Setup 0.6.55 (lleva un `Read Me.txt` inofensivo) |
 | Paint the Town Red | `/game/paint-the-town-red` | 716 | 337320 | 1.3.4 | 2.527.207.121 B (2 partes) | `paint-the-town-red-1.3.4` | Unity 64 IL2CPP (conserva `1=`) | Setup 0.6.55 |
 | Lethal Company | `/game/lethal-company` | 233 | 1966720 | 81 | 731.543.135 B | `lethal-company-81` | Unity 64 (`dlllist.txt`) | Canal s28 |
-| just volleyball | `/game/just-volleyball` | 7705 | 5037200 | 1.0.0 | 207.308.572 B | `just-volleyball-1.0.0` | Godot, Goldberg (sin Online-Fix; `account_steamid` quitado) | Canal s30 |
+| just volleyball | `/game/just-volleyball` | 7705 | 5037200 | 1.0.3 | 207.314.137 B | `just-volleyball-1.0.3` | Godot (`volleyball.pck` aparte desde 1.0.3), Goldberg sin Online-Fix. El paquete 1.0.3 trae `offline=1` y `disable_networking=1`: se publica con `configs.main.ini` propio (red activa, `listen_port=47584`) | Canal s30 (1.0.0), s31 (1.0.3) |
 
 Gamble With Your Friends no vino de AnkerGames por enlace: era una carpeta ya descargada (receta de la guía maestra).
+
+### Actualizar un juego ya publicado
+
+Sube la versión (`1.0.0` → `1.0.3`), un release nuevo `<id>-<versión>` y cambia `requiredFiles`, `pack` y el lock. Quien ya lo tiene ve «Versión nueva» en la ficha y Coco reemplaza **solo los archivos de `requiredFiles`**, con respaldo:
+
+- Fija todo lo que el juego necesita para arrancar en la versión nueva (ejecutable, `.pck`/datos, DLL del emulador, `steam_interfaces.txt`…). Un archivo nuevo que no esté en `requiredFiles` no llega a quien actualiza.
+- **No fijes** un archivo que exista en la instalación vieja sin estar fijado en ella y que cambie de contenido (`branches.json`, `configs.app.ini`, `supported_languages.txt`…): la actualización se niega («Archivo previo no pertenece al manifiesto antiguo»). Tampoco `configs.user.ini` (Coco le escribe el nombre del jugador). Las instalaciones nuevas los reciben igual desde el ZIP.
+- Revisa los `.ini` del emulador de la versión nueva: AnkerGames puede traer la red apagada.
+- Prueba la actualización real sobre una **copia** de la instalación vieja del anfitrión (`COCO2_HOST_SMOKE_TARGET` = la copia, caché con el ZIP enlazado como en el paso 7):
+  `cargo test --lib host_package_upgrade_smoke -- --ignored --nocapture` debe terminar en `upgraded`. Después abre el juego de esa copia hasta el menú.
 
 ## Tiempos reales (anfitrión)
 

@@ -4,8 +4,8 @@
   "type": "standalone",
   "files": [],
   "archive": {
-    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/just-volleyball-1.0.0/just-volleyball-1.0.0-part01.zip",
-    "sha256": "c2a61b1834d8c11e49ec0b5de2434b0eb1f9acea2b470ef9ea9befceb69f9239",
-    "size": 207308572
+    "url": "https://github.com/Franco-Caballero/CocoMinecraftUpdater/releases/download/just-volleyball-1.0.3/just-volleyball-1.0.3-part01.zip",
+    "sha256": "c053b8b9af115116f09ae15ca57fa3c26b049dff7a8d2f2a77477e1261b4b165",
+    "size": 207314137
   }
 }
