@@ -370,7 +370,9 @@ pub async fn prepare_windows(app:AppHandle)->Result<&'static str,String>{
     tauri::async_runtime::spawn_blocking(move||{
         // The verified MSI stays locked against changes until Windows has installed it.
         let _locked=msi;
-        let status=request_with(Some(&app),&[],&[],false,script);
+        // The host's Coco receives friends' profile names on the Coco network.
+        let host_program:Vec<PathBuf>=if crate::services::zerotier_host::is_host(){std::env::current_exe().into_iter().collect()}else{Vec::new()};
+        let status=request_with(Some(&app),&[],&host_program,false,script);
         crate::services::diagnostics::log("windows",&format!("preparación al abrir: {status}"));
         status
     }).await.map_err(|error|format!("Autorización interrumpida: {error}"))
