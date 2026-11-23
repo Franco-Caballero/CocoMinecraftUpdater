@@ -37,9 +37,9 @@ test('host-only first-run package review requires authoring capability and never
   assert.match(welcome,/onOpenPackage:\(\)=>void/);
   assert.match(welcome,/hostStudioAvailable&&<button[^\n]*onClick=\{onOpenPackage\}/);
   assert.match(welcome,/Los amigos solo reciben juegos aprobados en el catálogo firmado/);
-  assert.match(main,/onOpenPackage=\{\(\)=>\{if\(hostStudioAvailable\)\{navigate\('settings'\);setPackagePickerRequest\(\+\+packagePickerSerial\.current\);\}\}\}/);
-  assert.match(main,/LazyFirstRun hostStudioAvailable=\{hostStudioAvailable\}/);
-  assert.match(main,/onPickerRequestConsumed=\{\(\)=>setPackagePickerRequest\(0\)\}/);
+  // Settings no longer has the host section, so the first-day screen offers no package button.
+  assert.match(main,/onOpenPackage=\{dismissWelcome\}/);
+  assert.doesNotMatch(main,/LazyFirstRun hostStudioAvailable|setPackagePickerRequest/);
   assert.match(hub,/firstRunPickerGate\.current\.consume\(pickerRequestId\)/);
   assert.match(hub,/onPickerRequestConsumed\?\.\(\)/);
   assert.match(hub,/if\(!hostCanImportNow\.current\|\|incomingPath\|\|!isTauri\(\)\)return/);
@@ -59,7 +59,7 @@ test('client first-run receives host-curated catalog and cannot trigger package 
   assert.match(welcome,/hostStudioAvailable=false/);
   assert.match(welcome,/Todo lo que ves lo aprobó el anfitrión/);
   assert.match(welcome,/el anfitrión apruebe y publique juegos en el catálogo verificado/);
-  assert.match(main,/pickerRequestId=\{hostStudioAvailable\?packagePickerRequest:0\}/);
+  assert.doesNotMatch(main,/pickerRequestId=/);
   assert.match(hub,/hostCanImport&&!compact&&<details className="catalog-legacy-import"/);
   assert.match(hub,/hostCanImport&&<label className="catalog-consent"/);
   assert.match(hub,/hostCanImport&&<button className="primary-button" disabled=\{!confirmed\|\|importing\}/);

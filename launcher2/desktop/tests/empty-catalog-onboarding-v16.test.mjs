@@ -17,14 +17,13 @@ test('a missing or damaged initial catalog keeps Reyna and honest host-curated g
   assert.match(main,/useState<View>\('library'\)/,'the welcome must remain reachable in the actual landing tab');
   assert.doesNotMatch(render,/items\.length>0&&!loadError&&isTauri\(\)/);
   assert.match(render,/catalogReady=\{items\.length>0&&!loadError\}/);
-  assert.match(render,/hostStudioAvailable=\{hostStudioAvailable\}/);
+  assert.doesNotMatch(render,/hostStudioAvailable=/,'no package button on the welcome: Settings has no host section');
   assert.match(welcome,/catalogReady:boolean/);
   assert.match(welcome,/disabled=\{!catalogReady\}/);
   assert.match(main,/className="coco-reyna" src="\/reyna-2\.webp"/,'Reyna stays in the side panel, catalog or not');
   assert.match(welcome,/hostStudioAvailable&&<button[^\n]*onClick=\{onOpenPackage\}/);
   assert.match(welcome,/No necesitas recibir archivos de otras personas/);
-  assert.doesNotMatch(render,/onOpenPackage=\{\(\)=>\{dismissWelcome/);
-  assert.match(render,/onOpenPackage=\{\(\)=>\{if\(hostStudioAvailable\)/);
+  assert.match(render,/onOpenPackage=\{dismissWelcome\}/);
 });
 
 test('client receives signed catalog route, but never a legacy or unsigned friend-package fallback',async()=>{
@@ -32,8 +31,8 @@ test('client receives signed catalog route, but never a legacy or unsigned frien
     readFile(resolve(root,'src/main.tsx'),'utf8'),
     readFile(resolve(root,'src/CatalogHub.tsx'),'utf8'),
   ]);
-  assert.match(main,/LazyCatalogHub hostStudioAvailable=\{hostStudioAvailable\}/);
-  assert.match(main,/pickerRequestId=\{hostStudioAvailable\?packagePickerRequest:0\}/);
+  assert.match(main,/LazyCatalogHub key=\{incomingPackages\[0\]\} hostStudioAvailable=\{hostStudioAvailable\}/,'only the review of a package opened from Explorer');
+  assert.doesNotMatch(main,/pickerRequestId=/,'Settings no longer carries the catalog hub');
   assert.match(hub,/hostCanImport&&<button ref=\{openPackageButtonRef\}/);
   assert.match(hub,/hostCanImport&&!compact&&<details className="catalog-legacy-import"/);
   assert.match(hub,/hostCanImport&&<label className="catalog-consent"/);

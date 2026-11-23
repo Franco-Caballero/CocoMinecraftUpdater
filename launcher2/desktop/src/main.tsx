@@ -5,7 +5,7 @@ import { convertFileSrc, isTauri, invoke as invokeNative } from '@tauri-apps/api
 import { invoke, captureUnexpectedErrors, copyDiagnosticReport } from './diagnostics';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Activity, ClipboardCopy, ArrowDownAZ, ArrowRight, ArrowUpRight, Check, CircleAlert, Clock3, Download, FileArchive, Heart, LoaderCircle, Maximize2, Minus, PackagePlus, Play, Search, Settings2, ShieldCheck, Sparkles, X, Camera, HardDrive, Trash2, FolderOpen, FolderInput, Wifi } from 'lucide-react';
+import { Activity, ClipboardCopy, ArrowDownAZ, ArrowRight, ArrowUpRight, Check, CircleAlert, Clock3, Download, FileArchive, Heart, LoaderCircle, Maximize2, Minus, Play, Search, Settings2, ShieldCheck, Sparkles, X, Camera, HardDrive, Trash2, FolderOpen, FolderInput, Wifi } from 'lucide-react';
 import '@fontsource-variable/big-shoulders-display';
 import '@fontsource-variable/instrument-sans';
 import '../../prototype/styles.css';
@@ -34,7 +34,6 @@ import {MAX_PENDING_PACKAGES,acknowledgePackageOverflow,dismissPackageRequest,en
 import {persistPackageInbox,readPersistedPackageInbox} from './package-inbox-persistence';
 import type {PackageInboxState} from './package-inbox';
 import {PackageActivationDrain} from './package-activation-drain';
-import {isPortablePackageFile} from './portable-format';
 import {EXPERIENCE_PAGE_SIZE,indexExperiences,matchesExperienceQuery,nextExperiencePage,normalizeExperienceQuery} from './experience-search';
 import {indexDiscoveryNames,nextDiscoveryIndex,quickDiscovery} from './quick-discovery';
 import {gamePrimaryAction} from './game-primary-action';
@@ -597,8 +596,6 @@ function App(){
     incomingPackages.length===0&&!selected&&!hostStudioOpen&&!mediaPlaying&&!streamLoading&&
     !nativeOperationGate.current.busy()&&
     appUpdate.stage!=='downloading'&&appUpdate.stage!=='installing';
-  const [packagePickerRequest,setPackagePickerRequest]=useState(0);
-  const packagePickerSerial=React.useRef(0);
   const updateRunning=React.useRef(false);
   const updateAttempt=React.useRef(0);
   const nativeWriteBusy=React.useRef(false);
@@ -757,7 +754,6 @@ function App(){
         accepted.push(path);
       }
       stagedNativePrefix=accepted;
-      if(accepted.some(isPortablePackageFile))setPackagePickerRequest(0);
       if(accepted.length&&!commitInbox(enqueuePackageRequests(inboxLive.current,accepted)))
         throw new Error('Explorer review could not be saved locally; native request retained');
     };
@@ -1865,9 +1861,6 @@ function App(){
     processUnknown:gameProcessUncertain,
     opening:runtime?.state==='verifying'&&runtime.id===selected.id,firstRun:firstGameRun,
   }):null;
-  const hostStudioBlocked=Boolean(packageReviewDeferred||incomingPackages.length||
-    runtime?.state==='running'||observedGameIds.length||gameProcessUncertain||
-    mediaPrepareGate.current.busy()||busy||updateRunning.current);
   // All diagnostic paths originate from a registered native manifest/plan.
   // A planned destination is NOT evidence that Defender quarantined a file.
   const nativeDiagnosticPath=selected?.workflow==='coco-standalone'
@@ -2089,7 +2082,7 @@ function App(){
       <main className="main-content" id="mainContent" ref={mainRef}>
         {loadError&&<div className="notice error" role="alert">No se pudo leer la biblioteca: {loadError}</div>}
         {inboxPersistenceError&&<div className="notice error" role="alert">No se pudo guardar la revisión pendiente. Mantén Coco abierto; si se cierra inesperadamente, vuelve a abrir el paquete desde Explorer. No se importó ni ejecutó nada.</div>}
-        {welcomeVisible&&<React.Suspense fallback={null}><LazyFirstRun hostStudioAvailable={hostStudioAvailable} catalogReady={items.length>0&&!loadError} onExplore={()=>{dismissWelcome();navigate('library');if(installedIds.size)setFilter('installed');}} onOpenPackage={()=>{if(hostStudioAvailable){navigate('settings');setPackagePickerRequest(++packagePickerSerial.current);}}} onDismiss={dismissWelcome} installedCount={installedIds.size}/></React.Suspense>}
+        {welcomeVisible&&<React.Suspense fallback={null}><LazyFirstRun catalogReady={items.length>0&&!loadError} onExplore={()=>{dismissWelcome();navigate('library');if(installedIds.size)setFilter('installed');}} onOpenPackage={dismissWelcome} onDismiss={dismissWelcome} installedCount={installedIds.size}/></React.Suspense>}
         {incomingPackages.length>0&&packageReviewDeferred&&<div className="coco-package-deferred" role="status" aria-live="polite"><FileArchive size={16}/><span>{incomingPackages.length===1?'Recibiste un paquete para revisar':`${incomingPackages.length} paquetes esperan revisión`}. Se mostrarán cuando termines la operación actual. No se importó ni ejecutó nada.</span></div>}
         {inbox.dropped>0&&incomingPackages.length===0&&<div className="notice error coco-inbox-overflow" role="alert">Se recibieron más paquetes de los que Coco puede revisar a la vez. Abre nuevamente los archivos pendientes desde Explorer. <button className="filter-button" onClick={()=>commitInbox(acknowledgePackageOverflow(inboxLive.current))}>Entendido</button></div>}
         {pendingOperations.length>0&&<section className="coco-recovery-banner" role="alert" aria-label="Operaciones pendientes de recuperar"><ShieldCheck size={19}/><div><strong>{pendingOperations.length===1?'Hay un juego pendiente de recuperar':`${pendingOperations.length} juegos necesitan revisión`}</strong><p>Los archivos permanecen protegidos. Coco no modificará nada sin que revises la recuperación.</p></div><div className="coco-recovery-buttons">{pendingOperations.slice(0,3).map(operation=><button className="filter-button" key={`${operation.id}/${operation.kind}`} onClick={()=>{const entry=items.find(x=>x.id===operation.id);if(entry){openDetails(entry);setOperationMessage(operation.status==='blocked-unsafe'?'La recuperación automática está bloqueada por seguridad. Revisa la instalación.':'Hay una operación interrumpida: revisa la recuperación disponible.');}else navigate('settings');}}>{items.find(x=>x.id===operation.id)?.name||'Ver juego'} <ArrowRight size={14}/></button>)}</div></section>}
@@ -2106,9 +2099,7 @@ function App(){
             <button className="toggle-button" disabled={!isTauri()||savingIdentity||identityName===identity.username} onClick={saveIdentity}><Check size={15}/>{confirmIdentity?'Confirmar cambio':'Guardar'}</button>
             {confirmIdentity&&<p className="identity-warning">Cambiar el nombre puede cambiar tu inventario y avances. Confirma el cambio.</p>}{identityError&&<p className="operation-message" role="alert">{identityError}</p>}{avatarError&&<p className="operation-message" role="alert">{avatarError}</p>}</div></div></section>
           <section className="coco-setting"><div><h2>Windows Defender</h2><p>{defenderOutcome||'Coco excluye solo las carpetas de juegos y sus descargas.'}</p></div><div className="coco-setting-control"><button className="filter-button" disabled={!isTauri()||defenderBusy||windowsPreparation!=='idle'} onClick={()=>void checkDefender()}><ShieldCheck size={14}/> {defenderBusy?'Revisando…':'Revisar permisos'}</button></div></section>
-          <section className="coco-setting"><div><h2>Conexión con tus amigos</h2><p>{networkRepairOutcome||'Si no ves a tus amigos en las partidas o ZeroTier no se instaló, Coco lo instala y lo conecta solo. Windows pide permiso una vez.'}</p></div><div className="coco-setting-control"><button className="filter-button" disabled={!isTauri()||networkRepairBusy||windowsPreparation!=='idle'} onClick={()=>void repairNetwork()}><Wifi size={14}/> {networkRepairBusy?'Reparando…':'Reparar conexión'}</button></div></section>
-          <section className="coco-setting"><div><h2>Ayuda</h2><p>{diagnosticNote||'Si algo falla, copia el diagnóstico y pégalo en el chat con Coco.'}</p></div><div className="coco-setting-control"><button className="filter-button active" disabled={!isTauri()} onClick={()=>void copyDiagnostic()}><ClipboardCopy size={14}/> Copiar diagnóstico</button><button className="filter-button" disabled={!isTauri()} onClick={()=>void invoke('open_log_folder').catch(console.warn)}><FolderOpen size={14}/> Abrir registros</button></div></section>
-          {hostStudioAvailable&&<section className="coco-setting coco-host"><div><h2>Anfitrión</h2><p>Solo aparece en tu PC. Prepara juegos y revisa paquetes de prueba.</p></div><div className="coco-setting-control"><button className="host-studio-button" title={hostStudioBlocked?'Termina la operación activa o revisa el paquete pendiente antes de crear otro':'Crear un paquete compartible'} disabled={hostStudioBlocked} onClick={()=>{if(!hostStudioBlocked)setHostStudioOpen(true);}}><PackagePlus size={17}/><span>Crear juego</span></button></div>{incomingPackages.length===0&&isTauri()&&<React.Suspense fallback={null}><LazyCatalogHub hostStudioAvailable={hostStudioAvailable} onChanged={refreshNativeCatalog} onImported={openImportedGame} pickerRequestId={hostStudioAvailable?packagePickerRequest:0} onPickerRequestConsumed={()=>setPackagePickerRequest(0)}/></React.Suspense>}</section>}
+          <section className="coco-setting"><div><h2>Ayuda</h2><p>{networkRepairOutcome||diagnosticNote||'Si algo falla, copia el diagnóstico y pégalo en el chat con Coco.'}</p></div><div className="coco-setting-control"><button className="filter-button active" disabled={!isTauri()} onClick={()=>void copyDiagnostic()}><ClipboardCopy size={14}/> Copiar diagnóstico</button><button className="filter-button" disabled={!isTauri()} onClick={()=>void invoke('open_log_folder').catch(console.warn)}><FolderOpen size={14}/> Abrir registros</button><button className="filter-button" disabled={!isTauri()||networkRepairBusy||windowsPreparation!=='idle'} onClick={()=>void repairNetwork()}><Wifi size={14}/> {networkRepairBusy?'Reparando…':'Reparar conexión'}</button></div></section>
           <section className="coco-activity-history" aria-label="Actividad reciente guardada en este PC">
             <div className="coco-activity-history-head"><div><h2>Tu actividad</h2></div>{activity.length>0&&<button className="filter-button" onClick={()=>{clearActivity();setActivity([]);}}>Borrar historial</button>}</div>
             {activity.length===0?<p className="coco-activity-empty">Lo que juegues e instales aparecerá aquí.</p>:

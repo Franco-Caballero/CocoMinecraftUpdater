@@ -5,13 +5,12 @@ import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 
-test('host-only first-use welcome remains available after cancelling draft picker; clients have no picker',async()=>{
+test('the first-use welcome offers no package picker to anyone',async()=>{
   const app=await readFile(resolve(root,'src/main.tsx'),'utf8');
   const welcome=app.match(/<LazyFirstRun[\s\S]*?\/>/)?.[0];
   assert.ok(welcome);
-  assert.match(welcome,/hostStudioAvailable=\{hostStudioAvailable\}/);
-  assert.match(welcome,/onOpenPackage=\{\(\)=>\{if\(hostStudioAvailable\)\{navigate\('settings'\);setPackagePickerRequest\(\+\+packagePickerSerial\.current\);\}\}\}/);
-  assert.doesNotMatch(welcome,/onOpenPackage=\{\(\)=>\{dismissWelcome\(\)/);
+  assert.doesNotMatch(welcome,/hostStudioAvailable=|setPackagePickerRequest/);
+  assert.match(welcome,/onOpenPackage=\{dismissWelcome\}/);
   assert.match(app,/const openImportedGame=\(id:string\)=>\{\s*dismissWelcome\(\);/);
   assert.match(welcome,/onDismiss=\{dismissWelcome\}/);
 });

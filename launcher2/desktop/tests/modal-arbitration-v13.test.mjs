@@ -11,12 +11,12 @@ const src=await readFile(resolve(root,'src/main.tsx'),'utf8');
 const ast=ts.createSourceFile('main.tsx',src,ts.ScriptTarget.ES2022,true,ts.ScriptKind.TSX);
 const extracted=new Map();
 const visit=node=>{
-  if(ts.isVariableDeclaration(node)&&['packageReviewDeferred','hostStudioBlocked'].includes(node.name.getText(ast)))
+  if(ts.isVariableDeclaration(node)&&['packageReviewDeferred'].includes(node.name.getText(ast)))
     extracted.set(node.name.getText(ast),node.initializer.getText(ast));
   ts.forEachChild(node,visit);
 };
 visit(ast);
-assert.equal(extracted.size,2);
+assert.equal(extracted.size,1);
 const compiled=Object.fromEntries([...extracted].map(([key,tsCode])=>[
   key,ts.transpileModule('('+tsCode+')',{compilerOptions:{module:ts.ModuleKind.None,target:ts.ScriptTarget.ES2022}}).outputText,
 ]));
@@ -33,7 +33,6 @@ function caseFor(changes={}){
   };
   const ctx={...base,...changes};
   ctx.packageReviewDeferred=vm.runInNewContext(compiled.packageReviewDeferred,ctx);
-  ctx.hostStudioBlocked=vm.runInNewContext(compiled.hostStudioBlocked,ctx);
   return ctx;
 }
 
@@ -49,17 +48,6 @@ test('Explorer package review cannot interrupt Host Studio, native writes, video
   assert.equal(caseFor({appUpdate:{stage:'deferred'}}).packageReviewDeferred,false);
 });
 
-test('Host Studio cannot start while installer, package review or game needs resources',()=>{
-  assert.equal(caseFor().hostStudioBlocked,false);
-  for(const changed of [
-    {incomingPackages:['C:\\Amigo\\x.coco2pack']},
-    {runtime:{state:'running'}},{observedGameIds:['game']},
-    {gameProcessUncertain:true},
-    {mediaPrepareGate:{current:{busy:()=>true}}},
-    {nativeOperationGate:{current:{busy:()=>true}}},
-  ])assert.equal(caseFor(changed).hostStudioBlocked,true,JSON.stringify(changed));
-});
-
 test('React defers the inbox dialog but preserves queued path and correct focus on resume',()=>{
   const start=src.indexOf('// Windows can deliver a new package');
   const end=src.indexOf('// Hover clips stop playing',start);
@@ -68,7 +56,6 @@ test('React defers the inbox dialog but preserves queued path and correct focus 
   assert.match(src,/if\(incomingPackages\.length&&!packageReviewDeferred\)/);
   assert.match(src,/\},\[incomingPackages\[0\],packageReviewDeferred\]\)/);
   assert.match(src,/incomingPackages\.length>0&&packageReviewDeferred&&<div className="coco-package-deferred"/);
-  assert.match(src,/disabled=\{hostStudioBlocked\}/);
-  assert.match(src,/if\(!hostStudioBlocked\)setHostStudioOpen\(true\)/);
+  assert.doesNotMatch(src,/coco-host|hostStudioBlocked/,'the host section was removed from Settings');
   assert.doesNotMatch(src.slice(start,end),/import_local_publish_package|install_standalone|launch_standalone/);
 });

@@ -27,7 +27,8 @@ test('Settings repair the Coco network with one Windows prompt',async()=>{
   const [main,defender,lib,diagnostics]=await Promise.all([read('src/main.tsx'),read('src-tauri/src/services/defender.rs'),read('src-tauri/src/lib.rs'),read('src/diagnostics.ts')]);
   assert.match(lib,/services::defender::repair_zerotier/);
   assert.match(main,/invoke<\{status:string;detail:string\}>\('repair_zerotier'\)/);
-  assert.match(main,/<h2>Conexión con tus amigos<\/h2>[\s\S]*?Reparar conexión/);
+  assert.match(main,/<h2>Ayuda<\/h2>[\s\S]*?Abrir registros<\/button><button[\s\S]{0,200}?repairNetwork\(\)[\s\S]{0,120}?'Reparar conexión'\}<\/button><\/div><\/section>/,'next to «Abrir registros»');
+  assert.doesNotMatch(main,/Conexión con tus amigos/);
   assert.match(diagnostics,/'repair_zerotier'/,'the repair shows up in the diagnostic');
   assert.match(defender,/fn repair_zerotier[\s\S]*?request_with\(Some\(&app\),&\[\],&host_program,true,Some\(script\)\)/,'forced past the quiet period');
   assert.match(defender,/Temp\\coco-zerotier-/,'installs from a copy msiexec can open');

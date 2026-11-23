@@ -14,8 +14,8 @@ test('new client sees approved host catalog journey, and host-only picker never 
   assert.match(first,/hostStudioAvailable&&<button className="primary-button first-run-package-action" onClick=\{onOpenPackage\}/);
   assert.match(first,/Todo lo que ves lo aprobó el anfitrión/);
   assert.doesNotMatch(first,/Abrir paquete|importar/i);
-  assert.match(app,/onOpenPackage=\{\(\)=>\{if\(hostStudioAvailable\)/);
-  assert.match(app,/LazyFirstRun hostStudioAvailable=\{hostStudioAvailable\}/);
+  assert.match(app,/onOpenPackage=\{dismissWelcome\}/);
+  assert.doesNotMatch(app,/LazyFirstRun hostStudioAvailable/);
   assert.match(hub,/review_local_publish_package/);
   assert.match(hub,/!hostCanImportNow\.current\|\|!review\|\|!confirmed/);
   assert.match(hub,/reviewGate\.current\.beginCommit\(reviewTicket,sourcePath,review\.reviewToken\)/);
@@ -29,5 +29,5 @@ test('client first-day path cannot expose unsigned CTA even with empty embedded 
   assert.match(first,/hostStudioAvailable=false/);
   assert.match(first,/hostStudioAvailable&&<button/);
   assert.match(first,/La biblioteca aún no tiene juegos disponibles/);
-  assert.match(app,/pickerRequestId=\{hostStudioAvailable\?packagePickerRequest:0\}/);
+  assert.doesNotMatch(app,/LazyFirstRun hostStudioAvailable|pickerRequestId=/,'no package button on the first-day screen');
 });
