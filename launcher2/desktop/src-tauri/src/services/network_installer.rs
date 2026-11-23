@@ -10,7 +10,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Manager};
 
 const PINNED_BYTES: u64 = 12_003_840;
-const PINNED_SHA256: &str = "42514072b0fe44b8f66e0395bcd23a0b1d1642c28ed00831f1527b2f41b14670";
+pub(crate) const PINNED_SHA256: &str = "42514072b0fe44b8f66e0395bcd23a0b1d1642c28ed00831f1527b2f41b14670";
 static INSTALL_RUNNING: AtomicBool = AtomicBool::new(false);
 
 #[derive(Serialize)]
@@ -43,6 +43,17 @@ fn no_reparse_components(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// `\\?\C:\…` → `C:\…`. `fs::canonicalize` returns that form and msiexec cannot open a
+/// package from it (exit code 1619): every friend without ZeroTier hit this in 0.6.81.
+fn plain(path: &Path) -> PathBuf {
+    let text=path.to_string_lossy();
+    if let Some(rest)=text.strip_prefix(r"\\?\UNC\"){return PathBuf::from(format!(r"\\{rest}"));}
+    match text.strip_prefix(r"\\?\"){
+        Some(rest) if rest.as_bytes().get(1)==Some(&b':')=>PathBuf::from(rest),
+        _=>path.to_path_buf(),
+    }
+}
+
 pub(crate) fn pinned_installer(resource_root: &Path) -> Result<(PathBuf, File), String> {
     let path=resource_root.join("resources").join("ZeroTierOne.msi");
     no_reparse_components(&path)?;
@@ -67,7 +78,7 @@ pub(crate) fn pinned_installer(resource_root: &Path) -> Result<(PathBuf, File), 
     }
     let actual=format!("{:x}",hash.finalize());
     if actual!=PINNED_SHA256{return Err("Bundled ZeroTier MSI does not match approved SHA-256".into());}
-    Ok((source,file))
+    Ok((plain(&source),file))
 }
 
 #[cfg(windows)]
@@ -169,5 +180,17 @@ mod tests{
         fs::write(base.join("resources/ZeroTierOne.msi"),b"forged bytes").unwrap();
         assert!(pinned_installer(&base).is_err());
         fs::remove_dir_all(base).unwrap();
+    }
+    #[cfg(windows)]
+    #[test]
+    fn msiexec_gets_a_path_it_can_open(){
+        assert_eq!(plain(Path::new(r"\\?\D:\Users\a b\AppData\Local\Coco Launcher 2\resources\ZeroTierOne.msi")),
+            PathBuf::from(r"D:\Users\a b\AppData\Local\Coco Launcher 2\resources\ZeroTierOne.msi"));
+        assert_eq!(plain(Path::new(r"\\?\UNC\server\share\ZeroTierOne.msi")),PathBuf::from(r"\\server\share\ZeroTierOne.msi"));
+        assert_eq!(plain(Path::new(r"C:\Coco\ZeroTierOne.msi")),PathBuf::from(r"C:\Coco\ZeroTierOne.msi"));
+        // The real bundled MSI, resolved the way Coco resolves it on a friend's PC.
+        let (path,_file)=pinned_installer(Path::new(env!("CARGO_MANIFEST_DIR"))).unwrap();
+        assert!(!path.to_string_lossy().starts_with(r"\\?\"),"{}",path.display());
+        assert!(path.is_file());
     }
 }

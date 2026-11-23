@@ -2,7 +2,7 @@ import { invoke as nativeInvoke, type InvokeArgs } from '@tauri-apps/api/core';
 
 /** Operations worth a line in the log even when they work, so a failure has its context. */
 const MILESTONES=new Set(['install_standalone','upgrade_standalone','launch_standalone','uninstall_standalone',
-  'move_installation','commit_standalone_repair','prepare_windows','ensure_defender_exclusions']);
+  'move_installation','commit_standalone_repair','prepare_windows','ensure_defender_exclusions','repair_zerotier']);
 const QUIET=new Set(['log_event','get_diagnostic_report','copy_diagnostic_file']);
 
 const describe=(args?:InvokeArgs)=>{

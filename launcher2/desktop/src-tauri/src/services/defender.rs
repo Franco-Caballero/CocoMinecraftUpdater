@@ -16,6 +16,8 @@ use tauri::{AppHandle,Emitter};
 const STATE_FILE:&str="defender-exclusions.json";
 const AUTHORIZATION_EVENT:&str="coco2://windows-authorization";
 static PREPARATION:Mutex<()>=Mutex::new(());
+/// The "zerotier:" lines of the last elevated run, so «Reparar conexión» can say what failed.
+static LAST_ZEROTIER_LINES:Mutex<Vec<String>>=Mutex::new(Vec::new());
 const DECLINED_RETRY_SECONDS:u64=6*60*60;
 const UNAVAILABLE_RETRY_SECONDS:u64=7*24*60*60;
 /// Folders next to a game hold its installation stage, a move in progress and kept saves.
@@ -115,30 +117,65 @@ fn elevated_script(paths:&[String],result:&Path,extra:&str)->String{
 
 const NETWORK_ID:&str="58997fc5f3c0c001";
 
+/// Folders where the ZeroTier installers put the service program (1.16 uses ProgramData).
+const ZEROTIER_ROOTS:&[&str]=&["C:\\ProgramData\\ZeroTier\\One","C:\\Program Files\\ZeroTier\\One","C:\\Program Files (x86)\\ZeroTier\\One"];
+
+fn zerotier_program_present()->bool{
+    ZEROTIER_ROOTS.iter().any(|root|Path::new(root).join("zerotier-one_x64.exe").is_file())
+}
+
+/// Runs the bundled MSI from the elevated script. Every way 0.6.81 or a friend's PC can trip it:
+/// - msiexec cannot open a `\\?\` path (exit 1619: every new friend in 0.6.81) nor, for the
+///   administrator who approves the prompt, perhaps a folder of another account. The MSI is
+///   copied into a fresh folder under Windows\Temp and installed from there; if that copy is
+///   impossible it still runs from where Coco is installed.
+/// - the copy is hashed again inside the elevated script, so what runs is the pinned MSI;
+/// - another installation in progress (Windows Update, exit 1618) is waited out;
+/// - the exit code and the first error of msiexec's own log come back as result lines.
+///
+/// `action` and `extra` exist for the test, which runs an administrative image ('/a') unelevated.
+fn msi_commands(msi:&Path,action:&str,extra:&str)->String{
+    const TEMPLATE:&str=r#"$src=__SRC__;$work=Join-Path $env:SystemRoot ('Temp\coco-zerotier-'+[guid]::NewGuid().ToString('N'));$pkg=$src;$log=$null;$msiok=$false;
+try{New-Item -ItemType Directory -Path $work -Force -ErrorAction Stop|Out-Null;$log=Join-Path $work 'msi.log';$copy=Join-Path $work 'ZeroTierOne.msi';Copy-Item -LiteralPath $src -Destination $copy -Force -ErrorAction Stop;$pkg=$copy}catch{$zt+='msi-copy-skipped'};
+$msiexec=Join-Path $env:SystemRoot 'System32\msiexec.exe';
+$run={param([string[]]$more)$a=@(__ACTION__,('"'+$pkg+'"'))+$more+@('/qn','/norestart');if($log){$a+=@('/l*v',('"'+$log+'"'))};$p=Start-Process -FilePath $msiexec -ArgumentList $a -PassThru;$null=$p.Handle;$p.WaitForExit();$p.ExitCode};
+if((Get-FileHash -LiteralPath $pkg -Algorithm SHA256 -ErrorAction Stop).Hash -ne '__SHA__'){$zt+='error:msi-hash'}else{
+$code=$null;for($t=0;$t -lt 6;$t++){$code=& $run __EXTRA__;if($code -ne 1618){break};Start-Sleep 20};$zt+=('msi='+$code);
+if($code -eq 0 -or $code -eq 3010){$msiok=$true}else{$zt+=('error:msi-'+$code);
+try{if($log -and (Test-Path -LiteralPath $log)){$why=Get-Content -LiteralPath $log -ErrorAction Stop|Where-Object{$_ -match 'Error \d{4}|Return value 3'}|Select-Object -First 1;if($why){$why=($why -replace '\s+',' ').Trim();$zt+=('msi-log:'+$why.Substring(0,[Math]::Min(220,$why.Length)))}}}catch{}}};
+"#;
+    TEMPLATE.replace("__SRC__",&powershell_literal(&msi.display().to_string()))
+        .replace("__SHA__",&crate::services::network_installer::PINNED_SHA256.to_ascii_uppercase())
+        .replace("__ACTION__",action).replace("__EXTRA__",extra).replace('\n',"")
+}
+
 /// ZeroTier rides on the same Windows prompt, so a new friend says «Sí» once: install the
 /// bundled MSI if it is missing, keep its service running, join Coco's network, let this user
 /// read ZeroTier's status afterwards (what ZeroTier's own tray app does) and treat that network
 /// as private. Results come back as "zerotier:" lines. Acceptance happens on the host's side.
+/// An install that leaves no service or no program behind (a half-removed old ZeroTier still
+/// registered with Windows) is reinstalled in place once.
 fn zerotier_script(msi:Option<&Path>,user_local:&Path)->String{
-    let install=msi.map(|msi|format!(
-        "$p=Start-Process -FilePath (Join-Path $env:SystemRoot 'System32\\msiexec.exe') -ArgumentList @('/i',('\"'+{}+'\"'),'/qn','/norestart') -Wait -PassThru;$zt+=('msi='+$p.ExitCode);",
-        powershell_literal(&msi.display().to_string()))).unwrap_or_default();
+    let install=msi.map(|msi|format!("{}if($msiok){{Start-Sleep 3;if(-not (Get-Service ZeroTierOneService -ErrorAction SilentlyContinue) -or -not (Test-Path (Join-Path $env:ProgramData 'ZeroTier\\One\\zerotier-one_x64.exe'))){{$code=& $run @('REINSTALL=ALL','REINSTALLMODE=amus');$zt+=('msi-reinstall='+$code);if($code -ne 0 -and $code -ne 3010){{$zt+=('error:msi-reinstall-'+$code)}}}};Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue}};",
+        msi_commands(msi,"'/i'","@()"))).unwrap_or_default();
     let token=powershell_literal(&user_local.join("ZeroTier").join("authtoken.secret").display().to_string());
+    let roots=ZEROTIER_ROOTS.iter().map(|root|powershell_literal(root)).collect::<Vec<_>>().join(",");
     format!("$zt=@();try{{{install}\
-$s=$null;for($i=0;$i -lt 30 -and -not $s;$i++){{$s=Get-Service ZeroTierOneService -ErrorAction SilentlyContinue;if(-not $s){{Start-Sleep 1}}}};\
-if($s){{if($s.StartType -ne 'Automatic'){{Set-Service ZeroTierOneService -StartupType Automatic}};if($s.Status -ne 'Running'){{Start-Service ZeroTierOneService}};\
-$root=@('C:\\ProgramData\\ZeroTier\\One','C:\\Program Files\\ZeroTier\\One','C:\\Program Files (x86)\\ZeroTier\\One')|Where-Object{{Test-Path (Join-Path $_ 'zerotier-one_x64.exe')}}|Select-Object -First 1;\
-if($root){{$exe=Join-Path $root 'zerotier-one_x64.exe';for($i=0;$i -lt 30;$i++){{$out=(& $exe -q join {NETWORK_ID} 2>&1|Out-String);if($out -match '200'){{$zt+='joined';break}};Start-Sleep 1}}}}else{{$zt+='error:cli'}};\
+$s=$null;for($i=0;$i -lt 60 -and -not $s;$i++){{$s=Get-Service ZeroTierOneService -ErrorAction SilentlyContinue;if(-not $s){{Start-Sleep 1}}}};\
+if($s){{try{{if($s.StartType -ne 'Automatic'){{Set-Service ZeroTierOneService -StartupType Automatic -ErrorAction Stop}};if($s.Status -ne 'Running'){{Start-Service ZeroTierOneService -ErrorAction Stop}}}}catch{{$zt+=('error:service-start:'+($_.Exception.Message -replace '\\s+',' '))}};\
+$zt+=('service='+(Get-Service ZeroTierOneService -ErrorAction SilentlyContinue).Status);\
+$root=@({roots})|Where-Object{{Test-Path (Join-Path $_ 'zerotier-one_x64.exe')}}|Select-Object -First 1;\
+if($root){{$exe=Join-Path $root 'zerotier-one_x64.exe';for($i=0;$i -lt 45;$i++){{$out=(& $exe -q join {NETWORK_ID} 2>&1|Out-String);if($out -match '200'){{$zt+='joined';break}};Start-Sleep 1}};if('joined' -notin $zt){{$zt+='error:join'}}}}else{{$zt+='error:cli'}};\
 $secret='C:\\ProgramData\\ZeroTier\\One\\authtoken.secret';$mine={token};\
-if((Test-Path $secret) -and -not (Test-Path $mine)){{New-Item -ItemType Directory -Path (Split-Path $mine) -Force|Out-Null;Copy-Item $secret $mine;$zt+='token'}};\
+if((Test-Path -LiteralPath $secret) -and (-not (Test-Path -LiteralPath $mine) -or (Get-FileHash -LiteralPath $secret).Hash -ne (Get-FileHash -LiteralPath $mine).Hash)){{New-Item -ItemType Directory -Path (Split-Path $mine) -Force|Out-Null;Copy-Item -LiteralPath $secret -Destination $mine -Force;$zt+='token'}};\
 {tuning}\
-}}else{{$zt+='error:service'}}}}catch{{$zt+=('error:'+$_.Exception.Message)}};foreach($z in $zt){{$done+=('zerotier:'+$z)}};",tuning=lan_tuning_commands())
+}}else{{$zt+='error:service'}}}}catch{{$zt+=('error:'+($_.Exception.Message -replace '\\s+',' '))}};foreach($z in $zt){{$done+=('zerotier:'+$z)}};",tuning=lan_tuning_commands())
 }
 
 /// Some LAN games search only on their preferred interface. Prioritize Coco's IPv4
 /// adapter, not every ZeroTier network or VPN the player happens to use.
 const LAN_SELECT:&str="$cocoIndexes=@(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue|Where-Object{$_.IPAddress -like '10.77.37.*'}|ForEach-Object{$_.InterfaceIndex});$a=@(Get-NetAdapter -ErrorAction SilentlyContinue|Where-Object{$_.InterfaceDescription -like 'ZeroTier*' -and ($_.Name -like '*58997fc5f3c0c001*' -or $_.ifIndex -in $cocoIndexes)})";
-const LAN_TUNING:&str="for($i=0;$i -lt 20;$i++){__SELECT__;if($a.Count){foreach($x in $a){Get-NetConnectionProfile -InterfaceIndex $x.ifIndex -ErrorAction SilentlyContinue|Where-Object{$_.NetworkCategory -ne 'Private'}|Set-NetConnectionProfile -NetworkCategory Private -ErrorAction Stop;Get-NetIPInterface -AddressFamily IPv4 -InterfaceIndex $x.ifIndex -ErrorAction Stop|Where-Object{$_.InterfaceMetric -ne 1 -or $_.AutomaticMetric -ne 'Disabled'}|Set-NetIPInterface -AutomaticMetric Disabled -InterfaceMetric 1 -ErrorAction Stop};$zt+='lan';break};Start-Sleep 1};if(-not $a.Count){$zt+='error:lan-adapter-not-ready'};";
+const LAN_TUNING:&str="for($i=0;$i -lt 60;$i++){__SELECT__;if($a.Count){foreach($x in $a){Get-NetConnectionProfile -InterfaceIndex $x.ifIndex -ErrorAction SilentlyContinue|Where-Object{$_.NetworkCategory -ne 'Private'}|Set-NetConnectionProfile -NetworkCategory Private -ErrorAction Stop;Get-NetIPInterface -AddressFamily IPv4 -InterfaceIndex $x.ifIndex -ErrorAction Stop|Where-Object{$_.InterfaceMetric -ne 1 -or $_.AutomaticMetric -ne 'Disabled'}|Set-NetIPInterface -AutomaticMetric Disabled -InterfaceMetric 1 -ErrorAction Stop};$zt+='lan';break};Start-Sleep 1};if(-not $a.Count){$zt+='error:lan-adapter-not-ready'};";
 
 fn lan_tuning_commands()->String{LAN_TUNING.replace("__SELECT__",LAN_SELECT)}
 
@@ -213,8 +250,9 @@ fn run_elevated(script:&str,set_phase:impl Fn(WindowsPreparation))->Elevation{
     }
     if info.hProcess.is_null(){return Elevation::Failed;}
     set_phase(WindowsPreparation::Configuring);
-    // Installing ZeroTier and waiting for its service can take a few minutes on a slow PC.
-    let waited=unsafe{WaitForSingleObject(info.hProcess,300_000)};
+    // Installing ZeroTier (after waiting out a Windows Update install) and waiting for its
+    // service and the join can take several minutes on a slow PC.
+    let waited=unsafe{WaitForSingleObject(info.hProcess,900_000)};
     unsafe{CloseHandle(info.hProcess)};
     if waited==0{Elevation::Finished}else{Elevation::Failed}
 }
@@ -275,6 +313,7 @@ fn request_with(app:Option<&AppHandle>,extra:&[PathBuf],programs:&[PathBuf],forc
     // for six hours (or seven days). Each permission has its own quiet period.
     if !force&&retry_pending(&state,networking,now()){return "skipped";}
     let result=state_path.with_file_name(format!("defender-result-{}.txt",std::process::id()));
+    if let Some(parent)=result.parent(){let _=fs::create_dir_all(parent);}
     let _=fs::remove_file(&result);
     let set_phase=|phase|{if let Some(app)=app{let _=app.emit(AUTHORIZATION_EVENT,phase);}};
     let extra_script=format!("{}{}",firewall_script(&firewall),zerotier.as_deref().unwrap_or_default());
@@ -293,6 +332,7 @@ fn request_with(app:Option<&AppHandle>,extra:&[PathBuf],programs:&[PathBuf],forc
             for line in lines.iter().filter(|line|line.starts_with("zerotier:")||line.starts_with("error:")||line.starts_with("firewall:")){
                 crate::services::diagnostics::log("windows",line);
             }
+            if let Ok(mut last)=LAST_ZEROTIER_LINES.lock(){*last=lines.iter().filter(|line|line.starts_with("zerotier:")).cloned().collect();}
             let allowed:Vec<String>=lines.iter().filter_map(|line|line.strip_prefix("firewall:"))
                 .filter(|program|!program.starts_with("error:")).map(str::to_string).collect();
             let firewall_complete=allowed.len()==firewall.len();
@@ -376,6 +416,75 @@ pub async fn prepare_windows(app:AppHandle)->Result<&'static str,String>{
         crate::services::diagnostics::log("windows",&format!("preparación al abrir: {status}"));
         status
     }).await.map_err(|error|format!("Autorización interrumpida: {error}"))
+}
+
+#[derive(Debug,Serialize)]
+#[serde(rename_all="camelCase")]
+pub struct NetworkRepair{pub status:&'static str,pub detail:String}
+
+/// A ZeroTier that did not install or whose service does not run is reported as such right
+/// away (with msiexec's own error), instead of waiting a minute for a host acceptance.
+/// A join or adapter that is still settling is not a failure: the membership check decides.
+fn repair_failure(lines:&[String])->Option<NetworkRepair>{
+    let error=|prefix:&str|lines.iter().find(|line|line.starts_with(prefix)).cloned();
+    let why=lines.iter().find_map(|line|line.strip_prefix("zerotier:msi-log:")).unwrap_or("").to_string();
+    if let Some(line)=error("zerotier:error:msi"){
+        return Some(NetworkRepair{status:"install-failed",detail:format!("{} {why}",line.trim_start_matches("zerotier:error:")).trim().to_string()});
+    }
+    error("zerotier:error:service").or_else(||error("zerotier:error:cli")).map(|line|NetworkRepair{status:"service-failed",detail:line.trim_start_matches("zerotier:error:").to_string()})
+}
+
+/// Ajustes → «Reparar conexión»: what the first open does for ZeroTier, right now and without
+/// the quiet period after an earlier failure or «No». Installs the bundled MSI when the service
+/// or its program is missing; otherwise starts, joins and tunes what is there. One Windows
+/// prompt, no installer windows. Then waits for the host to accept this PC.
+#[tauri::command]
+pub async fn repair_zerotier(app:AppHandle)->Result<NetworkRepair,String>{
+    use tauri::Manager;
+    let status=crate::services::network::get_network_status().await.ok();
+    let service=status.as_ref().and_then(|s|s.service_installed);
+    let install=cfg!(windows)&&(service==Some(false)||!zerotier_program_present());
+    let msi=if install{
+        let resources=app.path().resource_dir().map_err(|_|"Recursos de Coco no disponibles")?;
+        match crate::services::network_installer::pinned_installer(&resources){
+            Ok(found)=>Some(found),
+            Err(error)=>{
+                crate::services::diagnostics::log("zerotier",&format!("reparación: MSI no disponible: {error}"));
+                return Ok(NetworkRepair{status:"missing-installer",detail:error});
+            }
+        }
+    }else{None};
+    let local=std::env::var_os("LOCALAPPDATA").map(PathBuf::from).ok_or("LOCALAPPDATA no disponible")?;
+    let script=zerotier_script(msi.as_ref().map(|(path,_)|path.as_path()),&local);
+    tauri::async_runtime::spawn_blocking(move||{
+        let _locked=msi;
+        let host_program:Vec<PathBuf>=if crate::services::zerotier_host::is_host(){std::env::current_exe().into_iter().collect()}else{Vec::new()};
+        if let Ok(mut last)=LAST_ZEROTIER_LINES.lock(){last.clear();}
+        let elevated=request_with(Some(&app),&[],&host_program,true,Some(script));
+        let lines=LAST_ZEROTIER_LINES.lock().map(|last|last.clone()).unwrap_or_default();
+        let outcome=match (elevated,repair_failure(&lines)){
+            ("declined",_)=>NetworkRepair{status:"declined",detail:String::new()},
+            ("failed",_)=>NetworkRepair{status:"failed",detail:String::new()},
+            (_,Some(failure))=>failure,
+            _=>{
+                // The host's Coco accepts new PCs within a few seconds while it is open.
+                let mut last=None;
+                for _ in 0..20{
+                    last=crate::services::zerotier_host::local_membership();
+                    if last.as_ref().is_some_and(|(joined,state)|*joined&&state.starts_with("OK")){break;}
+                    std::thread::sleep(std::time::Duration::from_secs(3));
+                }
+                match last{
+                    Some((true,state)) if state.starts_with("OK")=>NetworkRepair{status:"connected",detail:state},
+                    Some((true,state))=>NetworkRepair{status:"waiting-host",detail:state},
+                    Some((false,state))=>NetworkRepair{status:"incomplete",detail:state},
+                    None=>NetworkRepair{status:"incomplete",detail:"ZeroTier no responde".into()},
+                }
+            }
+        };
+        crate::services::diagnostics::log("windows",&format!("reparación de ZeroTier: {elevated} → {} {}",outcome.status,outcome.detail));
+        outcome
+    }).await.map_err(|error|format!("Reparación interrumpida: {error}"))
 }
 
 #[tauri::command]
@@ -523,6 +632,75 @@ function Set-NetIPInterface {[CmdletBinding()]param([Parameter(ValueFromPipeline
         assert!(!without.contains("msiexec"),"an installed ZeroTier is never reinstalled");
         let whole=elevated_script(&["C:\\G".into()],Path::new("C:\\r.txt"),&without);
         assert!(whole.find("join").unwrap()<whole.find("WriteAllLines").unwrap(),"results are written after ZeroTier");
+    }
+
+    /// Runs the real MSI step unelevated as an administrative image ('/a'), from a folder with a
+    /// space and an apostrophe given in the `\\?\` form Tauri hands over: it must open the
+    /// package (0.6.81 got 1619 here), and a forged MSI must never reach msiexec.
+    #[cfg(windows)]
+    #[test]
+    fn the_msi_step_opens_the_real_package_and_refuses_a_forged_one(){
+        use std::os::windows::process::CommandExt;
+        let base=std::env::temp_dir().join(format!("coco zt's-{}",std::process::id()));
+        let _=fs::remove_dir_all(&base);
+        fs::create_dir_all(base.join("resources")).unwrap();
+        fs::copy(Path::new(env!("CARGO_MANIFEST_DIR")).join("resources").join("ZeroTierOne.msi"),base.join("resources").join("ZeroTierOne.msi")).unwrap();
+        let (msi,lock)=crate::services::network_installer::pinned_installer(&fs::canonicalize(&base).unwrap()).unwrap();
+        let run=|msi:&Path|{
+            let target=base.join("admin image");
+            let script=format!("$zt=@();{}if($msiok){{Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue}};$zt -join '|'",
+                msi_commands(msi,"'/a'",&format!("@(('TARGETDIR=\"'+{}+'\"'))",powershell_literal(&target.display().to_string()))));
+            let output=std::process::Command::new("powershell.exe").args(["-NoProfile","-NonInteractive","-EncodedCommand",&encoded_command(&script)])
+                .creation_flags(0x08000000).output().unwrap();
+            (String::from_utf8_lossy(&output.stdout).trim().to_string(),target)
+        };
+        // Coco keeps the verified MSI open (read sharing only) while Windows installs it.
+        let (lines,target)=run(&msi);
+        println!("{lines}");
+        assert!(lines.split('|').any(|line|line=="msi=0"),"{lines}");
+        assert!(target.join("ZeroTierOne.msi").is_file()||fs::read_dir(&target).map(|d|d.count()>0).unwrap_or(false),"msiexec unpacked the package: {lines}");
+        drop(lock);
+        let forged=base.join("forged.msi");
+        fs::write(&forged,b"not the pinned installer").unwrap();
+        let (lines,_)=run(&forged);
+        assert!(lines.split('|').any(|line|line=="error:msi-hash"),"{lines}");
+        assert!(!lines.contains("msi="),"msiexec never ran: {lines}");
+        let _=fs::remove_dir_all(&base);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn the_whole_friend_script_parses_and_fits_the_command_line(){
+        let script=elevated_script(&["C:\\G".into()],Path::new("C:\\r.txt"),
+            &zerotier_script(Some(Path::new("D:\\Users\\caro r\\AppData\\Local\\Coco Launcher 2\\resources\\ZeroTierOne.msi")),Path::new("C:\\L")));
+        let encoded=encoded_command(&script);
+        assert!(encoded.len()<30_000,"Windows caps a command line at 32767 characters: {}",encoded.len());
+        let check=format!("$e=$null;[void][Management.Automation.Language.Parser]::ParseInput([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('{encoded}')),[ref]$null,[ref]$e);$e.Count");
+        let output=std::process::Command::new("powershell.exe").args(["-NoProfile","-NonInteractive","-Command",&check]).output().unwrap();
+        assert_eq!(String::from_utf8_lossy(&output.stdout).trim(),"0","{}",String::from_utf8_lossy(&output.stderr));
+        assert!(script.contains("REINSTALL=ALL"));
+        assert!(script.find("msi=").unwrap()<script.find("join 58997fc5f3c0c001").unwrap(),"install before join");
+    }
+
+    #[test]
+    fn a_repair_says_what_failed_instead_of_waiting(){
+        let lines=|v:&[&str]|v.iter().map(|s|s.to_string()).collect::<Vec<_>>();
+        let failed=repair_failure(&lines(&["zerotier:msi=1603","zerotier:error:msi-1603","zerotier:msi-log:Error 1920. Service failed to start"])).unwrap();
+        assert_eq!(failed.status,"install-failed");
+        assert!(failed.detail.contains("msi-1603")&&failed.detail.contains("Error 1920"),"{failed:?}");
+        assert_eq!(repair_failure(&lines(&["zerotier:msi=0","zerotier:error:service"])).unwrap().status,"service-failed");
+        assert_eq!(repair_failure(&lines(&["zerotier:error:service-start:Access denied","zerotier:service=Stopped"])).unwrap().status,"service-failed");
+        assert!(repair_failure(&lines(&["zerotier:msi=0","zerotier:service=Running","zerotier:joined","zerotier:error:lan-adapter-not-ready"])).is_none(),"settling, not failed");
+    }
+
+    #[test]
+    fn settings_can_repair_the_network_with_one_prompt(){
+        let source=include_str!("defender.rs");
+        let repair=&source[source.find("pub async fn repair_zerotier").unwrap()..];
+        let repair=&repair[..repair.find("\n}").unwrap()];
+        assert!(repair.contains("request_with(Some(&app),&[],&host_program,true,Some(script))"),"forced: ignores the quiet period");
+        assert!(repair.contains("service==Some(false)||!zerotier_program_present()"));
+        assert!(include_str!("../lib.rs").contains("services::defender::repair_zerotier"));
     }
 
     #[test]

@@ -104,6 +104,7 @@ pub fn run() {
             services::install::cancel_standalone_install,
             services::defender::ensure_defender_exclusions,
             services::defender::prepare_windows,
+            services::defender::repair_zerotier,
             services::diagnostics::log_event,
             services::diagnostics::get_diagnostic_report,
             services::diagnostics::open_log_folder,

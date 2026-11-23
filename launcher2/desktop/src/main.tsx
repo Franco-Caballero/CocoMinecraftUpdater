@@ -5,7 +5,7 @@ import { convertFileSrc, isTauri, invoke as invokeNative } from '@tauri-apps/api
 import { invoke, captureUnexpectedErrors, copyDiagnosticReport } from './diagnostics';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Activity, ClipboardCopy, ArrowDownAZ, ArrowRight, ArrowUpRight, Check, CircleAlert, Clock3, Download, FileArchive, Heart, LoaderCircle, Maximize2, Minus, PackagePlus, Play, Search, Settings2, ShieldCheck, Sparkles, X, Camera, HardDrive, Trash2, FolderOpen, FolderInput } from 'lucide-react';
+import { Activity, ClipboardCopy, ArrowDownAZ, ArrowRight, ArrowUpRight, Check, CircleAlert, Clock3, Download, FileArchive, Heart, LoaderCircle, Maximize2, Minus, PackagePlus, Play, Search, Settings2, ShieldCheck, Sparkles, X, Camera, HardDrive, Trash2, FolderOpen, FolderInput, Wifi } from 'lucide-react';
 import '@fontsource-variable/big-shoulders-display';
 import '@fontsource-variable/instrument-sans';
 import '../../prototype/styles.css';
@@ -483,6 +483,8 @@ function App(){
   const [defenderOutcome,setDefenderOutcome]=useState('');
   const [diagnosticNote,setDiagnosticNote]=useState('');
   const [defenderBusy,setDefenderBusy]=useState(false);
+  const [networkRepairBusy,setNetworkRepairBusy]=useState(false);
+  const [networkRepairOutcome,setNetworkRepairOutcome]=useState('');
   const [avatar,setAvatar]=useState<string|null>(readCachedAvatar);
   const [avatarBusy,setAvatarBusy]=useState(false);
   const [avatarError,setAvatarError]=useState('');
@@ -1702,6 +1704,23 @@ function App(){
     }catch(error){setDefenderOutcome(String(error));}
     finally{setDefenderBusy(false);}
   };
+  /** Ajustes: installs ZeroTier from the Setup if it is missing, joins Coco's network and waits for the host. */
+  const repairNetwork=async()=>{
+    if(!isTauri()||networkRepairBusy)return;
+    setNetworkRepairBusy(true);setNetworkRepairOutcome('Acepta el permiso de Windows. Instalar y conectar puede tardar un par de minutos.');
+    try{
+      const result=await invoke<{status:string;detail:string}>('repair_zerotier');
+      const address=result.detail.match(/10\.77\.37\.\d+/)?.[0];
+      setNetworkRepairOutcome(result.status==='connected'?`Listo: estás en la red Coco${address?` como ${address}`:''}.`:
+        result.status==='waiting-host'?'ZeroTier quedó instalado y unido. Falta que el anfitrión te acepte: pídele que abra Coco y vuelve a tocar «Reparar conexión».':
+        result.status==='declined'?'Windows no dio permiso. Vuelve a intentarlo y elige «Sí».':
+        result.status==='missing-installer'?'Esta copia de Coco no trae el instalador de ZeroTier. Descarga Coco de nuevo.':
+        result.status==='install-failed'?`Windows no pudo instalar ZeroTier (${result.detail}). Si tienes otro antivirus, pausa su protección un momento y vuelve a intentarlo; si sigue, copia el diagnóstico.`:
+        result.status==='service-failed'?'ZeroTier está instalado pero no arranca. Reinicia el PC y vuelve a tocar «Reparar conexión»; si sigue, copia el diagnóstico.':
+        'No se pudo completar. Copia el diagnóstico (abajo) y envíalo al anfitrión.');
+    }catch(error){setNetworkRepairOutcome(String(error));}
+    finally{setNetworkRepairBusy(false);}
+  };
   const refreshInstallLocation=async(id:string)=>{
     const location=await invoke<InstallLocation>('get_install_location',{id});
     setInstallLocation(location);
@@ -2087,6 +2106,7 @@ function App(){
             <button className="toggle-button" disabled={!isTauri()||savingIdentity||identityName===identity.username} onClick={saveIdentity}><Check size={15}/>{confirmIdentity?'Confirmar cambio':'Guardar'}</button>
             {confirmIdentity&&<p className="identity-warning">Cambiar el nombre puede cambiar tu inventario y avances. Confirma el cambio.</p>}{identityError&&<p className="operation-message" role="alert">{identityError}</p>}{avatarError&&<p className="operation-message" role="alert">{avatarError}</p>}</div></div></section>
           <section className="coco-setting"><div><h2>Windows Defender</h2><p>{defenderOutcome||'Coco excluye solo las carpetas de juegos y sus descargas.'}</p></div><div className="coco-setting-control"><button className="filter-button" disabled={!isTauri()||defenderBusy||windowsPreparation!=='idle'} onClick={()=>void checkDefender()}><ShieldCheck size={14}/> {defenderBusy?'Revisando…':'Revisar permisos'}</button></div></section>
+          <section className="coco-setting"><div><h2>Conexión con tus amigos</h2><p>{networkRepairOutcome||'Si no ves a tus amigos en las partidas o ZeroTier no se instaló, Coco lo instala y lo conecta solo. Windows pide permiso una vez.'}</p></div><div className="coco-setting-control"><button className="filter-button" disabled={!isTauri()||networkRepairBusy||windowsPreparation!=='idle'} onClick={()=>void repairNetwork()}><Wifi size={14}/> {networkRepairBusy?'Reparando…':'Reparar conexión'}</button></div></section>
           <section className="coco-setting"><div><h2>Ayuda</h2><p>{diagnosticNote||'Si algo falla, copia el diagnóstico y pégalo en el chat con Coco.'}</p></div><div className="coco-setting-control"><button className="filter-button active" disabled={!isTauri()} onClick={()=>void copyDiagnostic()}><ClipboardCopy size={14}/> Copiar diagnóstico</button><button className="filter-button" disabled={!isTauri()} onClick={()=>void invoke('open_log_folder').catch(console.warn)}><FolderOpen size={14}/> Abrir registros</button></div></section>
           {hostStudioAvailable&&<section className="coco-setting coco-host"><div><h2>Anfitrión</h2><p>Solo aparece en tu PC. Prepara juegos y revisa paquetes de prueba.</p></div><div className="coco-setting-control"><button className="host-studio-button" title={hostStudioBlocked?'Termina la operación activa o revisa el paquete pendiente antes de crear otro':'Crear un paquete compartible'} disabled={hostStudioBlocked} onClick={()=>{if(!hostStudioBlocked)setHostStudioOpen(true);}}><PackagePlus size={17}/><span>Crear juego</span></button></div>{incomingPackages.length===0&&isTauri()&&<React.Suspense fallback={null}><LazyCatalogHub hostStudioAvailable={hostStudioAvailable} onChanged={refreshNativeCatalog} onImported={openImportedGame} pickerRequestId={hostStudioAvailable?packagePickerRequest:0} onPickerRequestConsumed={()=>setPackagePickerRequest(0)}/></React.Suspense>}</section>}
           <section className="coco-activity-history" aria-label="Actividad reciente guardada en este PC">

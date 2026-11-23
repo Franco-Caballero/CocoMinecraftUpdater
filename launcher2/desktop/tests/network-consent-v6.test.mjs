@@ -9,16 +9,28 @@ const read=name=>readFile(resolve(root,name),'utf8');
 // ZeroTier configures itself like Coco 1 did: on first open, inside the same single Windows
 // prompt as Defender. The launcher never waits on it, and the host being offline only means
 // the friend's membership is accepted the next time the host opens Coco.
-test('ZeroTier is set up on first open inside the one Windows prompt, never from the settings',async()=>{
+test('ZeroTier is set up on first open inside the one Windows prompt',async()=>{
   const [main,defender,lib]=await Promise.all([read('src/main.tsx'),read('src-tauri/src/services/defender.rs'),read('src-tauri/src/lib.rs')]);
   assert.match(main,/invoke<string>\('prepare_windows'\)/);
-  assert.doesNotMatch(main,/join_coco_network|install_zerotier_msi|<h2>Multijugador<\/h2>/,'no network buttons left for the friend');
+  assert.doesNotMatch(main,/join_coco_network|install_zerotier_msi|<h2>Multijugador<\/h2>/,'only the one repair button, never the old step-by-step network buttons');
   assert.match(lib,/services::defender::prepare_windows/);
   assert.match(defender,/fn prepare_windows[\s\S]*?zerotier_script\(msi[\s\S]*?request_with\(Some\(&app\),&\[\],&host_program,false,script\)/,'one elevation for Defender and ZeroTier');
   assert.match(defender,/let host_program[^;]*is_host\(\)\{std::env::current_exe\(\)/,'only the host lets Coco itself through the firewall');
   assert.doesNotMatch(defender.slice(defender.indexOf('pub async fn prepare_windows')).split('\n}')[0],/setup_supported/,'the never-true status flag must not gate the setup');
   assert.match(defender,/service_installed==Some\(false\)/,'only installs ZeroTier when it is missing');
   assert.match(defender,/pinned_installer/,'only the SHA-pinned bundled MSI');
+});
+
+// 0.6.81 left every new friend without ZeroTier (msiexec exit 1619). If the first open still
+// fails, Ajustes repairs it in one prompt: install when missing, join, wait for the host.
+test('Settings repair the Coco network with one Windows prompt',async()=>{
+  const [main,defender,lib,diagnostics]=await Promise.all([read('src/main.tsx'),read('src-tauri/src/services/defender.rs'),read('src-tauri/src/lib.rs'),read('src/diagnostics.ts')]);
+  assert.match(lib,/services::defender::repair_zerotier/);
+  assert.match(main,/invoke<\{status:string;detail:string\}>\('repair_zerotier'\)/);
+  assert.match(main,/<h2>Conexión con tus amigos<\/h2>[\s\S]*?Reparar conexión/);
+  assert.match(diagnostics,/'repair_zerotier'/,'the repair shows up in the diagnostic');
+  assert.match(defender,/fn repair_zerotier[\s\S]*?request_with\(Some\(&app\),&\[\],&host_program,true,Some\(script\)\)/,'forced past the quiet period');
+  assert.match(defender,/Temp\\coco-zerotier-/,'installs from a copy msiexec can open');
 });
 
 test('Windows consent guidance ends when the elevated helper starts or the request fails',async()=>{
