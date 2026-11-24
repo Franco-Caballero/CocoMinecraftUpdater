@@ -25,7 +25,21 @@ struct Journal {
 const UPGRADE_TRANSACTION:&str="upgrade-transaction-v1";
 const RECEIPT:&str=".coco/standalone-install-v1.json";
 
+/// The Steam emulator files Coco itself writes the player's name into (`game_prepare::set_player_name`).
+/// They are Coco's, not the player's: when one is pinned and no longer matches (0.6.69/0.6.70 wrote the
+/// name without keeping the packaged text to put back), repair restores the packaged copy.
+fn emulator_name_file(path:&str)->bool {
+    let parts:Vec<String>=path.replace('\\',"/").split('/').map(str::to_ascii_lowercase).collect();
+    let in_settings=parts.len()>=2&&parts[parts.len()-2]=="steam_settings";
+    match parts.last().map(String::as_str){
+        Some("configs.user.ini"|"force_account_name.txt")=>in_settings,
+        Some("steam_emu.ini"|"rune.ini")=>true,
+        _=>false,
+    }
+}
+
 fn protected_path(path:&str)->bool {
+    if emulator_name_file(path){return false;}
     path.replace('\\',"/").split('/').any(|part|matches!(part.to_ascii_lowercase().as_str(),
         ".coco"|"saves"|"playerdata"|"advancements"|"stats"|
         "config"|"configs"|"mods"|"plugins"|"bepinex"|"distanthorizons"|
@@ -957,6 +971,16 @@ mod tests {
         fs::write(f.live.join(".coco/standalone-install-v1.json"),b"{}" ).unwrap();
         assert!(commit(&f.m,&f.live,&f.stage,&AtomicBool::new(false),&guard,&mut noop).is_err());
         assert_eq!(fs::read(f.live.join("game.exe")).unwrap(),b"modified");
+    }
+
+    #[test]
+    fn a_name_coco_wrote_into_a_pinned_emulator_file_is_repaired(){
+        let name="Dressmaker_Data/Plugins/x86_64/steam_settings/configs.user.ini";
+        let f=fixture(&[(name,b"account_name=STEAMRIP\r\n",Some(b"account_name=ZoeSokolov88\r\n"))]);
+        assert!(commit(&f.m,&f.live,&f.stage,&AtomicBool::new(false),&guard,&mut noop).is_ok());
+        assert_eq!(fs::read(f.live.join(name)).unwrap(),b"account_name=STEAMRIP\r\n");
+        assert!(protected_path("Dressmaker_Data/Plugins/x86_64/other.ini"),"only the emulator name files");
+        assert!(protected_path("config/configs.user.ini"),"outside steam_settings it stays the player's");
     }
 
     #[test]
